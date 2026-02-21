@@ -123,56 +123,60 @@ export default function MasterProgramCalendar({ programs, athleteId, currentProg
                 <button onClick={nextMonth} className="btn-icon">→</button>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', background: 'rgba(15, 23, 42, 0.5)', padding: '0.75rem 0', borderBottom: '1px solid var(--card-border)' }}>
-                {weekDays.map(d => <div key={d} style={{ textAlign: 'center', fontSize: '0.75rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase' }}>{d}</div>)}
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridAutoRows: '1fr' }}>
-                {calendarDays.map((day, i) => (
-                    <div
-                        key={day.dateStr}
-                        onClick={() => day.program && day.session && day.session.exercises?.length > 0 && onSelectSession && onSelectSession(day.program, day.weekNum, day.dayNum)}
-                        style={{
-                            minHeight: '110px',
-                            padding: '0.5rem',
-                            borderRight: (i + 1) % 7 === 0 ? 'none' : '1px solid var(--card-border)',
-                            borderBottom: '1px solid var(--card-border)',
-                            background: day.isCurrentMonth ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.3)',
-                            cursor: (day.program && day.session && day.session.exercises?.length > 0) ? 'pointer' : 'default',
-                            position: 'relative',
-                            transition: 'background 0.2s',
-                        }}
-                        className={day.program ? 'calendar-day-active' : ''}
-                    >
-                        <div style={{
-                            fontSize: '0.85rem',
-                            color: day.isCurrentMonth ? 'var(--foreground)' : 'var(--muted)',
-                            marginBottom: '0.5rem',
-                            fontWeight: day.isCurrentMonth ? 500 : 400
-                        }}>
-                            {day.date.getDate()}
-                        </div>
-
-                        {day.program && day.session && day.session.exercises && day.session.exercises.length > 0 && (
-                            <div style={{
-                                background: 'rgba(6, 182, 212, 0.1)',
-                                borderLeft: '3px solid var(--primary)',
-                                padding: '6px',
-                                borderRadius: '0 6px 6px 0',
-                                fontSize: '0.75rem',
-                                boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                            }}>
-                                <div style={{ fontWeight: 600, color: 'var(--primary)', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-                                    {day.program.name}
-                                </div>
-                                <div style={{ marginTop: '2px' }}>
-                                    <div style={{ color: 'var(--foreground)', fontWeight: 500 }}>{day.session.name}</div>
-                                    <div style={{ opacity: 0.7, fontSize: '0.7rem' }}>{day.session.exercises.length} Exercises</div>
-                                </div>
-                            </div>
-                        )}
+            <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
+                <div style={{ minWidth: '700px' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', background: 'rgba(15, 23, 42, 0.5)', padding: '0.75rem 0', borderBottom: '1px solid var(--card-border)' }}>
+                        {weekDays.map(d => <div key={d} style={{ textAlign: 'center', fontSize: '0.75rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase' }}>{d}</div>)}
                     </div>
-                ))}
+
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridAutoRows: '1fr' }}>
+                        {calendarDays.map((day, i) => (
+                            <div
+                                key={day.dateStr}
+                                onClick={() => day.program && day.session && day.session.exercises?.length > 0 && onSelectSession && onSelectSession(day.program, day.weekNum, day.dayNum)}
+                                style={{
+                                    minHeight: '110px',
+                                    padding: '0.5rem',
+                                    borderRight: (i + 1) % 7 === 0 ? 'none' : '1px solid var(--card-border)',
+                                    borderBottom: '1px solid var(--card-border)',
+                                    background: day.isCurrentMonth ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.3)',
+                                    cursor: (day.program && day.session && day.session.exercises?.length > 0) ? 'pointer' : 'default',
+                                    position: 'relative',
+                                    transition: 'background 0.2s',
+                                }}
+                                className={day.program ? 'calendar-day-active' : ''}
+                            >
+                                <div style={{
+                                    fontSize: '0.85rem',
+                                    color: day.isCurrentMonth ? 'var(--foreground)' : 'var(--muted)',
+                                    marginBottom: '0.5rem',
+                                    fontWeight: day.isCurrentMonth ? 500 : 400
+                                }}>
+                                    {day.date.getDate()}
+                                </div>
+
+                                {day.program && day.session && day.session.exercises && day.session.exercises.length > 0 && (
+                                    <div style={{
+                                        background: 'rgba(6, 182, 212, 0.1)',
+                                        borderLeft: '3px solid var(--primary)',
+                                        padding: '6px',
+                                        borderRadius: '0 6px 6px 0',
+                                        fontSize: '0.75rem',
+                                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+                                    }}>
+                                        <div style={{ fontWeight: 600, color: 'var(--primary)', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                                            {day.program.name}
+                                        </div>
+                                        <div style={{ marginTop: '2px' }}>
+                                            <div style={{ color: 'var(--foreground)', fontWeight: 500 }}>{day.session.name}</div>
+                                            <div style={{ opacity: 0.7, fontSize: '0.7rem' }}>{day.session.exercises.length} Exercises</div>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
             </div>
             <style jsx>{`
                 .btn-icon {

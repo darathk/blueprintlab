@@ -159,7 +159,7 @@ export default function AthleteCharts({ logs, readinessLogs = [], programs = [] 
                     {title}
                 </h3>
                 <div style={{ overflowX: 'auto', overflowY: 'visible', paddingBottom: '10px' }}>
-                    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} style={{ overflow: 'visible' }}>
+                    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} style={{ overflow: 'visible', minWidth: '500px' }}>
                         {/* Grid Lines */}
                         <line x1={padding} y1={height - padding} x2={width - padding} y2={height - padding} stroke="rgba(148, 163, 184, 0.2)" strokeWidth="1" />
                         <line x1={padding} y1={padding} x2={padding} y2={height - padding} stroke="rgba(148, 163, 184, 0.2)" strokeWidth="1" />

@@ -218,9 +218,14 @@ a {
   }
 
   /* Ensure flex containers stack */
-  .flex-row-mobile-col {
+  .flex-mobile-col {
     flex-direction: column !important;
-    align-items: stretch !important;
+    align-items: flex-start !important;
+    gap: 0.75rem !important;
+  }
+
+  .flex-mobile-col>div {
+    width: 100% !important;
   }
 
   /* Adjust typography */

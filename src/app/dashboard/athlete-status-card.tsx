@@ -32,7 +32,7 @@ export default function AthleteStatusCard({ athlete, progress }) {
                 e.currentTarget.style.transform = 'translateY(0)';
             }}
         >
-            <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div className="flex-mobile-col" style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
                     <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'white', letterSpacing: '-0.01em' }}>
                         {athlete.name}

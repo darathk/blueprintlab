@@ -368,12 +368,12 @@ export default function PeriodizationPlanner({ athlete }) {
                 <div style={{ marginBottom: '2rem', padding: '1.5rem', background: 'rgba(15, 23, 42, 0.4)', borderRadius: '12px', border: '1px solid var(--card-border)' }}>
 
                     <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', color: 'var(--foreground)', borderLeft: '3px solid var(--primary)', paddingLeft: '0.75rem' }}>Mission Parameters</h3>
-                    <div style={{ display: 'grid', gap: '1.5rem', gridTemplateColumns: '1fr 1fr', marginBottom: '2rem' }}>
-                        <div>
+                    <div className="flex-mobile-col" style={{ display: 'flex', gap: '1.5rem', marginBottom: '2rem' }}>
+                        <div style={{ flex: 1 }}>
                             <label className="label">Target Objective (Meet Name)</label>
                             <input className="input" value={meetName} onChange={e => setMeetName(e.target.value)} placeholder="e.g. Galactic Nationals" />
                         </div>
-                        <div>
+                        <div style={{ flex: 1 }}>
                             <label className="label">Launch Date (Meet Date)</label>
                             <input className="input" type="date" value={meetDate} onChange={e => setMeetDate(e.target.value)} style={{ colorScheme: 'dark' }} />
                         </div>
@@ -382,7 +382,7 @@ export default function PeriodizationPlanner({ athlete }) {
                     {/* Auto-Generator */}
                     <div style={{ marginBottom: '2rem', padding: '1.5rem', background: 'rgba(6, 182, 212, 0.05)', borderRadius: '12px', border: '1px dashed var(--primary)' }}>
                         <h4 style={{ fontSize: '0.95rem', marginBottom: '1rem', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>⚡ Auto-Sequence Generator</h4>
-                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'end' }}>
+                        <div className="flex-mobile-col" style={{ display: 'flex', gap: '1rem', alignItems: 'end' }}>
                             <div>
                                 <label className="label">Peak Duration (Weeks)</label>
                                 <input
@@ -394,7 +394,7 @@ export default function PeriodizationPlanner({ athlete }) {
                                     min="2"
                                 />
                             </div>
-                            <button onClick={generatePlan} className="btn btn-primary">
+                            <button onClick={generatePlan} className="btn btn-primary" style={{ height: '42px' }}>
                                 Initialize Sequence
                             </button>
                         </div>
