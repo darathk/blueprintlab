@@ -32,15 +32,17 @@ export default function BlockReview({ programs, logs, reportParams }) {
         if (!program) return [];
         let filtered = logs.filter(l => l.programId === program.id);
 
+        const params = reportParams?.parameters || reportParams;
+
         // Filter by reportParams date range if applicable
-        if (reportParams?.startDate) {
-            const start = new Date(reportParams.startDate);
+        if (params?.startDate) {
+            const start = new Date(params.startDate);
             // Beginning of day
             start.setHours(0, 0, 0, 0);
             filtered = filtered.filter(l => new Date(l.date) >= start);
         }
-        if (reportParams?.endDate) {
-            const end = new Date(reportParams.endDate);
+        if (params?.endDate) {
+            const end = new Date(params.endDate);
             // End of day
             end.setHours(23, 59, 59, 999);
             filtered = filtered.filter(l => new Date(l.date) <= end);
@@ -50,17 +52,19 @@ export default function BlockReview({ programs, logs, reportParams }) {
     }, [program, logs, reportParams]);
 
     const lookBackWeeks = useMemo(() => {
+        const params = reportParams?.parameters || reportParams; // Handle both flattened and nested formats
+
         // 1. If explicit duration string provided (e.g. from dropdown "4 Weeks")
-        if (reportParams?.duration) {
+        if (params?.duration) {
             // Handle both string "4 Weeks" and number 4
-            const match = String(reportParams.duration).match(/(\d+)/);
+            const match = String(params.duration).match(/(\d+)/);
             if (match) return parseInt(match[0], 10);
         }
 
         // 2. If explicit date range provided
-        if (reportParams?.startDate && reportParams?.endDate) {
-            const start = new Date(reportParams.startDate);
-            const end = new Date(reportParams.endDate);
+        if (params?.startDate && params?.endDate) {
+            const start = new Date(params.startDate);
+            const end = new Date(params.endDate);
             const diffTime = Math.abs(end.getTime() - start.getTime());
             return Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 7)) || 1;
         }

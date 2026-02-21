@@ -35,9 +35,11 @@ export default function MetaBlockReview({ programs, logs, reportParams }) {
         const blockStats = [];
         const assistMap = {};
 
+        const params = reportParams?.parameters || reportParams;
+
         // Filter programs based on reportParams.programIds
         const selectedPrograms = programs.filter(p =>
-            reportParams.programIds.length === 0 || reportParams.programIds.includes(p.id)
+            !params?.programIds || params.programIds.length === 0 || params.programIds.includes(p.id)
         );
 
         selectedPrograms.forEach(prog => {
