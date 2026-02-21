@@ -1,70 +1,76 @@
 import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+
 export const dynamic = 'force-dynamic';
-import fs from 'fs';
-import path from 'path';
-
-const REPORTS_PATH = path.join(process.cwd(), 'data', 'reports.json');
-
-function getReports() {
-    if (!fs.existsSync(REPORTS_PATH)) return [];
-    try {
-        return JSON.parse(fs.readFileSync(REPORTS_PATH, 'utf8'));
-    } catch {
-        return [];
-    }
-}
 
 export async function GET(req: Request) {
-    const { searchParams } = new URL(req.url);
-    const athleteId = searchParams.get('athleteId');
+    try {
+        const { searchParams } = new URL(req.url);
+        const athleteId = searchParams.get('athleteId');
 
-    let reports = getReports();
-    if (athleteId) {
-        reports = reports.filter((r: any) => r.athleteId === athleteId);
+        const where = athleteId ? { athleteId } : {};
+
+        const reports = await prisma.report.findMany({
+            where,
+            orderBy: { created: 'desc' },
+        });
+
+        // Convert Dates back to ISO strings for existing UI compatibility
+        const formattedReports = reports.map(r => ({
+            ...r,
+            created: r.created.toISOString()
+        }));
+
+        return NextResponse.json(formattedReports);
+    } catch (error) {
+        console.error("GET /api/reports Error:", error);
+        return NextResponse.json({ error: 'Failed to fetch reports' }, { status: 500 });
     }
-
-    // Sort by date desc
-    reports.sort((a: any, b: any) => new Date(b.created).getTime() - new Date(a.created).getTime());
-
-    return NextResponse.json(reports);
 }
 
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const reports = getReports();
+        const { athleteId, config } = body;
 
-        const newReport = {
-            id: Math.random().toString(36).substr(2, 9),
-            created: new Date().toISOString(),
-            status: 'Complete', // Simulating instant generation
-            ...body
-        };
+        if (!athleteId || !config) {
+            return NextResponse.json({ error: 'Missing athleteId or config' }, { status: 400 });
+        }
 
-        reports.push(newReport);
-        fs.writeFileSync(REPORTS_PATH, JSON.stringify(reports, null, 2));
+        const newReport = await prisma.report.create({
+            data: {
+                athleteId,
+                config,
+                status: 'Complete'
+            }
+        });
 
-        return NextResponse.json(newReport);
+        return NextResponse.json({
+            ...newReport,
+            created: newReport.created.toISOString()
+        });
     } catch (e) {
+        console.error("POST /api/reports Error:", e);
         return NextResponse.json({ error: 'Failed to create report' }, { status: 500 });
     }
 }
+
 export async function DELETE(req: Request) {
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get('id');
-
-    if (!id) {
-        return NextResponse.json({ error: 'Missing report ID' }, { status: 400 });
-    }
-
     try {
-        const reports = getReports();
-        const newReports = reports.filter((r: any) => r.id !== id);
-        fs.writeFileSync(REPORTS_PATH, JSON.stringify(newReports, null, 2));
+        const { searchParams } = new URL(req.url);
+        const id = searchParams.get('id');
+
+        if (!id) {
+            return NextResponse.json({ error: 'Missing report ID' }, { status: 400 });
+        }
+
+        await prisma.report.delete({
+            where: { id }
+        });
 
         return NextResponse.json({ success: true });
     } catch (e) {
-        console.error(e);
+        console.error("DELETE /api/reports Error:", e);
         return NextResponse.json({ error: 'Failed to delete report' }, { status: 500 });
     }
 }
