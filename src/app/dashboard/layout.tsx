@@ -15,12 +15,22 @@ export default async function DashboardLayout({
     if (!user) redirect('/sign-in');
 
     const email = user.primaryEmailAddress?.emailAddress || '';
-    const athlete = await prisma.athlete.findUnique({
-        where: { email }
-    });
 
-    if (athlete) {
-        redirect(`/athlete/${athlete.id}/dashboard`);
+    // Check if this user is explicitly designated as the Coach/Admin via Env Var
+    // Vercel deployment allows setting NEXT_PUBLIC_ADMIN_EMAIL
+    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.ADMIN_EMAIL;
+    const isCoach = adminEmail && email.toLowerCase() === adminEmail.toLowerCase();
+
+    // If they are not the designated coach, see if they are an athlete
+    if (!isCoach) {
+        const athlete = await prisma.athlete.findUnique({
+            where: { email }
+        });
+
+        // Redirect athletes out of the Coach Dashboard
+        if (athlete) {
+            redirect(`/athlete/${athlete.id}/dashboard`);
+        }
     }
 
     return (
