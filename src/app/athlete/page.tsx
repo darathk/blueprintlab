@@ -1,10 +1,10 @@
 import { redirect } from 'next/navigation';
 import { currentUser } from '@clerk/nextjs/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import { UserButton } from '@clerk/nextjs';
 import Link from 'next/link';
 
-const prisma = new PrismaClient();
+
 
 export default async function AthleteLoginPage() {
     const user = await currentUser();

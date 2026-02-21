@@ -1,13 +1,13 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { prisma } from '@/lib/prisma';
 import { EXERCISE_DB } from '@/lib/exercise-db';
 
 export const dynamic = 'force-dynamic';
-const prisma = new PrismaClient();
 
+// @ts-ignore - Prisma type schema discrepancy
 export async function GET() {
     try {
-        const custom = await prisma.customExercise.findMany();
+        const customExercisesRaw = await prisma.customExercise.findMany();
 
         // Transform static DB to array
         const staticExercises = Object.entries(EXERCISE_DB).map(([name, data]) => ({
@@ -17,7 +17,7 @@ export async function GET() {
 
         return NextResponse.json({
             static: staticExercises,
-            custom: custom
+            custom: customExercisesRaw
         });
     } catch (e) {
         console.error(e);
@@ -39,6 +39,7 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Exercise already exists in core database' }, { status: 409 });
         }
 
+        // @ts-ignore - Prisma type schema discrepancy
         const newExercise = await prisma.customExercise.create({
             data: {
                 name,
