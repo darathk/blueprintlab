@@ -3,16 +3,17 @@ import { getAthletes, getPrograms, getLogs } from '@/lib/storage';
 import AthleteCalendarContainer from '@/components/dashboard/AthleteCalendarContainer';
 
 export default async function AthleteDashboard({ params }) {
-    const { id } = await params;
-    const athletes = await getAthletes();
+    const [{ id }, athletes, programs, logs] = await Promise.all([
+        params,
+        getAthletes(),
+        getPrograms(),
+        getLogs()
+    ]);
     const athlete = athletes.find(a => a.id === id);
 
     if (!athlete) return <div>Athlete not found</div>;
 
-    const programs = await getPrograms();
     const program = programs.find(p => p.id === athlete.currentProgramId);
-
-    const logs = await getLogs(); // Fetch logs
     const athleteLogs = logs.filter(l => l.athleteId === id);
 
     return (

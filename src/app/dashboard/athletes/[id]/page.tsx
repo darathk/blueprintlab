@@ -8,12 +8,14 @@ import AthleteCalendarContainer from '@/components/dashboard/AthleteCalendarCont
 import CollapsibleSection from '@/components/ui/CollapsibleSection';
 
 export default async function AthleteAnalyticsPage({ params }) {
-    const { id } = await params;
-    const athletes = await getAthletes();
+    const [{ id }, athletes, logs, readinessLogs, programs] = await Promise.all([
+        params,
+        getAthletes(),
+        getLogs(),
+        getReadiness(),
+        getPrograms()
+    ]);
     const athlete = athletes.find(a => a.id === id);
-    const logs = await getLogs();
-    const readinessLogs = await getReadiness();
-    const programs = await getPrograms();
 
     // Filter logs for this athlete
     const athleteLogs = logs.filter(l => l.athleteId === id);

@@ -3,9 +3,11 @@ import { getAthletes, getPrograms, getLogs } from '@/lib/storage';
 import AthleteStatusCard from './athlete-status-card';
 
 export default async function DashboardPage() {
-    const athletes = await getAthletes();
-    const programs = await getPrograms();
-    const logs = await getLogs();
+    const [athletes, programs, logs] = await Promise.all([
+        getAthletes(),
+        getPrograms(),
+        getLogs()
+    ]);
 
     return (
         <div>

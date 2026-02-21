@@ -184,3 +184,63 @@ a {
 ::-webkit-scrollbar-thumb:hover {
   background: rgba(148, 163, 184, 0.3);
 }
+
+/* -------------------------------------
+   MOBILE RESPONSIVENESS
+-------------------------------------- */
+@media (max-width: 768px) {
+  .container {
+    padding: 0 1rem;
+  }
+
+  .card {
+    padding: 1rem;
+  }
+
+  /* Stack header navigation links */
+  header {
+    flex-wrap: wrap;
+    height: auto !important;
+    padding: 1rem !important;
+    gap: 1rem;
+  }
+
+  header nav {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  /* Make grid layouts single column on small screens */
+  .grid-cols-2,
+  .grid-cols-3,
+  .grid-cols-4 {
+    grid-template-columns: 1fr !important;
+  }
+
+  /* Ensure flex containers stack */
+  .flex-row-mobile-col {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  /* Adjust typography */
+  h1 {
+    font-size: 2rem !important;
+  }
+
+  h2 {
+    font-size: 1.25rem !important;
+  }
+
+  /* Ensure charts and overflowing content can scroll horizontally if needed without breaking page layout */
+  .chart-container-mobile {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+  }
+
+  /* Make buttons full width on small screens if they are inside forms */
+  form .btn {
+    width: 100%;
+  }
+}
