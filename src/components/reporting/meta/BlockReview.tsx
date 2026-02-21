@@ -56,6 +56,8 @@ export default function BlockReview({ programs, logs, reportParams }) {
 
         // 1. If explicit duration string provided (e.g. from dropdown "4 Weeks")
         if (params?.duration) {
+            if (params.duration === 'All Time') return 'All Time';
+
             // Handle both string "4 Weeks" and number 4
             const match = String(params.duration).match(/(\d+)/);
             if (match) return parseInt(match[0], 10);
@@ -111,7 +113,7 @@ export default function BlockReview({ programs, logs, reportParams }) {
                 <div style={{ marginBottom: '2rem', fontSize: '0.9rem' }}>
                     <p style={{ margin: '0.5rem 0' }}><strong>Program:</strong> {program.name}</p>
                     <p style={{ margin: '0.5rem 0' }}><strong>End Date:</strong> {program.endDate ? new Date(program.endDate).toLocaleDateString() : 'Ongoing'}</p>
-                    <p style={{ margin: '0.5rem 0' }}><strong>Duration:</strong> {lookBackWeeks} Weeks</p>
+                    <p style={{ margin: '0.5rem 0' }}><strong>Duration:</strong> {lookBackWeeks}{typeof lookBackWeeks === 'number' ? ' Weeks' : ''}</p>
                 </div>
 
                 <div style={{ background: '#0f3460', color: 'white', padding: '0.5rem 1rem', marginBottom: '0.5rem', borderRadius: '4px', fontWeight: 'bold' }}>
