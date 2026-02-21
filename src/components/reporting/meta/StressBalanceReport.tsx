@@ -4,7 +4,7 @@ export default function StressBalanceReport({ readinessLogs, reportParams }) {
     // Filter by date range if needed
 
     // Sort logs
-    const sortedLogs = [...(readinessLogs || [])].sort((a, b) => new Date(a.date) - new Date(b.date));
+    const sortedLogs = [...(readinessLogs || [])].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
     return (
         <div style={{ padding: '0 1rem' }}>

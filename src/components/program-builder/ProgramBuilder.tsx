@@ -180,7 +180,7 @@ const BuilderExerciseCard = ({ exercise, onUpdate, onRemove }) => {
 
 
 
-export default function ProgramBuilder({ athleteId, initialData = null, athletes = [] }) {
+export default function ProgramBuilder({ athleteId, initialData = null, athletes = [] }: { athleteId?: string, initialData?: any, athletes?: any[] }) {
     const router = useRouter();
     const [programName, setProgramName] = useState('');
     const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);

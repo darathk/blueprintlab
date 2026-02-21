@@ -10,7 +10,7 @@ export default async function AthletePortalLayout({
     params,
 }: {
     children: React.ReactNode;
-    params: { id: string };
+    params: Promise<{ id: string }>;
 }) {
     const user = await currentUser();
     if (!user) redirect('/sign-in');

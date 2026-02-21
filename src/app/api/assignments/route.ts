@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
-import { getAthletes, readData, writeData } from '@/lib/storage';
+import { PrismaClient } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
-export async function POST(request) {
+const prisma = new PrismaClient();
+
+export async function POST(request: Request) {
     try {
         const body = await request.json();
         const { athleteId, programId } = body;
@@ -12,20 +14,39 @@ export async function POST(request) {
             return NextResponse.json({ error: 'Missing athleteId or programId' }, { status: 400 });
         }
 
-        const athletes = await getAthletes();
-        const athleteIndex = athletes.findIndex(a => a.id === athleteId);
+        // First, check if athlete exists
+        const athlete = await prisma.athlete.findUnique({
+            where: { id: athleteId }
+        });
 
-        if (athleteIndex === -1) {
+        if (!athlete) {
             return NextResponse.json({ error: 'Athlete not found' }, { status: 404 });
         }
 
-        // Update athlete's current program
-        athletes[athleteIndex].currentProgramId = programId;
+        // Deactivate old active programs
+        await prisma.program.updateMany({
+            where: { athleteId, status: 'active', id: { not: programId } },
+            data: { status: 'completed' }
+        });
 
-        // Write back to file
-        await writeData('athletes.json', athletes);
+        // Activate the new assigned program
+        await prisma.program.update({
+            where: { id: programId },
+            data: { status: 'active', athleteId } // Ensuring it belongs to them
+        });
 
-        return NextResponse.json({ success: true, athlete: athletes[athleteIndex] });
+        // Fetch fresh athlete data mapping for the frontend wrapper
+        const updatedAthlete = await prisma.athlete.findUnique({
+            where: { id: athleteId },
+            include: { programs: { where: { status: 'active' } } }
+        });
+
+        const frontendAthlete = {
+            ...updatedAthlete,
+            currentProgramId: programId // The frontend expects this synthesized property
+        };
+
+        return NextResponse.json({ success: true, athlete: frontendAthlete });
     } catch (error) {
         console.error(error);
         return NextResponse.json({ error: 'Failed to assign program' }, { status: 500 });

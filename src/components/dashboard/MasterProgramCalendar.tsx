@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 
-export default function MasterProgramCalendar({ programs, athleteId, currentProgramId, onSelectSession }) {
+export default function MasterProgramCalendar({ programs, athleteId, currentProgramId, onSelectSession, logs = [] }: { programs: any[], athleteId?: string, currentProgramId: string, onSelectSession: any, logs?: any[] }) {
     // Default to current month
     const [currentMonth, setCurrentMonth] = useState(new Date());
 
