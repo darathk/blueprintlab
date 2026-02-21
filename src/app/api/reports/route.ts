@@ -15,11 +15,17 @@ export async function GET(req: Request) {
             orderBy: { created: 'desc' },
         });
 
-        // Convert Dates back to ISO strings for existing UI compatibility
-        const formattedReports = reports.map(r => ({
-            ...r,
-            created: r.created.toISOString()
-        }));
+        // Convert Dates back to ISO strings and spread config for UI compatibility
+        const formattedReports = reports.map(r => {
+            const config = r.config as any || {};
+            return {
+                id: r.id,
+                athleteId: r.athleteId,
+                status: r.status,
+                created: r.created.toISOString(),
+                ...config
+            };
+        });
 
         return NextResponse.json(formattedReports);
     } catch (error) {
@@ -31,10 +37,10 @@ export async function GET(req: Request) {
 export async function POST(req: Request) {
     try {
         const body = await req.json();
-        const { athleteId, config } = body;
+        const { athleteId, ...config } = body;
 
-        if (!athleteId || !config) {
-            return NextResponse.json({ error: 'Missing athleteId or config' }, { status: 400 });
+        if (!athleteId || !config.name || !config.type) {
+            return NextResponse.json({ error: 'Missing athleteId, name, or type' }, { status: 400 });
         }
 
         const newReport = await prisma.report.create({
@@ -46,8 +52,11 @@ export async function POST(req: Request) {
         });
 
         return NextResponse.json({
-            ...newReport,
-            created: newReport.created.toISOString()
+            id: newReport.id,
+            athleteId: newReport.athleteId,
+            status: newReport.status,
+            created: newReport.created.toISOString(),
+            ...config
         });
     } catch (e) {
         console.error("POST /api/reports Error:", e);

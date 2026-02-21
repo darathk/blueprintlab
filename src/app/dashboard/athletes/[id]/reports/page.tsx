@@ -15,6 +15,7 @@ export default function ReportsPage({ params }: { params: Promise<{ id: string }
     const [reports, setReports] = useState([]);
     const [showWizard, setShowWizard] = useState(false);
     const [loading, setLoading] = useState(true);
+    const [isGenerating, setIsGenerating] = useState(false);
 
     const fetchReports = async () => {
         setLoading(true);
@@ -34,18 +35,26 @@ export default function ReportsPage({ params }: { params: Promise<{ id: string }
     }, [id]);
 
     const handleGenerate = async (payload) => {
+        setIsGenerating(true);
         try {
             const res = await fetch('/api/reports', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
+
             if (res.ok) {
                 setShowWizard(false);
                 fetchReports();
+            } else {
+                const errData = await res.json();
+                alert(`Failed to generate report: ${errData.error || 'Server error'}`);
             }
         } catch (e) {
             console.error(e);
+            alert('A network error occurred while generating the report.');
+        } finally {
+            setIsGenerating(false);
         }
     };
 

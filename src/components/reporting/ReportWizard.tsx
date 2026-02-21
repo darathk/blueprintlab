@@ -203,7 +203,9 @@ export default function ReportWizard({ athleteId, onClose, onGenerate }) {
                     {step < 3 ? (
                         <button onClick={handleNext} disabled={!reportType} className="btn btn-primary">Next</button>
                     ) : (
-                        <button onClick={handleGenerate} className="btn btn-primary" style={{ background: 'var(--success)', border: 'none', color: 'white' }}>Generate Report</button>
+                        <button onClick={handleGenerate} className="btn btn-primary" style={{ background: 'var(--success)', border: 'none', color: 'white' }}>
+                            Generate Report
+                        </button>
                     )}
                 </div>
             </div>
