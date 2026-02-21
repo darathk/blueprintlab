@@ -99,14 +99,14 @@ export default function BlockReview({ programs, logs, reportParams }) {
 
             {/* Sidebar */}
             <div style={{
-                background: '#f1f5f9', // Light gray background like screenshot
-                borderRight: '1px solid #e2e8f0',
+                background: 'var(--card-bg)',
+                borderRight: '1px solid var(--card-border)',
                 padding: '1.5rem',
-                color: '#0f172a',
+                color: 'var(--foreground)',
                 height: '100%',
                 overflowY: 'auto'
             }}>
-                <div style={{ background: '#0f3460', color: 'white', padding: '0.5rem 1rem', marginBottom: '1.5rem', borderRadius: '4px', textAlign: 'center', fontWeight: 'bold' }}>
+                <div style={{ background: 'rgba(78, 205, 196, 0.1)', color: 'var(--primary)', padding: '0.5rem 1rem', marginBottom: '1.5rem', borderRadius: '4px', textAlign: 'center', fontWeight: 'bold' }}>
                     Block Review Report
                 </div>
 
@@ -116,23 +116,23 @@ export default function BlockReview({ programs, logs, reportParams }) {
                     <p style={{ margin: '0.5rem 0' }}><strong>Duration:</strong> {lookBackWeeks}{typeof lookBackWeeks === 'number' ? ' Weeks' : ''}</p>
                 </div>
 
-                <div style={{ background: '#0f3460', color: 'white', padding: '0.5rem 1rem', marginBottom: '0.5rem', borderRadius: '4px', fontWeight: 'bold' }}>
+                <div style={{ background: 'rgba(78, 205, 196, 0.1)', color: 'var(--primary)', padding: '0.5rem 1rem', marginBottom: '0.5rem', borderRadius: '4px', fontWeight: 'bold' }}>
                     Comp Lifts
                 </div>
-                <div style={{ marginBottom: '2rem', fontSize: '0.85rem', color: '#475569' }}>
-                    <p style={{ margin: '0.25rem 0' }}><strong>Squat:</strong> Competition Squat</p>
-                    <p style={{ margin: '0.25rem 0' }}><strong>Bench:</strong> Competition Bench</p>
-                    <p style={{ margin: '0.25rem 0' }}><strong>Deadlift:</strong> Competition Deadlift</p>
+                <div style={{ marginBottom: '2rem', fontSize: '0.85rem', color: 'var(--secondary-foreground)' }}>
+                    <p style={{ margin: '0.25rem 0' }}><strong style={{ color: 'var(--foreground)' }}>Squat:</strong> Competition Squat</p>
+                    <p style={{ margin: '0.25rem 0' }}><strong style={{ color: 'var(--foreground)' }}>Bench:</strong> Competition Bench</p>
+                    <p style={{ margin: '0.25rem 0' }}><strong style={{ color: 'var(--foreground)' }}>Deadlift:</strong> Competition Deadlift</p>
                 </div>
 
-                <div style={{ background: '#0f3460', color: 'white', padding: '0.5rem 1rem', marginBottom: '0.5rem', borderRadius: '4px', fontWeight: 'bold' }}>
+                <div style={{ background: 'rgba(78, 205, 196, 0.1)', color: 'var(--primary)', padding: '0.5rem 1rem', marginBottom: '0.5rem', borderRadius: '4px', fontWeight: 'bold' }}>
                     Report Sections
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.9rem' }}>
-                    <button onClick={() => scrollToSection('improvements')} style={{ textAlign: 'left', background: 'transparent', border: 'none', color: '#2563eb', cursor: 'pointer', padding: 0 }}>Block Improvements</button>
-                    <button onClick={() => scrollToSection('notes')} style={{ textAlign: 'left', background: 'transparent', border: 'none', color: '#2563eb', cursor: 'pointer', padding: 0 }}>Coach Notes</button>
-                    <button onClick={() => scrollToSection('comp-stats')} style={{ textAlign: 'left', background: 'transparent', border: 'none', color: '#2563eb', cursor: 'pointer', padding: 0 }}>Competition Lift Stats</button>
-                    <button onClick={() => scrollToSection('density')} style={{ textAlign: 'left', background: 'transparent', border: 'none', color: '#2563eb', cursor: 'pointer', padding: 0 }}>All Lift Density Data</button>
+                    <button onClick={() => scrollToSection('improvements')} style={{ textAlign: 'left', background: 'transparent', border: 'none', color: 'var(--accent)', cursor: 'pointer', padding: 0 }}>Block Improvements</button>
+                    <button onClick={() => scrollToSection('notes')} style={{ textAlign: 'left', background: 'transparent', border: 'none', color: 'var(--accent)', cursor: 'pointer', padding: 0 }}>Coach Notes</button>
+                    <button onClick={() => scrollToSection('comp-stats')} style={{ textAlign: 'left', background: 'transparent', border: 'none', color: 'var(--accent)', cursor: 'pointer', padding: 0 }}>Competition Lift Stats</button>
+                    <button onClick={() => scrollToSection('density')} style={{ textAlign: 'left', background: 'transparent', border: 'none', color: 'var(--accent)', cursor: 'pointer', padding: 0 }}>All Lift Density Data</button>
                 </div>
             </div>
 
