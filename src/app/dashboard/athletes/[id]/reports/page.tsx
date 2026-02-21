@@ -80,7 +80,6 @@ export default function ReportsPage({ params }: { params: Promise<{ id: string }
     const loadData = async () => {
         setDataLoading(true);
         try {
-            console.log('Fetching data for athlete:', id);
             const [l, r, p] = await Promise.all([
                 fetch('/api/logs').then(res => res.json()),
                 fetch('/api/readiness').then(res => res.json()),

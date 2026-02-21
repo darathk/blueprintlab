@@ -88,8 +88,6 @@ export default function MetaBlockReview({ programs, logs, reportParams }) {
                 });
             });
 
-            console.log(`Program ${prog.id} (${prog.name}): Found ${relevantSets.length} sets for ${primaryLift}`);
-
             // 2. Aggregate by Date (Max E1RM per day)
             const dailyMaxMap = new Map(); // DateString -> { date, e1rm, ... }
 
