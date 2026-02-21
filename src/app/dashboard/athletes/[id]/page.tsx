@@ -22,7 +22,8 @@ export default async function AthleteAnalyticsPage({ params }) {
     // Identify exercises logged
     const exerciseNames = new Set();
     athleteLogs.forEach(log => {
-        log.exercises.forEach(ex => exerciseNames.add(ex.name));
+        const exercises = log.exercises as any[];
+        exercises.forEach((ex: any) => exerciseNames.add(ex.name));
     });
     const uniqueExercises = Array.from(exerciseNames);
 

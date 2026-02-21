@@ -17,8 +17,9 @@ export default async function WorkoutPage({ params }) {
 
     if (!program) return <div>Program not found</div>;
 
-    const week = program.weeks.find(w => w.weekNumber === weekNum);
-    const session = week?.sessions.find(s => s.day === dayNum);
+    const weeks = program.weeks as any[];
+    const week = weeks.find(w => w.weekNumber === weekNum);
+    const session = week?.sessions.find((s: any) => s.day === dayNum);
 
     if (!session) return <div>Session not found</div>;
 

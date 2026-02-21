@@ -42,29 +42,27 @@ export default async function DashboardPage() {
                             };
 
                             if (currentProgram) {
-                                progress.totalWeeks = currentProgram.weeks.length;
+                                progress.totalWeeks = (currentProgram.weeks as any[]).length;
 
-                                // Calculate total sessions
-                                currentProgram.weeks.forEach(w => {
-                                    progress.totalSessions += w.sessions.length;
+                                const weeks = currentProgram.weeks as any[];
+                                let totalSessions = 0;
+                                weeks.forEach((w: any) => {
+                                    totalSessions += w.sessions.length;
                                 });
+                                progress.totalSessions = totalSessions;
 
                                 // Calculate completed sessions based on logs
                                 const athleteLogs = logs.filter(l => l.athleteId === athlete.id && l.programId === currentProgram.id);
-                                const uniqueSessions = new Set(athleteLogs.map(l => l.sessionId)); // Assuming sessionId or unique combo
-                                // Since logs might be at exercise level, we need to group by session.
-                                // Our logs struct: { athleteId, programId, weekNumber, dayNumber, ... }
-                                // A unique session is (programId, weekNumber, dayNumber).
-                                const completedSet = new Set();
-                                athleteLogs.forEach(l => {
-                                    completedSet.add(`${l.weekNumber}-${l.dayNumber}`);
-                                });
-                                progress.completedSessions = completedSet.size;
+                                const uniqueSessions = new Set(athleteLogs.map(l => l.sessionId));
+                                progress.completedSessions = uniqueSessions.size;
 
-                                // Estimate current week (lazy way: max week in logs, or 1)
+                                // Estimate current week from sessionId (e.g. "week-2-day-1")
                                 if (athleteLogs.length > 0) {
-                                    const maxWeek = Math.max(...athleteLogs.map(l => l.weekNumber));
-                                    progress.currentWeek = maxWeek;
+                                    const weeksFromLogs = athleteLogs.map(l => {
+                                        const match = l.sessionId.match(/week-(\d+)/i);
+                                        return match ? parseInt(match[1]) : 1;
+                                    });
+                                    progress.currentWeek = Math.max(...weeksFromLogs);
                                 }
                             }
 
