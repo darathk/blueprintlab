@@ -1,0 +1,69 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Athlete {
+  id            String    @id @default(uuid())
+  name          String
+  email         String    @unique
+  nextMeetName  String?
+  nextMeetDate  String?
+  periodization Json?
+  programs      Program[]
+  reports       Report[]
+  readiness     Readiness[]
+}
+
+model Program {
+  id          String   @id @default(uuid())
+  athleteId   String
+  athlete     Athlete  @relation(fields: [athleteId], references: [id])
+  name        String
+  startDate   String
+  endDate     String?
+  weeks       Json     // Storing complex nested structure easily
+  status      String   @default("active")
+  logs        Log[]
+}
+
+model Log {
+  id          String   @id @default(uuid())
+  programId   String
+  program     Program  @relation(fields: [programId], references: [id])
+  sessionId   String
+  date        String
+  exercises   Json     // Completed sets, reps, rpes
+}
+
+model Report {
+  id        String   @id @default(uuid())
+  athleteId String
+  athlete   Athlete  @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  created   DateTime @default(now())
+  status    String   @default("Complete")
+  config    Json     // Stores report parameters
+}
+
+model CustomExercise {
+  id        String   @id @default(uuid())
+  name      String   @unique
+  category  String
+  parent    String
+  isCustom  Boolean  @default(true)
+}
+
+model Readiness {
+  id        String   @id @default(uuid())
+  athleteId String
+  athlete   Athlete  @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  programId String?
+  date      String
+  scores    Json
+  timestamp DateTime @default(now())
+}

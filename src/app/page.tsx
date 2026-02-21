@@ -1,64 +1,32 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+import Link from 'next/link';
+
+import styles from './page.module.css';
 
 export default function Home() {
   return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className={styles.intro}>
-          <h1>To get started, edit the page.tsx file.</h1>
-          <p>
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className={styles.secondary}
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+    <div className={styles.page} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'radial-gradient(circle at center, #1e293b 0%, #020617 100%)' }}>
+      <main className={styles.main} style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
+        <div style={{
+          position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
+          width: '600px', height: '600px', background: 'radial-gradient(circle, rgba(6, 182, 212, 0.15) 0%, transparent 70%)',
+          pointerEvents: 'none', zIndex: -1
+        }}></div>
+
+
+        <h1 style={{ fontSize: '3.5rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: '0.5rem' }}>
+          Blueprint<span className="neon-text" style={{ color: 'var(--primary)' }}>Lab</span>
+        </h1>
+        <p style={{ marginBottom: '3rem', color: 'var(--secondary-foreground)', fontSize: '1.2rem', maxWidth: '600px', margin: '0 auto 3rem' }}>
+          Next-Generation Performance Telemetry & Mission Planning
+        </p>
+
+        <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center' }}>
+          <Link href="/dashboard" className="btn btn-primary" style={{ padding: '1rem 3rem', fontSize: '1.1rem', boxShadow: '0 0 30px rgba(6,182,212,0.2)' }}>
+            Enter Command
+          </Link>
+          <Link href="/athlete" className="btn btn-secondary" style={{ padding: '1rem 3rem', fontSize: '1.1rem' }}>
+            Athlete Portal
+          </Link>
         </div>
       </main>
     </div>

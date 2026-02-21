@@ -1,0 +1,26 @@
+import { NextResponse } from 'next/server';
+export const dynamic = 'force-dynamic';
+import { getReadiness, saveReadiness } from '@/lib/storage';
+
+export async function POST(request: Request) {
+    try {
+        const data = await request.json();
+        // data should be { athleteId, programId, date, scores: { ... } }
+
+        const newLog = await saveReadiness(data);
+        return NextResponse.json(newLog);
+    } catch (e) {
+        return NextResponse.json({ error: 'Failed to save readiness' }, { status: 500 });
+    }
+}
+
+export async function GET(request: Request) {
+    const { searchParams } = new URL(request.url);
+    const athleteId = searchParams.get('athleteId');
+
+    const logs = await getReadiness();
+    if (athleteId) {
+        return NextResponse.json(logs.filter((l: any) => l.athleteId === athleteId));
+    }
+    return NextResponse.json(logs);
+}
