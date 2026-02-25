@@ -127,12 +127,12 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
             let blob: File | Blob = file, mime = file.type;
             if (isVid) {
                 setStatusText('Compressing video…');
-                const { compressVideo } = await import(/* webpackIgnore: true */ '@/lib/videoCompressor');
+                const { compressVideo } = await import('@/lib/videoCompressor');
                 const c = await compressVideo(file, p => setCompressProgress(p));
                 blob = new File([c], file.name.replace(/\.[^.]+$/, '.mp4'), { type: 'video/mp4' }); mime = 'video/mp4';
             } else {
                 setStatusText('Compressing photo…'); setCompressProgress(40);
-                const imageCompression = (await import(/* webpackIgnore: true */ 'browser-image-compression')).default;
+                const imageCompression = (await import('browser-image-compression')).default;
                 const c = await imageCompression(file, { maxSizeMB: 1, maxWidthOrHeight: 1920, useWebWorker: true });
                 blob = c; mime = c.type; setCompressProgress(80);
             }
