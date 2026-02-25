@@ -2,8 +2,6 @@
 
 import { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { compressVideo } from '@/lib/videoCompressor';
-import imageCompression from 'browser-image-compression';
 
 interface Message {
     id: string; senderId: string; receiverId: string; content: string;
@@ -115,12 +113,15 @@ export default function CoachInbox({ coachId, coachName }: Props) {
         try {
             let blob: File | Blob = file, mime = file.type;
             if (isVid) {
-                setStatusText('Compressing video…');
-                const c = await compressVideo(file, p => setCompressProgress(p));
-                blob = new File([c], file.name.replace(/\.[^.]+$/, '.mp4'), { type: 'video/mp4' }); mime = 'video/mp4';
+                setStatusText('Uploading video…');
+                setCompressProgress(50);
             } else {
                 setStatusText('Compressing photo…'); setCompressProgress(40);
-                const c = await (imageCompression as any)(file, { maxSizeMB: 1, maxWidthOrHeight: 1920, useWebWorker: true }); blob = c; mime = c.type; setCompressProgress(80);
+                try {
+                    const imageCompression = (await import('browser-image-compression')).default;
+                    const c = await (imageCompression as any)(file, { maxSizeMB: 1, maxWidthOrHeight: 1920, useWebWorker: false });
+                    blob = c; mime = c.type; setCompressProgress(80);
+                } catch { /* skip compression if it fails */ }
             }
             setCompressProgress(101); setStatusText('Uploading…');
             const ext = mime.includes('png') ? '.png' : mime.includes('jpeg') || mime.includes('jpg') ? '.jpg' : '.mp4';
