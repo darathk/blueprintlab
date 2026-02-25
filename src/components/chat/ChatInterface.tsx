@@ -156,7 +156,8 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
     const saveMedia = async (url: string, isImg?: boolean) => {
         try {
             const r = await fetch(url); const b = await r.blob(); const a = document.createElement('a');
-            a.href = URL.createObjectURL(b); a.download = `lift_${Date.now()}${isImg ? '.jpg' : '.mp4'}`; a.click(); URL.revokeObjectURL(a.href);
+            const ext = isImg ? '.jpg' : url.includes('.webm') ? '.webm' : '.mp4';
+            a.href = URL.createObjectURL(b); a.download = `lift_${Date.now()}${ext}`; a.click(); URL.revokeObjectURL(a.href);
         } catch { window.open(url, '_blank'); }
     };
 
