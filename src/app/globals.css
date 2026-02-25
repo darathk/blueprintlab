@@ -1,3 +1,5 @@
+@import "tailwindcss";
+
 :root {
   /* Deep Space / Neon Lab Theme */
   --background: #0b0f19;

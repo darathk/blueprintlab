@@ -343,25 +343,7 @@ export default function AthleteCharts({ logs, readinessLogs = [], programs = [] 
                 )}
             </div>
 
-            {/* Section: Readiness Trends */}
-            <h2 style={{ fontSize: '1.25rem', marginBottom: '1.5rem', paddingBottom: '0.5rem', color: 'var(--foreground)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span className="neon-text" style={{ color: 'var(--accent)' }}>///</span> Biometric Status
-            </h2>
-            {readinessData ? (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '1.5rem' }}>
-                    {renderLineChart(readinessData.leg_soreness, '#ef4444', 'Leg Soreness', false)}
-                    {renderLineChart(readinessData.push_soreness, '#f97316', 'Push Soreness', false)}
-                    {renderLineChart(readinessData.pull_soreness, '#eab308', 'Pull Soreness', false)}
-                    {renderLineChart(readinessData.tiredness, '#06b6d4', 'Systemic Fatigue', false)}
-                    {renderLineChart(readinessData.recovery, '#22c55e', 'Recovery Index', false)}
-                    {renderLineChart(readinessData.motivation, '#a855f7', 'Neural Drive (Motivation)', false)}
-                    {renderLineChart(readinessData.training_load, '#f472b6', 'Training Load', false)}
-                </div>
-            ) : (
-                <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--secondary-foreground)', border: '1px dashed var(--card-border)', borderRadius: '12px' }}>
-                    No biometric data recorded.
-                </div>
-            )}
+
         </div>
     );
 }

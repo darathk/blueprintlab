@@ -6,14 +6,11 @@ import CompStats from '@/components/analytics/CompStats';
 import LiftDensity from '@/components/analytics/LiftDensity';
 
 export default function BlockReview({ programs, logs, reportParams }) {
-    console.log('BlockReview Debug:', { programsCount: programs?.length, reportParams });
 
     // If no program selected, default to the most recent one (sorted by startDate desc)
     const sortedPrograms = [...(programs || [])].sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
-    console.log('Sorted Programs:', sortedPrograms.map(p => `${p.name} (${p.id})`));
 
     const targetProgramId = reportParams?.programIds?.[0] || sortedPrograms[0]?.id;
-    console.log('Target ID:', targetProgramId);
 
     const program = programs?.find(p => p.id === targetProgramId);
 

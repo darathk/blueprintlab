@@ -2,6 +2,19 @@
 
 import { useState, useMemo } from 'react';
 
+// Parse "YYYY-MM-DD" as LOCAL date, not UTC.
+// new Date("2026-02-25") is parsed as UTC midnight, which in EST becomes Feb 24 7pm — shifting dates by 1 day.
+// This function avoids that trap entirely.
+function parseLocalDate(dateStr: string): Date {
+    if (!dateStr) return new Date();
+    const parts = dateStr.split('-');
+    if (parts.length === 3) {
+        return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
+    }
+    // Fallback: if it's already a full ISO string with time, it's fine
+    return new Date(dateStr);
+}
+
 export default function MasterProgramCalendar({ programs, athleteId, currentProgramId, onSelectSession, logs = [] }: { programs: any[], athleteId?: string, currentProgramId: string, onSelectSession: any, logs?: any[] }) {
     // Default to current month
     const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -23,7 +36,7 @@ export default function MasterProgramCalendar({ programs, athleteId, currentProg
 
         // If no current program, maybe sort by start date descending (newest on top)?
         // This helps if there are overlaps, we probably want the newest assignment.
-        return filtered.sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+        return filtered.sort((a, b) => parseLocalDate(b.startDate).getTime() - parseLocalDate(a.startDate).getTime());
     }, [programs, athleteId, currentProgramId]);
 
     const nextMonth = () => {
@@ -45,11 +58,11 @@ export default function MasterProgramCalendar({ programs, athleteId, currentProg
         for (const prog of athletePrograms) {
             if (!prog.startDate) continue;
 
-            const start = new Date(prog.startDate);
+            const start = parseLocalDate(prog.startDate);
             // End date might be explicit or calculated
             let end;
             if (prog.endDate) {
-                end = new Date(prog.endDate);
+                end = parseLocalDate(prog.endDate);
             } else {
                 // Calculate from weeks
                 const totalWeeks = prog.weeks?.length || 0;

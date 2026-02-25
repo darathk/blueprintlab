@@ -81,14 +81,14 @@ export default function ReportsPage({ params }: { params: Promise<{ id: string }
         setDataLoading(true);
         try {
             const [l, r, p] = await Promise.all([
-                fetch('/api/logs').then(res => res.json()),
-                fetch('/api/readiness').then(res => res.json()),
-                fetch('/api/programs').then(res => res.json())
+                fetch(`/api/logs?athleteId=${id}`).then(res => res.json()),
+                fetch(`/api/readiness?athleteId=${id}`).then(res => res.json()),
+                fetch(`/api/programs?athleteId=${id}`).then(res => res.json())
             ]);
 
             setAthleteData({
-                logs: l.filter((x: any) => x.athleteId === id),
-                readiness: r.filter((x: any) => x.athleteId === id),
+                logs: l,
+                readiness: r,
                 programs: p
             });
         } catch (error) {

@@ -3,10 +3,14 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import ExercisePicker from '@/components/program-builder/ExercisePicker';
-import StressMatrix from '@/components/program-builder/StressMatrix';
 import ImportProgram from '@/components/programs/ImportProgram';
 import ProgramCalendarGrid from './ProgramCalendarGrid';
+
+const StressMatrix = dynamic(() => import('@/components/program-builder/StressMatrix'), {
+    loading: () => <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="pulse">Loading stress charts...</div>
+});
 
 // Helper to generate IDs
 const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -807,11 +811,8 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
         }
     };
 
-    // Helper for toast (simplified)
-    const showToast = (msg) => {
-        // Implementation detail or just console
-        console.log(msg);
-    };
+    // Helper for toast (simplified - no-op in production)
+    const showToast = (_msg) => { };
 
     const closeEditor = () => {
         if (editingSession) {

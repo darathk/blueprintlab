@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
-import { getReadiness, saveReadiness } from '@/lib/storage';
+import { getReadiness, saveReadiness, getReadinessByAthlete } from '@/lib/storage';
 
 export async function POST(request: Request) {
     try {
@@ -18,9 +18,10 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const athleteId = searchParams.get('athleteId');
 
-    const logs = await getReadiness();
     if (athleteId) {
-        return NextResponse.json(logs.filter((l: any) => l.athleteId === athleteId));
+        const logs = await getReadinessByAthlete(athleteId);
+        return NextResponse.json(logs);
     }
+    const logs = await getReadiness();
     return NextResponse.json(logs);
 }

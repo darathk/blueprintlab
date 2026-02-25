@@ -1,11 +1,17 @@
 import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 import { prisma } from '@/lib/prisma';
+import { getProgramsByAthlete } from '@/lib/storage';
 
+export async function GET(request: Request) {
+    const { searchParams } = new URL(request.url);
+    const athleteId = searchParams.get('athleteId');
 
-
-export async function GET() {
     try {
+        if (athleteId) {
+            const programs = await getProgramsByAthlete(athleteId);
+            return NextResponse.json(programs);
+        }
         const programs = await prisma.program.findMany();
         return NextResponse.json(programs);
     } catch (error) {

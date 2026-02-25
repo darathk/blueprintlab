@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import { cache } from 'react';
 
 export async function getAthletes() {
     const athletes = await prisma.athlete.findMany({
@@ -116,6 +117,59 @@ export async function saveReadiness(log) {
     });
     return newLog;
 }
+
+
+export const getAthleteById = cache(async (id) => {
+    const athlete = await prisma.athlete.findUnique({
+        where: { id },
+        include: { programs: { where: { status: 'active' } } }
+    });
+    if (!athlete) return null;
+    const { programs, ...rest } = athlete;
+    return {
+        ...rest,
+        currentProgramId: programs.length > 0 ? programs[0].id : null
+    };
+});
+
+export const getProgramsByAthlete = cache(async (athleteId) => {
+    return prisma.program.findMany({
+        where: { athleteId }
+    });
+});
+
+export const getLogsByAthlete = cache(async (athleteId) => {
+    const logs = await prisma.log.findMany({
+        where: { program: { athleteId } },
+        include: { program: { select: { athleteId: true } } }
+    });
+    return logs.map(l => {
+        const { program, ...rest } = l;
+        return {
+            ...rest,
+            athleteId: program ? program.athleteId : null
+        };
+    });
+});
+
+export const getReadinessByAthlete = cache(async (athleteId) => {
+    return prisma.readiness.findMany({
+        where: { athleteId }
+    });
+});
+
+// Lightweight aggregate: returns [{programId, athleteId, sessionId}] with NO exercise payloads
+export const getLogSummariesForDashboard = cache(async () => {
+    return prisma.log.findMany({
+        select: {
+            sessionId: true,
+            programId: true,
+            program: {
+                select: { athleteId: true }
+            }
+        }
+    });
+});
 
 // Dummy functions to prevent older unused routes from crashing during import tree parsing
 export async function readData() { return []; }

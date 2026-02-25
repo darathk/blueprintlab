@@ -3,34 +3,41 @@ import { redirect } from 'next/navigation';
 import { currentUser } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
 import { UserButton } from '@clerk/nextjs';
+import { cache } from 'react';
 
+// Cache the auth check so it only runs once per request lifecycle
+const getAuthState = cache(async () => {
+    const user = await currentUser();
+    if (!user) return { isCoach: false, user: null, athleteId: null };
 
+    const email = user.primaryEmailAddress?.emailAddress || '';
+    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.ADMIN_EMAIL;
+    const isCoach = !!(adminEmail && email.toLowerCase() === adminEmail.toLowerCase());
+
+    let athleteId = null;
+    if (!isCoach) {
+        const athlete = await prisma.athlete.findUnique({ where: { email } });
+        if (athlete) athleteId = athlete.id;
+    }
+
+    return { isCoach, user, athleteId };
+});
 
 export default async function DashboardLayout({
     children,
 }: {
     children: React.ReactNode
 }) {
-    const user = await currentUser();
+    const { isCoach, user, athleteId } = await getAuthState();
+
     if (!user) redirect('/sign-in');
 
-    const email = user.primaryEmailAddress?.emailAddress || '';
-
-    // Check if this user is explicitly designated as the Coach/Admin via Env Var
-    // Vercel deployment allows setting NEXT_PUBLIC_ADMIN_EMAIL
-    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.ADMIN_EMAIL;
-    const isCoach = adminEmail && email.toLowerCase() === adminEmail.toLowerCase();
-
-    // If they are not the designated coach, see if they are an athlete
+    // STRICT: Only the designated admin can access the Coach Dashboard
     if (!isCoach) {
-        const athlete = await prisma.athlete.findUnique({
-            where: { email }
-        });
-
-        // Redirect athletes out of the Coach Dashboard
-        if (athlete) {
-            redirect(`/athlete/${athlete.id}/dashboard`);
-        }
+        // If they're a known athlete, send to their portal
+        if (athleteId) redirect(`/athlete/${athleteId}/dashboard`);
+        // Otherwise, send them to the home page — they have no access
+        redirect('/');
     }
 
     return (

@@ -18,6 +18,8 @@ model Athlete {
   programs      Program[]
   reports       Report[]
   readiness     Readiness[]
+  sentMessages     Message[] @relation("SentMessages")
+  receivedMessages Message[] @relation("ReceivedMessages")
 }
 
 model Program {
@@ -66,4 +68,24 @@ model Readiness {
   date      String
   scores    Json
   timestamp DateTime @default(now())
+}
+
+model Message {
+  id         String   @id @default(uuid())
+  senderId   String
+  sender     Athlete  @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId String
+  receiver   Athlete  @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  content    String
+  mediaUrl   String?
+  mediaType  String?
+  createdAt  DateTime @default(now())
+  read       Boolean  @default(false)
+  replyToId  String?
+  replyTo    Message? @relation("MessageReplies", fields: [replyToId], references: [id])
+  replies    Message[] @relation("MessageReplies")
+
+  @@index([senderId, createdAt])
+  @@index([receiverId, createdAt])
+  @@index([receiverId, read])
 }

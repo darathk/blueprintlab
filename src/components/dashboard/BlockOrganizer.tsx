@@ -339,7 +339,7 @@ export default function PeriodizationPlanner({ athlete }) {
             {/* Header */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '1rem' }}>
                 <div>
-                    <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--foreground)', letterSpacing: '-0.02em' }} className="neon-text">Periodization Cartographer</h2>
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--foreground)', letterSpacing: '-0.02em' }} className="neon-text">Meet Planner</h2>
                     <p style={{ color: 'var(--secondary-foreground)', fontSize: '0.9rem' }}>Mapping the roadmap to {meetName || 'Victory'}</p>
                 </div>
 

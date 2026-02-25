@@ -2,6 +2,7 @@ import { redirect } from 'next/navigation';
 import { currentUser } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
 import { UserButton } from '@clerk/nextjs';
+import Link from 'next/link';
 
 
 
@@ -59,6 +60,22 @@ export default async function AthletePortalLayout({
                     <span>{requestedAthlete.name}'s Portal</span>
                 </div>
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                    <Link href={`/athlete/${id}/chat`} style={{
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        color: 'var(--primary)',
+                        textDecoration: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.35rem',
+                        padding: '0.4rem 0.75rem',
+                        borderRadius: '8px',
+                        border: '1px solid rgba(6, 182, 212, 0.3)',
+                        background: 'rgba(6, 182, 212, 0.08)',
+                        transition: 'all 0.2s'
+                    }}>
+                        💬 Messages
+                    </Link>
                     <UserButton afterSignOutUrl="/" />
                 </div>
             </header>

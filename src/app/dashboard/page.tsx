@@ -1,13 +1,23 @@
 import Link from 'next/link';
-import { getAthletes, getPrograms, getLogs } from '@/lib/storage';
+import { getAthletes, getPrograms, getLogSummariesForDashboard } from '@/lib/storage';
+import { prisma } from '@/lib/prisma';
 import AthleteStatusCard from './athlete-status-card';
+import CollapsibleSection from '@/components/ui/CollapsibleSection';
+import CoachInbox from '@/components/chat/CoachInbox';
 
 export default async function DashboardPage() {
-    const [athletes, programs, logs] = await Promise.all([
+    const [athletes, programs, logSummaries] = await Promise.all([
         getAthletes(),
         getPrograms(),
-        getLogs()
+        getLogSummariesForDashboard()
     ]);
+
+    // Look up coach's Athlete record for the inbox
+    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.ADMIN_EMAIL || '';
+    let coach = await prisma.athlete.findUnique({ where: { email: adminEmail } });
+    if (!coach) {
+        coach = await prisma.athlete.create({ data: { name: 'Coach', email: adminEmail } });
+    }
 
     return (
         <div>
@@ -23,6 +33,11 @@ export default async function DashboardPage() {
                 </div>
             </div>
 
+            {/* Coach Inbox - Discord-style unified messaging */}
+            <CollapsibleSection title="💬 Messages" defaultOpen={false}>
+                <CoachInbox coachId={coach.id} coachName={coach.name} />
+            </CollapsibleSection>
+
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                 <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: 'var(--foreground)', display: 'flex', alignItems: 'center', gap: '0.5rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '0.5rem' }}>
                     <span className="neon-text">///</span> Active Personnel
@@ -34,7 +49,6 @@ export default async function DashboardPage() {
                         {athletes.map(athlete => {
                             const currentProgram = programs.find(p => p.id === athlete.currentProgramId);
 
-                            // Calculate Progress
                             let progress = {
                                 completedSessions: 0,
                                 totalSessions: 0,
@@ -53,14 +67,12 @@ export default async function DashboardPage() {
                                 });
                                 progress.totalSessions = totalSessions;
 
-                                // Calculate completed sessions based on logs
-                                const athleteLogs = logs.filter(l => l.athleteId === athlete.id && l.programId === currentProgram.id);
-                                const uniqueSessions = new Set(athleteLogs.map(l => l.sessionId));
+                                const athleteLogSummaries = logSummaries.filter(l => l.program?.athleteId === athlete.id && l.programId === currentProgram.id);
+                                const uniqueSessions = new Set(athleteLogSummaries.map(l => l.sessionId));
                                 progress.completedSessions = uniqueSessions.size;
 
-                                // Estimate current week from sessionId (e.g. "week-2-day-1")
-                                if (athleteLogs.length > 0) {
-                                    const weeksFromLogs = athleteLogs.map(l => {
+                                if (athleteLogSummaries.length > 0) {
+                                    const weeksFromLogs = athleteLogSummaries.map(l => {
                                         const match = l.sessionId.match(/week-(\d+)/i);
                                         return match ? parseInt(match[1]) : 1;
                                     });

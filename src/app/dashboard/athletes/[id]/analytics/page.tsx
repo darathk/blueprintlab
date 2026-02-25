@@ -1,5 +1,9 @@
-import { getLogs } from '@/lib/storage';
-import AnalyticsClient from './analytics-client';
+import { getLogsByAthlete } from '@/lib/storage';
+import dynamic from 'next/dynamic';
+
+const AnalyticsClient = dynamic(() => import('./analytics-client'), {
+    loading: () => <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="pulse">Loading analytics engine...</div>
+});
 
 export default async function AnalyticsPage({ params }) {
     // Await params as per Next.js 15+ requirements
@@ -7,8 +11,7 @@ export default async function AnalyticsPage({ params }) {
     const { id } = resolvedParams;
 
     // Fetch logs server-side
-    const allLogs = await getLogs();
-    const athleteLogs = allLogs.filter(l => l.athleteId === id);
+    const athleteLogs = await getLogsByAthlete(id);
 
     return (
         <div>

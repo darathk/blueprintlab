@@ -1,4 +1,4 @@
-import { getPrograms, getAthletes, getLogs } from '@/lib/storage';
+import { getProgramsByAthlete, getLogsByAthlete } from '@/lib/storage';
 import WorkoutLogger from './workout-logger';
 
 export default async function WorkoutPage({ params }) {
@@ -12,7 +12,10 @@ export default async function WorkoutPage({ params }) {
     const weekNum = parseInt(parts[1].substring(1));
     const dayNum = parseInt(parts[2].substring(1));
 
-    const programs = await getPrograms();
+    const [programs, athleteLogs] = await Promise.all([
+        getProgramsByAthlete(athleteId),
+        getLogsByAthlete(athleteId)
+    ]);
     const program = programs.find(p => p.id === programId);
 
     if (!program) return <div>Program not found</div>;
@@ -23,9 +26,8 @@ export default async function WorkoutPage({ params }) {
 
     if (!session) return <div>Session not found</div>;
 
-    // Fetch existing logs to hydrate the logger
-    const logs = await getLogs();
-    const existingLog = logs.find(l =>
+    // Find existing log for this specific session
+    const existingLog = athleteLogs.find(l =>
         l.programId === programId &&
         l.sessionId === sessionId
     );
