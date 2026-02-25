@@ -58,13 +58,19 @@ export default async function DashboardPage() {
                             };
 
                             if (currentProgram) {
-                                progress.totalWeeks = (currentProgram.weeks as any[]).length;
-
                                 const weeks = currentProgram.weeks as any[];
                                 let totalSessions = 0;
-                                weeks.forEach((w: any) => {
-                                    totalSessions += w.sessions.length;
+                                let lastActiveWeek = -1;
+
+                                weeks.forEach((w: any, index: number) => {
+                                    const sessionCount = w.sessions ? w.sessions.length : 0;
+                                    totalSessions += sessionCount;
+                                    if (sessionCount > 0) {
+                                        lastActiveWeek = index;
+                                    }
                                 });
+
+                                progress.totalWeeks = lastActiveWeek + 1;
                                 progress.totalSessions = totalSessions;
 
                                 const athleteLogSummaries = logSummaries.filter(l => l.program?.athleteId === athlete.id && l.programId === currentProgram.id);
