@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { compressVideo } from '@/lib/videoCompressor';
 import imageCompression from 'browser-image-compression';
@@ -56,10 +56,10 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
         });
     }, [athleteId, currentUserId, otherUserId]);
 
-    // Scroll to bottom BEFORE paint — no visible animation
-    useLayoutEffect(() => {
+    // Scroll to bottom instantly — runs after render
+    useEffect(() => {
         const el = scrollContainerRef.current;
-        if (el) el.scrollTop = el.scrollHeight;
+        if (el) { el.scrollTop = el.scrollHeight; }
     }, [messages.length]);
 
     // Realtime — append only, no re-fetch
