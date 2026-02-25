@@ -34,8 +34,7 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
     const [compressProgress, setCompressProgress] = useState(-1);
     const [statusText, setStatusText] = useState('');
     const [replyingTo, setReplyingTo] = useState<Message | null>(null);
-    const [contextMenu, setContextMenu] = useState<{ x: number; y: number; msg: Message } | null>(null);
-    const [longPressTimer, setLongPressTimer] = useState<ReturnType<typeof setTimeout> | null>(null);
+    const [activeMenu, setActiveMenu] = useState<string | null>(null);
     const [loaded, setLoaded] = useState(false);
 
     const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -95,8 +94,8 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
         return () => clearInterval(poll);
     }, [athleteId, currentUserId, otherUserId]);
 
-    // Close context menu on click outside
-    useEffect(() => { const c = () => setContextMenu(null); window.addEventListener('click', c); return () => window.removeEventListener('click', c); }, []);
+    // Close action menu on click outside
+    useEffect(() => { const c = () => setActiveMenu(null); window.addEventListener('click', c); return () => window.removeEventListener('click', c); }, []);
 
     // Send — optimistic
     const handleSend = async (mediaUrl?: string, mediaType?: string) => {
@@ -227,56 +226,80 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
                             {dateSep && <div style={{ textAlign: 'center', margin: '16px 0 8px', fontSize: 11, color: 'rgba(255,255,255,0.3)', fontWeight: 500 }}>{fmtDate(msg.createdAt)}</div>}
                             {timeSep && !dateSep && <div style={{ textAlign: 'center', margin: '10px 0 4px', fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>{fmtTime(msg.createdAt)}</div>}
 
-                            <div style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start', marginTop: timeSep && i > 0 ? 8 : 2 }}
-                                onContextMenu={(e) => { e.preventDefault(); setContextMenu({ x: e.clientX, y: e.clientY, msg }); }}
-                                onPointerDown={(e) => { const t = setTimeout(() => setContextMenu({ x: e.clientX, y: e.clientY, msg }), 500); setLongPressTimer(t); }}
-                                onPointerUp={() => { if (longPressTimer) { clearTimeout(longPressTimer); setLongPressTimer(null); } }}
-                                onPointerCancel={() => { if (longPressTimer) { clearTimeout(longPressTimer); setLongPressTimer(null); } }}>
+                            <div style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start', alignItems: 'center', marginTop: timeSep && i > 0 ? 8 : 2, gap: 4, position: 'relative' }}>
 
-                                <div style={{
-                                    maxWidth: '75%',
-                                    padding: msg.mediaUrl ? '4px 4px 8px' : '8px 14px',
-                                    borderRadius: mine ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                                    background: mine ? 'linear-gradient(135deg, rgba(6,182,212,0.3), rgba(16,185,129,0.2))' : 'var(--card-bg)',
-                                    border: mine ? '1px solid rgba(6,182,212,0.12)' : '1px solid var(--card-border)',
-                                    wordBreak: 'break-word',
-                                    overflowWrap: 'break-word',
-                                }}>
-                                    {/* Reply */}
-                                    {msg.replyTo && (
-                                        <div style={{ margin: msg.mediaUrl ? '4px 8px 6px' : '0 0 6px', padding: '6px 8px', borderRadius: 10, background: 'rgba(255,255,255,0.04)', borderLeft: '2px solid rgba(6,182,212,0.5)', fontSize: 11 }}>
-                                            <div style={{ fontWeight: 600, color: 'rgba(6,182,212,0.7)', marginBottom: 2 }}>{msg.replyTo.sender.name}</div>
-                                            <div style={{ color: 'rgba(255,255,255,0.35)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                {msg.replyTo.mediaUrl ? (msg.replyTo.mediaType?.startsWith('image') ? '📷 Photo' : '📹 Video') : msg.replyTo.content}
+                                {/* Action button — left side for own messages */}
+                                {mine && (
+                                    <button onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === msg.id ? null : msg.id); }}
+                                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'rgba(255,255,255,0.2)', padding: '2px 4px', flexShrink: 0, lineHeight: 1 }}
+                                        title="Actions">⋮</button>
+                                )}
+
+                                <div style={{ position: 'relative', maxWidth: '75%' }}>
+                                    <div style={{
+                                        padding: msg.mediaUrl ? '4px 4px 8px' : '8px 14px',
+                                        borderRadius: mine ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                                        background: mine ? 'linear-gradient(135deg, rgba(6,182,212,0.3), rgba(16,185,129,0.2))' : 'var(--card-bg)',
+                                        border: mine ? '1px solid rgba(6,182,212,0.12)' : '1px solid var(--card-border)',
+                                        wordBreak: 'break-word',
+                                        overflowWrap: 'break-word',
+                                    }}>
+                                        {/* Reply */}
+                                        {msg.replyTo && (
+                                            <div style={{ margin: msg.mediaUrl ? '4px 8px 6px' : '0 0 6px', padding: '6px 8px', borderRadius: 10, background: 'rgba(255,255,255,0.04)', borderLeft: '2px solid rgba(6,182,212,0.5)', fontSize: 11 }}>
+                                                <div style={{ fontWeight: 600, color: 'rgba(6,182,212,0.7)', marginBottom: 2 }}>{msg.replyTo.sender.name}</div>
+                                                <div style={{ color: 'rgba(255,255,255,0.35)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                    {msg.replyTo.mediaUrl ? (msg.replyTo.mediaType?.startsWith('image') ? '📷 Photo' : '📹 Video') : msg.replyTo.content}
+                                                </div>
                                             </div>
+                                        )}
+
+                                        {/* Video */}
+                                        {msg.mediaUrl && isVid && (
+                                            <div>
+                                                <video controls playsInline muted preload="metadata" style={{ width: '100%', maxWidth: 280, borderRadius: 14, background: '#000', display: 'block' }}>
+                                                    <source src={msg.mediaUrl} type={msg.mediaType || 'video/mp4'} />
+                                                </video>
+                                            </div>
+                                        )}
+
+                                        {/* Image */}
+                                        {msg.mediaUrl && isImg && (
+                                            <div>
+                                                <img src={msg.mediaUrl} alt="" loading="lazy" onClick={() => window.open(msg.mediaUrl!, '_blank')}
+                                                    style={{ width: '100%', maxWidth: 280, borderRadius: 14, display: 'block', cursor: 'pointer', objectFit: 'cover' }} />
+                                            </div>
+                                        )}
+
+                                        {/* Text */}
+                                        <div style={{ fontSize: 14, lineHeight: 1.4, color: 'rgba(255,255,255,0.9)', padding: msg.mediaUrl ? '0 10px' : 0 }}>{msg.content}</div>
+
+                                        {/* Time */}
+                                        <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.18)', marginTop: 2, textAlign: mine ? 'right' : 'left', padding: msg.mediaUrl ? '0 10px' : 0 }}>{fmtTime(msg.createdAt)}</div>
+                                    </div>
+
+                                    {/* Inline action menu */}
+                                    {activeMenu === msg.id && (
+                                        <div onClick={e => e.stopPropagation()} style={{
+                                            position: 'absolute', zIndex: 50, top: 0, ...(mine ? { right: '100%', marginRight: 4 } : { left: '100%', marginLeft: 4 }),
+                                            background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 10, boxShadow: '0 6px 20px rgba(0,0,0,0.5)', padding: '3px 0', minWidth: 120, whiteSpace: 'nowrap'
+                                        }}>
+                                            <button onClick={() => { setReplyingTo(msg); setActiveMenu(null); }}
+                                                style={{ display: 'block', width: '100%', textAlign: 'left', padding: '7px 12px', background: 'none', border: 'none', fontSize: 12, color: 'var(--foreground)', cursor: 'pointer' }}>↩️ Reply</button>
+                                            <button onClick={() => { navigator.clipboard.writeText(msg.content); setActiveMenu(null); }}
+                                                style={{ display: 'block', width: '100%', textAlign: 'left', padding: '7px 12px', background: 'none', border: 'none', fontSize: 12, color: 'var(--foreground)', cursor: 'pointer' }}>📋 Copy</button>
+                                            {msg.mediaUrl && <button onClick={() => { saveMedia(msg.mediaUrl!, msg.mediaType?.startsWith('image')); setActiveMenu(null); }}
+                                                style={{ display: 'block', width: '100%', textAlign: 'left', padding: '7px 12px', background: 'none', border: 'none', fontSize: 12, color: 'var(--foreground)', cursor: 'pointer' }}>💾 Save</button>}
                                         </div>
                                     )}
-
-                                    {/* Video */}
-                                    {msg.mediaUrl && isVid && (
-                                        <div>
-                                            <video controls playsInline muted preload="metadata" style={{ width: '100%', maxWidth: 280, borderRadius: 14, background: '#000', display: 'block' }}>
-                                                <source src={msg.mediaUrl} type={msg.mediaType || 'video/mp4'} />
-                                            </video>
-                                            <button onClick={() => saveMedia(msg.mediaUrl!, false)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 10, color: 'rgba(6,182,212,0.5)', marginTop: 4, marginLeft: 4 }}>💾 Save</button>
-                                        </div>
-                                    )}
-
-                                    {/* Image */}
-                                    {msg.mediaUrl && isImg && (
-                                        <div>
-                                            <img src={msg.mediaUrl} alt="" loading="lazy" onClick={() => window.open(msg.mediaUrl!, '_blank')}
-                                                style={{ width: '100%', maxWidth: 280, borderRadius: 14, display: 'block', cursor: 'pointer', objectFit: 'cover' }} />
-                                            <button onClick={() => saveMedia(msg.mediaUrl!, true)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 10, color: 'rgba(6,182,212,0.5)', marginTop: 4, marginLeft: 4 }}>💾 Save</button>
-                                        </div>
-                                    )}
-
-                                    {/* Text */}
-                                    <div style={{ fontSize: 14, lineHeight: 1.4, color: 'rgba(255,255,255,0.9)', padding: msg.mediaUrl ? '0 10px' : 0 }}>{msg.content}</div>
-
-                                    {/* Time */}
-                                    <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.18)', marginTop: 2, textAlign: mine ? 'right' : 'left', padding: msg.mediaUrl ? '0 10px' : 0 }}>{fmtTime(msg.createdAt)}</div>
                                 </div>
+
+                                {/* Action button — right side for other's messages */}
+                                {!mine && (
+                                    <button onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === msg.id ? null : msg.id); }}
+                                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'rgba(255,255,255,0.2)', padding: '2px 4px', flexShrink: 0, lineHeight: 1 }}
+                                        title="Actions">⋮</button>
+                                )}
                             </div>
                         </div>
                     );
@@ -284,21 +307,7 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
 
             </div>
 
-            {/* Context Menu */}
-            {contextMenu && (
-                <div style={{
-                    position: 'fixed', zIndex: 50, top: Math.min(contextMenu.y, window.innerHeight - 140), left: Math.min(contextMenu.x, window.innerWidth - 170),
-                    background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 12, boxShadow: '0 8px 24px rgba(0,0,0,0.5)', padding: '4px 0', minWidth: 150
-                }}
-                    onClick={e => e.stopPropagation()}>
-                    <button onClick={() => { setReplyingTo(contextMenu.msg); setContextMenu(null); }}
-                        style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: 'var(--foreground)', cursor: 'pointer' }}>↩️ Reply</button>
-                    {contextMenu.msg.mediaUrl && <button onClick={() => { saveMedia(contextMenu.msg.mediaUrl!, contextMenu.msg.mediaType?.startsWith('image')); setContextMenu(null); }}
-                        style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: 'var(--foreground)', cursor: 'pointer' }}>💾 Save</button>}
-                    <button onClick={() => { navigator.clipboard.writeText(contextMenu.msg.content); setContextMenu(null); }}
-                        style={{ display: 'block', width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: 'var(--foreground)', cursor: 'pointer' }}>📋 Copy</button>
-                </div>
-            )}
+
 
             {/* Reply bar */}
             {replyingTo && (
