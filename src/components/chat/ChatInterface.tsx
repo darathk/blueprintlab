@@ -126,8 +126,15 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
         try {
             let blob: File | Blob = file, mime = file.type;
             if (isVid) {
-                setStatusText('Uploading video…');
-                setCompressProgress(50);
+                setStatusText('Compressing video…');
+                try {
+                    const { compressVideo } = await import('@/lib/videoCompressor');
+                    const c = await compressVideo(file, p => setCompressProgress(p));
+                    blob = new File([c], file.name.replace(/\.[^.]+$/, '.webm'), { type: 'video/webm' }); mime = 'video/webm';
+                } catch (compErr) {
+                    console.warn('Video compression failed, uploading original:', compErr);
+                    setCompressProgress(50);
+                }
             } else {
                 setStatusText('Compressing photo…'); setCompressProgress(40);
                 try {
@@ -137,7 +144,7 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
                 } catch { /* skip compression if it fails */ }
             }
             setCompressProgress(101); setStatusText('Uploading…');
-            const ext = mime.includes('png') ? '.png' : mime.includes('jpeg') || mime.includes('jpg') ? '.jpg' : '.mp4';
+            const ext = mime.includes('png') ? '.png' : mime.includes('jpeg') || mime.includes('jpg') ? '.jpg' : mime.includes('webm') ? '.webm' : '.mp4';
             const { data, error } = await supabase.storage.from('lift-videos').upload(`${athleteId}/${Date.now()}${ext}`, blob, { cacheControl: '3600', upsert: false });
             if (error) throw error;
             const { data: u } = supabase.storage.from('lift-videos').getPublicUrl(data.path);

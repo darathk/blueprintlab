@@ -1,104 +1,136 @@
-import type { FFmpeg } from '@ffmpeg/ffmpeg';
+/**
+ * Browser-native video compression using Canvas + MediaRecorder.
+ * Zero external dependencies — works with any bundler (including Turbopack).
+ *
+ * Strategy:
+ *  1. Load the video into a hidden <video> element
+ *  2. Draw each frame onto a <canvas> scaled to 720p
+ *  3. Capture the canvas stream + original audio via MediaRecorder
+ *  4. Return the compressed WebM blob
+ */
 
-let fetchFileFn: any = null;
-
-let ffmpeg: FFmpeg | null = null;
+const TARGET_HEIGHT = 720;
+const VIDEO_BITRATE = 1_000_000; // 1 Mbps
 
 /**
- * Compress a video file using FFmpeg WASM.
- * - Scales to 720p, 30fps, ~1Mbps bitrate
- * - Runs entirely in the browser (no server needed)
- * - Returns a compressed MP4 Blob
+ * Compress a video file using the browser's native MediaRecorder API.
+ * Returns a compressed WebM blob (~60-80% smaller for typical phone videos).
  */
 export async function compressVideo(
     file: File,
-    onProgress?: (progress: number) => void
+    onProgress?: (percent: number) => void
 ): Promise<Blob> {
-    // Initialize FFmpeg (lazy singleton)
-    if (!ffmpeg) {
-        // Bypass Next.js bundler (Turbopack) to avoid the "Cannot find module as expression is too dynamic" crash
-        // @ts-ignore - TS cannot resolve remote URLs
-        const FFmpegModule = await import(/* webpackIgnore: true */ 'https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/esm/index.js');
-        // @ts-ignore - TS cannot resolve remote URLs
-        const utilModule = await import(/* webpackIgnore: true */ 'https://unpkg.com/@ffmpeg/util@0.12.1/dist/esm/index.js');
+    return new Promise((resolve, reject) => {
+        const video = document.createElement('video');
+        video.muted = true;
+        video.playsInline = true;
+        video.preload = 'auto';
 
-        const { FFmpeg } = FFmpegModule;
-        const { fetchFile, toBlobURL } = utilModule;
-        fetchFileFn = fetchFile;
+        const url = URL.createObjectURL(file);
+        video.src = url;
 
-        ffmpeg = new FFmpeg();
+        video.onloadedmetadata = () => {
+            // Calculate scaled dimensions (maintain aspect ratio, cap at 720p height)
+            const scale = Math.min(1, TARGET_HEIGHT / video.videoHeight);
+            const width = Math.round(video.videoWidth * scale);
+            const height = Math.round(video.videoHeight * scale);
 
-        // Load FFmpeg WASM from CDN
-        const baseURL = 'https://unpkg.com/@ffmpeg/core@0.12.6/dist/esm';
-        await ffmpeg.load({
-            coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
-            wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
-            classWorkerURL: await toBlobURL('https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/esm/worker.js', 'text/javascript'),
-        });
-    }
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d')!;
 
-    // Track progress via FFmpeg log output
-    if (onProgress) {
-        let duration = 0;
+            // Capture the canvas as a video stream
+            const canvasStream = canvas.captureStream(30); // 30 fps
 
-        ffmpeg.on('log', ({ message }) => {
-            // Parse duration from FFmpeg output: "Duration: 00:00:10.50"
-            const durationMatch = message.match(/Duration:\s*(\d+):(\d+):(\d+)\.(\d+)/);
-            if (durationMatch) {
-                duration =
-                    parseInt(durationMatch[1]) * 3600 +
-                    parseInt(durationMatch[2]) * 60 +
-                    parseInt(durationMatch[3]) +
-                    parseInt(durationMatch[4]) / 100;
+            // Try to capture audio from the original video
+            let combinedStream: MediaStream;
+            try {
+                const videoEl = video as any;
+                // Create an AudioContext to extract audio
+                const audioCtx = new AudioContext();
+                const source = audioCtx.createMediaElementSource(video);
+                const dest = audioCtx.createMediaStreamDestination();
+                source.connect(dest);
+                source.connect(audioCtx.destination); // keep audio playing
+
+                // Combine canvas video track + audio track
+                combinedStream = new MediaStream([
+                    ...canvasStream.getVideoTracks(),
+                    ...dest.stream.getAudioTracks()
+                ]);
+            } catch {
+                // If audio extraction fails, just use video-only stream
+                combinedStream = canvasStream;
             }
 
-            // Parse current time: "time=00:00:05.25"
-            const timeMatch = message.match(/time=\s*(\d+):(\d+):(\d+)\.(\d+)/);
-            if (timeMatch && duration > 0) {
-                const currentTime =
-                    parseInt(timeMatch[1]) * 3600 +
-                    parseInt(timeMatch[2]) * 60 +
-                    parseInt(timeMatch[3]) +
-                    parseInt(timeMatch[4]) / 100;
-                const percent = Math.min(99, Math.round((currentTime / duration) * 100));
-                onProgress(percent);
-            }
-        });
-    }
+            // Choose the best available codec
+            const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+                ? 'video/webm;codecs=vp9'
+                : MediaRecorder.isTypeSupported('video/webm;codecs=vp8')
+                    ? 'video/webm;codecs=vp8'
+                    : 'video/webm';
 
-    // Write input file to FFmpeg's virtual filesystem
-    const inputName = 'input' + getExtension(file.name);
-    await ffmpeg.writeFile(inputName, await fetchFileFn(file));
+            const recorder = new MediaRecorder(combinedStream, {
+                mimeType,
+                videoBitsPerSecond: VIDEO_BITRATE,
+            });
 
-    // Compress: 720p, 30fps, ~1Mbps bitrate, fast preset
-    await ffmpeg.exec([
-        '-i', inputName,
-        '-vf', 'scale=-2:720',         // Scale to 720p height, auto-width
-        '-r', '30',                      // 30fps
-        '-b:v', '1M',                   // ~1Mbps video bitrate
-        '-c:v', 'libx264',              // H.264 codec
-        '-preset', 'fast',              // Balance speed vs compression
-        '-c:a', 'aac',                  // AAC audio
-        '-b:a', '128k',                 // 128kbps audio
-        '-movflags', '+faststart',      // Optimize for web streaming
-        'output.mp4'
-    ]);
+            const chunks: Blob[] = [];
 
-    // Read compressed output
-    const data = await ffmpeg.readFile('output.mp4');
+            recorder.ondataavailable = (e) => {
+                if (e.data.size > 0) chunks.push(e.data);
+            };
 
-    // Cleanup virtual filesystem
-    await ffmpeg.deleteFile(inputName);
-    await ffmpeg.deleteFile('output.mp4');
+            recorder.onstop = () => {
+                URL.revokeObjectURL(url);
+                const blob = new Blob(chunks, { type: 'video/webm' });
+                onProgress?.(100);
+                resolve(blob);
+            };
 
-    if (onProgress) onProgress(100);
+            recorder.onerror = (e) => {
+                URL.revokeObjectURL(url);
+                reject(new Error('MediaRecorder error: ' + (e as any)?.error?.message || 'unknown'));
+            };
 
-    // Convert to Blob (FFmpeg FileData type needs explicit cast for strict TS)
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return new Blob([data as any], { type: 'video/mp4' });
-}
+            // Start recording
+            recorder.start(100); // collect data every 100ms
 
-function getExtension(filename: string): string {
-    const dot = filename.lastIndexOf('.');
-    return dot >= 0 ? filename.substring(dot) : '.mp4';
+            // Draw frames to canvas as video plays
+            const duration = video.duration;
+            let animFrame: number;
+
+            const drawFrame = () => {
+                if (video.paused || video.ended) return;
+
+                ctx.drawImage(video, 0, 0, width, height);
+
+                // Report progress
+                if (duration && onProgress) {
+                    const percent = Math.min(99, Math.round((video.currentTime / duration) * 100));
+                    onProgress(percent);
+                }
+
+                animFrame = requestAnimationFrame(drawFrame);
+            };
+
+            video.onplay = () => {
+                drawFrame();
+            };
+
+            video.onended = () => {
+                cancelAnimationFrame(animFrame);
+                recorder.stop();
+            };
+
+            // Start playback (which drives the recording)
+            video.play().catch(reject);
+        };
+
+        video.onerror = () => {
+            URL.revokeObjectURL(url);
+            reject(new Error('Failed to load video file'));
+        };
+    });
 }
