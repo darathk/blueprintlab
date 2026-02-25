@@ -130,7 +130,12 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
                 try {
                     const { compressVideo } = await import('@/lib/videoCompressor');
                     const c = await compressVideo(file, p => setCompressProgress(p));
-                    blob = new File([c], file.name.replace(/\.[^.]+$/, '.webm'), { type: 'video/webm' }); mime = 'video/webm';
+                    if (c) {
+                        blob = new File([c], file.name.replace(/\.[^.]+$/, '.mp4'), { type: 'video/mp4' }); mime = 'video/mp4';
+                    } else {
+                        // Browser doesn't support MP4 compression — upload original
+                        setStatusText('Uploading video…'); setCompressProgress(50);
+                    }
                 } catch (compErr) {
                     console.warn('Video compression failed, uploading original:', compErr);
                     setCompressProgress(50);
@@ -144,7 +149,7 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
                 } catch { /* skip compression if it fails */ }
             }
             setCompressProgress(101); setStatusText('Uploading…');
-            const ext = mime.includes('png') ? '.png' : mime.includes('jpeg') || mime.includes('jpg') ? '.jpg' : mime.includes('webm') ? '.webm' : '.mp4';
+            const ext = mime.includes('png') ? '.png' : mime.includes('jpeg') || mime.includes('jpg') ? '.jpg' : '.mp4';
             const { data, error } = await supabase.storage.from('lift-videos').upload(`${athleteId}/${Date.now()}${ext}`, blob, { cacheControl: '3600', upsert: false });
             if (error) throw error;
             const { data: u } = supabase.storage.from('lift-videos').getPublicUrl(data.path);
