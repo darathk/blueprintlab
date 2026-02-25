@@ -65,7 +65,6 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
         const ch = supabase.channel(`chat-${athleteId}`)
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'Message', filter: `senderId=eq.${otherUserId}` },
                 (payload) => {
-                    // Fetch the full message with relations
                     fetch(`/api/messages?athleteId=${athleteId}`)
                         .then(r => r.ok ? r.json() : null)
                         .then(data => { if (data) setMessages(data); });
@@ -77,6 +76,25 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
             ).subscribe();
         return () => { supabase.removeChannel(ch); };
     }, [athleteId, currentUserId, otherUserId]);
+
+    // Polling fallback — check for new messages every 3s
+    useEffect(() => {
+        const poll = setInterval(() => {
+            fetch(`/api/messages?athleteId=${athleteId}`)
+                .then(r => r.ok ? r.json() : null)
+                .then(data => {
+                    if (data && data.length !== messages.length) {
+                        setMessages(data);
+                        // Mark as read
+                        fetch('/api/messages', {
+                            method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ athleteId: otherUserId, readerId: currentUserId })
+                        });
+                    }
+                });
+        }, 3000);
+        return () => clearInterval(poll);
+    }, [athleteId, currentUserId, otherUserId, messages.length]);
 
     // Close context menu on click outside
     useEffect(() => { const c = () => setContextMenu(null); window.addEventListener('click', c); return () => window.removeEventListener('click', c); }, []);

@@ -74,6 +74,27 @@ export default function CoachInbox({ coachId, coachName }: Props) {
         return () => { supabase.removeChannel(ch); };
     }, [coachId, selectedId, fetchConvos, fetchMessages]);
 
+    // Polling fallback — check for new messages every 3s
+    useEffect(() => {
+        const poll = setInterval(() => {
+            fetchConvos();
+            if (selectedId) {
+                fetch(`/api/messages?athleteId=${selectedId}`)
+                    .then(r => r.ok ? r.json() : null)
+                    .then(data => {
+                        if (data && data.length !== messages.length) {
+                            setMessages(data);
+                            fetch('/api/messages', {
+                                method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ athleteId: selectedId, readerId: coachId })
+                            });
+                        }
+                    });
+            }
+        }, 3000);
+        return () => clearInterval(poll);
+    }, [coachId, selectedId, fetchConvos, messages.length]);
+
     useEffect(() => { const c = () => setContextMenu(null); window.addEventListener('click', c); return () => window.removeEventListener('click', c); }, []);
 
     // Optimistic send
