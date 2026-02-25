@@ -1,5 +1,6 @@
-import { FFmpeg } from '@ffmpeg/ffmpeg';
-import { fetchFile, toBlobURL } from '@ffmpeg/util';
+import type { FFmpeg } from '@ffmpeg/ffmpeg';
+
+let fetchFileFn: any = null;
 
 let ffmpeg: FFmpeg | null = null;
 
@@ -15,6 +16,16 @@ export async function compressVideo(
 ): Promise<Blob> {
     // Initialize FFmpeg (lazy singleton)
     if (!ffmpeg) {
+        // Bypass Next.js bundler (Turbopack) to avoid the "Cannot find module as expression is too dynamic" crash
+        // @ts-ignore - TS cannot resolve remote URLs
+        const FFmpegModule = await import(/* webpackIgnore: true */ 'https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/esm/index.js');
+        // @ts-ignore - TS cannot resolve remote URLs
+        const utilModule = await import(/* webpackIgnore: true */ 'https://unpkg.com/@ffmpeg/util@0.12.1/dist/esm/index.js');
+
+        const { FFmpeg } = FFmpegModule;
+        const { fetchFile, toBlobURL } = utilModule;
+        fetchFileFn = fetchFile;
+
         ffmpeg = new FFmpeg();
 
         // Load FFmpeg WASM from CDN
@@ -22,6 +33,7 @@ export async function compressVideo(
         await ffmpeg.load({
             coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
             wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+            classWorkerURL: await toBlobURL('https://unpkg.com/@ffmpeg/ffmpeg@0.12.6/dist/esm/worker.js', 'text/javascript'),
         });
     }
 
@@ -56,7 +68,7 @@ export async function compressVideo(
 
     // Write input file to FFmpeg's virtual filesystem
     const inputName = 'input' + getExtension(file.name);
-    await ffmpeg.writeFile(inputName, await fetchFile(file));
+    await ffmpeg.writeFile(inputName, await fetchFileFn(file));
 
     // Compress: 720p, 30fps, ~1Mbps bitrate, fast preset
     await ffmpeg.exec([
