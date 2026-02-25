@@ -3,7 +3,7 @@ import { getAthletes, getPrograms, getLogSummariesForDashboard } from '@/lib/sto
 import { prisma } from '@/lib/prisma';
 import AthleteStatusCard from './athlete-status-card';
 import CollapsibleSection from '@/components/ui/CollapsibleSection';
-import CoachInbox from '@/components/chat/CoachInbox';
+import { CoachInbox } from '@/components/chat/ClientCoachInbox';
 
 export default async function DashboardPage() {
     const [athletes, programs, logSummaries] = await Promise.all([

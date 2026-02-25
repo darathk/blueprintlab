@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/prisma';
-import ChatInterface from '@/components/chat/ChatInterface';
+import { ChatInterface } from '@/components/chat/ClientChatInterface';
 
 export default async function CoachChatPage({ params }: { params: Promise<{ id: string }> }) {
     const { id: athleteId } = await params;
