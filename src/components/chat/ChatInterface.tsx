@@ -83,9 +83,8 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
             fetch(`/api/messages?athleteId=${athleteId}`)
                 .then(r => r.ok ? r.json() : null)
                 .then(data => {
-                    if (data && data.length !== messages.length) {
+                    if (data) {
                         setMessages(data);
-                        // Mark as read
                         fetch('/api/messages', {
                             method: 'PATCH', headers: { 'Content-Type': 'application/json' },
                             body: JSON.stringify({ athleteId: otherUserId, readerId: currentUserId })
@@ -94,7 +93,7 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
                 });
         }, 3000);
         return () => clearInterval(poll);
-    }, [athleteId, currentUserId, otherUserId, messages.length]);
+    }, [athleteId, currentUserId, otherUserId]);
 
     // Close context menu on click outside
     useEffect(() => { const c = () => setContextMenu(null); window.addEventListener('click', c); return () => window.removeEventListener('click', c); }, []);

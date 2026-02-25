@@ -82,7 +82,7 @@ export default function CoachInbox({ coachId, coachName }: Props) {
                 fetch(`/api/messages?athleteId=${selectedId}`)
                     .then(r => r.ok ? r.json() : null)
                     .then(data => {
-                        if (data && data.length !== messages.length) {
+                        if (data) {
                             setMessages(data);
                             fetch('/api/messages', {
                                 method: 'PATCH', headers: { 'Content-Type': 'application/json' },
@@ -93,7 +93,7 @@ export default function CoachInbox({ coachId, coachName }: Props) {
             }
         }, 3000);
         return () => clearInterval(poll);
-    }, [coachId, selectedId, fetchConvos, messages.length]);
+    }, [coachId, selectedId, fetchConvos]);
 
     useEffect(() => { const c = () => setContextMenu(null); window.addEventListener('click', c); return () => window.removeEventListener('click', c); }, []);
 
