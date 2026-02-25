@@ -13,52 +13,35 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'coachId is required' }, { status: 400 });
         }
 
-        // Get only the latest message per conversation + unread counts using raw aggregation
-        const messages = await prisma.message.findMany({
-            where: {
-                OR: [{ senderId: coachId }, { receiverId: coachId }]
-            },
-            select: {
-                senderId: true,
-                receiverId: true,
-                content: true,
-                createdAt: true,
-                read: true,
-                sender: { select: { id: true, name: true } },
-                receiver: { select: { id: true, name: true } },
-            },
-            orderBy: { createdAt: 'desc' }
-        });
+        // Use a raw Postgres query to natively compute latest message grouping & unread sums
+        const sql = `
+            SELECT DISTINCT ON (partner_id)
+                partner_id AS "athleteId",
+                a.name AS "athleteName",
+                m.content AS "lastMessage",
+                m."createdAt" AS "lastMessageAt",
+                (
+                    SELECT COUNT(*)::int
+                    FROM "Message" unread
+                    WHERE unread."receiverId" = $1
+                      AND unread."senderId" = partner_id
+                      AND unread.read = false
+                ) AS "unreadCount"
+            FROM (
+                SELECT 
+                    "senderId", "receiverId", content, "createdAt",
+                    CASE WHEN "senderId" = $1 THEN "receiverId" ELSE "senderId" END AS partner_id
+                FROM "Message"
+                WHERE "senderId" = $1 OR "receiverId" = $1
+            ) m
+            JOIN "Athlete" a ON a.id = m.partner_id
+            ORDER BY partner_id, m."createdAt" DESC;
+        `;
 
-        // Build lightweight conversation summaries (no full message payloads)
-        const convMap: Record<string, {
-            athleteId: string;
-            athleteName: string;
-            lastMessage: string;
-            lastMessageAt: string;
-            unreadCount: number;
-        }> = {};
+        const results = await prisma.$queryRawUnsafe<any[]>(sql, coachId);
 
-        for (const msg of messages) {
-            const otherId = msg.senderId === coachId ? msg.receiverId : msg.senderId;
-            const otherName = msg.senderId === coachId ? msg.receiver.name : msg.sender.name;
-
-            if (!convMap[otherId]) {
-                convMap[otherId] = {
-                    athleteId: otherId,
-                    athleteName: otherName,
-                    lastMessage: msg.content,
-                    lastMessageAt: msg.createdAt.toISOString(),
-                    unreadCount: 0
-                };
-            }
-
-            if (msg.receiverId === coachId && !msg.read) {
-                convMap[otherId].unreadCount++;
-            }
-        }
-
-        const sorted = Object.values(convMap).sort(
+        // Sort by last message time globally (DISTINCT ON only allows sorting by the DISTINCT key first)
+        const sorted = results.sort(
             (a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()
         );
 
