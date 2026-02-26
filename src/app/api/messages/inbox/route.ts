@@ -15,37 +15,39 @@ export async function GET(request: Request) {
 
         // Use a raw Postgres query to natively compute latest message grouping & unread sums
         const sql = `
-            SELECT DISTINCT ON (partner_id)
-                partner_id AS "athleteId",
+            SELECT 
+                a.id AS "athleteId",
                 a.name AS "athleteName",
-                m.content AS "lastMessage",
-                m."createdAt" AS "lastMessageAt",
-                (
-                    SELECT COUNT(*)::int
-                    FROM "Message" unread
-                    WHERE unread."receiverId" = $1
-                      AND unread."senderId" = partner_id
-                      AND unread.read = false
-                ) AS "unreadCount"
-            FROM (
-                SELECT 
-                    "senderId", "receiverId", content, "createdAt",
-                    CASE WHEN "senderId" = $1 THEN "receiverId" ELSE "senderId" END AS partner_id
+                latest_msg.content AS "lastMessage",
+                COALESCE(latest_msg."createdAt", '1970-01-01T00:00:00Z') AS "lastMessageAt",
+                COALESCE(unread_count.count, 0)::int AS "unreadCount"
+            FROM "Athlete" a
+            LEFT JOIN (
+                SELECT DISTINCT ON (partner_id)
+                    partner_id,
+                    content,
+                    "createdAt"
+                FROM (
+                    SELECT 
+                        "senderId", "receiverId", content, "createdAt",
+                        CASE WHEN "senderId" = $1 THEN "receiverId" ELSE "senderId" END AS partner_id
+                    FROM "Message"
+                    WHERE "senderId" = $1 OR "receiverId" = $1
+                ) m
+                ORDER BY partner_id, "createdAt" DESC
+            ) latest_msg ON latest_msg.partner_id = a.id
+            LEFT JOIN (
+                SELECT "senderId", COUNT(*) as count
                 FROM "Message"
-                WHERE "senderId" = $1 OR "receiverId" = $1
-            ) m
-            JOIN "Athlete" a ON a.id = m.partner_id
-            ORDER BY partner_id, m."createdAt" DESC;
+                WHERE "receiverId" = $1 AND read = false
+                GROUP BY "senderId"
+            ) unread_count ON unread_count."senderId" = a.id
+            WHERE a.id != $1
+            ORDER BY "lastMessageAt" DESC;
         `;
 
         const results = await prisma.$queryRawUnsafe<any[]>(sql, coachId);
-
-        // Sort by last message time globally (DISTINCT ON only allows sorting by the DISTINCT key first)
-        const sorted = results.sort(
-            (a, b) => new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime()
-        );
-
-        return NextResponse.json(sorted);
+        return NextResponse.json(results);
     } catch (error) {
         console.error('GET /api/messages/inbox error:', error);
         return NextResponse.json({ error: 'Failed to fetch inbox' }, { status: 500 });
