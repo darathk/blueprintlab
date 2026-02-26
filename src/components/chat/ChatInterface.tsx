@@ -56,8 +56,12 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
     // Scroll to bottom after render
     useEffect(() => {
         const el = scrollContainerRef.current;
-        if (el) requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
-    }, [messages.length]);
+        if (el) {
+            setTimeout(() => {
+                el.scrollTop = el.scrollHeight;
+            }, 100);
+        }
+    }, [messages]);
 
     // Realtime — append only, no re-fetch
     useEffect(() => {

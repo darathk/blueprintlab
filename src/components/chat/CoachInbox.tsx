@@ -61,8 +61,12 @@ export default function CoachInbox({ coachId, coachName }: Props) {
     // Scroll to bottom after render
     useEffect(() => {
         const el = scrollContainerRef.current;
-        if (el) requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
-    }, [messages.length]);
+        if (el) {
+            setTimeout(() => {
+                el.scrollTop = el.scrollHeight;
+            }, 100);
+        }
+    }, [messages]);
 
     // Realtime — only refetch if relevant
     useEffect(() => {
