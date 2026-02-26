@@ -8,8 +8,9 @@ export default function ProgramList({ athleteId }) {
 
     useEffect(() => {
         const loadPrograms = async () => {
-            const res = await fetch('/api/programs');
+            const res = await fetch(`/api/programs?athleteId=${athleteId}`);
             const data = await res.json();
+            // Fallback filter just in case, but server should now filter it
             setPrograms(data.filter((p: any) => p.athleteId === athleteId));
         };
         loadPrograms();
@@ -32,6 +33,13 @@ export default function ProgramList({ athleteId }) {
     };
 
     if (programs.length === 0) return null;
+
+    // Helper to render date safely across timezones
+    const safeDate = (isoString) => {
+        if (!isoString) return '';
+        // take the 'YYYY-MM-DD' part and set it to UTC noon to avoid timezone shift
+        return new Date(isoString.split('T')[0] + 'T12:00:00Z').toLocaleDateString();
+    };
 
     return (
         <div style={{ marginTop: '2rem' }}>
@@ -60,7 +68,7 @@ export default function ProgramList({ athleteId }) {
                             </span>
                         </div>
                         <div style={{ fontSize: '0.9rem', color: 'var(--secondary-foreground)', marginBottom: '1rem' }}>
-                            {new Date(p.startDate).toLocaleDateString()} — {new Date(p.endDate).toLocaleDateString()}
+                            {safeDate(p.startDate)} {p.endDate ? `— ${safeDate(p.endDate)}` : ''}
                         </div>
 
                         <div style={{ display: 'flex', gap: '1rem', marginTop: 'auto' }}>

@@ -224,10 +224,10 @@ export default function WorkoutLogger({ athleteId, programId, sessionId, exercis
     };
 
     return (
-        <div style={{ paddingBottom: '100px', background: '#e2e8f0', minHeight: '100vh' }}>
+        <div style={{ paddingBottom: '100px', background: 'var(--card-border)', minHeight: '100vh' }}>
             {/* Header Bar */}
             <div style={{
-                background: '#fff',
+                background: 'var(--background)',
                 borderBottom: '1px solid #cbd5e1',
                 padding: '1rem',
                 position: 'sticky',
@@ -236,20 +236,20 @@ export default function WorkoutLogger({ athleteId, programId, sessionId, exercis
                 marginBottom: '1rem'
             }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 600, color: '#0f172a' }}>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--foreground)' }}>
                         {formattedDate} 📝
                     </div>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: isSaving ? '#d97706' : '#10b981' }}>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: isSaving ? 'var(--warning)' : 'var(--success)' }}>
                         {isSaving ? 'Saving...' : '✓ All Changes Saved'}
                     </div>
                 </div>
 
                 {/* Progress Bar */}
-                <div style={{ width: '100%', height: '8px', background: '#cbd5e1', borderRadius: '4px', overflow: 'hidden' }}>
+                <div style={{ width: '100%', height: '8px', background: 'var(--card-border)', borderRadius: '4px', overflow: 'hidden' }}>
                     <div style={{
                         width: `${validationStats.percentage}%`,
                         height: '100%',
-                        background: validationStats.percentage === 100 ? '#10b981' : '#3b82f6',
+                        background: validationStats.percentage === 100 ? 'var(--success)' : 'var(--primary)',
                         transition: 'width 0.3s ease'
                     }} />
                 </div>
@@ -258,7 +258,7 @@ export default function WorkoutLogger({ athleteId, programId, sessionId, exercis
             <div style={{ padding: '0 1rem' }}>
                 {/* Session Name & Stats */}
                 <div style={{
-                    background: '#1e3a8a',
+                    background: 'rgba(6, 182, 212, 0.1)',
                     color: 'white',
                     padding: '0.75rem 1rem',
                     marginBottom: '1rem',
@@ -275,7 +275,7 @@ export default function WorkoutLogger({ athleteId, programId, sessionId, exercis
                 </div>
 
                 {/* Exercise Cards */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', overflow: 'hidden' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0', background: 'var(--background)', border: '1px solid #cbd5e1', borderRadius: '4px', overflow: 'hidden' }}>
                     {exerciseLogs.map((ex, exIndex) => {
                         // Max E1RM calc
                         const validSets = ex.sets.filter(s => s.actual.weight && s.actual.reps && s.actual.rpe);
@@ -304,7 +304,7 @@ export default function WorkoutLogger({ athleteId, programId, sessionId, exercis
                             <div key={ex.exerciseId} style={{ borderBottom: exIndex < exerciseLogs.length - 1 ? '1px solid #cbd5e1' : 'none' }}>
                                 {/* Exercise Header */}
                                 <div style={{
-                                    background: '#f8fafc',
+                                    background: 'var(--card-bg)',
                                     padding: '12px 16px',
                                     display: 'flex',
                                     justifyContent: 'space-between',
@@ -316,22 +316,22 @@ export default function WorkoutLogger({ athleteId, programId, sessionId, exercis
                                             onClick={() => toggleCollapse(exIndex)}
                                             style={{
                                                 width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                border: '2px solid #64748b', background: '#fff', color: '#0f172a', fontWeight: 'bold', cursor: 'pointer', padding: 0
+                                                border: '2px solid #64748b', background: 'var(--background)', color: 'var(--foreground)', fontWeight: 'bold', cursor: 'pointer', padding: 0
                                             }}
                                         >
                                             {ex.isCollapsed ? '+' : '−'}
                                         </button>
-                                        <h3 style={{ fontSize: '1rem', color: '#2563eb', fontWeight: 500, margin: 0 }}>{ex.name}</h3>
+                                        <h3 style={{ fontSize: '1rem', color: 'var(--primary)', fontWeight: 500, margin: 0 }}>{ex.name}</h3>
                                     </div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', color: '#0f172a', fontWeight: 600 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', color: 'var(--foreground)', fontWeight: 600 }}>
                                         Sets
                                         <input
                                             type="number"
                                             value={ex.sets.length}
                                             onChange={(e) => updateSetsCount(exIndex, e.target.value)}
-                                            style={{ width: '40px', padding: '4px', textAlign: 'center', background: '#fff', color: '#0f172a', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                                            style={{ width: '40px', padding: '4px', textAlign: 'center', background: 'var(--background)', color: 'var(--foreground)', border: '1px solid #cbd5e1', borderRadius: '4px' }}
                                         />
-                                        <span style={{ fontSize: '1.2rem', color: '#475569', marginLeft: 4 }}>...</span>
+                                        <span style={{ fontSize: '1.2rem', color: 'var(--secondary-foreground)', marginLeft: 4 }}>...</span>
                                     </div>
                                 </div>
 
@@ -339,20 +339,20 @@ export default function WorkoutLogger({ athleteId, programId, sessionId, exercis
                                     <div style={{ padding: '0 8px 16px 8px' }}>
                                         {/* Target / Actual Header */}
                                         <div style={{ display: 'flex', borderBottom: '1px dashed #cbd5e1', marginBottom: 8 }}>
-                                            <div style={{ width: '130px', textAlign: 'center', fontWeight: 'bold', fontSize: '0.85rem', color: '#1e3a8a', padding: '8px 0 4px 0' }}>Target</div>
+                                            <div style={{ width: '130px', textAlign: 'center', fontWeight: 'bold', fontSize: '0.85rem', color: 'rgba(6, 182, 212, 0.1)', padding: '8px 0 4px 0' }}>Target</div>
                                             <div style={{ flex: 1, position: 'relative' }}>
-                                                <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: 1, background: '#cbd5e1' }}></div>
-                                                <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '0.85rem', color: '#1e3a8a', padding: '8px 0 4px 0', background: '#f1f5f9' }}>Actual</div>
+                                                <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: 1, background: 'var(--card-border)' }}></div>
+                                                <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '0.85rem', color: 'rgba(6, 182, 212, 0.1)', padding: '8px 0 4px 0', background: 'var(--card-bg)' }}>Actual</div>
                                             </div>
                                         </div>
 
-                                        <div style={{ display: 'flex', marginBottom: 8, fontSize: '0.8rem', fontWeight: 600, color: '#1e3a8a' }}>
+                                        <div style={{ display: 'flex', marginBottom: 8, fontSize: '0.8rem', fontWeight: 600, color: 'rgba(6, 182, 212, 0.1)' }}>
                                             <div style={{ display: 'flex', width: '130px', justifyContent: 'center', gap: 4 }}>
                                                 <span style={{ flex: 1, textAlign: 'center' }}>Weight</span>
                                                 <span style={{ flex: 1, textAlign: 'center' }}>Reps</span>
                                                 <span style={{ flex: 1, textAlign: 'center' }}>RPE</span>
                                             </div>
-                                            <div style={{ position: 'relative', width: 1, background: '#cbd5e1', margin: '0 8px' }}></div>
+                                            <div style={{ position: 'relative', width: 1, background: 'var(--card-border)', margin: '0 8px' }}></div>
                                             <div style={{ display: 'flex', flex: 1, justifyContent: 'center', gap: 4 }}>
                                                 <span style={{ flex: 1, textAlign: 'center' }}>Weight</span>
                                                 <span style={{ flex: 1, textAlign: 'center' }}>Reps</span>
@@ -370,13 +370,13 @@ export default function WorkoutLogger({ athleteId, programId, sessionId, exercis
                                                 <div key={sIndex} style={{ display: 'flex', alignItems: 'center', padding: '6px 0', borderBottom: '1px dashed #e2e8f0' }}>
                                                     {/* Target Side */}
                                                     <div style={{ display: 'flex', width: '130px', justifyContent: 'center', gap: 4 }}>
-                                                        <div style={{ flex: 1, padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: 4, background: '#fff', textAlign: 'center', fontSize: '0.9rem', color: '#475569' }}>
+                                                        <div style={{ flex: 1, padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: 4, background: 'var(--background)', textAlign: 'center', fontSize: '0.9rem', color: 'var(--secondary-foreground)' }}>
                                                             {set.target.weight || '\u00A0'}
                                                         </div>
-                                                        <div style={{ flex: 1, padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: 4, background: '#fff', textAlign: 'center', fontSize: '0.9rem', color: '#475569' }}>
+                                                        <div style={{ flex: 1, padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: 4, background: 'var(--background)', textAlign: 'center', fontSize: '0.9rem', color: 'var(--secondary-foreground)' }}>
                                                             {cleanReps || '\u00A0'}
                                                         </div>
-                                                        <div style={{ flex: 1, padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: 4, background: '#fff', textAlign: 'center', fontSize: '0.9rem', color: '#475569' }}>
+                                                        <div style={{ flex: 1, padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: 4, background: 'var(--background)', textAlign: 'center', fontSize: '0.9rem', color: 'var(--secondary-foreground)' }}>
                                                             {set.target.rpe || '\u00A0'}
                                                         </div>
                                                     </div>
@@ -386,7 +386,7 @@ export default function WorkoutLogger({ athleteId, programId, sessionId, exercis
                                                         onClick={() => sIndex > 0 ? copyPreviousSet(exIndex, sIndex) : copyTargetToActual(exIndex, sIndex)}
                                                         style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 8px', display: 'flex', alignItems: 'center' }}
                                                     >
-                                                        <span style={{ color: '#10b981', fontSize: '1.4rem' }}>➞</span>
+                                                        <span style={{ color: 'var(--success)', fontSize: '1.4rem' }}>➞</span>
                                                     </button>
 
                                                     {/* Actual Side */}
@@ -396,14 +396,14 @@ export default function WorkoutLogger({ athleteId, programId, sessionId, exercis
                                                             inputMode="decimal"
                                                             value={set.actual.weight}
                                                             onChange={(e) => updateSet(exIndex, sIndex, 'weight', e.target.value)}
-                                                            style={{ flex: 1, padding: '6px 4px', border: '1px solid #94a3b8', borderRadius: 4, background: '#fff', textAlign: 'center', fontSize: '0.9rem', color: '#0f172a', width: '100%', outlineColor: '#3b82f6' }}
+                                                            style={{ flex: 1, padding: '6px 4px', border: '1px solid #94a3b8', borderRadius: 4, background: 'var(--background)', textAlign: 'center', fontSize: '0.9rem', color: 'var(--foreground)', width: '100%', outlineColor: 'var(--primary)' }}
                                                         />
                                                         <input
                                                             type="number"
                                                             inputMode="decimal"
                                                             value={set.actual.reps}
                                                             onChange={(e) => updateSet(exIndex, sIndex, 'reps', e.target.value)}
-                                                            style={{ flex: 1, padding: '6px 4px', border: '1px solid #94a3b8', borderRadius: 4, background: '#fff', textAlign: 'center', fontSize: '0.9rem', color: '#0f172a', width: '100%', outlineColor: '#3b82f6' }}
+                                                            style={{ flex: 1, padding: '6px 4px', border: '1px solid #94a3b8', borderRadius: 4, background: 'var(--background)', textAlign: 'center', fontSize: '0.9rem', color: 'var(--foreground)', width: '100%', outlineColor: 'var(--primary)' }}
                                                         />
                                                         <input
                                                             type="number"
@@ -411,16 +411,16 @@ export default function WorkoutLogger({ athleteId, programId, sessionId, exercis
                                                             step="0.5"
                                                             value={set.actual.rpe}
                                                             onChange={(e) => updateSet(exIndex, sIndex, 'rpe', e.target.value)}
-                                                            style={{ flex: 1, padding: '6px 4px', border: '1px solid #94a3b8', borderRadius: 4, background: '#fff', textAlign: 'center', fontSize: '0.9rem', color: '#0f172a', width: '100%', outlineColor: '#3b82f6' }}
+                                                            style={{ flex: 1, padding: '6px 4px', border: '1px solid #94a3b8', borderRadius: 4, background: 'var(--background)', textAlign: 'center', fontSize: '0.9rem', color: 'var(--foreground)', width: '100%', outlineColor: 'var(--primary)' }}
                                                         />
-                                                        <span style={{ color: '#475569', fontSize: '1.2rem', padding: '0 4px', fontWeight: 'bold' }}>...</span>
+                                                        <span style={{ color: 'var(--secondary-foreground)', fontSize: '1.2rem', padding: '0 4px', fontWeight: 'bold' }}>...</span>
                                                     </div>
                                                 </div>
                                             );
                                         })}
 
                                         {/* Stats row */}
-                                        <div style={{ padding: '12px 0 8px 0', borderBottom: '1px dashed #cbd5e1', fontSize: '0.85rem', color: '#334155' }}>
+                                        <div style={{ padding: '12px 0 8px 0', borderBottom: '1px dashed #cbd5e1', fontSize: '0.85rem', color: 'var(--foreground)' }}>
                                             <div style={{ display: 'flex', gap: '16px', fontWeight: 600 }}>
                                                 <span>E1RM: {maxE1RM} lbs</span>
                                                 <span>NL: {totalNL}</span>
@@ -435,7 +435,7 @@ export default function WorkoutLogger({ athleteId, programId, sessionId, exercis
 
                                         {/* Notes field */}
                                         <div style={{ marginTop: '12px' }}>
-                                            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', display: 'block', marginBottom: '4px' }}>Notes</label>
+                                            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--foreground)', display: 'block', marginBottom: '4px' }}>Notes</label>
                                             <textarea
                                                 value={ex.notes}
                                                 onChange={(e) => {
@@ -451,9 +451,9 @@ export default function WorkoutLogger({ athleteId, programId, sessionId, exercis
                                                     border: '1px solid #cbd5e1',
                                                     borderRadius: '4px',
                                                     fontSize: '0.9rem',
-                                                    color: '#0f172a',
+                                                    color: 'var(--foreground)',
                                                     resize: 'vertical',
-                                                    outlineColor: '#3b82f6'
+                                                    outlineColor: 'var(--primary)'
                                                 }}
                                             />
                                         </div>
@@ -471,7 +471,7 @@ export default function WorkoutLogger({ athleteId, programId, sessionId, exercis
                 bottom: 0,
                 left: 0,
                 width: '100%',
-                background: '#fff',
+                background: 'var(--background)',
                 borderTop: '1px solid #cbd5e1',
                 padding: '1rem',
                 zIndex: 100
@@ -479,7 +479,7 @@ export default function WorkoutLogger({ athleteId, programId, sessionId, exercis
                 <button
                     onClick={() => router.push(`/athlete/${athleteId}/dashboard`)}
                     style={{
-                        background: '#1e3a8a',
+                        background: 'rgba(6, 182, 212, 0.1)',
                         color: 'white',
                         border: 'none',
                         padding: '1rem',

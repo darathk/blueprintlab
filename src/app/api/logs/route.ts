@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 import { prisma } from '@/lib/prisma';
-
-
+import { revalidatePath } from 'next/cache';
 
 export async function POST(request: Request) {
     try {
@@ -44,6 +43,10 @@ export async function POST(request: Request) {
                 }
             });
         }
+
+        // Revalidate coach dashboard paths so updates reflect instantly
+        revalidatePath(`/dashboard/athletes/${programRecord.athleteId}`);
+        revalidatePath(`/dashboard`);
 
         return NextResponse.json({ success: true });
     } catch (error) {
