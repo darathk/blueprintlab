@@ -283,7 +283,7 @@ export default function CoachInbox({ coachId, coachName }: Props) {
                                                     )}
                                                     {msg.mediaUrl && isVid && (
                                                         <div><video controls playsInline muted preload="metadata" style={{ width: '100%', maxWidth: 260, borderRadius: 12, background: '#000', display: 'block' }}>
-                                                            <source src={msg.mediaUrl} type={msg.mediaType || 'video/mp4'} /></video></div>
+                                                            <source src={msg.mediaUrl} /></video></div>
                                                     )}
                                                     {msg.mediaUrl && isImg && (
                                                         <div><img src={msg.mediaUrl} alt="" loading="lazy" onClick={() => window.open(msg.mediaUrl!, '_blank')}
