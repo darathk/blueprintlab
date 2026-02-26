@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { calculateSimpleE1RM, calculateStress } from '@/lib/stress-index';
 
@@ -71,7 +71,59 @@ export default function ScheduleView({ programs, athleteId, logs }: {
         setEditState(prev => ({ ...prev, [sKey]: state }));
     }, [editState]);
 
-    const updateSet = (sKey: string, exIdx: number, setIdx: number, field: string, value: string) => {
+    // Auto-save debounced effect
+    const latestEditStateRef = useRef(editState);
+    useEffect(() => {
+        latestEditStateRef.current = editState;
+    }, [editState]);
+
+    const handleSaveRef = useRef<((sKey: string, programId: string) => Promise<void>) | null>(null);
+
+    handleSaveRef.current = async (sKey: string, programId: string) => {
+        const state = latestEditStateRef.current[sKey];
+        if (!state) return;
+
+        setSaving(prev => new Set(prev).add(sKey));
+        try {
+            const cleanLogs = state.map((ex: any) => ({
+                exerciseId: ex.exerciseId,
+                name: ex.name,
+                notes: ex.notes || '',
+                sets: ex.sets.map((s: any) => ({ weight: s.actual.weight, reps: s.actual.reps, rpe: s.actual.rpe }))
+            }));
+
+            const res = await fetch('/api/logs', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ athleteId, programId, sessionId: sKey, date: new Date().toISOString(), exercises: cleanLogs })
+            });
+
+            if (res.ok) {
+                setSavedKeys(prev => new Set(prev).add(sKey));
+                setTimeout(() => setSavedKeys(prev => { const n = new Set(prev); n.delete(sKey); return n; }), 2000);
+            }
+        } catch (e) {
+            console.error(e);
+        } finally {
+            setSaving(prev => { const n = new Set(prev); n.delete(sKey); return n; });
+        }
+    };
+
+    // Auto-save throttle logic
+    const saveTimersRef = useRef<Record<string, NodeJS.Timeout>>({});
+
+    const triggerAutoSave = useCallback((sKey: string, programId: string) => {
+        if (saveTimersRef.current[sKey]) {
+            clearTimeout(saveTimersRef.current[sKey]);
+        }
+        saveTimersRef.current[sKey] = setTimeout(() => {
+            if (handleSaveRef.current) {
+                handleSaveRef.current(sKey, programId);
+            }
+        }, 1000); // Save 1 second after last edit
+    }, []);
+
+    const updateSet = (sKey: string, exIdx: number, setIdx: number, field: string, value: string, programId: string) => {
         setEditState(prev => {
             const copy = JSON.parse(JSON.stringify(prev));
             if (copy[sKey]?.[exIdx]?.sets?.[setIdx]?.actual) {
@@ -79,17 +131,19 @@ export default function ScheduleView({ programs, athleteId, logs }: {
             }
             return copy;
         });
+        triggerAutoSave(sKey, programId);
     };
 
-    const updateNotes = (sKey: string, exIdx: number, value: string) => {
+    const updateNotes = (sKey: string, exIdx: number, value: string, programId: string) => {
         setEditState(prev => {
             const copy = JSON.parse(JSON.stringify(prev));
             if (copy[sKey]?.[exIdx]) copy[sKey][exIdx].notes = value;
             return copy;
         });
+        // triggerAutoSave(sKey, programId); // Optional: if we want to save on every keystroke in notes
     };
 
-    const copyPrevSet = (sKey: string, exIdx: number, setIdx: number) => {
+    const copyPrevSet = (sKey: string, exIdx: number, setIdx: number, programId: string) => {
         if (setIdx === 0) return;
         setEditState(prev => {
             const copy = JSON.parse(JSON.stringify(prev));
@@ -99,9 +153,10 @@ export default function ScheduleView({ programs, athleteId, logs }: {
             }
             return copy;
         });
+        triggerAutoSave(sKey, programId);
     };
 
-    const copyTargetToActual = (sKey: string, exIdx: number, setIdx: number) => {
+    const copyTargetToActual = (sKey: string, exIdx: number, setIdx: number, programId: string) => {
         setEditState(prev => {
             const copy = JSON.parse(JSON.stringify(prev));
             const target = copy[sKey]?.[exIdx]?.sets?.[setIdx]?.target;
@@ -114,29 +169,7 @@ export default function ScheduleView({ programs, athleteId, logs }: {
             }
             return copy;
         });
-    };
-
-    const handleSave = async (sKey: string, programId: string) => {
-        const exLogs = editState[sKey];
-        if (!exLogs) return;
-        setSaving(prev => new Set(prev).add(sKey));
-        try {
-            const cleanLogs = exLogs.map((ex: any) => ({
-                exerciseId: ex.exerciseId,
-                name: ex.name,
-                notes: ex.notes || '',
-                sets: ex.sets.map((s: any) => ({ weight: s.actual.weight, reps: s.actual.reps, rpe: s.actual.rpe }))
-            }));
-            await fetch('/api/logs', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ athleteId, programId, sessionId: sKey, date: new Date().toISOString(), exercises: cleanLogs })
-            });
-            setSavedKeys(prev => new Set(prev).add(sKey));
-            setTimeout(() => setSavedKeys(prev => { const n = new Set(prev); n.delete(sKey); return n; }), 2500);
-            router.refresh();
-        } catch (e) { console.error(e); }
-        finally { setSaving(prev => { const n = new Set(prev); n.delete(sKey); return n; }); }
+        triggerAutoSave(sKey, programId);
     };
 
     if (!Array.isArray(programs) || !programs.length) {
@@ -149,7 +182,7 @@ export default function ScheduleView({ programs, athleteId, logs }: {
     }
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 0, paddingBottom: '3rem' }}>
             {programs.map(program => {
                 const blockOpen = openBlocks.has(program.id);
                 const weeks: any[] = Array.isArray(program.weeks) ? program.weeks : [];
@@ -157,24 +190,24 @@ export default function ScheduleView({ programs, athleteId, logs }: {
                 const totalSessions = weeks.reduce((s: number, w: any) => s + (Array.isArray(w.sessions) ? w.sessions.length : 0), 0);
 
                 return (
-                    <div key={program.id}>
+                    <div key={program.id} style={{ marginBottom: 16 }}>
                         {/* ═══ Block Header ═══ */}
                         <button
                             onClick={() => toggle(openBlocks, program.id, setOpenBlocks)}
                             style={{
                                 width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                padding: '16px 16px', background: 'linear-gradient(135deg, rgba(6,182,212,0.18), rgba(16,185,129,0.12))',
+                                padding: '16px', background: 'var(--brand-dark-blue, #1e3a8a)', // Dark blue like RTS
                                 border: 'none', borderBottom: '1px solid var(--card-border)',
-                                color: 'var(--foreground)', cursor: 'pointer', textAlign: 'left'
+                                color: '#ffffff', cursor: 'pointer', textAlign: 'left'
                             }}
                         >
                             <div>
-                                <div style={{ fontSize: '1.05rem', fontWeight: 700 }}>{program.name}</div>
-                                <div style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', marginTop: 2 }}>
+                                <div style={{ fontSize: '1.2rem', fontWeight: 600 }}>{program.name}</div>
+                                <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>
                                     {totalWeeks} week{totalWeeks !== 1 ? 's' : ''} • {totalSessions} session{totalSessions !== 1 ? 's' : ''}
                                 </div>
                             </div>
-                            <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.35)', transition: 'transform 200ms', transform: blockOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+                            <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', transition: 'transform 200ms', transform: blockOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
                         </button>
 
                         {/* ═══ Weeks ═══ */}
@@ -186,18 +219,18 @@ export default function ScheduleView({ programs, athleteId, logs }: {
                             const sessions: any[] = Array.isArray(week.sessions) ? week.sessions : [];
 
                             return (
-                                <div key={weekKey}>
+                                <div key={weekKey} style={{ background: '#f8fafc', color: '#0f172a' }}> {/* Light grey background for RTS style */}
                                     <button
                                         onClick={() => toggle(openWeeks, weekKey, setOpenWeeks)}
                                         style={{
                                             width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                            padding: '12px 16px 12px 28px', background: 'rgba(255,255,255,0.02)',
-                                            border: 'none', borderBottom: '1px solid rgba(255,255,255,0.04)',
-                                            color: 'var(--foreground)', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600
+                                            padding: '12px 16px', background: '#e2e8f0', // Slightly darker grey for week header
+                                            border: 'none', borderBottom: '1px solid #cbd5e1',
+                                            color: '#0f172a', cursor: 'pointer', fontSize: '1rem', fontWeight: 600
                                         }}
                                     >
-                                        <span>Week {weekNum} <span style={{ fontWeight: 400, color: 'var(--secondary-foreground)', fontSize: '0.8rem' }}>• {sessions.length} session{sessions.length !== 1 ? 's' : ''}</span></span>
-                                        <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)', transition: 'transform 200ms', transform: weekOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+                                        <span>Week {weekNum} <span style={{ fontWeight: 400, color: '#64748b', fontSize: '0.85rem' }}>• {sessions.length} session{sessions.length !== 1 ? 's' : ''}</span></span>
+                                        <span style={{ fontSize: '0.75rem', color: '#64748b', transition: 'transform 200ms', transform: weekOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
                                     </button>
 
                                     {/* ═══ Sessions (Days) ═══ */}
@@ -211,47 +244,65 @@ export default function ScheduleView({ programs, athleteId, logs }: {
                                         const progress = sessionProgress(exercises, log);
 
                                         return (
-                                            <div key={sKey}>
-                                                {/* Session row */}
-                                                <button
-                                                    onClick={() => {
+                                            <div key={sKey} style={{ borderBottom: '1px solid #cbd5e1' }}>
+                                                {/* Session header */}
+                                                <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', background: sessionOpen ? '#1e3a8a' : '#f8fafc', color: sessionOpen ? '#fff' : '#0f172a', transition: 'all 0.2s' }}>
+                                                    <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => {
                                                         toggle(openSessions, sKey, setOpenSessions);
                                                         if (!openSessions.has(sKey)) initEdit(sKey, exercises, log);
-                                                    }}
-                                                    style={{
-                                                        width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-                                                        padding: '12px 16px 12px 44px', background: 'transparent',
-                                                        border: 'none', borderBottom: '1px solid rgba(255,255,255,0.03)',
-                                                        color: 'var(--foreground)', cursor: 'pointer', fontSize: '0.85rem', textAlign: 'left'
-                                                    }}
-                                                >
-                                                    <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', transition: 'transform 200ms', transform: sessionOpen ? 'rotate(90deg)' : 'rotate(0deg)', flexShrink: 0 }}>▶</span>
-                                                    <div style={{ flex: 1, minWidth: 0 }}>
-                                                        <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>
-                                                            Day {day} — {session.name || 'Workout'}
-                                                            <span style={{ fontWeight: 400, color: 'var(--secondary-foreground)', fontSize: '0.75rem', marginLeft: 8 }}>
-                                                                {exercises.length} exercise{exercises.length !== 1 ? 's' : ''}
-                                                            </span>
-                                                        </div>
-                                                        {/* Progress bar */}
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
-                                                            <div style={{ flex: 1, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
-                                                                <div style={{
-                                                                    height: '100%', borderRadius: 2, transition: 'width 300ms',
-                                                                    width: `${progress}%`,
-                                                                    background: progress === 100 ? '#10b981' : progress > 0 ? 'linear-gradient(90deg, #06b6d4, #10b981)' : 'transparent'
-                                                                }} />
+                                                    }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                                            {sessionOpen ? (
+                                                                <span style={{ color: '#fff' }}>▼</span>
+                                                            ) : (
+                                                                <span style={{ color: '#64748b' }}>▶</span>
+                                                            )}
+                                                            <div style={{ fontSize: '1.1rem', fontWeight: 600 }}>
+                                                                Session {day}
+                                                                {session.name && <span style={{ fontWeight: 400, fontSize: '0.9rem', color: sessionOpen ? 'rgba(255,255,255,0.7)' : '#64748b', marginLeft: 8 }}>— {session.name}</span>}
                                                             </div>
-                                                            <span style={{ fontSize: '0.65rem', color: progress === 100 ? '#10b981' : 'rgba(255,255,255,0.3)', fontWeight: 600, flexShrink: 0 }}>
-                                                                {progress}%
-                                                            </span>
                                                         </div>
+
+                                                        {/* Progress bar (only show when closed) */}
+                                                        {!sessionOpen && (
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, paddingLeft: 24 }}>
+                                                                <div style={{ flex: 1, height: 6, borderRadius: 3, background: '#cbd5e1', overflow: 'hidden' }}>
+                                                                    <div style={{
+                                                                        height: '100%', borderRadius: 3, transition: 'width 300ms',
+                                                                        width: `${progress}%`,
+                                                                        background: progress === 100 ? '#10b981' : '#3b82f6'
+                                                                    }} />
+                                                                </div>
+                                                                <span style={{ fontSize: '0.75rem', color: '#64748b', fontWeight: 600, width: 30 }}>
+                                                                    {progress}%
+                                                                </span>
+                                                            </div>
+                                                        )}
                                                     </div>
-                                                </button>
+
+                                                    {/* Auto-save status indicator */}
+                                                    {sessionOpen && (
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.8rem' }}>
+                                                            {saving.has(sKey) ? (
+                                                                <span style={{ color: '#fbbf24' }}>Saving...</span> /* Yellow */
+                                                            ) : savedKeys.has(sKey) ? (
+                                                                <span style={{ color: '#34d399' }}>✓ Saved</span> /* Green */
+                                                            ) : (
+                                                                <span style={{ color: 'rgba(255,255,255,0.5)' }}>📝 Edit</span>
+                                                            )}
+                                                        </div>
+                                                    )}
+                                                </div>
 
                                                 {/* ═══ Expanded Session: Exercise Cards ═══ */}
                                                 {sessionOpen && (
-                                                    <div style={{ padding: '8px 12px 16px 12px', borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(0,0,0,0.12)' }}>
+                                                    <div style={{ padding: '0', background: '#e2e8f0' }}> {/* Light grey backdrop for cards */}
+                                                        {/* "All Changes Saved" header like RTS */}
+                                                        <div style={{ padding: '6px 16px', fontSize: '0.8rem', fontWeight: 600, color: '#334155', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #cbd5e1' }}>
+                                                            <span style={{ color: saving.has(sKey) ? '#d97706' : '#10b981' }}>{saving.has(sKey) ? 'Saving changes...' : 'All Changes Saved.'}</span>
+                                                            <span style={{ fontWeight: 'normal', color: '#64748b' }}>Edit Mode</span>
+                                                        </div>
+
                                                         {(editState[sKey] || exercises).map((ex: any, exIdx: number) => {
                                                             const isEdit = !!editState[sKey];
                                                             const exerciseData = isEdit ? editState[sKey][exIdx] : ex;
@@ -290,47 +341,54 @@ export default function ScheduleView({ programs, athleteId, logs }: {
                                                             });
 
                                                             return (
-                                                                <div key={exIdx} style={{ border: '1px solid var(--card-border)', borderRadius: 10, background: 'var(--card-bg)', overflow: 'hidden', marginBottom: 8 }}>
-                                                                    {/* Exercise header — toggleable */}
-                                                                    <button
-                                                                        onClick={() => {
-                                                                            toggle(openExercises, exKey, setOpenExercises);
-                                                                            if (!editState[sKey]) initEdit(sKey, exercises, log);
-                                                                        }}
-                                                                        style={{
-                                                                            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                                                            padding: '10px 12px', background: 'rgba(255,255,255,0.03)',
-                                                                            border: 'none', borderBottom: exOpen ? '1px solid var(--card-border)' : 'none',
-                                                                            color: 'var(--foreground)', cursor: 'pointer', textAlign: 'left'
-                                                                        }}
-                                                                    >
-                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                                                            <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', transition: 'transform 200ms', transform: exOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
-                                                                            <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--accent)' }}>{exerciseData.name || ex.name}</span>
+                                                                <div key={exIdx} style={{ background: '#fff', borderBottom: '1px solid #cbd5e1' }}>
+                                                                    {/* Exercise header */}
+                                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: '#f8fafc', borderBottom: '1px solid #e2e8f0' }}>
+                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                                                            <button
+                                                                                onClick={() => {
+                                                                                    toggle(openExercises, exKey, setOpenExercises);
+                                                                                    if (!editState[sKey]) initEdit(sKey, exercises, log);
+                                                                                }}
+                                                                                style={{
+                                                                                    width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                                    border: '2px solid #64748b', background: '#fff', color: '#0f172a', fontWeight: 'bold', cursor: 'pointer', padding: 0
+                                                                                }}
+                                                                            >
+                                                                                {exOpen ? '−' : '+'}
+                                                                            </button>
+                                                                            <span style={{ fontSize: '1rem', color: '#2563eb', fontWeight: 500 }}>{exerciseData.name || ex.name}</span>
                                                                         </div>
-                                                                        <span style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)' }}>{sets.length} set{sets.length !== 1 ? 's' : ''}</span>
-                                                                    </button>
+                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.9rem', color: '#0f172a', fontWeight: 600 }}>
+                                                                            Sets <div style={{ minWidth: 40, padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: 4, textAlign: 'center', background: '#fff' }}>{sets.length}</div>
+                                                                            <span style={{ fontSize: '1.2rem', color: '#475569', marginLeft: 4 }}>...</span>
+                                                                        </div>
+                                                                    </div>
 
-                                                                    {/* Exercise body */}
+                                                                    {/* Exercise body / Input rows */}
                                                                     {exOpen && (
-                                                                        <div style={{ padding: '8px 8px 10px' }}>
-                                                                            {/* Prescribed / Actual headers */}
-                                                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 4 }}>
-                                                                                <div style={{ textAlign: 'center', fontSize: '0.7rem', fontWeight: 700, color: 'var(--accent)', borderBottom: '1px solid var(--accent)', paddingBottom: 3 }}>Prescribed</div>
-                                                                                <div style={{ textAlign: 'center', fontSize: '0.7rem', fontWeight: 700, color: 'var(--primary)', borderBottom: '1px solid var(--primary)', paddingBottom: 3 }}>Actual</div>
+                                                                        <div style={{ padding: '0 8px 16px 8px' }}>
+                                                                            {/* Target / Actual Header */}
+                                                                            <div style={{ display: 'flex', borderBottom: '1px dashed #cbd5e1', marginBottom: 8 }}>
+                                                                                <div style={{ width: '130px', textAlign: 'center', fontWeight: 'bold', fontSize: '0.85rem', color: '#1e3a8a', padding: '4px 0' }}>Target</div>
+                                                                                <div style={{ flex: 1, position: 'relative' }}>
+                                                                                    <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: 1, background: '#cbd5e1' }}></div>
+                                                                                    <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '0.85rem', color: '#1e3a8a', padding: '4px 0', background: '#f1f5f9' }}>Actual</div>
+                                                                                </div>
                                                                             </div>
-                                                                            {/* Sub-headers */}
-                                                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 6 }}>
-                                                                                <div style={{ display: 'flex', gap: 4, fontSize: '0.6rem', color: 'rgba(255,255,255,0.25)' }}>
+
+                                                                            <div style={{ display: 'flex', marginBottom: 8, fontSize: '0.8rem', fontWeight: 600, color: '#1e3a8a' }}>
+                                                                                <div style={{ display: 'flex', width: '130px', justifyContent: 'center', gap: 4 }}>
                                                                                     <span style={{ flex: 1, textAlign: 'center' }}>Weight</span>
                                                                                     <span style={{ flex: 1, textAlign: 'center' }}>Reps</span>
                                                                                     <span style={{ flex: 1, textAlign: 'center' }}>RPE</span>
                                                                                 </div>
-                                                                                <div style={{ display: 'flex', gap: 4, fontSize: '0.6rem', color: 'rgba(255,255,255,0.25)' }}>
+                                                                                <div style={{ position: 'relative', width: 1, background: '#cbd5e1', margin: '0 8px' }}></div>
+                                                                                <div style={{ display: 'flex', flex: 1, justifyContent: 'center', gap: 4 }}>
                                                                                     <span style={{ flex: 1, textAlign: 'center' }}>Weight</span>
                                                                                     <span style={{ flex: 1, textAlign: 'center' }}>Reps</span>
                                                                                     <span style={{ flex: 1, textAlign: 'center' }}>RPE</span>
-                                                                                    <span style={{ width: 28 }}></span>
+                                                                                    <div style={{ width: 24 }}></div> {/* Space for the trailing dots */}
                                                                                 </div>
                                                                             </div>
 
@@ -339,101 +397,76 @@ export default function ScheduleView({ programs, athleteId, logs }: {
                                                                                 const target = isEdit ? set.target : set;
                                                                                 const actual = isEdit ? set.actual : { weight: '', reps: '', rpe: '' };
                                                                                 return (
-                                                                                    <div key={setIdx} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 4, alignItems: 'center' }}>
-                                                                                        {/* Prescribed side */}
-                                                                                        <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                                                                                    <div key={setIdx} style={{ display: 'flex', alignItems: 'center', padding: '6px 0', borderBottom: '1px dashed #e2e8f0' }}>
+                                                                                        {/* Target side */}
+                                                                                        <div style={{ display: 'flex', width: '130px', justifyContent: 'center', gap: 4 }}>
                                                                                             {['weight', 'reps', 'rpe'].map(f => (
-                                                                                                <input key={f} disabled value={target[f] || ''} placeholder="—"
-                                                                                                    style={{
-                                                                                                        flex: 1, padding: '6px 4px', borderRadius: 6, textAlign: 'center', fontSize: '0.8rem', minWidth: 0,
-                                                                                                        background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
-                                                                                                        color: 'var(--foreground)', opacity: 0.6
-                                                                                                    }}
-                                                                                                />
+                                                                                                <div key={f} style={{ flex: 1, padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: 4, background: '#fff', textAlign: 'center', fontSize: '0.9rem', color: '#475569' }}>
+                                                                                                    {target[f] || '\u00A0'}
+                                                                                                </div>
                                                                                             ))}
                                                                                         </div>
+
+                                                                                        {/* Green Arrow */}
+                                                                                        <button
+                                                                                            onClick={() => setIdx > 0 ? copyPrevSet(sKey, exIdx, setIdx, program.id) : copyTargetToActual(sKey, exIdx, setIdx, program.id)}
+                                                                                            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 8px', display: 'flex', alignItems: 'center' }}
+                                                                                        >
+                                                                                            <span style={{ color: '#10b981', fontSize: '1.4rem' }}>➞</span>
+                                                                                        </button>
+
                                                                                         {/* Actual side */}
-                                                                                        <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                                                                                        <div style={{ display: 'flex', flex: 1, alignItems: 'center', gap: 4 }}>
                                                                                             {['weight', 'reps', 'rpe'].map(f => (
-                                                                                                <input key={f} type="text" inputMode="decimal"
-                                                                                                    value={actual[f]} placeholder={target[f] ? String(target[f]) : '—'}
-                                                                                                    onChange={e => updateSet(sKey, exIdx, setIdx, f, e.target.value)}
+                                                                                                <input key={f} type="number" inputMode="decimal"
+                                                                                                    value={actual[f]}
+                                                                                                    onChange={e => updateSet(sKey, exIdx, setIdx, f, e.target.value, program.id)}
                                                                                                     onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
                                                                                                     style={{
-                                                                                                        flex: 1, padding: '6px 4px', borderRadius: 6, textAlign: 'center', fontSize: '0.8rem', minWidth: 0,
-                                                                                                        background: actual[f] ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.04)',
-                                                                                                        border: `1px solid ${actual[f] ? 'rgba(16,185,129,0.25)' : 'rgba(255,255,255,0.06)'}`,
-                                                                                                        color: 'var(--foreground)', outline: 'none'
+                                                                                                        flex: 1, padding: '6px 4px', border: '1px solid #94a3b8', borderRadius: 4, background: '#fff', textAlign: 'center', fontSize: '0.9rem', color: '#0f172a', width: '100%', outlineColor: '#3b82f6'
                                                                                                     }}
                                                                                                 />
                                                                                             ))}
-                                                                                            {/* Copy tools */}
-                                                                                            <button
-                                                                                                onClick={() => setIdx > 0 ? copyPrevSet(sKey, exIdx, setIdx) : copyTargetToActual(sKey, exIdx, setIdx)}
-                                                                                                title={setIdx > 0 ? 'Copy previous set' : 'Copy prescribed'}
-                                                                                                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem', color: 'var(--accent)', padding: '0 2px', flexShrink: 0, width: 28, textAlign: 'center' }}
-                                                                                            >➜</button>
+                                                                                            <span style={{ color: '#475569', fontSize: '1.2rem', padding: '0 4px', fontWeight: 'bold' }}>...</span>
                                                                                         </div>
                                                                                     </div>
                                                                                 );
                                                                             })}
 
                                                                             {/* Stats row */}
-                                                                            {validSets.length > 0 && (
-                                                                                <div style={{
-                                                                                    marginTop: 8, padding: '8px 10px', borderRadius: 8,
-                                                                                    background: 'rgba(6,182,212,0.05)', border: '1px solid rgba(6,182,212,0.1)',
-                                                                                    fontSize: '0.72rem', color: 'var(--secondary-foreground)', lineHeight: 1.6
-                                                                                }}>
-                                                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 16px' }}>
-                                                                                        <span><b style={{ color: 'var(--accent)' }}>E1RM:</b> {maxE1RM} lbs</span>
-                                                                                        <span><b style={{ color: 'var(--accent)' }}>NL:</b> {totalNL}</span>
-                                                                                        <span><b style={{ color: 'var(--accent)' }}>Tonnage:</b> {tonnage.toLocaleString()} lbs</span>
-                                                                                    </div>
-                                                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 16px', marginTop: 2 }}>
-                                                                                        <span><b style={{ color: 'var(--primary)' }}>SI Total:</b> {exStress.total.toFixed(2)}</span>
-                                                                                        <span><b style={{ color: 'var(--primary)' }}>Peripheral:</b> {exStress.peripheral.toFixed(2)}</span>
-                                                                                        <span><b style={{ color: 'var(--primary)' }}>Central:</b> {exStress.central.toFixed(2)}</span>
-                                                                                    </div>
+                                                                            <div style={{ padding: '12px 0 8px 0', borderBottom: '1px dashed #cbd5e1', fontSize: '0.85rem', color: '#334155' }}>
+                                                                                <div style={{ display: 'flex', gap: '16px', fontWeight: 600 }}>
+                                                                                    <span>E1RM: {maxE1RM} lbs</span>
+                                                                                    <span>NL: {totalNL}</span>
+                                                                                    <span>Tonnage: {tonnage.toLocaleString()} lbs</span>
                                                                                 </div>
-                                                                            )}
+                                                                                <div style={{ display: 'flex', gap: '16px', marginTop: 4 }}>
+                                                                                    <span>Total: <span style={{ fontWeight: 'normal' }}>{exStress.total.toFixed(2)}</span></span>
+                                                                                    <span>Peripheral: <span style={{ fontWeight: 'normal' }}>{exStress.peripheral.toFixed(2)}</span></span>
+                                                                                    <span>Central: <span style={{ fontWeight: 'normal' }}>{exStress.central.toFixed(2)}</span></span>
+                                                                                </div>
+                                                                            </div>
 
-                                                                            {/* Notes */}
-                                                                            <div style={{ marginTop: 8 }}>
-                                                                                <input
-                                                                                    type="text"
+                                                                            {/* Notes field */}
+                                                                            <div style={{ display: 'flex', padding: '12px 0', alignItems: 'flex-start' }}>
+                                                                                <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#0f172a', marginRight: 12, marginTop: 4 }}>Notes:</span>
+                                                                                <textarea
                                                                                     value={exerciseData.notes || ''}
-                                                                                    onChange={e => updateNotes(sKey, exIdx, e.target.value)}
+                                                                                    onChange={e => updateNotes(sKey, exIdx, e.target.value, program.id)}
+                                                                                    onBlur={() => triggerAutoSave(sKey, program.id)}
                                                                                     onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
-                                                                                    placeholder="Exercise notes…"
+                                                                                    placeholder="Exercise Notes"
                                                                                     style={{
-                                                                                        width: '100%', padding: '7px 10px', borderRadius: 6,
-                                                                                        background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
-                                                                                        color: 'var(--foreground)', fontSize: '0.78rem', outline: 'none'
+                                                                                        flex: 1, minHeight: 60, padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: 4, background: '#fff', fontSize: '0.9rem', color: '#0f172a', resize: 'vertical', outlineColor: '#3b82f6'
                                                                                     }}
                                                                                 />
                                                                             </div>
+
                                                                         </div>
                                                                     )}
                                                                 </div>
                                                             );
                                                         })}
-
-                                                        {/* Save button */}
-                                                        <div style={{ marginTop: 8 }}>
-                                                            <button
-                                                                onClick={() => handleSave(sKey, program.id)}
-                                                                disabled={saving.has(sKey)}
-                                                                style={{
-                                                                    width: '100%', padding: '11px', borderRadius: 8, border: 'none', fontWeight: 700, fontSize: '0.85rem',
-                                                                    background: savedKeys.has(sKey) ? '#10b981' : 'linear-gradient(135deg, #06b6d4, #10b981)',
-                                                                    color: '#000', cursor: saving.has(sKey) ? 'not-allowed' : 'pointer', opacity: saving.has(sKey) ? 0.6 : 1,
-                                                                    transition: 'all 200ms'
-                                                                }}
-                                                            >
-                                                                {saving.has(sKey) ? 'Saving…' : savedKeys.has(sKey) ? '✓ Saved' : '💾 Save Workout'}
-                                                            </button>
-                                                        </div>
                                                     </div>
                                                 )}
                                             </div>
