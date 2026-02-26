@@ -345,7 +345,7 @@ export default function PeriodizationPlanner({ athlete }) {
 
                 {/* Days Out Counter */}
                 {daysOutData && (
-                    <div className="bg-amber-200 rounded-3xl shadow-sm p-4 text-slate-900 border border-slate-100" style={{ textAlign: 'center' }}>
+                    <div className="glass-panel" style={{ textAlign: 'center', padding: '1rem' }}>
                         <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--primary)', lineHeight: 1 }} className="neon-text">
                             {Math.abs(daysOutData.totalDays)}
                         </div>

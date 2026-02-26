@@ -128,7 +128,7 @@ export default function MasterProgramCalendar({ programs, athleteId, currentProg
 
     return (
         <div className="glass-panel" style={{ padding: '0', overflow: 'hidden', border: '1px solid var(--card-border)' }}>
-            <div className="bg-white rounded-3xl shadow-sm border border-slate-100" style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--card-border)' }}>
+            <div style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--card-border)', background: 'var(--card-bg)' }}>
                 <button onClick={prevMonth} className="btn-icon">←</button>
                 <span style={{ fontWeight: 700, fontSize: '1.1rem', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                     {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
