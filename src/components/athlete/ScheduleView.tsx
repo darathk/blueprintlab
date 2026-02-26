@@ -246,14 +246,14 @@ export default function ScheduleView({ programs, athleteId, logs }: {
                                         return (
                                             <div key={sKey} style={{ borderBottom: '1px solid #cbd5e1' }}>
                                                 {/* Session header */}
-                                                <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', background: sessionOpen ? 'rgba(6, 182, 212, 0.1)' : 'var(--card-bg)', color: sessionOpen ? 'var(--background)' : 'var(--foreground)', transition: 'all 0.2s' }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', background: sessionOpen ? 'rgba(6, 182, 212, 0.1)' : 'var(--card-bg)', color: 'var(--foreground)', transition: 'all 0.2s' }}>
                                                     <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => {
                                                         toggle(openSessions, sKey, setOpenSessions);
                                                         if (!openSessions.has(sKey)) initEdit(sKey, exercises, log);
                                                     }}>
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                                                             {sessionOpen ? (
-                                                                <span style={{ color: 'var(--background)' }}>▼</span>
+                                                                <span style={{ color: 'var(--primary)' }}>▼</span>
                                                             ) : (
                                                                 <span style={{ color: 'var(--secondary-foreground)' }}>▶</span>
                                                             )}
@@ -370,14 +370,14 @@ export default function ScheduleView({ programs, athleteId, logs }: {
                                                                         <div style={{ padding: '0 8px 16px 8px' }}>
                                                                             {/* Target / Actual Header */}
                                                                             <div style={{ display: 'flex', borderBottom: '1px dashed #cbd5e1', marginBottom: 8 }}>
-                                                                                <div style={{ width: '130px', textAlign: 'center', fontWeight: 'bold', fontSize: '0.85rem', color: 'rgba(6, 182, 212, 0.1)', padding: '4px 0' }}>Target</div>
+                                                                                <div style={{ width: '130px', textAlign: 'center', fontWeight: 'bold', fontSize: '0.85rem', color: 'var(--primary)', padding: '4px 0' }}>Target</div>
                                                                                 <div style={{ flex: 1, position: 'relative' }}>
                                                                                     <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: 1, background: 'var(--card-border)' }}></div>
-                                                                                    <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '0.85rem', color: 'rgba(6, 182, 212, 0.1)', padding: '4px 0', background: 'var(--card-bg)' }}>Actual</div>
+                                                                                    <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '0.85rem', color: 'var(--primary)', padding: '4px 0', background: 'var(--card-bg)' }}>Actual</div>
                                                                                 </div>
                                                                             </div>
 
-                                                                            <div style={{ display: 'flex', marginBottom: 8, fontSize: '0.8rem', fontWeight: 600, color: 'rgba(6, 182, 212, 0.1)' }}>
+                                                                            <div style={{ display: 'flex', marginBottom: 8, fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)' }}>
                                                                                 <div style={{ display: 'flex', width: '130px', justifyContent: 'center', gap: 4 }}>
                                                                                     <span style={{ flex: 1, textAlign: 'center' }}>Weight</span>
                                                                                     <span style={{ flex: 1, textAlign: 'center' }}>Reps</span>

@@ -13,6 +13,13 @@ const TIMELINES = {
 
 const PRIMARY_LIFTS = ['Squat', 'Bench', 'Deadlift'];
 
+// Map each primary lift to all accepted exercise name variants (lowercase)
+const PRIMARY_LIFT_NAMES = {
+    'Squat': ['competition squat', 'squat'],
+    'Bench': ['competition bench', 'competition bench press', 'bench press', 'bench'],
+    'Deadlift': ['competition deadlift', 'deadlift'],
+};
+
 export default function AthleteCharts({ logs, readinessLogs = [], programs = [] }) {
     const [timeline, setTimeline] = useState('ALL');
     const [selectedProgramId, setSelectedProgramId] = useState('ALL');
@@ -64,10 +71,11 @@ export default function AthleteCharts({ logs, readinessLogs = [], programs = [] 
             const sessionMaxMap = new Map();
 
             filteredLogs.forEach(log => {
-                // Match anything containing the lift name (e.g., "Squat", "Competition Squat", "Low Bar Squat")
+                // Match all known name variants for each competition lift
+                const acceptedNames = PRIMARY_LIFT_NAMES[lift] || [lift.toLowerCase()];
                 const matchingExercises = log.exercises.filter(ex => {
-                    const exName = (ex.name || '').toLowerCase();
-                    return exName.includes(lift.toLowerCase());
+                    const name = (ex.name || '').toLowerCase();
+                    return acceptedNames.includes(name);
                 });
 
                 if (matchingExercises.length === 0) return;
@@ -76,14 +84,11 @@ export default function AthleteCharts({ logs, readinessLogs = [], programs = [] 
                 matchingExercises.forEach(ex => {
                     const sets = ex.sets || [];
                     sets.forEach(set => {
-                        // Support both new `set.actual` structure and legacy flat `set` structure
-                        const actualSource = set.actual || set;
+                        const rpe = parseFloat(set.rpe || ex.rpe || 10);
+                        const reps = parseFloat(set.reps || ex.reps || 1);
+                        const weight = parseFloat(set.weight || ex.weight || 0);
 
-                        const rpe = parseFloat(actualSource.rpe || ex.rpe || 10);
-                        const reps = parseFloat(actualSource.reps || ex.reps || 1);
-                        const weight = parseFloat(actualSource.weight || ex.weight || 0);
-
-                        if (weight > 0 && String(actualSource.weight).trim() !== '') {
+                        if (weight > 0) {
                             // Epley / BlockReview formula: weight * (1 + (reps + (10 - rpe)) / 30)
                             const e1rm = weight * (1 + (reps + (10 - rpe)) / 30);
                             if (e1rm > currentLogMax) currentLogMax = e1rm;

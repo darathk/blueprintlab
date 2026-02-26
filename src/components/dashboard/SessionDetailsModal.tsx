@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { calculateSimpleE1RM, calculateStress } from '@/lib/stress-index';
 
-export default function SessionDetailsModal({ session, programName, programId, onClose, athleteId, onSaveLog, existingLog }) {
+export default function SessionDetailsModal({ session, programName, programId, sessionKey, onClose, athleteId, onSaveLog, existingLog }) {
     const [logData, setLogData] = useState({});
 
     // Initialize log data
@@ -70,9 +70,9 @@ export default function SessionDetailsModal({ session, programName, programId, o
     const handleSave = async () => {
         if (!onSaveLog) return;
 
-        // Format log for API
+        // Format log for API — use sessionKey (programId_wX_dY) to match athlete-side format
         const formattedLog = {
-            sessionId: session.id,
+            sessionId: sessionKey || session.id,
             programName: programName,
             programId: programId,
             date: new Date().toISOString(),

@@ -20,15 +20,19 @@ export default function AthleteCalendarContainer({ programs, athleteId, currentP
         const session = week?.sessions.find(s => s.day === dayNum);
 
         if (session) {
-            // Find latest log from LOCAL state
+            // Build the same session key the athlete side uses: "programId_wX_dY"
+            const sKey = `${program.id}_w${weekNum}_d${dayNum}`;
+
+            // Find latest log from LOCAL state using the athlete's sessionId format
             const sessionLog = localLogs
-                .filter(l => l.sessionId === session.id)
+                .filter(l => l.sessionId === sKey)
                 .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
 
             setSelectedSession({
                 session,
                 programName: program.name,
                 programId: program.id,
+                sessionKey: sKey,
                 existingLog: sessionLog
             });
         }
@@ -49,6 +53,7 @@ export default function AthleteCalendarContainer({ programs, athleteId, currentP
                     session={selectedSession.session}
                     programName={selectedSession.programName}
                     programId={selectedSession.programId}
+                    sessionKey={selectedSession.sessionKey}
                     athleteId={athleteId}
                     existingLog={selectedSession.existingLog}
                     onClose={() => setSelectedSession(null)}
