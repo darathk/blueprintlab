@@ -224,200 +224,218 @@ export default function WorkoutLogger({ athleteId, programId, sessionId, exercis
     };
 
     return (
-        <div style={{ paddingBottom: '100px' }}>
+        <div style={{ paddingBottom: '100px', background: '#e2e8f0', minHeight: '100vh' }}>
             {/* Header Bar */}
             <div style={{
-                background: 'var(--card-bg)',
-                borderBottom: '1px solid var(--card-border)',
+                background: '#fff',
+                borderBottom: '1px solid #cbd5e1',
                 padding: '1rem',
                 position: 'sticky',
                 top: 0,
                 zIndex: 10,
-                marginBottom: '2rem'
+                marginBottom: '1rem'
             }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
-                    <div style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--foreground)' }}>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 600, color: '#0f172a' }}>
                         {formattedDate} 📝
                     </div>
-                    <div style={{ fontSize: '0.8rem', color: 'var(--success)' }}>
-                        {isSaving ? 'Saving...' : 'All Changes Saved'}
+                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: isSaving ? '#d97706' : '#10b981' }}>
+                        {isSaving ? 'Saving...' : '✓ All Changes Saved'}
                     </div>
                 </div>
 
                 {/* Progress Bar */}
-                <div style={{ width: '100%', height: '8px', background: 'var(--background)', borderRadius: '4px', overflow: 'hidden' }}>
+                <div style={{ width: '100%', height: '8px', background: '#cbd5e1', borderRadius: '4px', overflow: 'hidden' }}>
                     <div style={{
                         width: `${validationStats.percentage}%`,
                         height: '100%',
-                        background: 'var(--success)',
+                        background: validationStats.percentage === 100 ? '#10b981' : '#3b82f6',
                         transition: 'width 0.3s ease'
                     }} />
                 </div>
             </div>
 
-            {/* Session Name & Stats */}
-            <div style={{
-                background: 'var(--primary)',
-                color: 'white',
-                padding: '0.5rem 1rem',
-                marginBottom: '1rem',
-                borderRadius: 'var(--radius)',
-                display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'center'
-            }}>
-                <h2 style={{ fontSize: '1.2rem', margin: 0 }}>Session {sessionId}</h2>
-                <div style={{ fontSize: '0.8rem', opacity: 0.9, textAlign: 'right' }}>
-                    <div>Stress: {sessionStats.total}</div>
-                    <div style={{ fontSize: '0.7rem', opacity: 0.8 }}>C: {sessionStats.central} | P: {sessionStats.peripheral}</div>
+            <div style={{ padding: '0 1rem' }}>
+                {/* Session Name & Stats */}
+                <div style={{
+                    background: '#1e3a8a',
+                    color: 'white',
+                    padding: '0.75rem 1rem',
+                    marginBottom: '1rem',
+                    borderRadius: '4px',
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                }}>
+                    <h2 style={{ fontSize: '1.2rem', margin: 0, fontWeight: 600 }}>Session {sessionId.split('_')[2]?.substring(1)}</h2>
+                    <div style={{ fontSize: '0.8rem', opacity: 0.9, textAlign: 'right' }}>
+                        <div style={{ fontWeight: 600 }}>Stress: {sessionStats.total}</div>
+                        <div style={{ fontSize: '0.7rem', opacity: 0.8 }}>C: {sessionStats.central} | P: {sessionStats.peripheral}</div>
+                    </div>
                 </div>
-            </div>
 
-            {/* Exercise Cards */}
-            <div style={{ display: 'grid', gap: '2rem' }}>
-                {exerciseLogs.map((ex, exIndex) => {
-                    // Max E1RM calc
-                    const validSets = ex.sets.filter(s => s.actual.weight && s.actual.reps && s.actual.rpe);
-                    const e1rms = validSets.map(s => calculateSimpleE1RM(s.actual.weight, s.actual.reps, s.actual.rpe));
-                    const maxE1RM = e1rms.length > 0 ? Math.max(...e1rms) : 0;
+                {/* Exercise Cards */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0', background: '#fff', border: '1px solid #cbd5e1', borderRadius: '4px', overflow: 'hidden' }}>
+                    {exerciseLogs.map((ex, exIndex) => {
+                        // Max E1RM calc
+                        const validSets = ex.sets.filter(s => s.actual.weight && s.actual.reps && s.actual.rpe);
+                        const e1rms = validSets.map(s => calculateSimpleE1RM(s.actual.weight, s.actual.reps, s.actual.rpe));
+                        const maxE1RM = e1rms.length > 0 ? Math.max(...e1rms) : 0;
 
-                    // Stress for this exercise
-                    let exStress = { total: 0, central: 0, peripheral: 0 };
-                    ex.sets.forEach(s => {
-                        if (s.actual.reps && s.actual.rpe) {
-                            const res = calculateStress(s.actual.reps, s.actual.rpe);
-                            exStress.total += res.total;
-                            exStress.central += res.central;
-                            exStress.peripheral += res.peripheral;
-                        }
-                    });
+                        // Stats for this exercise
+                        let exStress = { total: 0, central: 0, peripheral: 0 };
+                        let tonnage = 0;
+                        let totalNL = 0;
+                        ex.sets.forEach(s => {
+                            const w = parseFloat(s.actual.weight) || 0;
+                            const r = parseFloat(s.actual.reps) || 0;
+                            const rpe = parseFloat(s.actual.rpe) || 0;
+                            tonnage += w * r;
+                            totalNL += r;
+                            if (r > 0 && rpe > 0) {
+                                const res = calculateStress(r, rpe);
+                                exStress.total += res.total;
+                                exStress.central += res.central;
+                                exStress.peripheral += res.peripheral;
+                            }
+                        });
 
-                    return (
-                        <div key={ex.exerciseId} style={{ border: '1px solid var(--card-border)', borderRadius: 'var(--radius)', background: 'var(--card-bg)', overflow: 'hidden' }}>
-                            {/* Exercise Header */}
-                            <div style={{
-                                background: 'rgba(255,255,255,0.05)',
-                                padding: '0.5rem 1rem',
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                borderBottom: '1px solid var(--card-border)'
-                            }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <button
-                                        onClick={() => toggleCollapse(exIndex)}
-                                        style={{ background: 'none', border: '1px solid var(--card-border)', color: 'var(--foreground)', width: '24px', height: '24px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
-                                    >
-                                        {ex.isCollapsed ? '+' : '-'}
-                                    </button>
-                                    <h3 style={{ fontSize: '1rem', color: 'var(--accent)', margin: 0 }}>{ex.name}</h3>
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <label style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)' }}>Sets</label>
-                                    <input
-                                        type="number"
-                                        value={ex.sets.length}
-                                        onChange={(e) => updateSetsCount(exIndex, e.target.value)}
-                                        style={{ width: '40px', padding: '2px', textAlign: 'center', background: 'var(--background)', color: 'var(--foreground)', border: '1px solid var(--card-border)' }}
-                                    />
-                                </div>
-                            </div>
-
-                            {!ex.isCollapsed && (
-                                <div style={{ padding: '0.5rem' }}>
-                                    {/* Table Headers */}
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '0.5rem' }}>
-                                        <div style={{ textAlign: 'center', borderBottom: '1px solid var(--accent)', color: 'var(--accent)', fontSize: '0.8rem', fontWeight: 600 }}>Target</div>
-                                        <div style={{ textAlign: 'center', borderBottom: '1px solid var(--primary)', color: 'var(--primary)', fontSize: '0.8rem', fontWeight: 600 }}>Actual</div>
+                        return (
+                            <div key={ex.exerciseId} style={{ borderBottom: exIndex < exerciseLogs.length - 1 ? '1px solid #cbd5e1' : 'none' }}>
+                                {/* Exercise Header */}
+                                <div style={{
+                                    background: '#f8fafc',
+                                    padding: '12px 16px',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                    borderBottom: '1px solid #e2e8f0'
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <button
+                                            onClick={() => toggleCollapse(exIndex)}
+                                            style={{
+                                                width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                border: '2px solid #64748b', background: '#fff', color: '#0f172a', fontWeight: 'bold', cursor: 'pointer', padding: 0
+                                            }}
+                                        >
+                                            {ex.isCollapsed ? '+' : '−'}
+                                        </button>
+                                        <h3 style={{ fontSize: '1rem', color: '#2563eb', fontWeight: 500, margin: 0 }}>{ex.name}</h3>
                                     </div>
-
-                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '0.5rem' }}>
-                                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', fontSize: '0.7rem', color: 'var(--secondary-foreground)' }}>
-                                            <span style={{ flex: 1, textAlign: 'center' }}>Weight</span>
-                                            <span style={{ flex: 1, textAlign: 'center' }}>Reps</span>
-                                            <span style={{ flex: 1, textAlign: 'center' }}>RPE</span>
-                                        </div>
-                                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center', fontSize: '0.7rem', color: 'var(--secondary-foreground)' }}>
-                                            <span style={{ flex: 1, textAlign: 'center' }}>Weight</span>
-                                            <span style={{ flex: 1, textAlign: 'center' }}>Reps</span>
-                                            <span style={{ flex: 1, textAlign: 'center' }}>RPE</span>
-                                        </div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', color: '#0f172a', fontWeight: 600 }}>
+                                        Sets
+                                        <input
+                                            type="number"
+                                            value={ex.sets.length}
+                                            onChange={(e) => updateSetsCount(exIndex, e.target.value)}
+                                            style={{ width: '40px', padding: '4px', textAlign: 'center', background: '#fff', color: '#0f172a', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                                        />
+                                        <span style={{ fontSize: '1.2rem', color: '#475569', marginLeft: 4 }}>...</span>
                                     </div>
+                                </div>
 
-                                    {/* Set Rows */}
-                                    {ex.sets.map((set, sIndex) => (
-                                        <div key={sIndex} style={{
-                                            display: 'grid',
-                                            gridTemplateColumns: '1fr 1fr',
-                                            gap: '1rem',
-                                            alignItems: 'center',
-                                            marginBottom: '0.5rem',
-                                            paddingBottom: '0.5rem',
-                                            borderBottom: '1px dashed var(--card-border)'
-                                        }}>
-                                            {/* Target Side */}
-                                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-                                                <input className="input" disabled value={set.target.weight} placeholder="Work" style={{ flex: 1, textAlign: 'center', opacity: 0.7 }} />
-                                                <input className="input" disabled value={set.target.reps} placeholder="Target" style={{ flex: 1, textAlign: 'center', opacity: 0.7 }} />
-                                                <input className="input" disabled value={set.target.rpe} placeholder="@" style={{ flex: 1, textAlign: 'center', opacity: 0.7 }} />
-                                                <div style={{ width: '20px' }}>➜</div>
-                                            </div>
-
-                                            {/* Actual Side */}
-                                            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', position: 'relative' }}>
-                                                <input
-                                                    className="input"
-                                                    type="number"
-                                                    value={set.actual.weight}
-                                                    onChange={(e) => updateSet(exIndex, sIndex, 'weight', e.target.value)}
-                                                    placeholder="lbs"
-                                                    style={{ flex: 1, textAlign: 'center', borderColor: set.actual.weight ? 'var(--success)' : '' }}
-                                                />
-                                                <input
-                                                    className="input"
-                                                    type="number"
-                                                    value={set.actual.reps}
-                                                    onChange={(e) => updateSet(exIndex, sIndex, 'reps', e.target.value)}
-                                                    placeholder="Reps"
-                                                    style={{ flex: 1, textAlign: 'center', borderColor: set.actual.reps ? 'var(--success)' : '' }}
-                                                />
-                                                <input
-                                                    className="input"
-                                                    type="number"
-                                                    value={set.actual.rpe}
-                                                    onChange={(e) => updateSet(exIndex, sIndex, 'rpe', e.target.value)}
-                                                    step="0.5"
-                                                    placeholder="RPE"
-                                                    style={{ flex: 1, textAlign: 'center', borderColor: set.actual.rpe ? 'var(--success)' : '' }}
-                                                />
-
-                                                {/* Tools */}
-                                                <button
-                                                    onClick={() => copyPreviousSet(exIndex, sIndex)}
-                                                    title="Copy Previous"
-                                                    style={{
-                                                        background: 'none',
-                                                        border: 'none',
-                                                        cursor: 'pointer',
-                                                        fontSize: '1rem'
-                                                    }}
-                                                >
-                                                    📄
-                                                </button>
-                                                <span style={{ color: 'var(--success)' }}>⬆</span>
-                                                <span style={{ color: 'var(--error)' }}>✕</span>
+                                {!ex.isCollapsed && (
+                                    <div style={{ padding: '0 8px 16px 8px' }}>
+                                        {/* Target / Actual Header */}
+                                        <div style={{ display: 'flex', borderBottom: '1px dashed #cbd5e1', marginBottom: 8 }}>
+                                            <div style={{ width: '130px', textAlign: 'center', fontWeight: 'bold', fontSize: '0.85rem', color: '#1e3a8a', padding: '8px 0 4px 0' }}>Target</div>
+                                            <div style={{ flex: 1, position: 'relative' }}>
+                                                <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: 1, background: '#cbd5e1' }}></div>
+                                                <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '0.85rem', color: '#1e3a8a', padding: '8px 0 4px 0', background: '#f1f5f9' }}>Actual</div>
                                             </div>
                                         </div>
-                                    ))}
 
-                                    {/* Footer / Notes */}
-                                    <div style={{ marginTop: '0.5rem', padding: '0.5rem', background: 'rgba(0,0,0,0.2)', borderRadius: '4px' }}>
-                                        <div style={{ display: 'flex', gap: '1rem', fontSize: '0.75rem', marginBottom: '0.5rem', color: 'var(--secondary-foreground)' }}>
-                                            <span><strong>E1RM:</strong> {maxE1RM} lbs</span>
-                                            <span><strong>Stress:</strong> {exStress.total.toFixed(1)} <span style={{ opacity: 0.7 }}>(C:{exStress.central.toFixed(1)} P:{exStress.peripheral.toFixed(1)})</span></span>
+                                        <div style={{ display: 'flex', marginBottom: 8, fontSize: '0.8rem', fontWeight: 600, color: '#1e3a8a' }}>
+                                            <div style={{ display: 'flex', width: '130px', justifyContent: 'center', gap: 4 }}>
+                                                <span style={{ flex: 1, textAlign: 'center' }}>Weight</span>
+                                                <span style={{ flex: 1, textAlign: 'center' }}>Reps</span>
+                                                <span style={{ flex: 1, textAlign: 'center' }}>RPE</span>
+                                            </div>
+                                            <div style={{ position: 'relative', width: 1, background: '#cbd5e1', margin: '0 8px' }}></div>
+                                            <div style={{ display: 'flex', flex: 1, justifyContent: 'center', gap: 4 }}>
+                                                <span style={{ flex: 1, textAlign: 'center' }}>Weight</span>
+                                                <span style={{ flex: 1, textAlign: 'center' }}>Reps</span>
+                                                <span style={{ flex: 1, textAlign: 'center' }}>RPE</span>
+                                                <div style={{ width: 24 }}></div>
+                                            </div>
                                         </div>
-                                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
-                                            <label style={{ fontSize: '0.8rem', fontWeight: 600, marginTop: '4px' }}>Notes:</label>
+
+                                        {/* Set Rows */}
+                                        {ex.sets.map((set, sIndex) => {
+                                            const repsStr = String(set.target.reps);
+                                            const cleanReps = repsStr.includes('-') ? repsStr.split('-')[0] : repsStr;
+
+                                            return (
+                                                <div key={sIndex} style={{ display: 'flex', alignItems: 'center', padding: '6px 0', borderBottom: '1px dashed #e2e8f0' }}>
+                                                    {/* Target Side */}
+                                                    <div style={{ display: 'flex', width: '130px', justifyContent: 'center', gap: 4 }}>
+                                                        <div style={{ flex: 1, padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: 4, background: '#fff', textAlign: 'center', fontSize: '0.9rem', color: '#475569' }}>
+                                                            {set.target.weight || '\u00A0'}
+                                                        </div>
+                                                        <div style={{ flex: 1, padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: 4, background: '#fff', textAlign: 'center', fontSize: '0.9rem', color: '#475569' }}>
+                                                            {cleanReps || '\u00A0'}
+                                                        </div>
+                                                        <div style={{ flex: 1, padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: 4, background: '#fff', textAlign: 'center', fontSize: '0.9rem', color: '#475569' }}>
+                                                            {set.target.rpe || '\u00A0'}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Green Arrow Tool */}
+                                                    <button
+                                                        onClick={() => sIndex > 0 ? copyPreviousSet(exIndex, sIndex) : copyTargetToActual(exIndex, sIndex)}
+                                                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 8px', display: 'flex', alignItems: 'center' }}
+                                                    >
+                                                        <span style={{ color: '#10b981', fontSize: '1.4rem' }}>➞</span>
+                                                    </button>
+
+                                                    {/* Actual Side */}
+                                                    <div style={{ display: 'flex', flex: 1, alignItems: 'center', gap: 4 }}>
+                                                        <input
+                                                            type="number"
+                                                            inputMode="decimal"
+                                                            value={set.actual.weight}
+                                                            onChange={(e) => updateSet(exIndex, sIndex, 'weight', e.target.value)}
+                                                            style={{ flex: 1, padding: '6px 4px', border: '1px solid #94a3b8', borderRadius: 4, background: '#fff', textAlign: 'center', fontSize: '0.9rem', color: '#0f172a', width: '100%', outlineColor: '#3b82f6' }}
+                                                        />
+                                                        <input
+                                                            type="number"
+                                                            inputMode="decimal"
+                                                            value={set.actual.reps}
+                                                            onChange={(e) => updateSet(exIndex, sIndex, 'reps', e.target.value)}
+                                                            style={{ flex: 1, padding: '6px 4px', border: '1px solid #94a3b8', borderRadius: 4, background: '#fff', textAlign: 'center', fontSize: '0.9rem', color: '#0f172a', width: '100%', outlineColor: '#3b82f6' }}
+                                                        />
+                                                        <input
+                                                            type="number"
+                                                            inputMode="decimal"
+                                                            step="0.5"
+                                                            value={set.actual.rpe}
+                                                            onChange={(e) => updateSet(exIndex, sIndex, 'rpe', e.target.value)}
+                                                            style={{ flex: 1, padding: '6px 4px', border: '1px solid #94a3b8', borderRadius: 4, background: '#fff', textAlign: 'center', fontSize: '0.9rem', color: '#0f172a', width: '100%', outlineColor: '#3b82f6' }}
+                                                        />
+                                                        <span style={{ color: '#475569', fontSize: '1.2rem', padding: '0 4px', fontWeight: 'bold' }}>...</span>
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+
+                                        {/* Stats row */}
+                                        <div style={{ padding: '12px 0 8px 0', borderBottom: '1px dashed #cbd5e1', fontSize: '0.85rem', color: '#334155' }}>
+                                            <div style={{ display: 'flex', gap: '16px', fontWeight: 600 }}>
+                                                <span>E1RM: {maxE1RM} lbs</span>
+                                                <span>NL: {totalNL}</span>
+                                                <span>Tonnage: {tonnage.toLocaleString()} lbs</span>
+                                            </div>
+                                            <div style={{ display: 'flex', gap: '16px', marginTop: 4 }}>
+                                                <span>Total: <span style={{ fontWeight: 'normal' }}>{exStress.total.toFixed(2)}</span></span>
+                                                <span>Peripheral: <span style={{ fontWeight: 'normal' }}>{exStress.peripheral.toFixed(2)}</span></span>
+                                                <span>Central: <span style={{ fontWeight: 'normal' }}>{exStress.central.toFixed(2)}</span></span>
+                                            </div>
+                                        </div>
+
+                                        {/* Notes field */}
+                                        <div style={{ marginTop: '12px' }}>
+                                            <label style={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', display: 'block', marginBottom: '4px' }}>Notes</label>
                                             <textarea
                                                 value={ex.notes}
                                                 onChange={(e) => {
@@ -425,26 +443,26 @@ export default function WorkoutLogger({ athleteId, programId, sessionId, exercis
                                                     newLogs[exIndex].notes = e.target.value;
                                                     setExerciseLogs(newLogs);
                                                 }}
+                                                placeholder="Add exercise notes here..."
                                                 style={{
                                                     width: '100%',
-                                                    background: 'var(--background)',
-                                                    border: '1px solid var(--card-border)',
-                                                    color: 'var(--foreground)',
+                                                    minHeight: '60px',
+                                                    padding: '8px',
+                                                    border: '1px solid #cbd5e1',
                                                     borderRadius: '4px',
-                                                    padding: '0.5rem',
                                                     fontSize: '0.9rem',
+                                                    color: '#0f172a',
                                                     resize: 'vertical',
-                                                    minHeight: '40px'
+                                                    outlineColor: '#3b82f6'
                                                 }}
-                                                placeholder="Exercise notes..."
                                             />
                                         </div>
                                     </div>
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
+                                )}
+                            </div>
+                        );
+                    })}
+                </div>
             </div>
 
             {/* Footer Buttons */}
@@ -453,15 +471,15 @@ export default function WorkoutLogger({ athleteId, programId, sessionId, exercis
                 bottom: 0,
                 left: 0,
                 width: '100%',
-                background: 'var(--card-bg)',
-                borderTop: '1px solid var(--card-border)',
+                background: '#fff',
+                borderTop: '1px solid #cbd5e1',
                 padding: '1rem',
                 zIndex: 100
             }}>
                 <button
                     onClick={() => router.push(`/athlete/${athleteId}/dashboard`)}
                     style={{
-                        background: 'var(--primary)',
+                        background: '#1e3a8a',
                         color: 'white',
                         border: 'none',
                         padding: '1rem',
