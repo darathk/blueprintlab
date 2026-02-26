@@ -4,9 +4,10 @@ import { currentUser } from '@clerk/nextjs/server';
 
 export async function DELETE(
     request: Request,
-    { params }: { params: { id: string } }
+    { params }: { params: Promise<{ id: string }> }
 ) {
     try {
+        const { id } = await params;
         const user = await currentUser();
         if (!user) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -19,7 +20,7 @@ export async function DELETE(
             return NextResponse.json({ error: 'Forbidden. Admin access required.' }, { status: 403 });
         }
 
-        const { id } = params;
+
 
         // Perform a safe deletion of the athlete and all related records inside a transaction
         await prisma.$transaction(async (tx) => {
