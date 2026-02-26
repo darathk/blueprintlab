@@ -157,20 +157,8 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
         try {
             let blob: File | Blob = file, mime = file.type;
             if (isVid) {
-                setStatusText('Compressing video…');
-                try {
-                    const { compressVideo } = await import('@/lib/videoCompressor');
-                    const c = await compressVideo(file, p => setCompressProgress(p));
-                    if (c) {
-                        blob = new File([c], file.name.replace(/\.[^.]+$/, '.mp4'), { type: 'video/mp4' }); mime = 'video/mp4';
-                    } else {
-                        // Browser doesn't support MP4 compression — upload original
-                        setStatusText('Uploading video…'); setCompressProgress(50);
-                    }
-                } catch (compErr) {
-                    console.warn('Video compression failed, uploading original:', compErr);
-                    setCompressProgress(50);
-                }
+                setStatusText('Uploading video…');
+                setCompressProgress(50);
             } else {
                 setStatusText('Compressing photo…'); setCompressProgress(40);
                 try {
