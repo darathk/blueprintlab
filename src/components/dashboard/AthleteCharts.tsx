@@ -64,10 +64,11 @@ export default function AthleteCharts({ logs, readinessLogs = [], programs = [] 
             const sessionMaxMap = new Map();
 
             filteredLogs.forEach(log => {
-                // strict match like Block Review
-                const matchingExercises = log.exercises.filter(ex =>
-                    ex.name === `Competition ${lift}`
-                );
+                // Match anything containing the lift name (e.g., "Squat", "Competition Squat", "Low Bar Squat")
+                const matchingExercises = log.exercises.filter(ex => {
+                    const exName = (ex.name || '').toLowerCase();
+                    return exName.includes(lift.toLowerCase());
+                });
 
                 if (matchingExercises.length === 0) return;
 
@@ -75,11 +76,14 @@ export default function AthleteCharts({ logs, readinessLogs = [], programs = [] 
                 matchingExercises.forEach(ex => {
                     const sets = ex.sets || [];
                     sets.forEach(set => {
-                        const rpe = parseFloat(set.rpe || ex.rpe || 10);
-                        const reps = parseFloat(set.reps || ex.reps || 1);
-                        const weight = parseFloat(set.weight || ex.weight || 0);
+                        // Support both new `set.actual` structure and legacy flat `set` structure
+                        const actualSource = set.actual || set;
 
-                        if (weight > 0) {
+                        const rpe = parseFloat(actualSource.rpe || ex.rpe || 10);
+                        const reps = parseFloat(actualSource.reps || ex.reps || 1);
+                        const weight = parseFloat(actualSource.weight || ex.weight || 0);
+
+                        if (weight > 0 && String(actualSource.weight).trim() !== '') {
                             // Epley / BlockReview formula: weight * (1 + (reps + (10 - rpe)) / 30)
                             const e1rm = weight * (1 + (reps + (10 - rpe)) / 30);
                             if (e1rm > currentLogMax) currentLogMax = e1rm;

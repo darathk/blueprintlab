@@ -1,3 +1,6 @@
+import fs from 'fs';
+
+const globalsCss = `
 @import "tailwindcss";
 
 :root {
@@ -186,3 +189,7 @@ a {
     font-size: 0.8rem;
   }
 }
+`;
+
+fs.writeFileSync('/Users/Darath/.gemini/antigravity/scratch/athlete-analytics-tool/src/app/globals.css', globalsCss.trim());
+console.log('Successfully updated globals.css with Light Theme');
