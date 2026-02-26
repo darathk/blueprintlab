@@ -44,18 +44,25 @@ export default function ScheduleView({ programs, athleteId, logs }: {
     const monthData = useCallback(() => {
         const result: Map<string, { monthKey: string; label: string; year: number; month: number; weeks: { weekNumber: number; program: Program; sessions: { session: Session; date?: Date; log?: Log }[] }[] }> = new Map();
 
+        if (!Array.isArray(programs)) return [];
+
         programs.forEach(program => {
-            if (!program.weeks?.length) return;
+            const weeks = Array.isArray(program.weeks) ? program.weeks : [];
+            if (!weeks.length) return;
             const startDate = program.startDate ? new Date(program.startDate) : null;
 
-            program.weeks.forEach(week => {
-                week.sessions.forEach(session => {
+            weeks.forEach((week: any) => {
+                if (!week || !Array.isArray(week.sessions)) return;
+                const weekNumber = week.weekNumber || 1;
+
+                week.sessions.forEach((session: any) => {
+                    if (!session) return;
                     let sessionDate: Date | undefined;
 
                     if (session.scheduledDate) {
                         sessionDate = new Date(session.scheduledDate + 'T00:00:00');
                     } else if (startDate) {
-                        const offset = (week.weekNumber - 1) * 7 + (session.day - 1);
+                        const offset = (weekNumber - 1) * 7 + ((session.day || 1) - 1);
                         sessionDate = new Date(startDate);
                         sessionDate.setDate(sessionDate.getDate() + offset);
                     }
@@ -71,16 +78,16 @@ export default function ScheduleView({ programs, athleteId, logs }: {
                     }
 
                     const monthEntry = result.get(monthKey)!;
-                    let weekEntry = monthEntry.weeks.find(w => w.weekNumber === week.weekNumber && w.program.id === program.id);
+                    let weekEntry = monthEntry.weeks.find(w => w.weekNumber === weekNumber && w.program.id === program.id);
                     if (!weekEntry) {
-                        weekEntry = { weekNumber: week.weekNumber, program, sessions: [] };
+                        weekEntry = { weekNumber, program, sessions: [] };
                         monthEntry.weeks.push(weekEntry);
                     }
 
-                    const sKey = sessionKey(program.id, week.weekNumber, session.day);
-                    const log = logs.find(l => l.sessionId === sKey && l.programId === program.id);
+                    const sKey = sessionKey(program.id, weekNumber, session.day || 1);
+                    const log = Array.isArray(logs) ? logs.find(l => l.sessionId === sKey && l.programId === program.id) : undefined;
 
-                    weekEntry.sessions.push({ session, date: sessionDate, log });
+                    weekEntry.sessions.push({ session: { ...session, exercises: Array.isArray(session.exercises) ? session.exercises : [] }, date: sessionDate, log });
                 });
             });
         });

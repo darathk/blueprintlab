@@ -4,19 +4,27 @@ import { getAthleteById, getProgramsByAthlete, getLogsByAthlete } from '@/lib/st
 import ScheduleView from '@/components/athlete/ScheduleView';
 
 async function AsyncSchedule({ id }: { id: string }) {
-    const [athlete, programs, logs] = await Promise.all([
-        getAthleteById(id),
-        getProgramsByAthlete(id),
-        getLogsByAthlete(id)
-    ]);
+    try {
+        const [programs, logs] = await Promise.all([
+            getProgramsByAthlete(id),
+            getLogsByAthlete(id)
+        ]);
 
-    return (
-        <ScheduleView
-            programs={programs as any}
-            athleteId={id}
-            logs={logs as any}
-        />
-    );
+        return (
+            <ScheduleView
+                programs={programs as any}
+                athleteId={id}
+                logs={logs as any}
+            />
+        );
+    } catch (e) {
+        console.error('ScheduleView data error:', e);
+        return (
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--secondary-foreground)' }}>
+                <p>Unable to load schedule. Please try refreshing.</p>
+            </div>
+        );
+    }
 }
 
 export default async function AthleteDashboard({ params }) {
