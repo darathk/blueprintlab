@@ -53,10 +53,10 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
         });
     }, [athleteId, currentUserId, otherUserId]);
 
-    // Scroll to bottom instantly — runs after render
-    useEffect(() => {
+    // Scroll to bottom — fires synchronously after DOM commit
+    useLayoutEffect(() => {
         const el = scrollContainerRef.current;
-        if (el) { el.scrollTop = el.scrollHeight; }
+        if (el) requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
     }, [messages.length]);
 
     // Realtime — append only, no re-fetch

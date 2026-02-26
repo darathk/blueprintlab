@@ -58,10 +58,10 @@ export default function CoachInbox({ coachId, coachName }: Props) {
     // When selecting a conversation, load its messages
     useEffect(() => { if (selectedId) { setMessages([]); fetchMessages(selectedId); } }, [selectedId, fetchMessages]);
 
-    // Scroll to bottom instantly — runs after render
-    useEffect(() => {
+    // Scroll to bottom — fires synchronously after DOM commit
+    useLayoutEffect(() => {
         const el = scrollContainerRef.current;
-        if (el) { el.scrollTop = el.scrollHeight; }
+        if (el) requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
     }, [messages.length]);
 
     // Realtime — only refetch if relevant

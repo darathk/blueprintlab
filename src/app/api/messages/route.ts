@@ -13,41 +13,24 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'athleteId is required' }, { status: 400 });
         }
 
-        // Two indexed queries are faster than one OR query
-        const [sent, received] = await Promise.all([
-            prisma.message.findMany({
-                where: { senderId: athleteId },
-                select: {
-                    id: true, senderId: true, receiverId: true, content: true,
-                    mediaUrl: true, mediaType: true, createdAt: true, read: true, replyToId: true,
-                    sender: { select: { id: true, name: true, email: true } },
-                    receiver: { select: { id: true, name: true, email: true } },
-                    replyTo: { select: { id: true, content: true, mediaUrl: true, mediaType: true, sender: { select: { name: true } } } }
-                },
-                orderBy: { createdAt: 'desc' },
-                take: 100
-            }),
-            prisma.message.findMany({
-                where: { receiverId: athleteId },
-                select: {
-                    id: true, senderId: true, receiverId: true, content: true,
-                    mediaUrl: true, mediaType: true, createdAt: true, read: true, replyToId: true,
-                    sender: { select: { id: true, name: true, email: true } },
-                    receiver: { select: { id: true, name: true, email: true } },
-                    replyTo: { select: { id: true, content: true, mediaUrl: true, mediaType: true, sender: { select: { name: true } } } }
-                },
-                orderBy: { createdAt: 'desc' },
-                take: 100
-            })
-        ]);
-
-        // Merge, deduplicate, sort, take last 100
-        const merged = new Map<string, typeof sent[0]>();
-        for (const m of sent) merged.set(m.id, m);
-        for (const m of received) merged.set(m.id, m);
-        const all = [...merged.values()].sort((a, b) =>
-            new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-        ).slice(-100);
+        // Single query with OR — much faster than two queries + JS merge
+        const all = await prisma.message.findMany({
+            where: {
+                OR: [
+                    { senderId: athleteId },
+                    { receiverId: athleteId }
+                ]
+            },
+            select: {
+                id: true, senderId: true, receiverId: true, content: true,
+                mediaUrl: true, mediaType: true, createdAt: true, read: true, replyToId: true,
+                sender: { select: { id: true, name: true, email: true } },
+                receiver: { select: { id: true, name: true, email: true } },
+                replyTo: { select: { id: true, content: true, mediaUrl: true, mediaType: true, sender: { select: { name: true } } } }
+            },
+            orderBy: { createdAt: 'asc' },
+            take: 100
+        });
 
         return NextResponse.json(all);
     } catch (error) {
