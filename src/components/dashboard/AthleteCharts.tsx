@@ -167,8 +167,8 @@ export default function AthleteCharts({ logs, readinessLogs = [], programs = [] 
                     <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: color, boxShadow: `0 0 8px ${color}` }}></span>
                     {title}
                 </h3>
-                <div style={{ overflowX: 'auto', overflowY: 'visible', paddingBottom: '10px' }}>
-                    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} style={{ overflow: 'visible', minWidth: '500px' }}>
+                <div style={{ overflowX: 'auto', overflowY: 'visible', paddingBottom: '10px', position: 'relative' }}>
+                    <svg width="100%" height={height} viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none" style={{ overflow: 'visible', minWidth: '500px' }}>
                         {/* Grid Lines */}
                         <line x1={padding} y1={height - padding} x2={width - padding} y2={height - padding} stroke="rgba(148, 163, 184, 0.2)" strokeWidth="1" />
                         <line x1={padding} y1={padding} x2={padding} y2={height - padding} stroke="rgba(148, 163, 184, 0.2)" strokeWidth="1" />
@@ -233,8 +233,8 @@ export default function AthleteCharts({ logs, readinessLogs = [], programs = [] 
                     {activePoint && activePoint.title === title && (
                         <div style={{
                             position: 'absolute',
-                            left: `${activePoint.x}px`,
-                            top: `${activePoint.y - 40}px`, // Float above the point
+                            left: `${(activePoint.x / width) * 100}%`,
+                            top: `${activePoint.y - 40}px`,
                             transform: 'translateX(-50%)',
                             background: 'rgba(15, 23, 42, 0.95)',
                             border: `1px solid ${color}`,
