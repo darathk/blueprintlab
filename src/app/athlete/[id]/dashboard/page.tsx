@@ -1,41 +1,21 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
 import { getAthleteById, getProgramsByAthlete, getLogsByAthlete } from '@/lib/storage';
-import AthleteCalendarContainer from '@/components/dashboard/AthleteCalendarContainer';
+import ScheduleView from '@/components/athlete/ScheduleView';
 
-async function AsyncAthleteCalendar({ id }) {
-    const athlete = await getAthleteById(id);
-    const programs = await getProgramsByAthlete(id);
-    const athleteLogs = await getLogsByAthlete(id);
-
-    const program = programs.find(p => p.id === athlete.currentProgramId);
-
-    if (!program) {
-        return (
-            <div className="card">
-                <p>No active program. Check the calendar below for history.</p>
-                <div style={{ marginTop: '2rem' }}>
-                    <AthleteCalendarContainer
-                        programs={programs}
-                        athleteId={id}
-                        logs={athleteLogs}
-                        currentProgramId={athlete.currentProgramId}
-                    />
-                </div>
-            </div>
-        );
-    }
+async function AsyncSchedule({ id }: { id: string }) {
+    const [athlete, programs, logs] = await Promise.all([
+        getAthleteById(id),
+        getProgramsByAthlete(id),
+        getLogsByAthlete(id)
+    ]);
 
     return (
-        <div>
-            <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem' }}>Your Training Schedule</h2>
-            <AthleteCalendarContainer
-                programs={programs}
-                athleteId={id}
-                logs={athleteLogs}
-                currentProgramId={athlete.currentProgramId}
-            />
-        </div>
+        <ScheduleView
+            programs={programs as any}
+            athleteId={id}
+            logs={logs as any}
+        />
     );
 }
 
@@ -45,21 +25,22 @@ export default async function AthleteDashboard({ params }) {
 
     if (!athlete) return <div>Athlete not found</div>;
 
-    const Loader = () => <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--secondary-foreground)' }} className="pulse">Loading calendar data...</div>;
-
     return (
-        <div style={{ minHeight: '100vh', padding: '2rem' }}>
-            <header style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ minHeight: '100vh', padding: '1rem', maxWidth: 600, margin: '0 auto' }}>
+            <header style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 4px' }}>
                 <div>
-                    <h1 style={{ fontSize: '1.5rem', fontWeight: 700 }}>Hello, {athlete.name}</h1>
-                    <p style={{ color: 'var(--secondary-foreground)' }}>Ready to train?</p>
+                    <h1 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Hello, {athlete.name}</h1>
+                    <p style={{ color: 'var(--secondary-foreground)', fontSize: '0.85rem' }}>Ready to train?</p>
                 </div>
-                <Link href="/" style={{ fontSize: '0.875rem', color: 'var(--secondary-foreground)' }}>Logout</Link>
+                <Link href="/" style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)' }}>Logout</Link>
             </header>
 
-            <Suspense fallback={<Loader />}>
-                <AsyncAthleteCalendar id={id} />
-            </Suspense>
+            <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--card-border)', background: 'var(--card-bg)' }}>
+                <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center', color: 'var(--secondary-foreground)' }} className="pulse">Loading schedule…</div>}>
+                    <AsyncSchedule id={id} />
+                </Suspense>
+            </div>
         </div>
     );
 }
+
