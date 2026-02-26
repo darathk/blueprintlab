@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 
 interface Message {
@@ -53,8 +53,8 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
         });
     }, [athleteId, currentUserId, otherUserId]);
 
-    // Scroll to bottom — fires synchronously after DOM commit
-    useLayoutEffect(() => {
+    // Scroll to bottom after render
+    useEffect(() => {
         const el = scrollContainerRef.current;
         if (el) requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
     }, [messages.length]);

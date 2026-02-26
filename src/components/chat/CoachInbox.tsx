@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, useLayoutEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 
 interface Message {
@@ -58,8 +58,8 @@ export default function CoachInbox({ coachId, coachName }: Props) {
     // When selecting a conversation, load its messages
     useEffect(() => { if (selectedId) { setMessages([]); fetchMessages(selectedId); } }, [selectedId, fetchMessages]);
 
-    // Scroll to bottom — fires synchronously after DOM commit
-    useLayoutEffect(() => {
+    // Scroll to bottom after render
+    useEffect(() => {
         const el = scrollContainerRef.current;
         if (el) requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
     }, [messages.length]);
