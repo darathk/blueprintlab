@@ -77,6 +77,36 @@ export default function CoachInbox({ coachId, coachName }: Props) {
         return () => { supabase.removeChannel(ch); };
     }, [coachId, selectedId, fetchConvos, fetchMessages]);
 
+    // Optimized Polling Fallback (Runs safely if Supabase keys are missing)
+    useEffect(() => {
+        const poll = setInterval(() => {
+            fetchConvos();
+            if (selectedId) {
+                fetch(`/api/messages?athleteId=${selectedId}`)
+                    .then(r => r.ok ? r.json() : null)
+                    .then(data => {
+                        if (data && Array.isArray(data)) {
+                            setMessages(prev => {
+                                // Only trigger expensive render and PATCH if new messages arrived
+                                if (prev.length !== data.length || prev[prev.length - 1]?.id !== data[data.length - 1]?.id) {
+                                    const hasUnread = data.some((m: any) => m.receiverId === coachId && !m.read);
+                                    if (hasUnread) {
+                                        fetch('/api/messages', {
+                                            method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ athleteId: selectedId, readerId: coachId })
+                                        });
+                                    }
+                                    return data;
+                                }
+                                return prev;
+                            });
+                        }
+                    });
+            }
+        }, 3000);
+        return () => clearInterval(poll);
+    }, [coachId, selectedId, fetchConvos]);
+
 
 
     useEffect(() => { const c = () => setActiveMenu(null); window.addEventListener('click', c); return () => window.removeEventListener('click', c); }, []);

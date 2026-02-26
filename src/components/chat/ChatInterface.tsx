@@ -80,6 +80,33 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
         return () => { supabase.removeChannel(ch); };
     }, [athleteId, currentUserId, otherUserId]);
 
+    // Optimized Polling Fallback (Runs safely if Supabase keys are missing)
+    useEffect(() => {
+        const poll = setInterval(() => {
+            fetch(`/api/messages?athleteId=${athleteId}`)
+                .then(r => r.ok ? r.json() : null)
+                .then(data => {
+                    if (data && data.length > 0) {
+                        setMessages(prev => {
+                            // Only trigger expensive render and PATCH if new messages arrived
+                            if (prev.length !== data.length || prev[prev.length - 1]?.id !== data[data.length - 1]?.id) {
+                                const hasUnread = data.some((m: any) => m.receiverId === currentUserId && !m.read);
+                                if (hasUnread) {
+                                    fetch('/api/messages', {
+                                        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ athleteId: otherUserId, readerId: currentUserId })
+                                    });
+                                }
+                                return data;
+                            }
+                            return prev;
+                        });
+                    }
+                });
+        }, 3000);
+        return () => clearInterval(poll);
+    }, [athleteId, currentUserId, otherUserId]);
+
 
 
     // Close action menu on click outside
