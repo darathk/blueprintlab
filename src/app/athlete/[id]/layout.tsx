@@ -43,7 +43,7 @@ export default async function AthletePortalLayout({
 
     return (
         <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--background)' }}>
-            <header className="glass-panel" style={{
+            <header className="glass-panel athlete-header" style={{
                 height: 'var(--header-height)',
                 display: 'flex',
                 alignItems: 'center',
@@ -79,7 +79,7 @@ export default async function AthletePortalLayout({
                     <UserButton afterSignOutUrl="/" />
                 </div>
             </header>
-            <main style={{ flex: 1, padding: '2rem' }}>
+            <main className="athlete-main" style={{ flex: 1, padding: '2rem' }}>
                 {children}
             </main>
         </div>

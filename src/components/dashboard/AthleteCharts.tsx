@@ -149,7 +149,7 @@ export default function AthleteCharts({ logs, readinessLogs = [], programs = [] 
     const renderLineChart = (dataPoints, color, title, showPercent = true) => {
         if (!dataPoints || dataPoints.length < 2) return null;
         const height = 150;
-        const width = 350;
+        const width = 300;
         const padding = 20;
 
         const values = dataPoints.map(d => d.value ?? d.e1rm);
@@ -330,7 +330,7 @@ export default function AthleteCharts({ logs, readinessLogs = [], programs = [] 
             <h2 style={{ fontSize: '1.25rem', marginBottom: '1.5rem', paddingBottom: '0.5rem', color: 'var(--foreground)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span className="neon-text" style={{ color: 'var(--primary)' }}>///</span> Performance Telemetry
             </h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(350px, 1fr))', gap: '1.5rem', marginBottom: '4rem' }}>
+            <div className="chart-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', marginBottom: '4rem' }}>
                 {PRIMARY_LIFTS.map(lift => {
                     const data = chartData[lift];
                     if (!data) return null;

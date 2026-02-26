@@ -331,6 +331,39 @@ a {
   form .btn {
     width: 100%;
   }
+
+  /* Program Builder */
+  .program-builder-layout {
+    grid-template-columns: 1fr !important;
+    height: auto !important;
+  }
+
+  .program-builder-sidebar {
+    max-height: 300px !important;
+  }
+
+  /* Session Details Modal */
+  .session-modal-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .session-modal-subgrid {
+    grid-template-columns: 1fr 1fr 1fr !important;
+  }
+
+  /* Athlete layout */
+  .athlete-header {
+    padding: 0 1rem !important;
+  }
+
+  .athlete-main {
+    padding: 1rem !important;
+  }
+
+  /* Chart grid */
+  .chart-grid {
+    grid-template-columns: 1fr !important;
+  }
 }
 
 @media (max-width: 480px) {

@@ -135,7 +135,7 @@ export default function SessionDetailsModal({ session, programName, programId, s
                     </div>
                 </div>
 
-                <div style={{ padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+                <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
                     {session.exercises.map((ex, exIndex) => {
                         // Exercise-level Stats
                         const exSets = logData[ex.id || exIndex] || [];
@@ -181,11 +181,11 @@ export default function SessionDetailsModal({ session, programName, programId, s
 
                                 <div style={{ padding: '0.5rem' }}>
                                     {/* Table Header */}
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(200px, 1fr) minmax(200px, 1fr)', gap: '1rem', marginBottom: '0.5rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '0.25rem' }}>
+                                    <div className="session-modal-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '0.5rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '0.25rem' }}>
                                         <div style={{ textAlign: 'center', color: 'var(--secondary-foreground)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Target</div>
                                         <div style={{ textAlign: 'center', color: 'var(--primary)', fontSize: '0.75rem', fontWeight: 700, textTransform: 'uppercase' }}>Actual</div>
                                     </div>
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'minmax(200px, 1fr) minmax(200px, 1fr)', gap: '1rem', marginBottom: '0.5rem', fontSize: '0.7rem', color: 'var(--secondary-foreground)' }}>
+                                    <div className="session-modal-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '0.5rem', fontSize: '0.7rem', color: 'var(--secondary-foreground)' }}>
                                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', textAlign: 'center' }}>
                                             <span>Weight</span><span>Reps</span><span>RPE</span>
                                         </div>
@@ -198,7 +198,7 @@ export default function SessionDetailsModal({ session, programName, programId, s
                                     {ex.sets.map((set, setIndex) => {
                                         const currentLog = logData[ex.id || exIndex]?.[setIndex] || {};
                                         return (
-                                            <div key={setIndex} style={{ display: 'grid', gridTemplateColumns: 'minmax(200px, 1fr) minmax(200px, 1fr)', gap: '1rem', marginBottom: '0.5rem', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '0.25rem', borderRadius: '4px' }}>
+                                            <div key={setIndex} className="session-modal-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginBottom: '0.5rem', alignItems: 'center', background: 'rgba(255,255,255,0.02)', padding: '0.25rem', borderRadius: '4px' }}>
                                                 {/* Target */}
                                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', textAlign: 'center', gap: '0.25rem' }}>
                                                     <div style={{ padding: '4px', background: 'rgba(255,255,255,0.05)', borderRadius: '3px' }}>{set.weight || '-'}</div>

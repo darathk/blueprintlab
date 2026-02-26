@@ -839,10 +839,10 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
     };
 
     return (
-        <div style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '2rem', height: 'calc(100vh - 100px)' }}>
+        <div className="program-builder-layout" style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '2rem', height: 'calc(100vh - 100px)' }}>
 
             {/* LEFTSIDE BAR: Exercise Picker (ALWAYS VISIBLE - "Same as previously") */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem', height: '100%', overflow: 'hidden' }}>
+            <div className="program-builder-sidebar" style={{ display: 'flex', flexDirection: 'column', gap: '2rem', height: '100%', overflow: 'hidden' }}>
                 <div style={{ flex: 1, overflow: 'hidden' }}>
                     <ExercisePicker onAdd={addExerciseToActiveSession} onDragStart={() => { }} />
                 </div>
