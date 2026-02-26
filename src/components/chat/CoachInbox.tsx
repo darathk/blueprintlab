@@ -73,26 +73,7 @@ export default function CoachInbox({ coachId, coachName }: Props) {
         return () => { supabase.removeChannel(ch); };
     }, [coachId, selectedId, fetchConvos, fetchMessages]);
 
-    // Polling fallback — check for new messages every 3s
-    useEffect(() => {
-        const poll = setInterval(() => {
-            fetchConvos();
-            if (selectedId) {
-                fetch(`/api/messages?athleteId=${selectedId}`)
-                    .then(r => r.ok ? r.json() : null)
-                    .then(data => {
-                        if (data) {
-                            setMessages(data);
-                            fetch('/api/messages', {
-                                method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ athleteId: selectedId, readerId: coachId })
-                            });
-                        }
-                    });
-            }
-        }, 3000);
-        return () => clearInterval(poll);
-    }, [coachId, selectedId, fetchConvos]);
+
 
     useEffect(() => { const c = () => setActiveMenu(null); window.addEventListener('click', c); return () => window.removeEventListener('click', c); }, []);
 
@@ -188,172 +169,182 @@ export default function CoachInbox({ coachId, coachName }: Props) {
     const showTime = (i: number) => i === 0 || messages[i].senderId !== messages[i - 1].senderId ||
         new Date(messages[i].createdAt).getTime() - new Date(messages[i - 1].createdAt).getTime() > 300000;
 
-return (
-    <div className="flex h-[580px] overflow-hidden rounded-xl bg-white border border-slate-200 shadow-sm">
-        {/* Sidebar */}
-        <div className="w-[260px] shrink-0 border-r border-slate-200 flex flex-col bg-slate-50">
-            <div className="p-3 border-b border-slate-200 flex justify-between items-center bg-slate-100/50">
-                <span className="font-semibold text-sm text-slate-900">Messages</span>
-                {totalUnread > 0 && <span className="bg-red-500 text-white text-[10px] font-bold rounded-full px-1.5 min-w-[18px] text-center">{totalUnread}</span>}
-            </div>
-            <div className="flex-1 overflow-y-auto">
-                {convos.length === 0 && <div className="text-center p-8 text-xs text-slate-500">No conversations</div>}
-                {convos.map(c => (
-                    <button key={c.athleteId} onClick={() => setSelectedId(c.athleteId)}
-                        className={`flex items-center gap-2.5 w-full py-2.5 px-3 border-none cursor-pointer text-left transition-colors ${selectedId === c.athleteId ? 'bg-blue-50/50 border-l-2 border-l-blue-600' : 'bg-transparent border-l-2 border-l-transparent hover:bg-slate-100/50'}`}>
-                        <div className="relative shrink-0">
-                            <div className="w-9 h-9 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white text-xs">
-                                {c.athleteName.charAt(0).toUpperCase()}
-                            </div>
-                            {c.unreadCount > 0 && <span className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center shadow-sm">{c.unreadCount}</span>}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                            <div className="flex justify-between items-center">
-                                <span className={`text-[13px] overflow-hidden text-ellipsis whitespace-nowrap ${c.unreadCount > 0 ? 'font-bold text-slate-900' : 'font-medium text-slate-700'}`}>{c.athleteName}</span>
-                                <span className="text-[10px] text-slate-400 shrink-0 ml-1.5">{fmtTime(c.lastMessageAt)}</span>
-                            </div>
-                            <div className={`text-[11px] overflow-hidden text-ellipsis whitespace-nowrap mt-0.5 ${c.unreadCount > 0 ? 'text-slate-700 font-semibold' : 'text-slate-500'}`}>{c.lastMessage}</div>
-                        </div>
-                    </button>
-                ))}
-            </div>
-        </div>
-
-        {/* Chat */}
-        <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-slate-50">
-            {!selectedConvo ? (
-                <div className="flex-1 flex flex-col items-center justify-center gap-2 text-slate-400 bg-slate-50/50">
-                    <span className="text-4xl text-slate-300">💬</span>
-                    <span className="text-[13px] text-slate-500 font-medium">Select a conversation</span>
+    return (
+        <div className="glass-panel" style={{ display: 'flex', height: 580, overflow: 'hidden', borderRadius: 12 }}>
+            {/* Sidebar */}
+            <div style={{ width: 260, flexShrink: 0, borderRight: '1px solid var(--card-border)', display: 'flex', flexDirection: 'column', background: 'rgba(15,23,42,0.3)' }}>
+                <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: 600, fontSize: 14, color: 'var(--foreground)' }}>Messages</span>
+                    {totalUnread > 0 && <span style={{ background: '#ef4444', color: '#fff', fontSize: 10, fontWeight: 700, borderRadius: 10, padding: '1px 7px', minWidth: 18, textAlign: 'center' as const }}>{totalUnread}</span>}
                 </div>
-            ) : (
-                <>
-                    {/* Header */}
-                    <div className="px-4 py-2.5 border-b border-slate-200 bg-white flex items-center gap-2.5 shrink-0">
-                        <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center font-bold text-white text-[11px] shrink-0">
-                            {selectedConvo.athleteName.charAt(0).toUpperCase()}
-                        </div>
-                        <span className="font-semibold text-sm text-slate-900">{selectedConvo.athleteName}</span>
+                <div style={{ flex: 1, overflowY: 'auto' }}>
+                    {convos.length === 0 && <div style={{ textAlign: 'center', padding: 32, fontSize: 12, color: 'var(--secondary-foreground)' }}>No conversations</div>}
+                    {convos.map(c => (
+                        <button key={c.athleteId} onClick={() => setSelectedId(c.athleteId)}
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 14px', border: 'none', cursor: 'pointer', textAlign: 'left' as const,
+                                background: selectedId === c.athleteId ? 'rgba(6,182,212,0.08)' : 'transparent',
+                                borderLeft: selectedId === c.athleteId ? '2px solid var(--primary)' : '2px solid transparent',
+                            }}>
+                            <div style={{ position: 'relative', flexShrink: 0 }}>
+                                <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #06b6d4, #10b981)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#000', fontSize: 12 }}>
+                                    {c.athleteName.charAt(0).toUpperCase()}
+                                </div>
+                                {c.unreadCount > 0 && <span style={{ position: 'absolute', top: -2, right: -2, width: 16, height: 16, borderRadius: '50%', background: '#ef4444', color: '#fff', fontSize: 9, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{c.unreadCount}</span>}
+                            </div>
+                            <div style={{ flex: 1, minWidth: 0 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ fontSize: 13, fontWeight: c.unreadCount > 0 ? 700 : 400, color: c.unreadCount > 0 ? 'var(--foreground)' : 'var(--secondary-foreground)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{c.athleteName}</span>
+                                    <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', flexShrink: 0, marginLeft: 6 }}>{fmtTime(c.lastMessageAt)}</span>
+                                </div>
+                                <div style={{ fontSize: 11, color: c.unreadCount > 0 ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.25)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const, marginTop: 1 }}>{c.lastMessage}</div>
+                            </div>
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* Chat */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+                {!selectedConvo ? (
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, color: 'var(--secondary-foreground)' }}>
+                        <span style={{ fontSize: 40 }}>💬</span>
+                        <span style={{ fontSize: 13 }}>Select a conversation</span>
                     </div>
+                ) : (
+                    <>
+                        {/* Header */}
+                        <div style={{ padding: '10px 16px', borderBottom: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                            <div style={{ width: 30, height: 30, borderRadius: '50%', background: 'linear-gradient(135deg, #06b6d4, #10b981)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#000', fontSize: 11, flexShrink: 0 }}>
+                                {selectedConvo.athleteName.charAt(0).toUpperCase()}
+                            </div>
+                            <span style={{ fontWeight: 600, fontSize: 14, color: 'var(--foreground)' }}>{selectedConvo.athleteName}</span>
+                        </div>
 
-                    {/* Messages */}
-                    <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overflow-x-hidden p-3 bg-slate-50">
-                        {msgLoading && <div className="text-center p-8 text-slate-500 text-[13px]">Loading…</div>}
+                        {/* Messages */}
+                        <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '10px 14px' }}>
+                            {msgLoading && <div style={{ textAlign: 'center', padding: 30, color: 'var(--secondary-foreground)', fontSize: 13 }}>Loading…</div>}
 
-                        {!msgLoading && messages.map((msg, i) => {
-                            const mine = msg.senderId === coachId;
-                            const isVid = msg.mediaType?.startsWith('video');
-                            const isImg = msg.mediaType?.startsWith('image');
-                            const dateSep = showDateSep(i);
-                            const timeSep = showTime(i);
+                            {!msgLoading && messages.map((msg, i) => {
+                                const mine = msg.senderId === coachId;
+                                const isVid = msg.mediaType?.startsWith('video');
+                                const isImg = msg.mediaType?.startsWith('image');
+                                const dateSep = showDateSep(i);
+                                const timeSep = showTime(i);
 
-                            return (
-                                <div key={msg.id}>
-                                    {dateSep && <div className="text-center my-3 text-[10px] text-slate-400 font-medium">{fmtDate(msg.createdAt)}</div>}
-                                    {timeSep && !dateSep && <div className="text-center my-2 text-[10px] text-slate-400">{fmtTime(msg.createdAt)}</div>}
+                                return (
+                                    <div key={msg.id}>
+                                        {dateSep && <div style={{ textAlign: 'center', margin: '12px 0 6px', fontSize: 10, color: 'rgba(255,255,255,0.3)', fontWeight: 500 }}>{fmtDate(msg.createdAt)}</div>}
+                                        {timeSep && !dateSep && <div style={{ textAlign: 'center', margin: '8px 0 4px', fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>{fmtTime(msg.createdAt)}</div>}
 
-                                    <div className={`flex items-center gap-1 relative ${mine ? 'justify-end' : 'justify-start'} ${timeSep && i > 0 ? 'mt-1.5' : 'mt-0.5'}`}>
+                                        <div style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start', alignItems: 'center', marginTop: timeSep && i > 0 ? 6 : 2, gap: 4, position: 'relative' }}>
 
-                                        {mine && (
-                                            <button onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === msg.id ? null : msg.id); }}
-                                                className="bg-transparent border-none cursor-pointer text-sm text-slate-400 hover:text-slate-600 px-1 shrink-0 leading-none"
-                                                title="Actions">⋮</button>
-                                        )}
+                                            {mine && (
+                                                <button onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === msg.id ? null : msg.id); }}
+                                                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'rgba(255,255,255,0.2)', padding: '2px 4px', flexShrink: 0, lineHeight: 1 }}
+                                                    title="Actions">⋮</button>
+                                            )}
 
-                                        <div className="relative max-w-[75%]">
-                                            <div className={`
-                                                    ${msg.mediaUrl ? 'p-1 pb-1.5' : 'py-1.5 px-3'}
-                                                    ${mine ? 'rounded-tl-2xl rounded-tr-2xl rounded-bl-2xl rounded-br-sm bg-blue-600 text-white shadow-sm' : 'rounded-tl-2xl rounded-tr-2xl rounded-bl-sm rounded-br-2xl bg-white text-slate-900 border border-slate-200 shadow-sm'}
-                                                    break-words
-                                                `}>
-                                                {msg.replyTo && (
-                                                    <div className={`mb-1 p-1.5 rounded-md border-l-2 text-[10px] ${mine ? 'bg-blue-700/50 border-blue-300' : 'bg-slate-100 border-blue-500'}`}>
-                                                        <div className={`font-semibold ${mine ? 'text-blue-100' : 'text-blue-600'}`}>{msg.replyTo.sender.name}</div>
-                                                        <div className={`overflow-hidden text-ellipsis whitespace-nowrap ${mine ? 'text-blue-100/80' : 'text-slate-500'}`}>{msg.replyTo.content}</div>
+                                            <div style={{ position: 'relative', maxWidth: '75%' }}>
+                                                <div style={{
+                                                    padding: msg.mediaUrl ? '4px 4px 6px' : '7px 12px',
+                                                    borderRadius: mine ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                                                    background: mine ? 'linear-gradient(135deg, rgba(6,182,212,0.3), rgba(16,185,129,0.2))' : 'var(--card-bg)',
+                                                    border: mine ? '1px solid rgba(6,182,212,0.12)' : '1px solid var(--card-border)',
+                                                    wordBreak: 'break-word', overflowWrap: 'break-word',
+                                                }}>
+                                                    {msg.replyTo && (
+                                                        <div style={{ margin: msg.mediaUrl ? '3px 6px 4px' : '0 0 4px', padding: '4px 8px', borderRadius: 8, background: 'rgba(255,255,255,0.04)', borderLeft: '2px solid rgba(6,182,212,0.5)', fontSize: 10 }}>
+                                                            <div style={{ fontWeight: 600, color: 'rgba(6,182,212,0.7)' }}>{msg.replyTo.sender.name}</div>
+                                                            <div style={{ color: 'rgba(255,255,255,0.35)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{msg.replyTo.content}</div>
+                                                        </div>
+                                                    )}
+                                                    {msg.mediaUrl && isVid && (
+                                                        <div><video controls playsInline muted preload="metadata" style={{ width: '100%', maxWidth: 260, borderRadius: 12, background: '#000', display: 'block' }}>
+                                                            <source src={msg.mediaUrl} type={msg.mediaType || 'video/mp4'} /></video></div>
+                                                    )}
+                                                    {msg.mediaUrl && isImg && (
+                                                        <div><img src={msg.mediaUrl} alt="" loading="lazy" onClick={() => window.open(msg.mediaUrl!, '_blank')}
+                                                            style={{ width: '100%', maxWidth: 260, borderRadius: 12, display: 'block', cursor: 'pointer', objectFit: 'cover' }} /></div>
+                                                    )}
+                                                    <div style={{ fontSize: 13, lineHeight: 1.4, color: 'rgba(255,255,255,0.9)', padding: msg.mediaUrl ? '0 8px' : 0 }}>{msg.content}</div>
+                                                    <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.18)', marginTop: 1, textAlign: mine ? 'right' : 'left', padding: msg.mediaUrl ? '0 8px' : 0 }}>{fmtTime(msg.createdAt)}</div>
+                                                </div>
+
+                                                {activeMenu === msg.id && (
+                                                    <div onClick={e => e.stopPropagation()} style={{
+                                                        position: 'absolute', zIndex: 50, top: 0, ...(mine ? { right: '100%', marginRight: 4 } : { left: '100%', marginLeft: 4 }),
+                                                        background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 10, boxShadow: '0 6px 20px rgba(0,0,0,0.5)', padding: '3px 0', minWidth: 120, whiteSpace: 'nowrap'
+                                                    }}>
+                                                        <button onClick={() => { setReplyingTo(msg); setActiveMenu(null); }}
+                                                            style={{ display: 'block', width: '100%', textAlign: 'left', padding: '7px 12px', background: 'none', border: 'none', fontSize: 12, color: 'var(--foreground)', cursor: 'pointer' }}>↩️ Reply</button>
+                                                        <button onClick={() => { navigator.clipboard.writeText(msg.content); setActiveMenu(null); }}
+                                                            style={{ display: 'block', width: '100%', textAlign: 'left', padding: '7px 12px', background: 'none', border: 'none', fontSize: 12, color: 'var(--foreground)', cursor: 'pointer' }}>📋 Copy</button>
+                                                        {msg.mediaUrl && <button onClick={() => { saveMedia(msg.mediaUrl!, msg.mediaType?.startsWith('image')); setActiveMenu(null); }}
+                                                            style={{ display: 'block', width: '100%', textAlign: 'left', padding: '7px 12px', background: 'none', border: 'none', fontSize: 12, color: 'var(--foreground)', cursor: 'pointer' }}>💾 Save</button>}
                                                     </div>
                                                 )}
-                                                {msg.mediaUrl && isVid && (
-                                                    <div><video controls playsInline muted preload="metadata" className="w-full max-w-[260px] rounded-xl bg-black block">
-                                                        <source src={msg.mediaUrl} type={msg.mediaType || 'video/mp4'} /></video></div>
-                                                )}
-                                                {msg.mediaUrl && isImg && (
-                                                    <div><img src={msg.mediaUrl} alt="" loading="lazy" onClick={() => window.open(msg.mediaUrl!, '_blank')}
-                                                        className="w-full max-w-[260px] rounded-xl block cursor-pointer object-cover bg-slate-100" /></div>
-                                                )}
-                                                <div className={`text-[13px] leading-relaxed ${msg.mediaUrl ? 'px-2' : 'px-0'} ${mine ? 'text-white' : 'text-slate-900'}`}>{msg.content}</div>
-                                                <div className={`text-[9px] mt-0.5 ${mine ? 'text-blue-200 text-right' : 'text-slate-400 text-left'} ${msg.mediaUrl ? 'px-2' : 'px-0'}`}>{fmtTime(msg.createdAt)}</div>
                                             </div>
 
-                                            {activeMenu === msg.id && (
-                                                <div onClick={e => e.stopPropagation()} className={`absolute z-50 top-0 bg-white border border-slate-200 rounded-lg shadow-lg py-1 min-w-[120px] whitespace-nowrap ${mine ? 'right-full mr-1' : 'left-full ml-1'}`}>
-                                                    <button onClick={() => { setReplyingTo(msg); setActiveMenu(null); }}
-                                                        className="block w-full text-left px-3 py-1.5 bg-transparent border-none text-xs text-slate-700 hover:bg-slate-50 cursor-pointer">↩️ Reply</button>
-                                                    <button onClick={() => { navigator.clipboard.writeText(msg.content); setActiveMenu(null); }}
-                                                        className="block w-full text-left px-3 py-1.5 bg-transparent border-none text-xs text-slate-700 hover:bg-slate-50 cursor-pointer">📋 Copy</button>
-                                                    {msg.mediaUrl && <button onClick={() => { saveMedia(msg.mediaUrl!, msg.mediaType?.startsWith('image')); setActiveMenu(null); }}
-                                                        className="block w-full text-left px-3 py-1.5 bg-transparent border-none text-xs text-slate-700 hover:bg-slate-50 cursor-pointer">💾 Save</button>}
-                                                </div>
+                                            {!mine && (
+                                                <button onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === msg.id ? null : msg.id); }}
+                                                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'rgba(255,255,255,0.2)', padding: '2px 4px', flexShrink: 0, lineHeight: 1 }}
+                                                    title="Actions">⋮</button>
                                             )}
                                         </div>
-
-                                        {!mine && (
-                                            <button onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === msg.id ? null : msg.id); }}
-                                                className="bg-transparent border-none cursor-pointer text-sm text-slate-400 hover:text-slate-600 px-1 shrink-0 leading-none"
-                                                title="Actions">⋮</button>
-                                        )}
                                     </div>
+                                );
+                            })}
+
+                        </div>
+
+                        {/* Reply */}
+                        {replyingTo && (
+                            <div style={{ padding: '6px 14px', borderTop: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+                                <div style={{ flex: 1, paddingLeft: 8, borderLeft: '2px solid var(--primary)', minWidth: 0 }}>
+                                    <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--primary)' }}>Replying to {replyingTo.sender.name}</div>
+                                    <div style={{ fontSize: 10, color: 'var(--secondary-foreground)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{replyingTo.content}</div>
                                 </div>
-                            );
-                        })}
-                    </div>
-
-                    {/* Reply */}
-                    {replyingTo && (
-                        <div className="px-3.5 py-1.5 border-t border-slate-200 bg-slate-50 flex items-center gap-2.5 shrink-0">
-                            <div className="flex-1 pl-2 border-l-2 border-blue-600 min-w-0">
-                                <div className="text-[10px] font-semibold text-blue-600">Replying to {replyingTo.sender.name}</div>
-                                <div className="text-[10px] text-slate-500 overflow-hidden text-ellipsis whitespace-nowrap">{replyingTo.content}</div>
-                            </div>
-                            <button onClick={() => setReplyingTo(null)} className="bg-transparent border-none text-slate-400 hover:text-slate-700 cursor-pointer text-sm">✕</button>
-                        </div>
-                    )}
-
-                    {/* Progress */}
-                    {uploading && (
-                        <div className="px-3.5 py-1.5 border-t border-slate-200 shrink-0 bg-slate-50">
-                            <div className="text-[11px] text-blue-600 font-semibold mb-1">{isCompressing ? `${statusText} ${compressProgress}%` : statusText || 'Uploading…'}</div>
-                            <div className="h-1 rounded-sm bg-slate-200 overflow-hidden">
-                                <div className="h-full rounded-sm bg-blue-600 transition-all duration-200" style={{ width: isCompressing ? `${compressProgress}%` : '100%' }} />
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Input */}
-                    <div className="px-2.5 pt-2 pb-2.5 border-t border-slate-200 shrink-0 bg-white">
-                        <input ref={fileRef} type="file" accept="video/*,image/*" onChange={handleMedia} className="hidden" />
-                        {isCompressing ? (
-                            <div className="text-center text-[11px] p-1 text-slate-500">Processing…</div>
-                        ) : (
-                            <div className="flex items-center gap-1.5">
-                                <button onClick={() => fileRef.current?.click()} disabled={uploading}
-                                    className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-600 cursor-pointer text-sm flex items-center justify-center shrink-0 transition-colors">
-                                    📎
-                                </button>
-                                <input type="text" value={newMsg} onChange={e => setNewMsg(e.target.value)}
-                                    onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
-                                    placeholder="Message"
-                                    className="flex-1 px-3.5 py-1.5 rounded-full bg-slate-100 border border-slate-300 text-slate-900 text-[13px] outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 min-w-0 transition-all" />
-                                <button onClick={() => handleSend()} disabled={sending || !newMsg.trim()}
-                                    className={`w-8 h-8 rounded-full border-none flex items-center justify-center shrink-0 text-sm font-bold transition-all ${newMsg.trim() ? 'bg-blue-600 text-white cursor-pointer hover:bg-blue-700' : 'bg-slate-200 text-slate-400 cursor-default'}`}>
-                                    →
-                                </button>
+                                <button onClick={() => setReplyingTo(null)} style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', fontSize: 14 }}>✕</button>
                             </div>
                         )}
-                    </div>
-                </>
-            )
-            }
+
+                        {/* Progress */}
+                        {uploading && (
+                            <div style={{ padding: '6px 14px', borderTop: '1px solid var(--card-border)', flexShrink: 0 }}>
+                                <div style={{ fontSize: 11, color: 'var(--primary)', fontWeight: 600, marginBottom: 3 }}>{isCompressing ? `${statusText} ${compressProgress}%` : statusText || 'Uploading…'}</div>
+                                <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
+                                    <div style={{ height: '100%', borderRadius: 2, background: 'linear-gradient(90deg, #06b6d4, #10b981)', transition: 'width 200ms', width: isCompressing ? `${compressProgress}%` : '100%' }} />
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Input */}
+                        <div style={{ padding: '8px 10px 10px', borderTop: '1px solid var(--card-border)', flexShrink: 0 }}>
+                            <input ref={fileRef} type="file" accept="video/*,image/*" onChange={handleMedia} style={{ display: 'none' }} />
+                            {isCompressing ? (
+                                <div style={{ textAlign: 'center', fontSize: 11, padding: 4, color: 'var(--secondary-foreground)' }}>Processing…</div>
+                            ) : (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                    <button onClick={() => fileRef.current?.click()} disabled={uploading}
+                                        style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'var(--secondary-foreground)', cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                        📎
+                                    </button>
+                                    <input type="text" value={newMsg} onChange={e => setNewMsg(e.target.value)}
+                                        onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
+                                        placeholder="Message"
+                                        style={{ flex: 1, padding: '6px 14px', borderRadius: 18, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'var(--foreground)', fontSize: 13, outline: 'none', minWidth: 0 }} />
+                                    <button onClick={() => handleSend()} disabled={sending || !newMsg.trim()}
+                                        style={{ width: 30, height: 30, borderRadius: '50%', background: newMsg.trim() ? 'linear-gradient(135deg, #06b6d4, #10b981)' : 'rgba(255,255,255,0.05)', border: 'none', cursor: newMsg.trim() ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, opacity: newMsg.trim() ? 1 : 0.4, color: newMsg.trim() ? '#000' : 'var(--secondary-foreground)', fontSize: 14, fontWeight: 700 }}>
+                                        →
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    </>
+                )
+                }
+            </div>
         </div>
-    </div>
-);
+    );
 }

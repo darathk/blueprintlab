@@ -76,23 +76,7 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
         return () => { supabase.removeChannel(ch); };
     }, [athleteId, currentUserId, otherUserId]);
 
-    // Polling fallback — check for new messages every 3s
-    useEffect(() => {
-        const poll = setInterval(() => {
-            fetch(`/api/messages?athleteId=${athleteId}`)
-                .then(r => r.ok ? r.json() : null)
-                .then(data => {
-                    if (data) {
-                        setMessages(data);
-                        fetch('/api/messages', {
-                            method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ athleteId: otherUserId, readerId: currentUserId })
-                        });
-                    }
-                });
-        }, 3000);
-        return () => clearInterval(poll);
-    }, [athleteId, currentUserId, otherUserId]);
+
 
     // Close action menu on click outside
     useEffect(() => { const c = () => setActiveMenu(null); window.addEventListener('click', c); return () => window.removeEventListener('click', c); }, []);
@@ -198,168 +182,164 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
     const showTime = (i: number) => i === 0 || messages[i].senderId !== messages[i - 1].senderId ||
         new Date(messages[i].createdAt).getTime() - new Date(messages[i - 1].createdAt).getTime() > 300000;
 
-return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100dvh', background: 'var(--background)' }}>
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, padding: '12px 16px', background: 'var(--card-bg)', borderBottom: '1px solid var(--card-border)', backdropFilter: 'blur(12px)' }}>
-            <button onClick={() => window.history.back()} style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600 }}>← Back</button>
-            <div style={{ flex: 1, textAlign: 'center', fontWeight: 600, color: 'var(--foreground)', fontSize: '1rem' }}>{otherUserName}</div>
-            <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#000', fontSize: '0.85rem', flexShrink: 0 }}>
-                {otherUserName.charAt(0).toUpperCase()}
+    return (
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--background)' }}>
+            {/* Header */}
+            <div style={{ padding: '12px 16px', background: 'var(--card-bg)', borderBottom: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+                <button onClick={() => window.history.back()} style={{ color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 500 }}>← Back</button>
+                <div style={{ flex: 1, textAlign: 'center', fontWeight: 600, color: 'var(--foreground)', fontSize: 15 }}>{otherUserName}</div>
+                <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'linear-gradient(135deg, #06b6d4, #10b981)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#000', fontSize: 13 }}>
+                    {otherUserName.charAt(0).toUpperCase()}
+                </div>
             </div>
-        </div>
 
-        {/* Messages */}
-        <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: 12 }}>
-            {!loaded && <div style={{ textAlign: 'center', padding: 40, color: 'var(--secondary-foreground)' }}>Loading…</div>}
-            {loaded && messages.length === 0 && <div style={{ textAlign: 'center', padding: 64, color: 'var(--secondary-foreground)', fontSize: '0.9rem' }}>No messages yet. Start the conversation!</div>}
+            {/* Messages */}
+            <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '12px 16px' }}>
+                {!loaded && <div style={{ textAlign: 'center', padding: 40, color: 'var(--secondary-foreground)' }}>Loading…</div>}
+                {loaded && messages.length === 0 && <div style={{ textAlign: 'center', padding: 60, color: 'var(--secondary-foreground)', fontSize: 14 }}>No messages yet. Start the conversation!</div>}
 
-            {messages.map((msg, i) => {
-                const mine = msg.senderId === currentUserId;
-                const isVid = msg.mediaType?.startsWith('video');
-                const isImg = msg.mediaType?.startsWith('image');
-                const dateSep = showDateSep(i);
-                const timeSep = showTime(i);
+                {messages.map((msg, i) => {
+                    const mine = msg.senderId === currentUserId;
+                    const isVid = msg.mediaType?.startsWith('video');
+                    const isImg = msg.mediaType?.startsWith('image');
+                    const dateSep = showDateSep(i);
+                    const timeSep = showTime(i);
 
-                return (
-                    <div key={msg.id}>
-                        {dateSep && <div style={{ textAlign: 'center', margin: '16px 0', fontSize: '0.75rem', color: 'var(--secondary-foreground)', fontWeight: 500 }}>{fmtDate(msg.createdAt)}</div>}
-                        {timeSep && !dateSep && <div style={{ textAlign: 'center', margin: '8px 0', fontSize: '10px', color: 'var(--secondary-foreground)' }}>{fmtTime(msg.createdAt)}</div>}
+                    return (
+                        <div key={msg.id}>
+                            {dateSep && <div style={{ textAlign: 'center', margin: '16px 0 8px', fontSize: 11, color: 'rgba(255,255,255,0.3)', fontWeight: 500 }}>{fmtDate(msg.createdAt)}</div>}
+                            {timeSep && !dateSep && <div style={{ textAlign: 'center', margin: '10px 0 4px', fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>{fmtTime(msg.createdAt)}</div>}
 
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, position: 'relative', justifyContent: mine ? 'flex-end' : 'flex-start', marginTop: timeSep && i > 0 ? 8 : 2 }}>
+                            <div style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start', alignItems: 'center', marginTop: timeSep && i > 0 ? 8 : 2, gap: 4, position: 'relative' }}>
 
-                            {/* Action button — left side for own messages */}
-                            {mine && (
-                                <button onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === msg.id ? null : msg.id); }}
-                                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--secondary-foreground)', padding: '0 4px', flexShrink: 0, lineHeight: 1 }}
-                                    title="Actions">⋮</button>
-                            )}
+                                {/* Action button — left side for own messages */}
+                                {mine && (
+                                    <button onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === msg.id ? null : msg.id); }}
+                                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'rgba(255,255,255,0.2)', padding: '2px 4px', flexShrink: 0, lineHeight: 1 }}
+                                        title="Actions">⋮</button>
+                                )}
 
-                            <div style={{ position: 'relative', maxWidth: '75%' }}>
-                                <div style={{
-                                    padding: msg.mediaUrl ? '4px 4px 8px' : '8px 14px',
-                                    borderRadius: mine ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                                    background: mine ? 'rgba(6, 182, 212, 0.15)' : 'var(--card-bg)',
-                                    border: mine ? '1px solid rgba(6, 182, 212, 0.3)' : '1px solid var(--card-border)',
-                                    backdropFilter: 'blur(8px)',
-                                    overflowWrap: 'break-word' as const,
-                                    wordBreak: 'break-word' as const,
-                                }}>
-                                    {/* Reply */}
-                                    {msg.replyTo && (
-                                        <div style={{ marginBottom: 6, padding: 6, borderRadius: 6, borderLeft: mine ? '2px solid var(--primary)' : '2px solid var(--accent)', fontSize: '11px', background: mine ? 'rgba(6, 182, 212, 0.1)' : 'rgba(168, 85, 247, 0.1)' }}>
-                                            <div style={{ fontWeight: 600, marginBottom: 2, color: mine ? 'var(--primary)' : 'var(--accent)' }}>{msg.replyTo.sender.name}</div>
-                                            <div style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--secondary-foreground)' }}>
-                                                {msg.replyTo.mediaUrl ? (msg.replyTo.mediaType?.startsWith('image') ? '📷 Photo' : '📹 Video') : msg.replyTo.content}
+                                <div style={{ position: 'relative', maxWidth: '75%' }}>
+                                    <div style={{
+                                        padding: msg.mediaUrl ? '4px 4px 8px' : '8px 14px',
+                                        borderRadius: mine ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                                        background: mine ? 'linear-gradient(135deg, rgba(6,182,212,0.3), rgba(16,185,129,0.2))' : 'var(--card-bg)',
+                                        border: mine ? '1px solid rgba(6,182,212,0.12)' : '1px solid var(--card-border)',
+                                        wordBreak: 'break-word',
+                                        overflowWrap: 'break-word',
+                                    }}>
+                                        {/* Reply */}
+                                        {msg.replyTo && (
+                                            <div style={{ margin: msg.mediaUrl ? '4px 8px 6px' : '0 0 6px', padding: '6px 8px', borderRadius: 10, background: 'rgba(255,255,255,0.04)', borderLeft: '2px solid rgba(6,182,212,0.5)', fontSize: 11 }}>
+                                                <div style={{ fontWeight: 600, color: 'rgba(6,182,212,0.7)', marginBottom: 2 }}>{msg.replyTo.sender.name}</div>
+                                                <div style={{ color: 'rgba(255,255,255,0.35)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                    {msg.replyTo.mediaUrl ? (msg.replyTo.mediaType?.startsWith('image') ? '📷 Photo' : '📹 Video') : msg.replyTo.content}
+                                                </div>
                                             </div>
+                                        )}
+
+                                        {/* Video */}
+                                        {msg.mediaUrl && isVid && (
+                                            <div>
+                                                <video controls playsInline muted preload="metadata" style={{ width: '100%', maxWidth: 280, borderRadius: 14, background: '#000', display: 'block' }}>
+                                                    <source src={msg.mediaUrl} type={msg.mediaType || 'video/mp4'} />
+                                                </video>
+                                            </div>
+                                        )}
+
+                                        {/* Image */}
+                                        {msg.mediaUrl && isImg && (
+                                            <div>
+                                                <img src={msg.mediaUrl} alt="" loading="lazy" onClick={() => window.open(msg.mediaUrl!, '_blank')}
+                                                    style={{ width: '100%', maxWidth: 280, borderRadius: 14, display: 'block', cursor: 'pointer', objectFit: 'cover' }} />
+                                            </div>
+                                        )}
+
+                                        {/* Text */}
+                                        <div style={{ fontSize: 14, lineHeight: 1.4, color: 'rgba(255,255,255,0.9)', padding: msg.mediaUrl ? '0 10px' : 0 }}>{msg.content}</div>
+
+                                        {/* Time */}
+                                        <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.18)', marginTop: 2, textAlign: mine ? 'right' : 'left', padding: msg.mediaUrl ? '0 10px' : 0 }}>{fmtTime(msg.createdAt)}</div>
+                                    </div>
+
+                                    {/* Inline action menu */}
+                                    {activeMenu === msg.id && (
+                                        <div onClick={e => e.stopPropagation()} style={{
+                                            position: 'absolute', zIndex: 50, top: 0, ...(mine ? { right: '100%', marginRight: 4 } : { left: '100%', marginLeft: 4 }),
+                                            background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 10, boxShadow: '0 6px 20px rgba(0,0,0,0.5)', padding: '3px 0', minWidth: 120, whiteSpace: 'nowrap'
+                                        }}>
+                                            <button onClick={() => { setReplyingTo(msg); setActiveMenu(null); }}
+                                                style={{ display: 'block', width: '100%', textAlign: 'left', padding: '7px 12px', background: 'none', border: 'none', fontSize: 12, color: 'var(--foreground)', cursor: 'pointer' }}>↩️ Reply</button>
+                                            <button onClick={() => { navigator.clipboard.writeText(msg.content); setActiveMenu(null); }}
+                                                style={{ display: 'block', width: '100%', textAlign: 'left', padding: '7px 12px', background: 'none', border: 'none', fontSize: 12, color: 'var(--foreground)', cursor: 'pointer' }}>📋 Copy</button>
+                                            {msg.mediaUrl && <button onClick={() => { saveMedia(msg.mediaUrl!, msg.mediaType?.startsWith('image')); setActiveMenu(null); }}
+                                                style={{ display: 'block', width: '100%', textAlign: 'left', padding: '7px 12px', background: 'none', border: 'none', fontSize: 12, color: 'var(--foreground)', cursor: 'pointer' }}>💾 Save</button>}
                                         </div>
                                     )}
-
-                                    {/* Video */}
-                                    {msg.mediaUrl && isVid && (
-                                        <div>
-                                            <video controls playsInline muted preload="metadata" style={{ width: '100%', maxWidth: 280, borderRadius: 12, background: '#000', display: 'block' }}>
-                                                <source src={msg.mediaUrl} type={msg.mediaType || 'video/mp4'} />
-                                            </video>
-                                        </div>
-                                    )}
-
-                                    {/* Image */}
-                                    {msg.mediaUrl && isImg && (
-                                        <div>
-                                            <img src={msg.mediaUrl} alt="" loading="lazy" onClick={() => window.open(msg.mediaUrl!, '_blank')}
-                                                style={{ width: '100%', maxWidth: 280, borderRadius: 12, display: 'block', cursor: 'pointer', objectFit: 'cover' }} />
-                                        </div>
-                                    )}
-
-                                    {/* Text */}
-                                    <div style={{ fontSize: '0.9rem', lineHeight: 1.5, padding: msg.mediaUrl ? '0 10px' : 0, color: 'var(--foreground)' }}>{msg.content}</div>
-
-                                    {/* Time */}
-                                    <div style={{ fontSize: '9px', marginTop: 2, color: 'var(--secondary-foreground)', textAlign: mine ? 'right' : 'left', padding: msg.mediaUrl ? '0 10px' : 0 }}>{fmtTime(msg.createdAt)}</div>
                                 </div>
 
-                                {/* Inline action menu */}
-                                {activeMenu === msg.id && (
-                                    <div onClick={e => e.stopPropagation()} style={{
-                                        position: 'absolute', zIndex: 50, top: 0,
-                                        ...(mine ? { right: '100%', marginRight: 4 } : { left: '100%', marginLeft: 4 }),
-                                        background: 'rgba(15, 23, 42, 0.95)', border: '1px solid var(--card-border)', borderRadius: 8,
-                                        backdropFilter: 'blur(12px)', boxShadow: '0 4px 16px rgba(0,0,0,0.4)', padding: '4px 0', minWidth: 120, whiteSpace: 'nowrap'
-                                    }}>
-                                        <button onClick={() => { setReplyingTo(msg); setActiveMenu(null); }}
-                                            style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 12px', background: 'none', border: 'none', fontSize: '0.75rem', color: 'var(--foreground)', cursor: 'pointer' }}>↩️ Reply</button>
-                                        <button onClick={() => { navigator.clipboard.writeText(msg.content); setActiveMenu(null); }}
-                                            style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 12px', background: 'none', border: 'none', fontSize: '0.75rem', color: 'var(--foreground)', cursor: 'pointer' }}>📋 Copy</button>
-                                        {msg.mediaUrl && <button onClick={() => { saveMedia(msg.mediaUrl!, msg.mediaType?.startsWith('image')); setActiveMenu(null); }}
-                                            style={{ display: 'block', width: '100%', textAlign: 'left', padding: '6px 12px', background: 'none', border: 'none', fontSize: '0.75rem', color: 'var(--foreground)', cursor: 'pointer' }}>💾 Save</button>}
-                                    </div>
+                                {/* Action button — right side for other's messages */}
+                                {!mine && (
+                                    <button onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === msg.id ? null : msg.id); }}
+                                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'rgba(255,255,255,0.2)', padding: '2px 4px', flexShrink: 0, lineHeight: 1 }}
+                                        title="Actions">⋮</button>
                                 )}
                             </div>
+                        </div>
+                    );
+                })}
 
-                            {/* Action button — right side for other's messages */}
-                            {!mine && (
-                                <button onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === msg.id ? null : msg.id); }}
-                                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--secondary-foreground)', padding: '0 4px', flexShrink: 0, lineHeight: 1 }}
-                                    title="Actions">⋮</button>
-                            )}
+            </div>
+
+
+
+            {/* Reply bar */}
+            {replyingTo && (
+                <div style={{ padding: '8px 16px', background: 'var(--card-bg)', borderTop: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+                    <div style={{ flex: 1, paddingLeft: 10, borderLeft: '2px solid var(--primary)', minWidth: 0 }}>
+                        <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--primary)' }}>Replying to {replyingTo.sender.name}</div>
+                        <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {replyingTo.mediaUrl ? (replyingTo.mediaType?.startsWith('image') ? '📷 Photo' : '📹 Video') : replyingTo.content}
                         </div>
                     </div>
-                );
-            })}
-        </div>
-
-        {/* Reply bar */}
-        {replyingTo && (
-            <div style={{ padding: '8px 16px', background: 'var(--card-bg)', borderTop: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-                <div style={{ flex: 1, paddingLeft: 10, borderLeft: '2px solid var(--primary)', minWidth: 0 }}>
-                    <div style={{ fontSize: '11px', fontWeight: 600, color: 'var(--primary)' }}>Replying to {replyingTo.sender.name}</div>
-                    <div style={{ fontSize: '11px', color: 'var(--secondary-foreground)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {replyingTo.mediaUrl ? (replyingTo.mediaType?.startsWith('image') ? '📷 Photo' : '📹 Video') : replyingTo.content}
-                    </div>
-                </div>
-                <button onClick={() => setReplyingTo(null)} style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', fontSize: '1rem' }}>✕</button>
-            </div>
-        )}
-
-        {/* Upload progress */}
-        {uploading && (
-            <div style={{ padding: '8px 16px', borderTop: '1px solid var(--card-border)', flexShrink: 0, background: 'var(--card-bg)' }}>
-                <div style={{ fontSize: '0.75rem', color: 'var(--primary)', fontWeight: 600, marginBottom: 4 }}>
-                    {isCompressing ? `${statusText} ${compressProgress}%` : statusText || 'Uploading…'}
-                </div>
-                <div style={{ height: 4, borderRadius: 2, background: 'var(--secondary)', overflow: 'hidden' }}>
-                    <div style={{ height: '100%', borderRadius: 2, background: 'var(--primary)', transition: 'width 200ms', width: isCompressing ? `${compressProgress}%` : '100%' }} />
-                </div>
-            </div>
-        )}
-
-        {/* Input */}
-        <div style={{ padding: '8px 12px 12px', background: 'var(--card-bg)', borderTop: '1px solid var(--card-border)', flexShrink: 0, backdropFilter: 'blur(12px)' }}>
-            <input ref={fileRef} type="file" accept="video/*,image/*" onChange={handleMedia} style={{ display: 'none' }} />
-            {isCompressing ? (
-                <div style={{ textAlign: 'center', fontSize: '0.75rem', padding: 6, color: 'var(--secondary-foreground)' }}>Processing…</div>
-            ) : (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <button onClick={() => fileRef.current?.click()} disabled={uploading}
-                        style={{ width: 36, height: 36, borderRadius: '50%', background: 'var(--secondary)', border: '1px solid var(--card-border)', color: 'var(--foreground)', cursor: 'pointer', fontSize: '1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        📎
-                    </button>
-                    <input type="text" value={newMessage} onChange={e => setNewMessage(e.target.value)}
-                        onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
-                        placeholder="Message"
-                        style={{ flex: 1, padding: '8px 16px', borderRadius: 20, background: 'var(--secondary)', border: '1px solid var(--card-border)', color: 'var(--foreground)', fontSize: '0.9rem', outline: 'none', minWidth: 0 }} />
-                    <button onClick={() => handleSend()} disabled={sending || !newMessage.trim()}
-                        style={{
-                            width: 36, height: 36, borderRadius: '50%', border: 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: '1rem', fontWeight: 700, transition: 'all 200ms',
-                            background: newMessage.trim() ? 'var(--primary)' : 'var(--secondary)', color: newMessage.trim() ? '#000' : 'var(--secondary-foreground)', cursor: newMessage.trim() ? 'pointer' : 'default',
-                            boxShadow: newMessage.trim() ? '0 0 12px rgba(6, 182, 212, 0.3)' : 'none'
-                        }}>
-                        →
-                    </button>
+                    <button onClick={() => setReplyingTo(null)} style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', fontSize: 16 }}>✕</button>
                 </div>
             )}
+
+            {/* Upload progress */}
+            {uploading && (
+                <div style={{ padding: '8px 16px', borderTop: '1px solid var(--card-border)', flexShrink: 0 }}>
+                    <div style={{ fontSize: 12, color: 'var(--primary)', fontWeight: 600, marginBottom: 4 }}>
+                        {isCompressing ? `${statusText} ${compressProgress}%` : statusText || 'Uploading…'}
+                    </div>
+                    <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', borderRadius: 2, background: 'linear-gradient(90deg, #06b6d4, #10b981)', transition: 'width 200ms', width: isCompressing ? `${compressProgress}%` : '100%' }} />
+                    </div>
+                </div>
+            )}
+
+            {/* Input */}
+            <div style={{ padding: '8px 12px 12px', background: 'var(--card-bg)', borderTop: '1px solid var(--card-border)', flexShrink: 0 }}>
+                <input ref={fileRef} type="file" accept="video/*,image/*" onChange={handleMedia} style={{ display: 'none' }} />
+                {isCompressing ? (
+                    <div style={{ textAlign: 'center', fontSize: 12, padding: 6, color: 'var(--secondary-foreground)' }}>Processing…</div>
+                ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <button onClick={() => fileRef.current?.click()} disabled={uploading}
+                            style={{ width: 34, height: 34, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'var(--secondary-foreground)', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            📎
+                        </button>
+                        <input type="text" value={newMessage} onChange={e => setNewMessage(e.target.value)}
+                            onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
+                            placeholder="Message"
+                            style={{ flex: 1, padding: '8px 16px', borderRadius: 20, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'var(--foreground)', fontSize: 14, outline: 'none', minWidth: 0 }} />
+                        <button onClick={() => handleSend()} disabled={sending || !newMessage.trim()}
+                            style={{ width: 34, height: 34, borderRadius: '50%', background: newMessage.trim() ? 'linear-gradient(135deg, #06b6d4, #10b981)' : 'rgba(255,255,255,0.05)', border: 'none', cursor: newMessage.trim() ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, opacity: newMessage.trim() ? 1 : 0.4, color: newMessage.trim() ? '#000' : 'var(--secondary-foreground)', fontSize: 16, fontWeight: 700 }}>
+                            →
+                        </button>
+                    </div>
+                )}
+            </div>
         </div>
-    </div>
-);
+    );
 }
