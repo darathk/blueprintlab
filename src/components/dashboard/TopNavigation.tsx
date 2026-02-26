@@ -46,16 +46,16 @@ export default function TopNavigation() {
                 Messages
             </Link>
             <Link
-                href="/dashboard/programs"
+                href="/dashboard/programs/new"
                 className="nav-link"
                 style={{
                     fontWeight: 600,
                     fontSize: '0.95rem',
-                    color: isActive('/dashboard/programs') ? 'var(--primary)' : 'var(--secondary-foreground)',
+                    color: isActive('/dashboard/programs/new') ? 'var(--primary)' : 'var(--secondary-foreground)',
                     textTransform: 'uppercase',
                     letterSpacing: '0.05em',
                     transition: 'color 0.2s ease',
-                    textShadow: isActive('/dashboard/programs') ? '0 0 10px rgba(6,182,212,0.4)' : 'none'
+                    textShadow: isActive('/dashboard/programs/new') ? '0 0 10px rgba(6,182,212,0.4)' : 'none'
                 }}
             >
                 Program Builder
