@@ -1,135 +1,45 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-
-/* ─────────── types ─────────── */
-interface SetDef { weight?: string; reps?: string; rpe?: string; }
-interface Exercise { id: string; name: string; sets: SetDef[]; }
-interface Session { id: string; name: string; day: number; exercises: Exercise[]; scheduledDate?: string; }
-interface Week { weekNumber: number; sessions: Session[]; }
-interface Program { id: string; name: string; startDate?: string; weeks: Week[]; }
-interface Log { programId: string; sessionId: string; date: string; exercises: { exerciseId: string; name: string; sets: { weight: string; reps: string; rpe: string; }[]; }[]; }
+import { calculateSimpleE1RM, calculateStress } from '@/lib/stress-index';
 
 /* ─────────── helpers ─────────── */
-const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
-
 function sessionKey(programId: string, weekNum: number, day: number) {
     return `${programId}_w${weekNum}_d${day}`;
 }
 
-/** Compute how many sets have actual data filled in */
-function sessionProgress(session: Session, log: Log | undefined): number {
-    const totalSets = session.exercises.reduce((s, ex) => s + (Array.isArray(ex.sets) ? ex.sets.length : 0), 0);
-    if (!totalSets) return 0;
-    if (!log) return 0;
+function sessionProgress(exercises: any[], log: any): number {
+    const totalSets = exercises.reduce((s: number, ex: any) => s + (Array.isArray(ex.sets) ? ex.sets.length : 0), 0);
+    if (!totalSets || !log) return 0;
     let filled = 0;
-    log.exercises.forEach(logEx => {
-        logEx.sets.forEach(s => {
-            if (s.weight || s.reps) filled++;
-        });
+    (log.exercises || []).forEach((logEx: any) => {
+        (logEx.sets || []).forEach((s: any) => { if (s.weight || s.reps) filled++; });
     });
     return Math.min(100, Math.round((filled / totalSets) * 100));
 }
 
 /* ─────────── component ─────────── */
 export default function ScheduleView({ programs, athleteId, logs }: {
-    programs: Program[];
+    programs: any[];
     athleteId: string;
-    logs: Log[];
+    logs: any[];
 }) {
     const router = useRouter();
 
-    // Collect ALL months that have sessions
-    const monthData = useCallback(() => {
-        const result: Map<string, { monthKey: string; label: string; year: number; month: number; weeks: { weekNumber: number; program: Program; sessions: { session: Session; date?: Date; log?: Log }[] }[] }> = new Map();
-
-        if (!Array.isArray(programs)) return [];
-
-        programs.forEach(program => {
-            const weeks = Array.isArray(program.weeks) ? program.weeks : [];
-            if (!weeks.length) return;
-            const startDate = program.startDate ? new Date(program.startDate) : null;
-
-            weeks.forEach((week: any) => {
-                if (!week || !Array.isArray(week.sessions)) return;
-                const weekNumber = week.weekNumber || 1;
-
-                week.sessions.forEach((session: any) => {
-                    if (!session) return;
-                    let sessionDate: Date | undefined;
-
-                    if (session.scheduledDate) {
-                        sessionDate = new Date(session.scheduledDate + 'T00:00:00');
-                    } else if (startDate) {
-                        const offset = (weekNumber - 1) * 7 + ((session.day || 1) - 1);
-                        sessionDate = new Date(startDate);
-                        sessionDate.setDate(sessionDate.getDate() + offset);
-                    }
-
-                    if (!sessionDate || isNaN(sessionDate.getTime())) return;
-
-                    const y = sessionDate.getFullYear();
-                    const m = sessionDate.getMonth();
-                    const monthKey = `${y}-${String(m).padStart(2, '0')}`;
-
-                    if (!result.has(monthKey)) {
-                        result.set(monthKey, { monthKey, label: `${MONTHS[m]} ${y}`, year: y, month: m, weeks: [] });
-                    }
-
-                    const monthEntry = result.get(monthKey)!;
-                    let weekEntry = monthEntry.weeks.find(w => w.weekNumber === weekNumber && w.program.id === program.id);
-                    if (!weekEntry) {
-                        weekEntry = { weekNumber, program, sessions: [] };
-                        monthEntry.weeks.push(weekEntry);
-                    }
-
-                    const sKey = sessionKey(program.id, weekNumber, session.day || 1);
-                    const log = Array.isArray(logs) ? logs.find(l => l.sessionId === sKey && l.programId === program.id) : undefined;
-
-                    weekEntry.sessions.push({ session: { ...session, exercises: Array.isArray(session.exercises) ? session.exercises : [] }, date: sessionDate, log });
-                });
-            });
-        });
-
-        // Sort months, weeks, sessions
-        const sorted = [...result.values()].sort((a, b) => a.monthKey.localeCompare(b.monthKey));
-        sorted.forEach(m => {
-            m.weeks.sort((a, b) => a.weekNumber - b.weekNumber);
-            m.weeks.forEach(w => w.sessions.sort((a, b) => (a.date?.getTime() || 0) - (b.date?.getTime() || 0)));
-        });
-
-        return sorted;
-    }, [programs, logs]);
-
-    const months = monthData();
-
-    // Auto-expand current month/week
-    const now = new Date();
-    const currentMonthKey = `${now.getFullYear()}-${String(now.getMonth()).padStart(2, '0')}`;
-
-    const [openMonths, setOpenMonths] = useState<Set<string>>(() => new Set([currentMonthKey]));
-    const [openWeeks, setOpenWeeks] = useState<Set<string>>(() => {
-        // Find which week the current date falls in
-        const keys = new Set<string>();
-        months.forEach(m => {
-            if (m.monthKey === currentMonthKey) {
-                m.weeks.forEach(w => {
-                    w.sessions.forEach(s => {
-                        if (s.date) {
-                            const diff = Math.abs(now.getTime() - s.date.getTime());
-                            if (diff < 7 * 24 * 60 * 60 * 1000) {
-                                keys.add(`${m.monthKey}-w${w.weekNumber}-${w.program.id}`);
-                            }
-                        }
-                    });
-                });
-            }
-        });
-        return keys;
+    // Toggle states
+    const [openBlocks, setOpenBlocks] = useState<Set<string>>(() => {
+        // auto-open first program
+        const s = new Set<string>();
+        if (programs?.length) s.add(programs[0].id);
+        return s;
     });
-    const [openDays, setOpenDays] = useState<Set<string>>(new Set());
-    const [editState, setEditState] = useState<Record<string, any>>({});
+    const [openWeeks, setOpenWeeks] = useState<Set<string>>(new Set());
+    const [openSessions, setOpenSessions] = useState<Set<string>>(new Set());
+    const [openExercises, setOpenExercises] = useState<Set<string>>(new Set());
+
+    // Workout edit state: keyed by session key
+    const [editState, setEditState] = useState<Record<string, any[]>>({});
     const [saving, setSaving] = useState<Set<string>>(new Set());
     const [savedKeys, setSavedKeys] = useState<Set<string>>(new Set());
 
@@ -139,15 +49,17 @@ export default function ScheduleView({ programs, athleteId, logs }: {
         setter(next);
     };
 
-    // Initialize edit state for a day
-    const initEdit = (sKey: string, session: Session, log: Log | undefined) => {
-        if (editState[sKey]) return; // already initialized
-        const state = session.exercises.map(ex => {
-            const logEx = log?.exercises?.find(l => l.exerciseId === ex.id || l.name === ex.name);
+    // Initialize edit state when a session is opened
+    const initEdit = useCallback((sKey: string, exercises: any[], log: any) => {
+        if (editState[sKey]) return;
+        const state = (exercises || []).map((ex: any) => {
+            const logEx = log?.exercises?.find((l: any) => l.exerciseId === ex.id || l.name === ex.name);
+            const sets = Array.isArray(ex.sets) ? ex.sets : [];
             return {
                 exerciseId: ex.id,
                 name: ex.name,
-                sets: (Array.isArray(ex.sets) ? ex.sets : []).map((s, i) => {
+                notes: logEx?.notes || ex.notes || '',
+                sets: sets.map((s: any, i: number) => {
                     const saved = logEx?.sets?.[i];
                     return {
                         target: { weight: s.weight || '', reps: s.reps || '', rpe: s.rpe || '' },
@@ -157,12 +69,49 @@ export default function ScheduleView({ programs, athleteId, logs }: {
             };
         });
         setEditState(prev => ({ ...prev, [sKey]: state }));
-    };
+    }, [editState]);
 
     const updateSet = (sKey: string, exIdx: number, setIdx: number, field: string, value: string) => {
         setEditState(prev => {
             const copy = JSON.parse(JSON.stringify(prev));
-            copy[sKey][exIdx].sets[setIdx].actual[field] = value;
+            if (copy[sKey]?.[exIdx]?.sets?.[setIdx]?.actual) {
+                copy[sKey][exIdx].sets[setIdx].actual[field] = value;
+            }
+            return copy;
+        });
+    };
+
+    const updateNotes = (sKey: string, exIdx: number, value: string) => {
+        setEditState(prev => {
+            const copy = JSON.parse(JSON.stringify(prev));
+            if (copy[sKey]?.[exIdx]) copy[sKey][exIdx].notes = value;
+            return copy;
+        });
+    };
+
+    const copyPrevSet = (sKey: string, exIdx: number, setIdx: number) => {
+        if (setIdx === 0) return;
+        setEditState(prev => {
+            const copy = JSON.parse(JSON.stringify(prev));
+            const prevActual = copy[sKey]?.[exIdx]?.sets?.[setIdx - 1]?.actual;
+            if (prevActual && copy[sKey][exIdx].sets[setIdx]) {
+                copy[sKey][exIdx].sets[setIdx].actual = { ...prevActual };
+            }
+            return copy;
+        });
+    };
+
+    const copyTargetToActual = (sKey: string, exIdx: number, setIdx: number) => {
+        setEditState(prev => {
+            const copy = JSON.parse(JSON.stringify(prev));
+            const target = copy[sKey]?.[exIdx]?.sets?.[setIdx]?.target;
+            if (target && copy[sKey][exIdx].sets[setIdx]) {
+                const reps = String(target.reps);
+                const cleanReps = reps.includes('-') ? reps.split('-')[0] : reps;
+                copy[sKey][exIdx].sets[setIdx].actual = {
+                    weight: target.weight, reps: cleanReps, rpe: target.rpe
+                };
+            }
             return copy;
         });
     };
@@ -175,6 +124,7 @@ export default function ScheduleView({ programs, athleteId, logs }: {
             const cleanLogs = exLogs.map((ex: any) => ({
                 exerciseId: ex.exerciseId,
                 name: ex.name,
+                notes: ex.notes || '',
                 sets: ex.sets.map((s: any) => ({ weight: s.actual.weight, reps: s.actual.reps, rpe: s.actual.rpe }))
             }));
             await fetch('/api/logs', {
@@ -183,22 +133,16 @@ export default function ScheduleView({ programs, athleteId, logs }: {
                 body: JSON.stringify({ athleteId, programId, sessionId: sKey, date: new Date().toISOString(), exercises: cleanLogs })
             });
             setSavedKeys(prev => new Set(prev).add(sKey));
-            setTimeout(() => setSavedKeys(prev => { const n = new Set(prev); n.delete(sKey); return n; }), 2000);
+            setTimeout(() => setSavedKeys(prev => { const n = new Set(prev); n.delete(sKey); return n; }), 2500);
             router.refresh();
         } catch (e) { console.error(e); }
         finally { setSaving(prev => { const n = new Set(prev); n.delete(sKey); return n; }); }
     };
 
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-
-    const formatDayLabel = (date: Date) => {
-        return `${dayNames[date.getDay()]}, ${MONTHS[date.getMonth()].slice(0, 3)} ${date.getDate()}`;
-    };
-
-    if (!months.length) {
+    if (!Array.isArray(programs) || !programs.length) {
         return (
             <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--secondary-foreground)' }}>
-                <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>No training schedule found.</p>
+                <p style={{ fontSize: '1.1rem', marginBottom: '0.5rem' }}>No training blocks found.</p>
                 <p style={{ fontSize: '0.85rem' }}>Ask your coach to assign a program.</p>
             </div>
         );
@@ -206,29 +150,40 @@ export default function ScheduleView({ programs, athleteId, logs }: {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-            {months.map(m => {
-                const monthOpen = openMonths.has(m.monthKey);
+            {programs.map(program => {
+                const blockOpen = openBlocks.has(program.id);
+                const weeks: any[] = Array.isArray(program.weeks) ? program.weeks : [];
+                const totalWeeks = weeks.length;
+                const totalSessions = weeks.reduce((s: number, w: any) => s + (Array.isArray(w.sessions) ? w.sessions.length : 0), 0);
+
                 return (
-                    <div key={m.monthKey}>
-                        {/* ── Month Header ── */}
+                    <div key={program.id}>
+                        {/* ═══ Block Header ═══ */}
                         <button
-                            onClick={() => toggle(openMonths, m.monthKey, setOpenMonths)}
+                            onClick={() => toggle(openBlocks, program.id, setOpenBlocks)}
                             style={{
                                 width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                padding: '14px 16px', background: 'linear-gradient(135deg, rgba(6,182,212,0.15), rgba(16,185,129,0.1))',
+                                padding: '16px 16px', background: 'linear-gradient(135deg, rgba(6,182,212,0.18), rgba(16,185,129,0.12))',
                                 border: 'none', borderBottom: '1px solid var(--card-border)',
-                                color: 'var(--foreground)', cursor: 'pointer', fontSize: '1.05rem', fontWeight: 700
+                                color: 'var(--foreground)', cursor: 'pointer', textAlign: 'left'
                             }}
                         >
-                            <span>{m.label}</span>
-                            <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.4)', transition: 'transform 200ms', transform: monthOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+                            <div>
+                                <div style={{ fontSize: '1.05rem', fontWeight: 700 }}>{program.name}</div>
+                                <div style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', marginTop: 2 }}>
+                                    {totalWeeks} week{totalWeeks !== 1 ? 's' : ''} • {totalSessions} session{totalSessions !== 1 ? 's' : ''}
+                                </div>
+                            </div>
+                            <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.35)', transition: 'transform 200ms', transform: blockOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
                         </button>
 
-                        {/* ── Weeks ── */}
-                        {monthOpen && m.weeks.map(w => {
-                            const weekKey = `${m.monthKey}-w${w.weekNumber}-${w.program.id}`;
+                        {/* ═══ Weeks ═══ */}
+                        {blockOpen && weeks.map((week: any) => {
+                            if (!week) return null;
+                            const weekNum = week.weekNumber || 1;
+                            const weekKey = `${program.id}-w${weekNum}`;
                             const weekOpen = openWeeks.has(weekKey);
-                            const weekSessions = w.sessions.length;
+                            const sessions: any[] = Array.isArray(week.sessions) ? week.sessions : [];
 
                             return (
                                 <div key={weekKey}>
@@ -236,48 +191,50 @@ export default function ScheduleView({ programs, athleteId, logs }: {
                                         onClick={() => toggle(openWeeks, weekKey, setOpenWeeks)}
                                         style={{
                                             width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                            padding: '11px 16px 11px 28px', background: 'rgba(255,255,255,0.02)',
+                                            padding: '12px 16px 12px 28px', background: 'rgba(255,255,255,0.02)',
                                             border: 'none', borderBottom: '1px solid rgba(255,255,255,0.04)',
                                             color: 'var(--foreground)', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600
                                         }}
                                     >
-                                        <span>Week {w.weekNumber} <span style={{ fontWeight: 400, color: 'var(--secondary-foreground)', fontSize: '0.8rem' }}>• {weekSessions} session{weekSessions !== 1 ? 's' : ''}</span></span>
+                                        <span>Week {weekNum} <span style={{ fontWeight: 400, color: 'var(--secondary-foreground)', fontSize: '0.8rem' }}>• {sessions.length} session{sessions.length !== 1 ? 's' : ''}</span></span>
                                         <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.3)', transition: 'transform 200ms', transform: weekOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
                                     </button>
 
-                                    {/* ── Days ── */}
-                                    {weekOpen && w.sessions.map(({ session, date, log }) => {
-                                        const sKey = sessionKey(w.program.id, w.weekNumber, session.day);
-                                        const dayKey = `${weekKey}-d${session.day}`;
-                                        const dayOpen = openDays.has(dayKey);
-                                        const progress = sessionProgress(session, log);
-                                        const isToday = date ? date.toDateString() === now.toDateString() : false;
+                                    {/* ═══ Sessions (Days) ═══ */}
+                                    {weekOpen && sessions.map((session: any) => {
+                                        if (!session) return null;
+                                        const day = session.day || 1;
+                                        const sKey = sessionKey(program.id, weekNum, day);
+                                        const sessionOpen = openSessions.has(sKey);
+                                        const exercises: any[] = Array.isArray(session.exercises) ? session.exercises : [];
+                                        const log = Array.isArray(logs) ? logs.find(l => l.sessionId === sKey && l.programId === program.id) : undefined;
+                                        const progress = sessionProgress(exercises, log);
 
                                         return (
-                                            <div key={dayKey}>
-                                                {/* Day row */}
+                                            <div key={sKey}>
+                                                {/* Session row */}
                                                 <button
                                                     onClick={() => {
-                                                        toggle(openDays, dayKey, setOpenDays);
-                                                        if (!openDays.has(dayKey)) initEdit(sKey, session, log);
+                                                        toggle(openSessions, sKey, setOpenSessions);
+                                                        if (!openSessions.has(sKey)) initEdit(sKey, exercises, log);
                                                     }}
                                                     style={{
                                                         width: '100%', display: 'flex', alignItems: 'center', gap: 10,
-                                                        padding: '12px 16px 12px 44px',
-                                                        background: isToday ? 'rgba(6,182,212,0.06)' : 'transparent',
+                                                        padding: '12px 16px 12px 44px', background: 'transparent',
                                                         border: 'none', borderBottom: '1px solid rgba(255,255,255,0.03)',
                                                         color: 'var(--foreground)', cursor: 'pointer', fontSize: '0.85rem', textAlign: 'left'
                                                     }}
                                                 >
-                                                    <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', transition: 'transform 200ms', transform: dayOpen ? 'rotate(90deg)' : 'rotate(0deg)', flexShrink: 0 }}>▶</span>
+                                                    <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', transition: 'transform 200ms', transform: sessionOpen ? 'rotate(90deg)' : 'rotate(0deg)', flexShrink: 0 }}>▶</span>
                                                     <div style={{ flex: 1, minWidth: 0 }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                                                            {isToday && <span style={{ fontSize: '0.65rem', background: 'var(--primary)', color: '#000', padding: '1px 6px', borderRadius: 8, fontWeight: 700 }}>TODAY</span>}
-                                                            <span style={{ fontWeight: 600, fontSize: '0.85rem' }}>{date ? formatDayLabel(date) : `Day ${session.day}`}</span>
-                                                            <span style={{ color: 'var(--secondary-foreground)', fontSize: '0.8rem' }}>— {session.name}</span>
+                                                        <div style={{ fontWeight: 600, fontSize: '0.85rem' }}>
+                                                            Day {day} — {session.name || 'Workout'}
+                                                            <span style={{ fontWeight: 400, color: 'var(--secondary-foreground)', fontSize: '0.75rem', marginLeft: 8 }}>
+                                                                {exercises.length} exercise{exercises.length !== 1 ? 's' : ''}
+                                                            </span>
                                                         </div>
                                                         {/* Progress bar */}
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 6 }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 5 }}>
                                                             <div style={{ flex: 1, height: 4, borderRadius: 2, background: 'rgba(255,255,255,0.06)', overflow: 'hidden' }}>
                                                                 <div style={{
                                                                     height: '100%', borderRadius: 2, transition: 'width 300ms',
@@ -292,64 +249,183 @@ export default function ScheduleView({ programs, athleteId, logs }: {
                                                     </div>
                                                 </button>
 
-                                                {/* Expanded: exercise list + inline editing */}
-                                                {dayOpen && (
-                                                    <div style={{ padding: '8px 16px 16px 56px', borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(0,0,0,0.15)' }}>
-                                                        {(editState[sKey] || session.exercises).map((ex: any, exIdx: number) => {
+                                                {/* ═══ Expanded Session: Exercise Cards ═══ */}
+                                                {sessionOpen && (
+                                                    <div style={{ padding: '8px 12px 16px 12px', borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(0,0,0,0.12)' }}>
+                                                        {(editState[sKey] || exercises).map((ex: any, exIdx: number) => {
                                                             const isEdit = !!editState[sKey];
                                                             const exerciseData = isEdit ? editState[sKey][exIdx] : ex;
+                                                            if (!exerciseData) return null;
                                                             const sets = isEdit ? exerciseData.sets : (Array.isArray(ex.sets) ? ex.sets : []);
+                                                            const exKey = `${sKey}-ex${exIdx}`;
+                                                            const exOpen = openExercises.has(exKey);
+
+                                                            // Compute per-exercise stats from actual data
+                                                            const validSets = sets.filter((s: any) => {
+                                                                const a = isEdit ? s.actual : { weight: '', reps: '', rpe: '' };
+                                                                return a.weight && a.reps && a.rpe;
+                                                            });
+                                                            const e1rms = validSets.map((s: any) => {
+                                                                const a = isEdit ? s.actual : { weight: '', reps: '', rpe: '' };
+                                                                return calculateSimpleE1RM(a.weight, a.reps, a.rpe);
+                                                            });
+                                                            const maxE1RM = e1rms.length > 0 ? Math.max(...e1rms) : 0;
+
+                                                            let exStress = { total: 0, central: 0, peripheral: 0 };
+                                                            let tonnage = 0;
+                                                            let totalNL = 0;
+                                                            sets.forEach((s: any) => {
+                                                                const a = isEdit ? s.actual : { weight: '', reps: '', rpe: '' };
+                                                                const w = parseFloat(a.weight) || 0;
+                                                                const r = parseFloat(a.reps) || 0;
+                                                                const rpe = parseFloat(a.rpe) || 0;
+                                                                tonnage += w * r;
+                                                                totalNL += r;
+                                                                if (r > 0 && rpe > 0) {
+                                                                    const res = calculateStress(r, rpe);
+                                                                    exStress.total += res.total;
+                                                                    exStress.central += res.central;
+                                                                    exStress.peripheral += res.peripheral;
+                                                                }
+                                                            });
 
                                                             return (
-                                                                <div key={exIdx} style={{ marginBottom: 12 }}>
-                                                                    <div style={{ fontWeight: 600, fontSize: '0.85rem', marginBottom: 4, color: 'rgba(6,182,212,0.9)' }}>
-                                                                        {exerciseData.name || ex.name}
-                                                                    </div>
+                                                                <div key={exIdx} style={{ border: '1px solid var(--card-border)', borderRadius: 10, background: 'var(--card-bg)', overflow: 'hidden', marginBottom: 8 }}>
+                                                                    {/* Exercise header — toggleable */}
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            toggle(openExercises, exKey, setOpenExercises);
+                                                                            if (!editState[sKey]) initEdit(sKey, exercises, log);
+                                                                        }}
+                                                                        style={{
+                                                                            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                                                            padding: '10px 12px', background: 'rgba(255,255,255,0.03)',
+                                                                            border: 'none', borderBottom: exOpen ? '1px solid var(--card-border)' : 'none',
+                                                                            color: 'var(--foreground)', cursor: 'pointer', textAlign: 'left'
+                                                                        }}
+                                                                    >
+                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                                                            <span style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.3)', transition: 'transform 200ms', transform: exOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+                                                                            <span style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--accent)' }}>{exerciseData.name || ex.name}</span>
+                                                                        </div>
+                                                                        <span style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)' }}>{sets.length} set{sets.length !== 1 ? 's' : ''}</span>
+                                                                    </button>
 
-                                                                    {/* Set headers */}
-                                                                    <div style={{ display: 'grid', gridTemplateColumns: '32px 1fr 1fr 1fr', gap: 4, fontSize: '0.65rem', color: 'rgba(255,255,255,0.25)', fontWeight: 600, marginBottom: 2, padding: '0 2px' }}>
-                                                                        <span>Set</span><span>Weight</span><span>Reps</span><span>RPE</span>
-                                                                    </div>
-
-                                                                    {sets.map((set: any, setIdx: number) => {
-                                                                        const target = isEdit ? set.target : set;
-                                                                        const actual = isEdit ? set.actual : { weight: '', reps: '', rpe: '' };
-
-                                                                        return (
-                                                                            <div key={setIdx} style={{ display: 'grid', gridTemplateColumns: '32px 1fr 1fr 1fr', gap: 4, marginBottom: 3 }}>
-                                                                                <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center' }}>{setIdx + 1}</div>
-                                                                                {['weight', 'reps', 'rpe'].map(field => (
-                                                                                    <input
-                                                                                        key={field}
-                                                                                        type="text"
-                                                                                        inputMode="decimal"
-                                                                                        placeholder={target[field] ? String(target[field]) : '—'}
-                                                                                        value={actual[field]}
-                                                                                        onChange={e => updateSet(sKey, exIdx, setIdx, field, e.target.value)}
-                                                                                        onFocus={() => { if (!editState[sKey]) initEdit(sKey, session, log); }}
-                                                                                        style={{
-                                                                                            width: '100%', padding: '6px 8px', borderRadius: 6,
-                                                                                            background: actual[field] ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.04)',
-                                                                                            border: `1px solid ${actual[field] ? 'rgba(16,185,129,0.2)' : 'rgba(255,255,255,0.06)'}`,
-                                                                                            color: 'var(--foreground)', fontSize: '0.8rem', outline: 'none',
-                                                                                            textAlign: 'center', minWidth: 0
-                                                                                        }}
-                                                                                    />
-                                                                                ))}
+                                                                    {/* Exercise body */}
+                                                                    {exOpen && (
+                                                                        <div style={{ padding: '8px 8px 10px' }}>
+                                                                            {/* Prescribed / Actual headers */}
+                                                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 4 }}>
+                                                                                <div style={{ textAlign: 'center', fontSize: '0.7rem', fontWeight: 700, color: 'var(--accent)', borderBottom: '1px solid var(--accent)', paddingBottom: 3 }}>Prescribed</div>
+                                                                                <div style={{ textAlign: 'center', fontSize: '0.7rem', fontWeight: 700, color: 'var(--primary)', borderBottom: '1px solid var(--primary)', paddingBottom: 3 }}>Actual</div>
                                                                             </div>
-                                                                        );
-                                                                    })}
+                                                                            {/* Sub-headers */}
+                                                                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 6 }}>
+                                                                                <div style={{ display: 'flex', gap: 4, fontSize: '0.6rem', color: 'rgba(255,255,255,0.25)' }}>
+                                                                                    <span style={{ flex: 1, textAlign: 'center' }}>Weight</span>
+                                                                                    <span style={{ flex: 1, textAlign: 'center' }}>Reps</span>
+                                                                                    <span style={{ flex: 1, textAlign: 'center' }}>RPE</span>
+                                                                                </div>
+                                                                                <div style={{ display: 'flex', gap: 4, fontSize: '0.6rem', color: 'rgba(255,255,255,0.25)' }}>
+                                                                                    <span style={{ flex: 1, textAlign: 'center' }}>Weight</span>
+                                                                                    <span style={{ flex: 1, textAlign: 'center' }}>Reps</span>
+                                                                                    <span style={{ flex: 1, textAlign: 'center' }}>RPE</span>
+                                                                                    <span style={{ width: 28 }}></span>
+                                                                                </div>
+                                                                            </div>
+
+                                                                            {/* Set rows */}
+                                                                            {sets.map((set: any, setIdx: number) => {
+                                                                                const target = isEdit ? set.target : set;
+                                                                                const actual = isEdit ? set.actual : { weight: '', reps: '', rpe: '' };
+                                                                                return (
+                                                                                    <div key={setIdx} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 4, alignItems: 'center' }}>
+                                                                                        {/* Prescribed side */}
+                                                                                        <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                                                                                            {['weight', 'reps', 'rpe'].map(f => (
+                                                                                                <input key={f} disabled value={target[f] || ''} placeholder="—"
+                                                                                                    style={{
+                                                                                                        flex: 1, padding: '6px 4px', borderRadius: 6, textAlign: 'center', fontSize: '0.8rem', minWidth: 0,
+                                                                                                        background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
+                                                                                                        color: 'var(--foreground)', opacity: 0.6
+                                                                                                    }}
+                                                                                                />
+                                                                                            ))}
+                                                                                        </div>
+                                                                                        {/* Actual side */}
+                                                                                        <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                                                                                            {['weight', 'reps', 'rpe'].map(f => (
+                                                                                                <input key={f} type="text" inputMode="decimal"
+                                                                                                    value={actual[f]} placeholder={target[f] ? String(target[f]) : '—'}
+                                                                                                    onChange={e => updateSet(sKey, exIdx, setIdx, f, e.target.value)}
+                                                                                                    onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
+                                                                                                    style={{
+                                                                                                        flex: 1, padding: '6px 4px', borderRadius: 6, textAlign: 'center', fontSize: '0.8rem', minWidth: 0,
+                                                                                                        background: actual[f] ? 'rgba(16,185,129,0.08)' : 'rgba(255,255,255,0.04)',
+                                                                                                        border: `1px solid ${actual[f] ? 'rgba(16,185,129,0.25)' : 'rgba(255,255,255,0.06)'}`,
+                                                                                                        color: 'var(--foreground)', outline: 'none'
+                                                                                                    }}
+                                                                                                />
+                                                                                            ))}
+                                                                                            {/* Copy tools */}
+                                                                                            <button
+                                                                                                onClick={() => setIdx > 0 ? copyPrevSet(sKey, exIdx, setIdx) : copyTargetToActual(sKey, exIdx, setIdx)}
+                                                                                                title={setIdx > 0 ? 'Copy previous set' : 'Copy prescribed'}
+                                                                                                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '0.8rem', color: 'var(--accent)', padding: '0 2px', flexShrink: 0, width: 28, textAlign: 'center' }}
+                                                                                            >➜</button>
+                                                                                        </div>
+                                                                                    </div>
+                                                                                );
+                                                                            })}
+
+                                                                            {/* Stats row */}
+                                                                            {validSets.length > 0 && (
+                                                                                <div style={{
+                                                                                    marginTop: 8, padding: '8px 10px', borderRadius: 8,
+                                                                                    background: 'rgba(6,182,212,0.05)', border: '1px solid rgba(6,182,212,0.1)',
+                                                                                    fontSize: '0.72rem', color: 'var(--secondary-foreground)', lineHeight: 1.6
+                                                                                }}>
+                                                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 16px' }}>
+                                                                                        <span><b style={{ color: 'var(--accent)' }}>E1RM:</b> {maxE1RM} lbs</span>
+                                                                                        <span><b style={{ color: 'var(--accent)' }}>NL:</b> {totalNL}</span>
+                                                                                        <span><b style={{ color: 'var(--accent)' }}>Tonnage:</b> {tonnage.toLocaleString()} lbs</span>
+                                                                                    </div>
+                                                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 16px', marginTop: 2 }}>
+                                                                                        <span><b style={{ color: 'var(--primary)' }}>SI Total:</b> {exStress.total.toFixed(2)}</span>
+                                                                                        <span><b style={{ color: 'var(--primary)' }}>Peripheral:</b> {exStress.peripheral.toFixed(2)}</span>
+                                                                                        <span><b style={{ color: 'var(--primary)' }}>Central:</b> {exStress.central.toFixed(2)}</span>
+                                                                                    </div>
+                                                                                </div>
+                                                                            )}
+
+                                                                            {/* Notes */}
+                                                                            <div style={{ marginTop: 8 }}>
+                                                                                <input
+                                                                                    type="text"
+                                                                                    value={exerciseData.notes || ''}
+                                                                                    onChange={e => updateNotes(sKey, exIdx, e.target.value)}
+                                                                                    onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
+                                                                                    placeholder="Exercise notes…"
+                                                                                    style={{
+                                                                                        width: '100%', padding: '7px 10px', borderRadius: 6,
+                                                                                        background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)',
+                                                                                        color: 'var(--foreground)', fontSize: '0.78rem', outline: 'none'
+                                                                                    }}
+                                                                                />
+                                                                            </div>
+                                                                        </div>
+                                                                    )}
                                                                 </div>
                                                             );
                                                         })}
 
                                                         {/* Save button */}
-                                                        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                                                        <div style={{ marginTop: 8 }}>
                                                             <button
-                                                                onClick={() => handleSave(sKey, w.program.id)}
+                                                                onClick={() => handleSave(sKey, program.id)}
                                                                 disabled={saving.has(sKey)}
                                                                 style={{
-                                                                    flex: 1, padding: '10px', borderRadius: 8, border: 'none', fontWeight: 700, fontSize: '0.85rem',
+                                                                    width: '100%', padding: '11px', borderRadius: 8, border: 'none', fontWeight: 700, fontSize: '0.85rem',
                                                                     background: savedKeys.has(sKey) ? '#10b981' : 'linear-gradient(135deg, #06b6d4, #10b981)',
                                                                     color: '#000', cursor: saving.has(sKey) ? 'not-allowed' : 'pointer', opacity: saving.has(sKey) ? 0.6 : 1,
                                                                     transition: 'all 200ms'
