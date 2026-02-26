@@ -2,8 +2,8 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { currentUser } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
-import { UserButton } from '@clerk/nextjs';
 import { cache } from 'react';
+import TopNavigation from '@/components/dashboard/TopNavigation';
 
 // Cache the auth check so it only runs once per request lifecycle
 const getAuthState = cache(async () => {
@@ -59,22 +59,10 @@ export default async function DashboardLayout({
                 zIndex: 100
             }}>
                 <div style={{ fontWeight: 800, fontSize: '1.5rem', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span style={{ fontSize: '1.2rem' }}>⚡</span>
                     <span>Blueprint<span style={{ color: 'var(--primary)', textShadow: '0 0 10px rgba(6,182,212,0.5)' }}>Lab</span></span>
                 </div>
 
-                <nav className="dashboard-nav" style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-                    <Link href="/dashboard" className="nav-link" style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--foreground)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        Command Center
-                    </Link>
-                    <Link href="/dashboard/messages" className="nav-link" style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        Messages
-                    </Link>
-                    <Link href="/dashboard/programs/new" className="nav-link" style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                        Program Builder
-                    </Link>
-                    <UserButton afterSignOutUrl="/" />
-                </nav>
+                <TopNavigation />
             </header>
 
             <main className="dashboard-main" style={{ flex: 1, padding: '2rem', position: 'relative' }}>

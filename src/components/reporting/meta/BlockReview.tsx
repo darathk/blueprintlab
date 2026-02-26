@@ -14,15 +14,7 @@ export default function BlockReview({ programs, logs, reportParams }) {
 
     const program = programs?.find(p => p.id === targetProgramId);
 
-    if (!program) {
-        return (
-            <div style={{ padding: '2rem', textAlign: 'center', color: 'white' }}>
-                <p>Please select a single program for Block Review.</p>
-            </div>
-        );
-    }
-
-    // Local state for notes
+    // Local state for notes (Must be called before any early returns)
     const [notes, setNotes] = useState('');
 
     const programLogs = useMemo(() => {
@@ -86,6 +78,14 @@ export default function BlockReview({ programs, logs, reportParams }) {
         return Math.ceil(diffTime / (1000 * 60 * 60 * 24 * 7)) || 1;
     }, [programLogs, reportParams, program]);
 
+    if (!program) {
+        return (
+            <div style={{ padding: '2rem', textAlign: 'center', color: 'white' }}>
+                <p>Please select a single program for Block Review.</p>
+            </div>
+        );
+    }
+
     const scrollToSection = (id) => {
         const el = document.getElementById(id);
         if (el) el.scrollIntoView({ behavior: 'smooth' });
@@ -99,7 +99,7 @@ export default function BlockReview({ programs, logs, reportParams }) {
                 background: 'var(--card-bg)',
                 borderRight: '1px solid var(--card-border)',
                 padding: '1.5rem',
-                color: 'var(--foreground)',
+                color: 'var(--primary)',
                 height: '100%',
                 overflowY: 'auto'
             }}>
@@ -117,9 +117,9 @@ export default function BlockReview({ programs, logs, reportParams }) {
                     Comp Lifts
                 </div>
                 <div style={{ marginBottom: '2rem', fontSize: '0.85rem', color: 'var(--secondary-foreground)' }}>
-                    <p style={{ margin: '0.25rem 0' }}><strong style={{ color: 'var(--foreground)' }}>Squat:</strong> Competition Squat</p>
-                    <p style={{ margin: '0.25rem 0' }}><strong style={{ color: 'var(--foreground)' }}>Bench:</strong> Competition Bench</p>
-                    <p style={{ margin: '0.25rem 0' }}><strong style={{ color: 'var(--foreground)' }}>Deadlift:</strong> Competition Deadlift</p>
+                    <p style={{ margin: '0.25rem 0' }}><strong style={{ color: 'var(--primary)' }}>Squat:</strong> Competition Squat</p>
+                    <p style={{ margin: '0.25rem 0' }}><strong style={{ color: 'var(--primary)' }}>Bench:</strong> Competition Bench</p>
+                    <p style={{ margin: '0.25rem 0' }}><strong style={{ color: 'var(--primary)' }}>Deadlift:</strong> Competition Deadlift</p>
                 </div>
 
                 <div style={{ background: 'rgba(78, 205, 196, 0.1)', color: 'var(--primary)', padding: '0.5rem 1rem', marginBottom: '0.5rem', borderRadius: '4px', fontWeight: 'bold' }}>
