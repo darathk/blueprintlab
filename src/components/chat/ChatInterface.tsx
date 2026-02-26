@@ -167,8 +167,8 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
                 } catch { /* skip compression if it fails */ }
             }
             setCompressProgress(101); setStatusText('Uploading…');
-            const ext = mime.includes('png') ? '.png' : mime.includes('jpeg') || mime.includes('jpg') ? '.jpg' : '.mp4';
-            const { data, error } = await supabase.storage.from('lift-videos').upload(`${athleteId}/${Date.now()}${ext}`, blob, { cacheControl: '3600', upsert: false });
+            const ext = mime.includes('png') ? '.png' : mime.includes('jpeg') || mime.includes('jpg') ? '.jpg' : mime.includes('quicktime') ? '.mov' : '.mp4';
+            const { data, error } = await supabase.storage.from('lift-videos').upload(`${athleteId}/${Date.now()}${ext}`, blob, { cacheControl: '3600', upsert: false, contentType: mime });
             if (error) throw error;
             const { data: u } = supabase.storage.from('lift-videos').getPublicUrl(data.path);
             await handleSend(u.publicUrl, mime);
