@@ -136,10 +136,10 @@ export default function MasterProgramCalendar({ programs, athleteId, currentProg
                 <button onClick={nextMonth} className="btn-icon">→</button>
             </div>
 
-            <div style={{ overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-                <div style={{ minWidth: '700px' }}>
+            <div style={{ overflowX: 'hidden' }}>
+                <div style={{ minWidth: '100%', width: '100%' }}>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', background: 'rgba(15, 23, 42, 0.5)', padding: '0.75rem 0', borderBottom: '1px solid var(--card-border)' }}>
-                        {weekDays.map(d => <div key={d} style={{ textAlign: 'center', fontSize: '0.75rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase' }}>{d}</div>)}
+                        {weekDays.map(d => <div key={d} style={{ textAlign: 'center', fontSize: 'clamp(0.6rem, 2vw, 0.75rem)', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase' }}>{d}</div>)}
                     </div>
 
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridAutoRows: '1fr' }}>
