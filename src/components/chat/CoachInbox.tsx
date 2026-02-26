@@ -58,15 +58,14 @@ export default function CoachInbox({ coachId, coachName }: Props) {
     // When selecting a conversation, load its messages
     useEffect(() => { if (selectedId) { setMessages([]); fetchMessages(selectedId); } }, [selectedId, fetchMessages]);
 
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+
     // Scroll to bottom after render
     useEffect(() => {
-        const el = scrollContainerRef.current;
-        if (el) {
-            setTimeout(() => {
-                el.scrollTop = el.scrollHeight;
-            }, 100);
-        }
-    }, [messages]);
+        setTimeout(() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+        }, 100);
+    }, [messages, selectedId]);
 
     // Realtime — only refetch if relevant
     useEffect(() => {
@@ -318,7 +317,7 @@ export default function CoachInbox({ coachId, coachName }: Props) {
                                     </div>
                                 );
                             })}
-
+                            <div ref={messagesEndRef} />
                         </div>
 
                         {/* Reply */}

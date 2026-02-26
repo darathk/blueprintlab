@@ -53,14 +53,13 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
         });
     }, [athleteId, currentUserId, otherUserId]);
 
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+
     // Scroll to bottom after render
     useEffect(() => {
-        const el = scrollContainerRef.current;
-        if (el) {
-            setTimeout(() => {
-                el.scrollTop = el.scrollHeight;
-            }, 100);
-        }
+        setTimeout(() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+        }, 100);
     }, [messages]);
 
     // Realtime — append only, no re-fetch
@@ -307,7 +306,7 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
                         </div>
                     );
                 })}
-
+                <div ref={messagesEndRef} />
             </div>
 
 
