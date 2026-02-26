@@ -11,7 +11,7 @@ export default function AthleteStatusCard({ athlete, progress }) {
 
     return (
         <div
-            className="glass-panel"
+            className="glass-panel athlete-card-inner"
             style={{
                 padding: '1.5rem',
                 cursor: 'pointer',
@@ -32,7 +32,7 @@ export default function AthleteStatusCard({ athlete, progress }) {
                 e.currentTarget.style.transform = 'translateY(0)';
             }}
         >
-            <div className="flex-mobile-col" style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div className="flex-mobile-col athlete-card-header" style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
                     <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'white', letterSpacing: '-0.01em' }}>
                         {athlete.name}

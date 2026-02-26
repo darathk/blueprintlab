@@ -128,7 +128,7 @@ export default function MasterProgramCalendar({ programs, athleteId, currentProg
 
     return (
         <div className="glass-panel" style={{ padding: '0', overflow: 'hidden', border: '1px solid var(--card-border)' }}>
-            <div style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.02)' }}>
+            <div className="bg-white rounded-3xl shadow-sm border border-slate-100" style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--card-border)' }}>
                 <button onClick={prevMonth} className="btn-icon">←</button>
                 <span style={{ fontWeight: 700, fontSize: '1.1rem', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                     {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
@@ -170,7 +170,7 @@ export default function MasterProgramCalendar({ programs, athleteId, currentProg
 
                                 {day.program && day.session && day.session.exercises && day.session.exercises.length > 0 && (
                                     <div style={{
-                                        background: 'rgba(6, 182, 212, 0.1)',
+                                        background: 'var(--secondary)',
                                         borderLeft: '3px solid var(--primary)',
                                         padding: '6px',
                                         borderRadius: '0 6px 6px 0',
@@ -181,7 +181,7 @@ export default function MasterProgramCalendar({ programs, athleteId, currentProg
                                             {day.program.name}
                                         </div>
                                         <div style={{ marginTop: '2px' }}>
-                                            <div style={{ color: 'var(--foreground)', fontWeight: 500 }}>{day.session.name}</div>
+                                            <div style={{ color: 'var(--primary)', fontWeight: 500 }}>{day.session.name}</div>
                                             <div style={{ opacity: 0.7, fontSize: '0.7rem' }}>{day.session.exercises.length} Exercises</div>
                                         </div>
                                     </div>

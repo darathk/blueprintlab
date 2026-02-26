@@ -75,7 +75,7 @@ export default function CompetitionTracker({ athlete }) {
             </div>
 
             {isEditing ? (
-                <div style={{ display: 'grid', gap: '1.5rem', gridTemplateColumns: '1fr 1fr auto', alignItems: 'end', background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '8px', border: '1px solid var(--card-border)' }}>
+                <div className="competition-edit-grid" style={{ display: 'grid', gap: '1.5rem', gridTemplateColumns: '1fr 1fr auto', alignItems: 'end', background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '8px', border: '1px solid var(--card-border)' }}>
                     <div>
                         <label className="label">Mission Name (Meet)</label>
                         <input
@@ -104,9 +104,9 @@ export default function CompetitionTracker({ athlete }) {
                             No mission data found. Calibrate target to begin countdown.
                         </div>
                     ) : (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '3rem' }}>
+                        <div className="competition-countdown" style={{ display: 'flex', alignItems: 'center', gap: '3rem' }}>
                             {/* Big Number Section */}
-                            <div style={{ textAlign: 'center', minWidth: '160px' }}>
+                            <div className="competition-countdown-number" style={{ textAlign: 'center', minWidth: '160px' }}>
                                 <div style={{
                                     fontSize: '3.5rem',
                                     fontWeight: 800,
@@ -125,7 +125,7 @@ export default function CompetitionTracker({ athlete }) {
 
                             {/* Details & Visual Bar */}
                             <div style={{ flex: 1 }}>
-                                <h3 style={{ fontSize: '1.75rem', marginBottom: '0.5rem', color: 'var(--foreground)', letterSpacing: '-0.02em' }}>{athlete.nextMeetName || 'Unidentified Mission'}</h3>
+                                <h3 className="competition-meet-name" style={{ fontSize: '1.75rem', marginBottom: '0.5rem', color: 'var(--foreground)', letterSpacing: '-0.02em' }}>{athlete.nextMeetName || 'Unidentified Mission'}</h3>
                                 <div style={{ fontSize: '1rem', color: 'var(--secondary-foreground)', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                     <span>📅</span>
                                     Launch: <span style={{ color: 'var(--foreground)', fontWeight: 500 }}>{new Date(athlete.nextMeetDate).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>

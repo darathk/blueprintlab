@@ -1,37 +1,29 @@
 @import "tailwindcss";
 
 :root {
-  /* Deep Space / Neon Lab Theme */
-  --background: #0b0f19;
-  /* Deepest Navy/Black */
-  --foreground: #f8fafc;
-  /* White/Slate-50 */
+  /* Clean Light Theme */
+  --background: #f4f4f5; /* Zinc 100 background */
+  --foreground: #09090b; /* Zinc 950 text */
 
-  --card-bg: rgba(30, 41, 59, 0.4);
-  /* Glassy Slate-800 */
-  --card-border: rgba(148, 163, 184, 0.1);
-  /* Subtle border */
+  --card-bg: #ffffff;
+  --card-border: #e4e4e7; /* Zinc 200 */
 
-  --primary: #06b6d4;
-  /* Cyan-500 Neon */
-  --primary-hover: #0891b2;
+  --primary: #18181b; /* Zinc 900 for modern high contrast primary */
+  --primary-hover: #27272a; 
   --primary-foreground: #ffffff;
 
-  --secondary: rgba(15, 23, 42, 0.6);
-  /* Darker glass for inputs/secondary */
-  --secondary-hover: rgba(30, 41, 59, 0.8);
-  --secondary-foreground: #94a3b8;
-  /* Slate-400 */
+  --secondary: #f4f4f5; /* Zinc 100 */
+  --secondary-hover: #e4e4e7; /* Zinc 200 */
+  --secondary-foreground: #52525b; /* Zinc 600 */
 
-  --accent: #a855f7;
-  /* Purple-500 Neon */
+  --accent: #2563eb; /* Blue 600 for important links/accents */
   --danger: #ef4444;
   --success: #10b981;
   --warning: #f59e0b;
 
   --font-sans: 'Inter', system-ui, sans-serif;
 
-  --radius: 12px;
+  --radius: 8px; /* Slightly sharper for modern clean look */
   --header-height: 64px;
 }
 
@@ -51,11 +43,6 @@ body {
 body {
   color: var(--foreground);
   background: var(--background);
-  /* Subtle mesh gradient background */
-  background-image:
-    radial-gradient(circle at 15% 50%, rgba(6, 182, 212, 0.08), transparent 25%),
-    radial-gradient(circle at 85% 30%, rgba(168, 85, 247, 0.08), transparent 25%);
-  background-attachment: fixed;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -69,27 +56,25 @@ a {
 /* Utilities */
 .container {
   max-width: 1400px;
-  /* Wider for dashboard view */
   margin: 0 auto;
   padding: 0 1.5rem;
 }
 
 .glass-panel {
   background: var(--card-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--card-border);
   border-radius: var(--radius);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
 }
 
 .neon-text {
-  text-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+  /* Legacy class kept for compatibility, updated style for light mode */
+  font-weight: 700;
+  color: var(--primary);
 }
 
 .neon-border {
   border: 1px solid var(--primary);
-  box-shadow: 0 0 8px rgba(6, 182, 212, 0.3);
 }
 
 .btn {
@@ -98,64 +83,61 @@ a {
   justify-content: center;
   padding: 0.5rem 1.25rem;
   border-radius: var(--radius);
-  font-weight: 600;
+  font-weight: 500;
   transition: all 0.2s ease;
   cursor: pointer;
   border: 1px solid transparent;
   font-size: 0.875rem;
-  letter-spacing: 0.025em;
+  letter-spacing: 0.01em;
 }
 
 .btn-primary {
-  background: rgba(6, 182, 212, 0.1);
-  border-color: rgba(6, 182, 212, 0.5);
-  color: var(--primary);
-  box-shadow: 0 0 10px rgba(6, 182, 212, 0.1);
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
 .btn-primary:hover {
-  background: rgba(6, 182, 212, 0.2);
-  box-shadow: 0 0 15px rgba(6, 182, 212, 0.3);
-  border-color: var(--primary);
-  color: #fff;
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
 }
 
 .btn-secondary {
   background: var(--secondary);
   color: var(--foreground);
   border: 1px solid var(--card-border);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
 .btn-secondary:hover {
   background: var(--secondary-hover);
-  border-color: rgba(255, 255, 255, 0.1);
 }
 
 .card {
-  /* Inherit glass panel styles */
   background: var(--card-bg);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--card-border);
   border-radius: var(--radius);
   padding: 1.5rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px -1px rgba(0, 0, 0, 0.1);
 }
 
 .input {
-  background: rgba(15, 23, 42, 0.6);
+  background: #ffffff;
   border: 1px solid var(--card-border);
   color: var(--foreground);
   padding: 0.6rem 1rem;
   border-radius: var(--radius);
   width: 100%;
   font-size: 0.875rem;
-  transition: border-color 0.2s;
+  transition: all 0.2s;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
 }
 
 .input:focus {
   outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 1px rgba(6, 182, 212, 0.2);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
 }
 
 .label {
@@ -179,12 +161,12 @@ a {
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(148, 163, 184, 0.2);
+  background: var(--card-border);
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(148, 163, 184, 0.3);
+  background: var(--secondary-foreground);
 }
 
 /* -------------------------------------
@@ -199,55 +181,113 @@ a {
     padding: 1rem;
   }
 
-  /* Stack header navigation links */
-  header {
-    flex-wrap: wrap;
-    height: auto !important;
-    padding: 1rem !important;
-    gap: 1rem;
+  .btn {
+    padding: 0.4rem 1rem;
+    font-size: 0.8rem;
   }
 
-  header nav {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  /* Make grid layouts single column on small screens */
-  .grid-cols-2,
-  .grid-cols-3,
-  .grid-cols-4 {
-    grid-template-columns: 1fr !important;
-  }
-
-  /* Ensure flex containers stack */
   .flex-mobile-col {
     flex-direction: column !important;
-    align-items: flex-start !important;
+    align-items: stretch !important;
+  }
+
+  /* Dashboard header */
+  .dashboard-header {
+    padding: 0 1rem !important;
+  }
+
+  .dashboard-nav {
     gap: 0.75rem !important;
   }
 
-  .flex-mobile-col>div {
-    width: 100% !important;
+  .dashboard-nav .nav-link {
+    font-size: 0.75rem !important;
+    letter-spacing: 0 !important;
   }
 
-  /* Adjust typography */
-  h1 {
-    font-size: 2rem !important;
+  .dashboard-main {
+    padding: 1rem !important;
   }
 
-  h2 {
+  /* Dashboard page heading */
+  .dashboard-heading {
+    font-size: 1.5rem !important;
+  }
+
+  .dashboard-heading-row {
+    flex-wrap: wrap !important;
+    gap: 0.75rem !important;
+    margin-bottom: 1.5rem !important;
+  }
+
+  /* Competition Tracker */
+  .competition-countdown {
+    flex-direction: column !important;
+    gap: 1.5rem !important;
+  }
+
+  .competition-countdown-number {
+    font-size: 2.5rem !important;
+    min-width: unset !important;
+  }
+
+  .competition-meet-name {
     font-size: 1.25rem !important;
   }
 
-  /* Ensure charts and overflowing content can scroll horizontally if needed without breaking page layout */
-  .chart-container-mobile {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-    width: 100%;
+  .competition-edit-grid {
+    grid-template-columns: 1fr !important;
   }
 
-  /* Make buttons full width on small screens if they are inside forms */
-  form .btn {
-    width: 100%;
+  /* Block Organizer / Periodization Planner */
+  .planner-header {
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    gap: 1rem !important;
+  }
+
+  .block-controls {
+    flex-wrap: wrap !important;
+  }
+
+  .block-controls select.input {
+    width: 100% !important;
+  }
+
+  .block-controls .input[placeholder="Block Name"] {
+    width: 100% !important;
+  }
+
+  .planner-actions {
+    flex-wrap: wrap !important;
+  }
+
+  /* Athlete status card */
+  .athlete-card-inner {
+    padding: 1rem !important;
+  }
+
+  .athlete-card-header {
+    flex-direction: column !important;
+    gap: 0.5rem !important;
+    align-items: flex-start !important;
+  }
+
+  .glass-panel {
+    padding: 1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .dashboard-nav .nav-link {
+    font-size: 0.65rem !important;
+  }
+
+  .dashboard-heading {
+    font-size: 1.25rem !important;
+  }
+
+  .competition-countdown-number {
+    font-size: 2rem !important;
   }
 }

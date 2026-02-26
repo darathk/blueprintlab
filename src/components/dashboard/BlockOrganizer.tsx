@@ -316,9 +316,9 @@ export default function PeriodizationPlanner({ athlete }) {
 
     const getTypeColor = (type) => {
         switch (type) {
-            case 'Development': return '#06b6d4'; // Cyan Neon
+            case 'Development': return '#38bdf8'; // Cyan Neon
             case 'Pivot/Deload': return '#a855f7'; // Purple Neon
-            case 'Taper': return '#ef4444'; // Red Neon
+            case 'Taper': return '#fb7185'; // Red Neon
             default: return '#94a3b8'; // Slate
         }
     };
@@ -337,15 +337,15 @@ export default function PeriodizationPlanner({ athlete }) {
         <div className="glass-panel" style={{ marginBottom: '2rem', padding: '1.5rem' }}>
 
             {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '1rem' }}>
+            <div className="planner-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '1rem' }}>
                 <div>
-                    <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--foreground)', letterSpacing: '-0.02em' }} className="neon-text">Meet Planner</h2>
+                    <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--primary)', letterSpacing: '-0.02em' }} className="neon-text">Meet Planner</h2>
                     <p style={{ color: 'var(--secondary-foreground)', fontSize: '0.9rem' }}>Mapping the roadmap to {meetName || 'Victory'}</p>
                 </div>
 
                 {/* Days Out Counter */}
                 {daysOutData && (
-                    <div style={{ textAlign: 'right' }}>
+                    <div className="bg-amber-200 rounded-3xl shadow-sm p-4 text-slate-900 border border-slate-100" style={{ textAlign: 'center' }}>
                         <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--primary)', lineHeight: 1 }} className="neon-text">
                             {Math.abs(daysOutData.totalDays)}
                         </div>
@@ -365,9 +365,9 @@ export default function PeriodizationPlanner({ athlete }) {
 
             {/* Editor Mode */}
             {isEditing && (
-                <div style={{ marginBottom: '2rem', padding: '1.5rem', background: 'rgba(15, 23, 42, 0.4)', borderRadius: '12px', border: '1px solid var(--card-border)' }}>
+                <div style={{ marginBottom: '2rem', padding: '1.5rem', background: 'var(--card-bg)', borderRadius: '2rem', border: '1px solid var(--card-border)' }}>
 
-                    <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', color: 'var(--foreground)', borderLeft: '3px solid var(--primary)', paddingLeft: '0.75rem' }}>Mission Parameters</h3>
+                    <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', color: 'var(--primary)', borderLeft: '3px solid var(--primary)', paddingLeft: '0.75rem' }}>Mission Parameters</h3>
                     <div className="flex-mobile-col" style={{ display: 'flex', gap: '1.5rem', marginBottom: '2rem' }}>
                         <div style={{ flex: 1 }}>
                             <label className="label">Target Objective (Meet Name)</label>
@@ -380,7 +380,7 @@ export default function PeriodizationPlanner({ athlete }) {
                     </div>
 
                     {/* Auto-Generator */}
-                    <div style={{ marginBottom: '2rem', padding: '1.5rem', background: 'rgba(6, 182, 212, 0.05)', borderRadius: '12px', border: '1px dashed var(--primary)' }}>
+                    <div style={{ marginBottom: '2rem', padding: '1.5rem', background: 'rgba(6, 182, 212, 0.05)', borderRadius: '2rem', border: '1px dashed var(--primary)' }}>
                         <h4 style={{ fontSize: '0.95rem', marginBottom: '1rem', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>⚡ Auto-Sequence Generator</h4>
                         <div className="flex-mobile-col" style={{ display: 'flex', gap: '1rem', alignItems: 'end' }}>
                             <div>
@@ -400,7 +400,7 @@ export default function PeriodizationPlanner({ athlete }) {
                         </div>
                     </div>
 
-                    <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', color: 'var(--foreground)', borderLeft: '3px solid var(--accent)', paddingLeft: '0.75rem' }}>Block Configuration</h3>
+                    <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', color: 'var(--primary)', borderLeft: '3px solid var(--accent)', paddingLeft: '0.75rem' }}>Block Configuration</h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                         {blocks.map((block, index) => (
                             <div
@@ -411,7 +411,7 @@ export default function PeriodizationPlanner({ athlete }) {
                                     gap: '0.75rem',
                                     background: hexToRgba(block.color, 0.1), // Subtle tint
                                     padding: '1rem',
-                                    borderRadius: '8px',
+                                    borderRadius: '9999px',
                                     border: `1px solid ${hexToRgba(block.color, 0.3)}`,
                                     position: 'relative',
                                     overflow: 'hidden'
@@ -425,10 +425,10 @@ export default function PeriodizationPlanner({ athlete }) {
                                 }} />
 
                                 {/* Top Row: Controls */}
-                                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', paddingLeft: '0.5rem' }}>
+                                <div className="block-controls" style={{ display: 'flex', gap: '1rem', alignItems: 'center', paddingLeft: '0.5rem' }}>
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                        <button onClick={() => moveBlock(index, -1)} disabled={index === 0} style={{ color: 'var(--foreground)', opacity: 0.7, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>▲</button>
-                                        <button onClick={() => moveBlock(index, 1)} disabled={index === blocks.length - 1} style={{ color: 'var(--foreground)', opacity: 0.7, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>▼</button>
+                                        <button onClick={() => moveBlock(index, -1)} disabled={index === 0} style={{ color: 'var(--primary)', opacity: 0.7, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>▲</button>
+                                        <button onClick={() => moveBlock(index, 1)} disabled={index === blocks.length - 1} style={{ color: 'var(--primary)', opacity: 0.7, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>▼</button>
                                     </div>
                                     <select
                                         value={block.type}
@@ -436,15 +436,15 @@ export default function PeriodizationPlanner({ athlete }) {
                                         className="input"
                                         style={{
                                             width: '160px',
-                                            background: 'rgba(15, 23, 42, 0.8)',
+                                            background: 'var(--card-bg)',
                                             border: `1px solid ${hexToRgba(block.color, 0.5)}`,
                                             color: block.color,
                                             fontWeight: 600
                                         }}
                                     >
-                                        <option value="Development" style={{ color: '#06b6d4', background: '#0f172a' }}>Development</option>
+                                        <option value="Development" style={{ color: '#38bdf8', background: '#0f172a' }}>Development</option>
                                         <option value="Pivot/Deload" style={{ color: '#a855f7', background: '#0f172a' }}>Pivot/Deload</option>
-                                        <option value="Taper" style={{ color: '#ef4444', background: '#0f172a' }}>Taper</option>
+                                        <option value="Taper" style={{ color: '#fb7185', background: '#0f172a' }}>Taper</option>
                                     </select>
                                     <input
                                         value={block.name}
@@ -457,13 +457,13 @@ export default function PeriodizationPlanner({ athlete }) {
                                             borderBottom: '1px solid var(--card-border)',
                                             borderRadius: 0,
                                             padding: '0.4rem 0',
-                                            color: 'var(--foreground)',
+                                            color: 'var(--primary)',
                                             fontSize: '1rem',
                                             fontWeight: 500
                                         }}
                                         placeholder="Block Name"
                                     />
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(0,0,0,0.3)', padding: '0.4rem 0.8rem', borderRadius: '6px', border: `1px solid ${hexToRgba(block.color, 0.2)}` }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(0,0,0,0.3)', padding: '0.4rem 0.8rem', borderRadius: '1rem', border: `1px solid ${hexToRgba(block.color, 0.2)}` }}>
                                         <input
                                             type="number"
                                             value={block.weeks || ''}
@@ -486,10 +486,10 @@ export default function PeriodizationPlanner({ athlete }) {
                                         style={{
                                             background: 'rgba(239, 68, 68, 0.1)',
                                             border: '1px solid rgba(239, 68, 68, 0.3)',
-                                            color: '#ef4444',
+                                            color: '#fb7185',
                                             width: '28px',
                                             height: '28px',
-                                            borderRadius: '6px',
+                                            borderRadius: '1rem',
                                             cursor: 'pointer',
                                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                                             fontSize: '1.2rem',
@@ -520,7 +520,7 @@ export default function PeriodizationPlanner({ athlete }) {
                             </div>
                         ))}
                     </div>
-                    <div style={{ marginTop: '2rem', display: 'flex', gap: '1rem', borderTop: '1px solid var(--card-border)', paddingTop: '1.5rem' }}>
+                    <div className="planner-actions" style={{ marginTop: '2rem', display: 'flex', gap: '1rem', borderTop: '1px solid var(--card-border)', paddingTop: '1.5rem' }}>
                         <button onClick={() => addBlock('Development')} className="btn btn-secondary">+ Add Segment</button>
                         <button onClick={handleSave} className="btn btn-primary" style={{ marginLeft: 'auto' }}>Save Configuration</button>
                     </div>
@@ -529,15 +529,15 @@ export default function PeriodizationPlanner({ athlete }) {
 
             {/* Weekly Table View */}
             {!meetDate ? (
-                <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--muted)', background: 'rgba(0,0,0,0.2)', borderRadius: '12px' }}>
+                <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--muted)', background: 'var(--secondary)', borderRadius: '2rem' }}>
                     <div style={{ fontSize: '2rem', marginBottom: '1rem', opacity: 0.5 }}>🌌</div>
                     <div>Initialize Meet Date to map the trajectory.</div>
                 </div>
             ) : (
-                <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid var(--card-border)' }}>
+                <div style={{ overflowX: 'auto', borderRadius: '9999px', border: '1px solid var(--card-border)' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
                         <thead>
-                            <tr style={{ background: 'rgba(15, 23, 42, 0.8)', borderBottom: '1px solid var(--card-border)' }}>
+                            <tr style={{ background: 'var(--card-bg)', borderBottom: '1px solid var(--card-border)' }}>
                                 <th style={{ padding: '1rem', textAlign: 'left', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.75rem' }}>Timeline</th>
                                 <th style={{ padding: '1rem', textAlign: 'left', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.75rem' }}>Date</th>
                                 <th style={{ padding: '1rem', textAlign: 'left', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.75rem' }}>Phase Objective</th>
@@ -551,7 +551,7 @@ export default function PeriodizationPlanner({ athlete }) {
                                         borderBottom: '1px solid rgba(148, 163, 184, 0.05)',
                                     }}
                                 >
-                                    <td style={{ padding: '1rem', color: 'var(--foreground)', fontWeight: 500 }}>{row.weekName}</td>
+                                    <td style={{ padding: '1rem', color: 'var(--primary)', fontWeight: 500 }}>{row.weekName}</td>
                                     <td style={{ padding: '1rem', fontFamily: 'monospace', color: 'rgba(255,255,255,0.7)' }}>
                                         {row.date.toLocaleDateString(undefined, { month: '2-digit', day: '2-digit' })}
                                         <span style={{ opacity: 0.3, marginLeft: '4px' }}>'{row.date.getFullYear().toString().substr(2)}</span>
@@ -577,7 +577,7 @@ export default function PeriodizationPlanner({ athlete }) {
                                                 flexDirection: 'column',
                                                 justifyContent: 'center',
                                                 alignItems: 'flex-start',
-                                                borderRadius: '6px',
+                                                borderRadius: '1rem',
                                                 boxShadow: `0 4px 6px -1px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255,255,255,0.2)`,
                                                 position: 'relative',
                                                 overflow: 'hidden'
