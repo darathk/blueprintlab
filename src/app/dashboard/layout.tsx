@@ -67,6 +67,9 @@ export default async function DashboardLayout({
                     <Link href="/dashboard" className="nav-link" style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--foreground)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                         Command Center
                     </Link>
+                    <Link href="/dashboard/messages" className="nav-link" style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                        Messages
+                    </Link>
                     <Link href="/dashboard/programs/new" className="nav-link" style={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                         Program Builder
                     </Link>

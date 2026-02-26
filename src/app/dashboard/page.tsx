@@ -3,7 +3,6 @@ import { getAthletes, getPrograms, getLogSummariesForDashboard } from '@/lib/sto
 import { prisma } from '@/lib/prisma';
 import AthleteStatusCard from './athlete-status-card';
 import CollapsibleSection from '@/components/ui/CollapsibleSection';
-import { CoachInbox } from '@/components/chat/ClientCoachInbox';
 
 export default async function DashboardPage() {
     const [athletes, programs, logSummaries] = await Promise.all([
@@ -33,10 +32,6 @@ export default async function DashboardPage() {
                 </div>
             </div>
 
-            {/* Coach Inbox - Discord-style unified messaging */}
-            <CollapsibleSection title="💬 Messages" defaultOpen={false}>
-                <CoachInbox coachId={coach.id} coachName={coach.name} />
-            </CollapsibleSection>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
                 <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: 'var(--foreground)', display: 'flex', alignItems: 'center', gap: '0.5rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '0.5rem' }}>
