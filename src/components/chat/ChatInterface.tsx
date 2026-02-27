@@ -306,7 +306,7 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
                                         {/* Video */}
                                         {msg.mediaUrl && isVid && (
                                             <div>
-                                                <video controls playsInline muted preload="metadata" style={{ width: '100%', maxWidth: '100%', maxHeight: 300, borderRadius: 14, background: '#000', display: 'block', objectFit: 'cover' }}>
+                                                <video controls playsInline muted preload="metadata" style={{ width: '100%', maxWidth: '100%', maxHeight: 200, borderRadius: 14, background: '#000', display: 'block', objectFit: 'cover' }}>
                                                     <source src={msg.mediaUrl} />
                                                 </video>
                                             </div>
@@ -316,7 +316,7 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
                                         {msg.mediaUrl && isImg && (
                                             <div>
                                                 <img src={msg.mediaUrl} alt="" loading="lazy" onClick={() => window.open(msg.mediaUrl!, '_blank')}
-                                                    style={{ width: '100%', maxWidth: '100%', maxHeight: 300, borderRadius: 14, display: 'block', cursor: 'pointer', objectFit: 'cover' }} />
+                                                    style={{ width: '100%', maxWidth: '100%', maxHeight: 200, borderRadius: 14, display: 'block', cursor: 'pointer', objectFit: 'cover' }} />
                                             </div>
                                         )}
 
