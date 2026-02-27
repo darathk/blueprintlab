@@ -21,19 +21,15 @@ export default async function AthleteChatPage({ params }: { params: Promise<{ id
     }
 
     return (
-        <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-            <h1 style={{
-                fontSize: '1.5rem',
-                fontWeight: 700,
-                marginBottom: '1.5rem',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '0.75rem'
-            }}>
-                <span style={{ color: 'var(--primary)' }}>💬</span>
-                Chat with Coach
-            </h1>
-
+        <div style={{
+            marginTop: '-2rem',
+            marginLeft: '-2rem',
+            marginRight: '-2rem',
+            marginBottom: '-2rem',
+            height: 'calc(100vh - var(--header-height, 60px))',
+            display: 'flex',
+            flexDirection: 'column'
+        }}>
             <ChatInterface
                 currentUserId={athlete.id}
                 otherUserId={coach.id}

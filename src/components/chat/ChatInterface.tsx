@@ -203,7 +203,7 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
         new Date(messages[i].createdAt).getTime() - new Date(messages[i - 1].createdAt).getTime() > 300000;
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: 'var(--background)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', flex: 1, background: 'var(--background)' }}>
             {/* Header */}
             <div style={{ padding: '12px 16px', background: 'var(--card-bg)', borderBottom: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
                 <button onClick={() => window.history.back()} style={{ color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 500 }}>← Back</button>
