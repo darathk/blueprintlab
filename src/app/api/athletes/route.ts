@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { currentUser } from '@clerk/nextjs/server';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,15 +17,28 @@ export async function GET() {
 
 export async function POST(request: Request) {
     try {
-        const body = await request.json();
-        const { id, name, email, nextMeetName, nextMeetDate, periodization, coachId, role } = body;
-
-        if (!id) {
-            return NextResponse.json({ error: 'Missing Athlete ID' }, { status: 400 });
+        const user = await currentUser();
+        if (!user) {
+            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
+        const coachEmail = user.primaryEmailAddress?.emailAddress || '';
+        const coach = await prisma.athlete.findUnique({
+            where: { email: coachEmail }
+        });
+
+        if (!coach || coach.role !== 'coach') {
+            return NextResponse.json({ error: 'Only coaches can add athletes' }, { status: 403 });
+        }
+
+        const body = await request.json();
+        const { id, name, email, nextMeetName, nextMeetDate, periodization } = body;
+
+        // If no ID is provided, assume it's a new athlete creation.
+        const athleteId = id || Math.random().toString(36).substring(7);
+
         const athlete = await prisma.athlete.upsert({
-            where: { id: id || 'new-uuid-placeholder' }, // Hack to force create if no ID
+            where: { id: athleteId },
             update: {
                 name: name !== undefined ? name : undefined,
                 email: email !== undefined ? email : undefined,
@@ -33,14 +47,14 @@ export async function POST(request: Request) {
                 periodization: periodization !== undefined ? periodization : undefined,
             },
             create: {
-                id, // undefined means prisma will generate uuid
+                id: athleteId,
                 name: name || 'New Athlete',
                 email: email || `${Date.now()}@example.com`,
                 nextMeetName: nextMeetName || null,
                 nextMeetDate: nextMeetDate || null,
                 periodization: periodization || null,
-                coachId: coachId || null,
-                role: role || 'athlete'
+                coachId: coach.id, // Forcefully link to the logged-in coach
+                role: 'athlete'
             }
         });
 
