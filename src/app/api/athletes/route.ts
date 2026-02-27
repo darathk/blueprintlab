@@ -34,10 +34,39 @@ export async function POST(request: Request) {
         const body = await request.json();
         const { id, name, email, nextMeetName, nextMeetDate, periodization } = body;
 
-        // If no ID is provided, assume it's a new athlete creation.
+        let athlete;
+
+        // If an email is provided, check if that user already exists
+        if (email) {
+            const existingUser = await prisma.athlete.findUnique({
+                where: { email }
+            });
+
+            if (existingUser) {
+                // If they exist and are a coach, don't let them be added as an athlete
+                if (existingUser.role === 'coach') {
+                    return NextResponse.json({ error: 'Cannot add another coach as an athlete' }, { status: 400 });
+                }
+
+                // If they exist, just update their coachId to link them to the current coach
+                athlete = await prisma.athlete.update({
+                    where: { email },
+                    data: {
+                        coachId: coach.id,
+                        name: name !== undefined ? name : existingUser.name,
+                        nextMeetName: nextMeetName !== undefined ? nextMeetName : existingUser.nextMeetName,
+                        nextMeetDate: nextMeetDate !== undefined ? nextMeetDate : existingUser.nextMeetDate,
+                        periodization: periodization !== undefined ? periodization : existingUser.periodization,
+                    }
+                });
+                return NextResponse.json(athlete);
+            }
+        }
+
+        // Otherwise, it's a brand new athlete.
         const athleteId = id || Math.random().toString(36).substring(7);
 
-        const athlete = await prisma.athlete.upsert({
+        athlete = await prisma.athlete.upsert({
             where: { id: athleteId },
             update: {
                 name: name !== undefined ? name : undefined,

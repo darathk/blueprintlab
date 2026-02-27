@@ -33,11 +33,13 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
                 setIsAdding(false);
                 router.refresh();
             } else {
-                alert('Failed to add athlete');
+                const errorData = await res.json().catch(() => ({}));
+                const errorMessage = errorData.error || res.statusText || 'Unknown error';
+                alert(`Failed to add athlete: ${res.status} - ${errorMessage}`);
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error(error);
-            alert('An error occurred');
+            alert(`Network Error: ${error.message || 'An error occurred'}`);
         } finally {
             setIsSubmitting(false);
         }
