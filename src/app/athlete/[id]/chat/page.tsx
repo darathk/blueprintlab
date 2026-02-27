@@ -22,11 +22,13 @@ export default async function AthleteChatPage({ params }: { params: Promise<{ id
 
     return (
         <div style={{
-            marginTop: '-2rem',
-            marginLeft: '-2rem',
-            marginRight: '-2rem',
-            marginBottom: '-2rem',
-            height: 'calc(100vh - var(--header-height, 60px))',
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            zIndex: 9999,
+            background: 'var(--background)',
             display: 'flex',
             flexDirection: 'column'
         }}>
