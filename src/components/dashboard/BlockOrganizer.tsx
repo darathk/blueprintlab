@@ -411,7 +411,7 @@ export default function PeriodizationPlanner({ athlete }) {
                                     gap: '0.75rem',
                                     background: hexToRgba(block.color, 0.1), // Subtle tint
                                     padding: '1rem',
-                                    borderRadius: '9999px',
+                                    borderRadius: '1rem',
                                     border: `1px solid ${hexToRgba(block.color, 0.3)}`,
                                     position: 'relative',
                                     overflow: 'hidden'
