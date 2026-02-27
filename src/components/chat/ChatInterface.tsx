@@ -297,7 +297,7 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
         new Date(messages[i].createdAt).getTime() - new Date(messages[i - 1].createdAt).getTime() > 300000;
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', flex: 1, background: 'var(--background)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', flex: 1, minHeight: 0, background: 'var(--background)' }}>
             {/* Header */}
             <div style={{ padding: '12px 16px', background: 'var(--card-bg)', borderBottom: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
                 <Link href={`/athlete/${athleteId}/dashboard`} style={{ color: 'var(--primary)', background: 'none', border: 'none', textDecoration: 'none', fontSize: 14, fontWeight: 500 }}>← Back</Link>
@@ -308,7 +308,7 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
             </div>
 
             {/* Messages */}
-            <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '12px 16px' }}>
+            <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '12px 16px', minHeight: 0 }}>
                 {!loaded && <div style={{ textAlign: 'center', padding: 40, color: 'var(--secondary-foreground)' }}>Loading…</div>}
                 {loaded && messages.length === 0 && <div style={{ textAlign: 'center', padding: 60, color: 'var(--secondary-foreground)', fontSize: 14 }}>No messages yet. Start the conversation!</div>}
 

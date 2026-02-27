@@ -235,7 +235,7 @@ export default function CoachInbox({ coachId, coachName }: Props) {
             </div>
 
             {/* Chat */}
-            <div style={{ flex: 1, display: isMobile && !selectedId ? 'none' : 'flex', flexDirection: 'column', minWidth: 0, overflow: 'hidden' }}>
+            <div style={{ flex: 1, display: isMobile && !selectedId ? 'none' : 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0, overflow: 'hidden' }}>
                 {!selectedConvo ? (
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, color: 'var(--secondary-foreground)' }}>
                         <span style={{ fontSize: 40 }}>💬</span>
@@ -255,7 +255,7 @@ export default function CoachInbox({ coachId, coachName }: Props) {
                         </div>
 
                         {/* Messages */}
-                        <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '10px 14px' }}>
+                        <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '10px 14px', minHeight: 0 }}>
                             {msgLoading && <div style={{ textAlign: 'center', padding: 30, color: 'var(--secondary-foreground)', fontSize: 13 }}>Loading…</div>}
 
                             {!msgLoading && messages.map((msg, i) => {
