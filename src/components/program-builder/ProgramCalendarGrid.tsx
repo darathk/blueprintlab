@@ -132,7 +132,7 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
             </div>
 
             {/* Header */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.5rem', marginBottom: '0.5rem' }}>
+            <div className="calendar-grid-header" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
                 {weekDays.map(d => (
                     <div key={d} style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--secondary-foreground)', fontWeight: 600 }}>
                         {d}
@@ -141,7 +141,7 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
             </div>
 
             {/* Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: '0.5rem' }}>
+            <div className="calendar-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
                 {calendarDays.map((day, i) => (
                     <div
                         key={day.dateStr}
@@ -149,47 +149,50 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
                         onDragOver={(e) => handleDragOver(e, day.dateStr)}
                         onDragLeave={handleDragLeave}
                         onDrop={(e) => handleDrop(e, day.weekNum, day.dayNum, day.dateStr)}
+                        className={`calendar-cell ${day.session ? 'has-session' : ''} ${day.isCurrentMonth ? 'current-month' : 'other-month'}`}
                         style={{
-                            aspectRatio: '1',
-                            background: day.session ? 'var(--card-bg)' : (day.isCurrentMonth ? 'rgba(255,255,255,0.02)' : 'transparent'),
                             border: dragOverDate === day.dateStr
                                 ? '2px dashed var(--primary)'
                                 : (day.session ? '1px solid var(--accent)' : '1px solid var(--card-border)'),
-                            borderRadius: '8px',
-                            padding: '0.5rem',
                             cursor: 'pointer',
-                            opacity: day.isCurrentMonth ? 1 : 0.3,
                             position: 'relative',
                             display: 'flex',
                             flexDirection: 'column',
                             transition: 'all 0.2s',
-                            transform: dragOverDate === day.dateStr ? 'scale(1.02)' : 'none'
+                            transform: dragOverDate === day.dateStr ? 'scale(1.02)' : 'none',
+                            minWidth: 0,
+                            minHeight: 0
                         }}
-                        className="calendar-cell"
                     >
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                            <span style={{ fontSize: '0.8rem', color: day.isCurrentMonth ? 'var(--secondary-foreground)' : 'var(--muted)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'flex-start', alignItems: 'flex-start' }}>
+                            <span className="date-number">
                                 {day.date.getDate()}
                             </span>
-
                         </div>
 
                         {day.session ? (
                             <div
                                 draggable
                                 onDragStart={(e) => handleDragStart(e, day.weekNum, day.dayNum)}
-                                style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '2px', overflow: 'hidden', marginTop: '4px', cursor: 'grab' }}
+                                className="session-container"
                             >
-                                <div style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--foreground)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                    {day.session.name}
+                                <div className="session-text">
+                                    <div className="session-name">
+                                        {day.session.name}
+                                    </div>
+                                    <div className="session-details">
+                                        {day.session.exercises.length} Exercises
+                                    </div>
                                 </div>
-                                <div style={{ fontSize: '0.7rem', color: 'var(--accent)' }}>
-                                    {day.session.exercises.length} Exercises
+                                <div className="session-icon">
+                                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'linear-gradient(135deg, #06b6d4, #10b981)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', fontSize: 12 }}>
+                                        📋
+                                    </div>
                                 </div>
                             </div>
                         ) : (
-                            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0 }} className="add-indicator">
-                                <span style={{ fontSize: '1.5rem', color: 'var(--secondary-foreground)' }}>+</span>
+                            <div className="add-indicator">
+                                <span>+</span>
                             </div>
                         )}
                     </div>
@@ -197,12 +200,134 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
             </div>
 
             <style jsx>{`
+                .calendar-grid-header {
+                    gap: 0.5rem;
+                    margin-bottom: 0.5rem;
+                }
+                .calendar-grid {
+                    gap: 0.5rem;
+                }
+                .calendar-cell {
+                    aspect-ratio: 1;
+                    padding: 0.5rem;
+                    border-radius: 8px;
+                    background: transparent;
+                    opacity: 0.3;
+                }
+                .calendar-cell.current-month {
+                    background: rgba(255,255,255,0.02);
+                    opacity: 1;
+                }
+                .calendar-cell.has-session {
+                    background: var(--card-bg);
+                }
                 .calendar-cell:hover {
                     background: var(--card-bg);
                     border-color: var(--accent);
                 }
                 .calendar-cell:hover .add-indicator {
                     opacity: 1 !important;
+                }
+                .session-container {
+                    flex: 1;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 2px;
+                    overflow: hidden;
+                    margin-top: 4px;
+                    cursor: grab;
+                }
+                .session-text {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 2px;
+                }
+                .session-icon {
+                    display: none;
+                }
+                .session-name {
+                    font-size: 0.75rem;
+                    font-weight: 600;
+                    color: var(--foreground);
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+                .session-details {
+                    font-size: 0.7rem;
+                    color: var(--accent);
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+                .date-number {
+                    font-size: 0.8rem;
+                    color: var(--muted);
+                }
+                .calendar-cell.current-month .date-number {
+                    color: var(--secondary-foreground);
+                }
+                .add-indicator {
+                    flex: 1;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    opacity: 0;
+                }
+                .add-indicator span {
+                    font-size: 1.5rem;
+                    color: var(--secondary-foreground);
+                }
+
+                @media (max-width: 768px) {
+                    .calendar-grid, .calendar-grid-header {
+                        gap: 0px !important;
+                    }
+                    .calendar-grid-header {
+                        margin-bottom: 0 !important;
+                    }
+                    .calendar-cell {
+                        border-radius: 0 !important;
+                        padding: 0.25rem !important;
+                        border-right: none !important;
+                        border-bottom: none !important;
+                    }
+                    /* Draw the missing borders for the grid edges */
+                    .calendar-grid {
+                        border-right: 1px solid var(--card-border);
+                        border-bottom: 1px solid var(--card-border);
+                    }
+                    .calendar-cell.has-session {
+                        border: 1px solid var(--card-border) !important;
+                        border-right: none !important;
+                        border-bottom: none !important;
+                    }
+                    .date-number {
+                        font-size: 0.75rem;
+                        font-weight: 500;
+                        margin-bottom: 2px;
+                        display: block;
+                        text-align: center;
+                        width: 100%;
+                    }
+                    .session-text {
+                        display: none;
+                    }
+                    .session-icon {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        margin: auto;
+                        padding-bottom: 4px;
+                    }
+                    .session-icon > div {
+                        width: 18px !important;
+                        height: 18px !important;
+                        font-size: 9px !important;
+                    }
+                    .add-indicator span {
+                        font-size: 1rem;
+                    }
                 }
             `}</style>
         </div>
