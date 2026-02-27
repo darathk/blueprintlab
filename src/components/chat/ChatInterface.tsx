@@ -356,7 +356,7 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
                                         {msg.mediaUrl && isVid && (
                                             <div>
                                                 <video controls playsInline muted preload="metadata" style={{ width: '100%', maxWidth: '100%', maxHeight: 200, borderRadius: 14, background: '#000', display: 'block', objectFit: 'cover' }}>
-                                                    <source src={msg.mediaUrl} />
+                                                    <source src={`${msg.mediaUrl}#t=0.001`} />
                                                 </video>
                                             </div>
                                         )}

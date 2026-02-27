@@ -200,7 +200,7 @@ export default function CoachInbox({ coachId, coachName }: Props) {
         new Date(messages[i].createdAt).getTime() - new Date(messages[i - 1].createdAt).getTime() > 300000;
 
     return (
-        <div className="glass-panel" style={{ display: 'flex', height: isMobile ? 'calc(100vh - 180px)' : 580, overflow: 'hidden', borderRadius: 12 }}>
+        <div className={isMobile && selectedId ? "" : "glass-panel"} style={isMobile && selectedId ? { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, display: 'flex', background: 'var(--background)' } : { display: 'flex', height: isMobile ? 'calc(100vh - 180px)' : 580, overflow: 'hidden', borderRadius: 12 }}>
             {/* Sidebar */}
             <div style={{ width: isMobile ? '100%' : 260, flexShrink: 0, borderRight: isMobile ? 'none' : '1px solid var(--card-border)', display: isMobile && selectedId ? 'none' : 'flex', flexDirection: 'column', background: 'rgba(15,23,42,0.3)' }}>
                 <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -293,12 +293,12 @@ export default function CoachInbox({ coachId, coachName }: Props) {
                                                         </div>
                                                     )}
                                                     {msg.mediaUrl && isVid && (
-                                                        <div><video controls playsInline muted preload="metadata" style={{ width: '100%', maxWidth: '100%', borderRadius: 12, background: '#000', display: 'block' }}>
-                                                            <source src={msg.mediaUrl} /></video></div>
+                                                        <div><video controls playsInline muted preload="metadata" style={{ width: '100%', maxWidth: '100%', maxHeight: 200, borderRadius: 12, background: '#000', display: 'block', objectFit: 'cover' }}>
+                                                            <source src={`${msg.mediaUrl}#t=0.001`} /></video></div>
                                                     )}
                                                     {msg.mediaUrl && isImg && (
                                                         <div><img src={msg.mediaUrl} alt="" loading="lazy" onClick={() => window.open(msg.mediaUrl!, '_blank')}
-                                                            style={{ width: '100%', maxWidth: '100%', borderRadius: 12, display: 'block', cursor: 'pointer', objectFit: 'cover' }} /></div>
+                                                            style={{ width: '100%', maxWidth: '100%', maxHeight: 200, borderRadius: 12, display: 'block', cursor: 'pointer', objectFit: 'cover' }} /></div>
                                                     )}
                                                     <div style={{ fontSize: 13, lineHeight: 1.4, color: 'rgba(255,255,255,0.9)', padding: msg.mediaUrl ? '0 8px' : 0 }}>{msg.content}</div>
                                                     <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.18)', marginTop: 1, textAlign: mine ? 'right' : 'left', padding: msg.mediaUrl ? '0 8px' : 0 }}>{fmtTime(msg.createdAt)}</div>
