@@ -138,18 +138,16 @@ export default function MasterProgramCalendar({ programs, athleteId, currentProg
 
             <div style={{ overflowX: 'hidden' }}>
                 <div style={{ minWidth: '100%', width: '100%' }}>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', background: 'rgba(15, 23, 42, 0.5)', padding: '0.75rem 0', borderBottom: '1px solid var(--card-border)' }}>
+                    <div className="calendar-grid-header" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', background: 'rgba(15, 23, 42, 0.5)', padding: '0.75rem 0', borderBottom: '1px solid var(--card-border)' }}>
                         {weekDays.map(d => <div key={d} style={{ textAlign: 'center', fontSize: 'clamp(0.6rem, 2vw, 0.75rem)', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase' }}>{d}</div>)}
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridAutoRows: '1fr' }}>
+                    <div className="calendar-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridAutoRows: '1fr' }}>
                         {calendarDays.map((day, i) => (
                             <div
                                 key={day.dateStr}
                                 onClick={() => day.program && day.session && day.session.exercises?.length > 0 && onSelectSession && onSelectSession(day.program, day.weekNum, day.dayNum)}
                                 style={{
-                                    minHeight: '110px',
-                                    padding: '0.5rem',
                                     borderRight: (i + 1) % 7 === 0 ? 'none' : '1px solid var(--card-border)',
                                     borderBottom: '1px solid var(--card-border)',
                                     background: day.isCurrentMonth ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.3)',
@@ -157,32 +155,33 @@ export default function MasterProgramCalendar({ programs, athleteId, currentProg
                                     position: 'relative',
                                     transition: 'background 0.2s',
                                 }}
-                                className={day.program ? 'calendar-day-active' : ''}
+                                className={`calendar-cell ${day.program ? 'calendar-day-active has-session' : ''} ${day.isCurrentMonth ? 'current-month' : 'other-month'}`}
                             >
-                                <div style={{
-                                    fontSize: '0.85rem',
-                                    color: day.isCurrentMonth ? 'var(--foreground)' : 'var(--muted)',
-                                    marginBottom: '0.5rem',
-                                    fontWeight: day.isCurrentMonth ? 500 : 400
-                                }}>
+                                <div className="date-number">
                                     {day.date.getDate()}
                                 </div>
 
                                 {day.program && day.session && day.session.exercises && day.session.exercises.length > 0 && (
-                                    <div style={{
+                                    <div className="session-container" style={{
                                         background: 'var(--secondary)',
                                         borderLeft: '3px solid var(--primary)',
                                         padding: '6px',
                                         borderRadius: '0 6px 6px 0',
-                                        fontSize: '0.75rem',
                                         boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
                                     }}>
-                                        <div style={{ fontWeight: 600, color: 'var(--primary)', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-                                            {day.program.name}
+                                        <div className="session-text">
+                                            <div style={{ fontWeight: 600, color: 'var(--primary)', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                                                {day.program.name}
+                                            </div>
+                                            <div style={{ marginTop: '2px' }}>
+                                                <div style={{ color: 'var(--primary)', fontWeight: 500 }}>{day.session.name}</div>
+                                                <div style={{ opacity: 0.7, fontSize: '0.7rem' }}>{day.session.exercises.length} Exercises</div>
+                                            </div>
                                         </div>
-                                        <div style={{ marginTop: '2px' }}>
-                                            <div style={{ color: 'var(--primary)', fontWeight: 500 }}>{day.session.name}</div>
-                                            <div style={{ opacity: 0.7, fontSize: '0.7rem' }}>{day.session.exercises.length} Exercises</div>
+                                        <div className="session-icon">
+                                            <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'linear-gradient(135deg, #06b6d4, #10b981)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', fontSize: 10 }}>
+                                                📋
+                                            </div>
                                         </div>
                                     </div>
                                 )}
@@ -205,8 +204,71 @@ export default function MasterProgramCalendar({ programs, athleteId, currentProg
                     color: var(--primary);
                     text-shadow: 0 0 8px var(--primary);
                 }
+                .calendar-cell {
+                    min-height: 110px;
+                    padding: 0.5rem;
+                }
                 .calendar-day-active:hover {
                     background: rgba(255,255,255,0.03) !important;
+                }
+                .date-number {
+                    font-size: 0.85rem;
+                    margin-bottom: 0.5rem;
+                }
+                .calendar-cell.current-month .date-number {
+                    color: var(--foreground);
+                    font-weight: 500;
+                }
+                .calendar-cell.other-month .date-number {
+                    color: var(--muted);
+                    font-weight: 400;
+                }
+                .session-icon {
+                    display: none;
+                }
+
+                @media (max-width: 768px) {
+                    .calendar-grid-header {
+                        padding: 0.25rem 0 !important;
+                    }
+                    .calendar-cell {
+                        min-height: auto;
+                        aspect-ratio: 1;
+                        padding: 0.25rem !important;
+                        border-right: 1px solid var(--card-border) !important;
+                        border-bottom: 1px solid var(--card-border) !important;
+                    }
+                    .date-number {
+                        font-size: 0.75rem;
+                        font-weight: 500 !important;
+                        margin-bottom: 2px;
+                        display: block;
+                        text-align: center;
+                        width: 100%;
+                    }
+                    .session-container {
+                        padding: 2px !important;
+                        border-left: none !important;
+                        background: transparent !important;
+                        box-shadow: none !important;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                        height: calc(100% - 16px);
+                    }
+                    .session-text {
+                        display: none;
+                    }
+                    .session-icon {
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                    }
+                    .session-icon > div {
+                        width: 18px !important;
+                        height: 18px !important;
+                        font-size: 9px !important;
+                    }
                 }
             `}</style>
         </div>
