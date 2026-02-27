@@ -22,7 +22,7 @@ export default function Home() {
 
         <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center' }}>
           <Link href="/dashboard" className="btn btn-primary" style={{ padding: '1rem 3rem', fontSize: '1.1rem', boxShadow: '0 0 30px rgba(6,182,212,0.2)' }}>
-            Enter Command
+            Coach Portal
           </Link>
           <Link href="/athlete" className="btn btn-secondary" style={{ padding: '1rem 3rem', fontSize: '1.1rem' }}>
             Athlete Portal
