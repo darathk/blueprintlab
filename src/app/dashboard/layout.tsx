@@ -11,13 +11,23 @@ const getAuthState = cache(async () => {
     if (!user) return { isCoach: false, user: null, athleteId: null };
 
     const email = user.primaryEmailAddress?.emailAddress || '';
-    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.ADMIN_EMAIL;
-    const isCoach = !!(adminEmail && email.toLowerCase() === adminEmail.toLowerCase());
 
-    let athleteId = null;
-    if (!isCoach) {
-        const athlete = await prisma.athlete.findUnique({ where: { email } });
-        if (athlete) athleteId = athlete.id;
+    // Check if they exist in the DB
+    const athlete = await prisma.athlete.findUnique({ where: { email } });
+
+    // In multi-coach system, coaches are just Athlete records with role === 'coach'
+    const isCoach = athlete?.role === 'coach';
+    const athleteId = athlete ? athlete.id : null;
+
+    // Fallback for the original admin if they somehow got demoted
+    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.ADMIN_EMAIL;
+    if (!isCoach && adminEmail && email.toLowerCase() === adminEmail.toLowerCase()) {
+        if (athlete) {
+            await prisma.athlete.update({ where: { email }, data: { role: 'coach' } });
+        } else {
+            await prisma.athlete.create({ data: { name: 'Admin Coach', email, role: 'coach' } });
+        }
+        return { isCoach: true, user, athleteId: athlete?.id || null };
     }
 
     return { isCoach, user, athleteId };
@@ -32,12 +42,12 @@ export default async function DashboardLayout({
 
     if (!user) redirect('/sign-in');
 
-    // STRICT: Only the designated admin can access the Coach Dashboard
+    // STRICT: Only designated coaches can access the Coach Dashboard
     if (!isCoach) {
         // If they're a known athlete, send to their portal
         if (athleteId) redirect(`/athlete/${athleteId}/dashboard`);
-        // Otherwise, send them to the home page — they have no access
-        redirect('/');
+        // Otherwise, send them to the home page — they have no access/need to register
+        redirect('/athlete');
     }
 
     return (

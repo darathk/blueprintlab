@@ -46,11 +46,50 @@ export default async function AthleteLoginPage() {
                 data: {
                     name: uName,
                     email: uEmail,
+                    role: 'athlete'
                 }
             });
             redirect(`/athlete/${newAthlete.id}/dashboard`);
         } else {
             redirect(`/athlete/${existingAthlete.id}/dashboard`);
+        }
+    }
+
+    async function registerCoach() {
+        'use server';
+
+        const registeringUser = await currentUser();
+        if (!registeringUser) return;
+
+        const uEmail = registeringUser.primaryEmailAddress?.emailAddress || '';
+        const uName = registeringUser.firstName && registeringUser.lastName
+            ? `${registeringUser.firstName} ${registeringUser.lastName}`
+            : (registeringUser.firstName || 'New Coach');
+
+        // Verify they don't already exist
+        const existingAthlete = await prisma.athlete.findUnique({
+            where: { email: uEmail }
+        });
+
+        if (!existingAthlete) {
+            await prisma.athlete.create({
+                data: {
+                    name: uName,
+                    email: uEmail,
+                    role: 'coach'
+                }
+            });
+            redirect('/dashboard');
+        } else if (existingAthlete.role === 'coach') {
+            redirect('/dashboard');
+        } else {
+            // They exist but are an athlete, upgrade them to coach? Or block?
+            // For now, upgrade them so they have dashboard access.
+            await prisma.athlete.update({
+                where: { email: uEmail },
+                data: { role: 'coach' }
+            });
+            redirect('/dashboard');
         }
     }
 
@@ -79,9 +118,11 @@ export default async function AthleteLoginPage() {
                         <div style={{ flex: 1, height: '1px', background: 'var(--card-border)' }}></div>
                     </div>
 
-                    <Link href="/dashboard" className="btn btn-secondary" style={{ width: '100%' }}>
-                        Proceed to Coach Dashboard
-                    </Link>
+                    <form action={registerCoach}>
+                        <button type="submit" className="btn btn-secondary" style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}>
+                            Register as a Coach
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>

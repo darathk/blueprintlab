@@ -3,44 +3,48 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
 model Athlete {
-  id            String    @id @default(uuid())
-  name          String
-  email         String    @unique
-  nextMeetName  String?
-  nextMeetDate  String?
-  periodization Json?
-  programs      Program[]
-  reports       Report[]
-  readiness     Readiness[]
-  sentMessages     Message[] @relation("SentMessages")
-  receivedMessages Message[] @relation("ReceivedMessages")
+  id               String      @id @default(uuid())
+  name             String
+  email            String      @unique
+  role             String      @default("athlete") // 'coach' or 'athlete'
+  coachId          String? // If role is 'athlete', this links them to their coach
+  coach            Athlete?    @relation("CoachToAthlete", fields: [coachId], references: [id])
+  guidedAthletes   Athlete[]   @relation("CoachToAthlete")
+  nextMeetName     String?
+  nextMeetDate     String?
+  periodization    Json?
+  programs         Program[]
+  reports          Report[]
+  readiness        Readiness[]
+  sentMessages     Message[]   @relation("SentMessages")
+  receivedMessages Message[]   @relation("ReceivedMessages")
 }
 
 model Program {
-  id          String   @id @default(uuid())
-  athleteId   String
-  athlete     Athlete  @relation(fields: [athleteId], references: [id])
-  name        String
-  startDate   String
-  endDate     String?
-  weeks       Json     // Storing complex nested structure easily
-  status      String   @default("active")
-  logs        Log[]
+  id        String  @id @default(uuid())
+  athleteId String
+  athlete   Athlete @relation(fields: [athleteId], references: [id])
+  name      String
+  startDate String
+  endDate   String?
+  weeks     Json // Storing complex nested structure easily
+  status    String  @default("active")
+  logs      Log[]
 }
 
 model Log {
-  id          String   @id @default(uuid())
-  programId   String
-  program     Program  @relation(fields: [programId], references: [id])
-  sessionId   String
-  date        String
-  exercises   Json     // Completed sets, reps, rpes
+  id        String  @id @default(uuid())
+  programId String
+  program   Program @relation(fields: [programId], references: [id])
+  sessionId String
+  date      String
+  exercises Json // Completed sets, reps, rpes
 }
 
 model Report {
@@ -49,15 +53,15 @@ model Report {
   athlete   Athlete  @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   created   DateTime @default(now())
   status    String   @default("Complete")
-  config    Json     // Stores report parameters
+  config    Json // Stores report parameters
 }
 
 model CustomExercise {
-  id        String   @id @default(uuid())
-  name      String   @unique
-  category  String
-  parent    String
-  isCustom  Boolean  @default(true)
+  id       String  @id @default(uuid())
+  name     String  @unique
+  category String
+  parent   String
+  isCustom Boolean @default(true)
 }
 
 model Readiness {
@@ -71,18 +75,18 @@ model Readiness {
 }
 
 model Message {
-  id         String   @id @default(uuid())
+  id         String    @id @default(uuid())
   senderId   String
-  sender     Athlete  @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
+  sender     Athlete   @relation("SentMessages", fields: [senderId], references: [id], onDelete: Cascade)
   receiverId String
-  receiver   Athlete  @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
+  receiver   Athlete   @relation("ReceivedMessages", fields: [receiverId], references: [id], onDelete: Cascade)
   content    String
   mediaUrl   String?
   mediaType  String?
-  createdAt  DateTime @default(now())
-  read       Boolean  @default(false)
+  createdAt  DateTime  @default(now())
+  read       Boolean   @default(false)
   replyToId  String?
-  replyTo    Message? @relation("MessageReplies", fields: [replyToId], references: [id])
+  replyTo    Message?  @relation("MessageReplies", fields: [replyToId], references: [id])
   replies    Message[] @relation("MessageReplies")
 
   @@index([senderId, createdAt])

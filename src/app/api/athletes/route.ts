@@ -17,14 +17,14 @@ export async function GET() {
 export async function POST(request: Request) {
     try {
         const body = await request.json();
-        const { id, name, email, nextMeetName, nextMeetDate, periodization } = body;
+        const { id, name, email, nextMeetName, nextMeetDate, periodization, coachId, role } = body;
 
         if (!id) {
             return NextResponse.json({ error: 'Missing Athlete ID' }, { status: 400 });
         }
 
         const athlete = await prisma.athlete.upsert({
-            where: { id },
+            where: { id: id || 'new-uuid-placeholder' }, // Hack to force create if no ID
             update: {
                 name: name !== undefined ? name : undefined,
                 email: email !== undefined ? email : undefined,
@@ -33,12 +33,14 @@ export async function POST(request: Request) {
                 periodization: periodization !== undefined ? periodization : undefined,
             },
             create: {
-                id,
+                id, // undefined means prisma will generate uuid
                 name: name || 'New Athlete',
-                email: email || `${id}@example.com`,
+                email: email || `${Date.now()}@example.com`,
                 nextMeetName: nextMeetName || null,
                 nextMeetDate: nextMeetDate || null,
-                periodization: periodization || null
+                periodization: periodization || null,
+                coachId: coachId || null,
+                role: role || 'athlete'
             }
         });
 

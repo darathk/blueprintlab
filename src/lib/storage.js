@@ -1,8 +1,15 @@
 import { prisma } from '@/lib/prisma';
 import { cache } from 'react';
 
-export async function getAthletes() {
+export async function getAthletes(coachId) {
+    if (!coachId) {
+        // Fallback or admin override: if no coachId provided, return none to be safe, 
+        // or we could throw an error. For now, let's strictly require a coach.
+        return [];
+    }
+
     const athletes = await prisma.athlete.findMany({
+        where: { coachId },
         include: { programs: { where: { status: 'active' } } }
     });
     return athletes.map(a => {
@@ -42,8 +49,11 @@ export async function saveAthlete(athlete) {
     }
 }
 
-export async function getPrograms() {
-    return prisma.program.findMany();
+export async function getPrograms(coachId) {
+    if (!coachId) return [];
+    return prisma.program.findMany({
+        where: { athlete: { coachId } }
+    });
 }
 
 export async function updateProgram(program) {
@@ -65,8 +75,10 @@ export async function deleteProgram(id) {
     return true;
 }
 
-export async function getLogs() {
+export async function getLogs(coachId) {
+    if (!coachId) return [];
     const logs = await prisma.log.findMany({
+        where: { program: { athlete: { coachId } } },
         include: { program: { select: { athleteId: true } } }
     });
     return logs.map(l => {
@@ -101,8 +113,11 @@ export async function saveLog(logEntry) {
     }
 }
 
-export async function getReadiness() {
-    return prisma.readiness.findMany();
+export async function getReadiness(coachId) {
+    if (!coachId) return [];
+    return prisma.readiness.findMany({
+        where: { athlete: { coachId } }
+    });
 }
 
 export async function saveReadiness(log) {
@@ -159,8 +174,10 @@ export const getReadinessByAthlete = cache(async (athleteId) => {
 });
 
 // Lightweight aggregate: returns [{programId, athleteId, sessionId}] with NO exercise payloads
-export const getLogSummariesForDashboard = cache(async () => {
+export const getLogSummariesForDashboard = cache(async (coachId) => {
+    if (!coachId) return [];
     return prisma.log.findMany({
+        where: { program: { athlete: { coachId } } },
         select: {
             sessionId: true,
             programId: true,

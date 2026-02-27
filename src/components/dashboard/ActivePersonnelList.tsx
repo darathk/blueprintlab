@@ -1,10 +1,47 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import AthleteStatusCard from '@/app/dashboard/athlete-status-card';
 
-export default function ActivePersonnelList({ athletes, programs, logSummaries }) {
+export default function ActivePersonnelList({ athletes, programs, logSummaries, coachId }) {
+    const router = useRouter();
     const [searchQuery, setSearchQuery] = useState('');
+    const [isAdding, setIsAdding] = useState(false);
+    const [newName, setNewName] = useState('');
+    const [newEmail, setNewEmail] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const handleAddAthlete = async (e: React.FormEvent) => {
+        e.preventDefault();
+        setIsSubmitting(true);
+        try {
+            const res = await fetch('/api/athletes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: newName,
+                    email: newEmail,
+                    coachId: coachId,
+                    role: 'athlete'
+                })
+            });
+
+            if (res.ok) {
+                setNewName('');
+                setNewEmail('');
+                setIsAdding(false);
+                router.refresh();
+            } else {
+                alert('Failed to add athlete');
+            }
+        } catch (error) {
+            console.error(error);
+            alert('An error occurred');
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
 
     const filteredAthletes = athletes.filter(athlete =>
         athlete.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -21,9 +58,18 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries }
                 gap: '1rem',
                 flexWrap: 'wrap'
             }}>
-                <h2 style={{ fontSize: '1.5rem', color: 'var(--foreground)', display: 'flex', alignItems: 'center', gap: '0.5rem', margin: 0 }}>
-                    <span className="neon-text">///</span> Active Personnel
-                </h2>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <h2 style={{ fontSize: '1.5rem', color: 'var(--foreground)', margin: 0 }}>
+                        <span className="neon-text">///</span> Active Personnel
+                    </h2>
+                    <button
+                        onClick={() => setIsAdding(!isAdding)}
+                        className="btn btn-secondary"
+                        style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
+                    >
+                        {isAdding ? 'Cancel' : '+ Add Athlete'}
+                    </button>
+                </div>
 
                 {/* Search Bar */}
                 <input
@@ -53,6 +99,39 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries }
                     }}
                 />
             </div>
+
+            {isAdding && (
+                <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '1rem', border: '1px solid var(--primary)' }}>
+                    <h3 style={{ marginTop: 0, marginBottom: '1rem', fontSize: '1.1rem' }}>Add New Athlete</h3>
+                    <form onSubmit={handleAddAthlete} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                        <div style={{ flex: 1, minWidth: '200px' }}>
+                            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--muted)', marginBottom: '0.3rem' }}>Name</label>
+                            <input
+                                type="text"
+                                required
+                                value={newName}
+                                onChange={(e) => setNewName(e.target.value)}
+                                style={{ width: '100%', padding: '0.6rem', borderRadius: '4px', border: '1px solid var(--card-border)', background: 'var(--background)', color: 'white' }}
+                                placeholder="E.g. John Doe"
+                            />
+                        </div>
+                        <div style={{ flex: 1, minWidth: '200px' }}>
+                            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--muted)', marginBottom: '0.3rem' }}>Email</label>
+                            <input
+                                type="email"
+                                required
+                                value={newEmail}
+                                onChange={(e) => setNewEmail(e.target.value)}
+                                style={{ width: '100%', padding: '0.6rem', borderRadius: '4px', border: '1px solid var(--card-border)', background: 'var(--background)', color: 'white' }}
+                                placeholder="john@example.com"
+                            />
+                        </div>
+                        <button type="submit" className="btn btn-primary" disabled={isSubmitting} style={{ padding: '0.6rem 1.5rem' }}>
+                            {isSubmitting ? 'Adding...' : 'Add Athlete'}
+                        </button>
+                    </form>
+                </div>
+            )}
 
             {filteredAthletes.length === 0 ? (
                 <p style={{ color: 'var(--secondary-foreground)' }}>

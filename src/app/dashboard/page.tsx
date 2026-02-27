@@ -4,19 +4,24 @@ import { prisma } from '@/lib/prisma';
 import ActivePersonnelList from '@/components/dashboard/ActivePersonnelList';
 import CollapsibleSection from '@/components/ui/CollapsibleSection';
 
-export default async function DashboardPage() {
-    const [athletes, programs, logSummaries] = await Promise.all([
-        getAthletes(),
-        getPrograms(),
-        getLogSummariesForDashboard()
-    ]);
+import { currentUser } from '@clerk/nextjs/server';
 
-    // Look up coach's Athlete record for the inbox
-    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.ADMIN_EMAIL || '';
-    let coach = await prisma.athlete.findUnique({ where: { email: adminEmail } });
-    if (!coach) {
-        coach = await prisma.athlete.create({ data: { name: 'Coach', email: adminEmail } });
-    }
+export default async function DashboardPage() {
+    const user = await currentUser();
+    if (!user) return null; // Let layout handle redirect
+
+    const email = user.primaryEmailAddress?.emailAddress || '';
+    const coach = await prisma.athlete.findUnique({ where: { email } });
+
+    if (!coach || coach.role !== 'coach') return null;
+
+    const coachId = coach.id;
+
+    const [athletes, programs, logSummaries] = await Promise.all([
+        getAthletes(coachId),
+        getPrograms(coachId),
+        getLogSummariesForDashboard(coachId)
+    ]);
 
     return (
         <div>
@@ -31,6 +36,7 @@ export default async function DashboardPage() {
                 athletes={athletes}
                 programs={programs}
                 logSummaries={logSummaries}
+                coachId={coachId}
             />
         </div>
     );
