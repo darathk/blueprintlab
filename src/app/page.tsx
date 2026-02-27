@@ -1,8 +1,29 @@
 import Link from 'next/link';
-
+import { redirect } from 'next/navigation';
+import { currentUser } from '@clerk/nextjs/server';
+import { prisma } from '@/lib/prisma';
 import styles from './page.module.css';
 
-export default function Home() {
+export default async function Home() {
+  const user = await currentUser();
+
+  // If the user is logged in, redirect them immediately to their proper portal
+  if (user) {
+    const email = user.primaryEmailAddress?.emailAddress || '';
+    const athlete = await prisma.athlete.findUnique({ where: { email } });
+
+    // If they are a coach, redirect to coach dashboard
+    if (athlete?.role === 'coach') {
+      redirect('/dashboard');
+    }
+    // If they are an athlete with a valid ID, redirect to their specific dashboard
+    if (athlete?.role === 'athlete' && athlete?.id) {
+      redirect(`/athlete/${athlete.id}/dashboard`);
+    }
+    // If they have no DB record, redirect to the onboarding screen (Image 1)
+    redirect('/athlete');
+  }
+
   return (
     <div className={styles.page} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'radial-gradient(circle at center, #1e293b 0%, #020617 100%)' }}>
       <main className={styles.main} style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
