@@ -534,7 +534,7 @@ export default function PeriodizationPlanner({ athlete }) {
                     <div>Initialize Meet Date to map the trajectory.</div>
                 </div>
             ) : (
-                <div style={{ overflowX: 'auto', borderRadius: '9999px', border: '1px solid var(--card-border)' }}>
+                <div style={{ overflowX: 'auto', borderRadius: '1rem', border: '1px solid var(--card-border)' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
                         <thead>
                             <tr style={{ background: 'var(--card-bg)', borderBottom: '1px solid var(--card-border)' }}>
