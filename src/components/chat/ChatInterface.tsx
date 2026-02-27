@@ -35,8 +35,8 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
     const [compressProgress, setCompressProgress] = useState(-1);
     const [statusText, setStatusText] = useState('');
     const [replyingTo, setReplyingTo] = useState<Message | null>(null);
-    const [stagedFile, setStagedFile] = useState<File | null>(null);
-    const [stagedFileUrl, setStagedFileUrl] = useState<string | null>(null);
+    const [stagedFiles, setStagedFiles] = useState<File[]>([]);
+    const [stagedFileUrls, setStagedFileUrls] = useState<string[]>([]);
     const [activeMenu, setActiveMenu] = useState<string | null>(null);
     const [loaded, setLoaded] = useState(false);
 
@@ -119,82 +119,114 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
     // Send — optimistic
     const handleSend = async () => {
         const text = newMessage.trim();
-        if (!text && !stagedFile) return;
+        if (!text && stagedFiles.length === 0) return;
 
-        // If there's a file, we need to upload it first
-        let finalMediaUrl = null;
-        let finalMediaType = null;
+        // Copy the files and clear UI state immediately
+        const filesToSend = [...stagedFiles];
+        const urlsToSend = [...stagedFileUrls];
 
-        if (stagedFile) {
-            setUploading(true); setCompressProgress(0);
-            try {
-                const isVid = stagedFile.type.startsWith('video/');
-                let blob: File | Blob = stagedFile;
-                let mime = stagedFile.type;
-
-                if (isVid) {
-                    setStatusText('Uploading video…');
-                    setCompressProgress(50);
-                } else {
-                    setStatusText('Compressing photo…'); setCompressProgress(40);
-                    try {
-                        const imageCompression = (await import('browser-image-compression')).default;
-                        const c = await (imageCompression as any)(stagedFile, { maxSizeMB: 1, maxWidthOrHeight: 1920, useWebWorker: false });
-                        blob = c; mime = c.type; setCompressProgress(80);
-                    } catch { /* skip compression if it fails */ }
-                }
-
-                setCompressProgress(101); setStatusText('Uploading…');
-                const ext = mime.includes('png') ? '.png' : mime.includes('jpeg') || mime.includes('jpg') ? '.jpg' : mime.includes('quicktime') ? '.mov' : '.mp4';
-                const { data, error } = await supabase.storage.from('lift-videos').upload(`${athleteId}/${Date.now()}${ext}`, blob, { cacheControl: '3600', upsert: false, contentType: mime });
-
-                if (error) throw error;
-
-                const { data: u } = supabase.storage.from('lift-videos').getPublicUrl(data.path);
-                finalMediaUrl = u.publicUrl;
-                finalMediaType = mime;
-            } catch (err) {
-                console.error('Upload failed:', err);
-                alert('Media upload failed. Message not sent.');
-                setUploading(false);
-                setCompressProgress(-1);
-                setStatusText('');
-                return; // Stop send on failure
-            }
-        }
-
-        const content = text || (finalMediaType?.startsWith('image') ? '📷 Photo' : '📎 Video');
-
-        // Optimistic message
-        const tempId = `temp-${Date.now()}`;
-        const optimistic: Message = {
-            id: tempId, senderId: currentUserId, receiverId: otherUserId, content,
-            mediaUrl: finalMediaUrl || null, mediaType: finalMediaType || null,
-            createdAt: new Date().toISOString(), read: false,
-            replyToId: replyingTo?.id || null, replyTo: replyingTo ? { id: replyingTo.id, content: replyingTo.content, mediaUrl: replyingTo.mediaUrl, mediaType: replyingTo.mediaType, sender: replyingTo.sender } : null,
-            sender: { id: currentUserId, name: currentUserName, email: '' },
-            receiver: { id: otherUserId, name: otherUserName, email: '' },
-        };
-
-        setMessages(prev => [...prev, optimistic]);
         setNewMessage('');
         setReplyingTo(null);
-
-        // Clear staged file immediately upon optimism
-        if (stagedFileUrl) URL.revokeObjectURL(stagedFileUrl);
-        setStagedFile(null);
-        setStagedFileUrl(null);
+        setStagedFiles([]);
+        setStagedFileUrls([]);
         if (fileRef.current) fileRef.current.value = '';
 
-        setSending(true);
-        try {
-            const res = await fetch('/api/messages', {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ senderId: currentUserId, receiverId: otherUserId, content, mediaUrl: finalMediaUrl, mediaType: finalMediaType, replyToId: replyingTo?.id || null })
+        // Create optimistic messages
+        const optimisticMessages: Message[] = [];
+
+        if (filesToSend.length === 0) {
+            // Just text
+            const tempId = `temp-${Date.now()}`;
+            optimisticMessages.push({
+                id: tempId, senderId: currentUserId, receiverId: otherUserId, content: text,
+                mediaUrl: null, mediaType: null,
+                createdAt: new Date().toISOString(), read: false,
+                replyToId: replyingTo?.id || null, replyTo: replyingTo ? { id: replyingTo.id, content: replyingTo.content, mediaUrl: replyingTo.mediaUrl, mediaType: replyingTo.mediaType, sender: replyingTo.sender } : null,
+                sender: { id: currentUserId, name: currentUserName, email: '' },
+                receiver: { id: otherUserId, name: otherUserName, email: '' },
             });
-            if (res.ok) {
-                const real = await res.json();
-                setMessages(prev => prev.map(m => m.id === tempId ? real : m));
+        } else {
+            // Files (with text on the first one)
+            filesToSend.forEach((file, index) => {
+                const tempId = `temp-${Date.now()}-${index}`;
+                const isVid = file.type.startsWith('video/');
+                const content = index === 0 && text ? text : (isVid ? '📎 Video' : '📷 Photo');
+                optimisticMessages.push({
+                    id: tempId, senderId: currentUserId, receiverId: otherUserId, content,
+                    mediaUrl: urlsToSend[index],
+                    mediaType: file.type,
+                    createdAt: new Date().toISOString(), read: false,
+                    replyToId: index === 0 ? (replyingTo?.id || null) : null,
+                    replyTo: index === 0 ? (replyingTo ? { id: replyingTo.id, content: replyingTo.content, mediaUrl: replyingTo.mediaUrl, mediaType: replyingTo.mediaType, sender: replyingTo.sender } : null) : null,
+                    sender: { id: currentUserId, name: currentUserName, email: '' },
+                    receiver: { id: otherUserId, name: otherUserName, email: '' },
+                });
+            });
+        }
+
+        setMessages(prev => [...prev, ...optimisticMessages]);
+        setSending(true);
+
+        try {
+            if (filesToSend.length === 0) {
+                // Just send the text message
+                const tempId = optimisticMessages[0].id;
+                const res = await fetch('/api/messages', {
+                    method: 'POST', headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ senderId: currentUserId, receiverId: otherUserId, content: text, mediaUrl: null, mediaType: null, replyToId: replyingTo?.id || null })
+                });
+                if (res.ok) {
+                    const real = await res.json();
+                    setMessages(prev => prev.map(m => m.id === tempId ? real : m));
+                }
+            } else {
+                // Send files sequentially
+                setUploading(true);
+                for (let i = 0; i < filesToSend.length; i++) {
+                    const file = filesToSend[i];
+                    const tempId = optimisticMessages[i].id;
+                    const isVid = file.type.startsWith('video/');
+                    let blob: File | Blob = file;
+                    let mime = file.type;
+
+                    setStatusText(filesToSend.length > 1 ? `Uploading ${i + 1} of ${filesToSend.length}…` : 'Uploading…');
+                    setCompressProgress(10);
+
+                    if (!isVid) {
+                        try {
+                            const imageCompression = (await import('browser-image-compression')).default;
+                            const c = await (imageCompression as any)(file, { maxSizeMB: 1, maxWidthOrHeight: 1920, useWebWorker: false });
+                            blob = c; mime = c.type; setCompressProgress(40);
+                        } catch { /* skip compression */ }
+                    }
+
+                    setCompressProgress(80);
+                    const ext = mime.includes('png') ? '.png' : mime.includes('jpeg') || mime.includes('jpg') ? '.jpg' : mime.includes('quicktime') ? '.mov' : '.mp4';
+                    const { data, error } = await supabase.storage.from('lift-videos').upload(`${athleteId}/${Date.now()}-${i}${ext}`, blob, { cacheControl: '3600', upsert: false, contentType: mime });
+
+                    if (error) {
+                        console.error('Upload failed:', error);
+                        continue;
+                    }
+
+                    setCompressProgress(100);
+                    const { data: u } = supabase.storage.from('lift-videos').getPublicUrl(data.path);
+
+                    const content = i === 0 && text ? text : (isVid ? '📎 Video' : '📷 Photo');
+                    const replyToId = i === 0 ? (replyingTo?.id || null) : null;
+
+                    const res = await fetch('/api/messages', {
+                        method: 'POST', headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ senderId: currentUserId, receiverId: otherUserId, content, mediaUrl: u.publicUrl, mediaType: mime, replyToId })
+                    });
+
+                    if (res.ok) {
+                        const real = await res.json();
+                        setMessages(prev => prev.map(m => m.id === tempId ? real : m));
+                    }
+
+                    URL.revokeObjectURL(urlsToSend[i]);
+                }
             }
         } catch (e) { console.error('Send failed:', e); }
         finally {
@@ -207,19 +239,36 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
 
     // Staging media
     const handleMedia = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0]; if (!file) return;
-        const isVid = file.type.startsWith('video/'), isImg = file.type.startsWith('image/');
-        if (!isVid && !isImg) { alert('Upload a photo or video'); return; }
-        if (file.size > 200 * 1024 * 1024) { alert('File must be under 200MB'); return; }
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
 
-        setStagedFile(file);
-        setStagedFileUrl(URL.createObjectURL(file));
+        const validFiles = files.filter(f => {
+            const isVid = f.type.startsWith('video/'), isImg = f.type.startsWith('image/');
+            return (isVid || isImg) && f.size <= 200 * 1024 * 1024;
+        });
+
+        if (validFiles.length < files.length) {
+            alert('Some files were ignored (must be image/video under 200MB)');
+        }
+        if (validFiles.length === 0) return;
+
+        setStagedFiles(prev => [...prev, ...validFiles]);
+        setStagedFileUrls(prev => [...prev, ...validFiles.map(f => URL.createObjectURL(f))]);
+
+        // Reset input so selecting the same file again triggers onChange
+        if (fileRef.current) fileRef.current.value = '';
     };
 
-    const clearStagedMedia = () => {
-        if (stagedFileUrl) URL.revokeObjectURL(stagedFileUrl);
-        setStagedFile(null);
-        setStagedFileUrl(null);
+    const clearStagedMedia = (index?: number) => {
+        if (index !== undefined) {
+            URL.revokeObjectURL(stagedFileUrls[index]);
+            setStagedFiles(prev => prev.filter((_, i) => i !== index));
+            setStagedFileUrls(prev => prev.filter((_, i) => i !== index));
+        } else {
+            stagedFileUrls.forEach(url => URL.revokeObjectURL(url));
+            setStagedFiles([]);
+            setStagedFileUrls([]);
+        }
         if (fileRef.current) fileRef.current.value = '';
     };
 
@@ -384,27 +433,29 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
             )}
 
             {/* Staged Media Preview */}
-            {stagedFile && stagedFileUrl && (
-                <div style={{ padding: '8px 16px', background: 'var(--card-bg)', borderTop: '1px solid var(--card-border)', flexShrink: 0, position: 'relative' }}>
-                    <div style={{ width: 80, height: 80, borderRadius: 8, overflow: 'hidden', position: 'relative', border: '1px solid var(--card-border)', background: '#000' }}>
-                        {stagedFile.type.startsWith('image/') ? (
-                            <img src={stagedFileUrl} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                        ) : (
-                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.7)', fontSize: 24 }}>
-                                📹
-                            </div>
-                        )}
-                        <button onClick={clearStagedMedia} disabled={uploading} style={{
-                            position: 'absolute', top: 4, right: 4, width: 20, height: 20, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: 'none', color: '#fff', fontSize: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
-                        }}>✕</button>
-                    </div>
+            {stagedFiles.length > 0 && (
+                <div style={{ padding: '8px 16px', background: 'var(--card-bg)', borderTop: '1px solid var(--card-border)', flexShrink: 0, display: 'flex', gap: 8, overflowX: 'auto' }}>
+                    {stagedFiles.map((f, i) => (
+                        <div key={i} style={{ width: 80, height: 80, borderRadius: 8, overflow: 'hidden', position: 'relative', border: '1px solid var(--card-border)', background: '#000', flexShrink: 0 }}>
+                            {f.type.startsWith('image/') ? (
+                                <img src={stagedFileUrls[i]} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            ) : (
+                                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.7)', fontSize: 24 }}>
+                                    📹
+                                </div>
+                            )}
+                            <button onClick={() => clearStagedMedia(i)} disabled={uploading} style={{
+                                position: 'absolute', top: 4, right: 4, width: 20, height: 20, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: 'none', color: '#fff', fontSize: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            }}>✕</button>
+                        </div>
+                    ))}
                 </div>
             )}
 
             {/* Input */}
             <div style={{ padding: '8px 12px 12px', background: 'var(--card-bg)', borderTop: '1px solid var(--card-border)', flexShrink: 0 }}>
-                <input ref={fileRef} type="file" accept="video/*,image/*" onChange={handleMedia} style={{ display: 'none' }} />
-                {isCompressing && !stagedFile ? (
+                <input ref={fileRef} type="file" multiple accept="video/*,image/*" onChange={handleMedia} style={{ display: 'none' }} />
+                {isCompressing && stagedFiles.length === 0 ? (
                     <div style={{ textAlign: 'center', fontSize: 12, padding: 6, color: 'var(--secondary-foreground)' }}>Processing…</div>
                 ) : (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -414,11 +465,11 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
                         </button>
                         <input type="text" value={newMessage} onChange={e => setNewMessage(e.target.value)}
                             onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
-                            placeholder={(stagedFile && !newMessage) ? "Add a caption..." : "Message"}
+                            placeholder={(stagedFiles.length > 0 && !newMessage) ? "Add a caption..." : "Message"}
                             disabled={uploading}
                             style={{ flex: 1, padding: '8px 16px', borderRadius: 20, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'var(--foreground)', fontSize: 14, outline: 'none', minWidth: 0, opacity: uploading ? 0.5 : 1 }} />
-                        <button onClick={() => handleSend()} disabled={uploading || (!newMessage.trim() && !stagedFile)}
-                            style={{ width: 34, height: 34, borderRadius: '50%', background: (newMessage.trim() || stagedFile) ? 'linear-gradient(135deg, #06b6d4, #10b981)' : 'rgba(255,255,255,0.05)', border: 'none', cursor: (newMessage.trim() || stagedFile) ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, opacity: uploading ? 0.3 : (newMessage.trim() || stagedFile) ? 1 : 0.4, color: (newMessage.trim() || stagedFile) ? '#000' : 'var(--secondary-foreground)', fontSize: 16, fontWeight: 700 }}>
+                        <button onClick={() => handleSend()} disabled={uploading || (!newMessage.trim() && stagedFiles.length === 0)}
+                            style={{ width: 34, height: 34, borderRadius: '50%', background: (newMessage.trim() || stagedFiles.length > 0) ? 'linear-gradient(135deg, #06b6d4, #10b981)' : 'rgba(255,255,255,0.05)', border: 'none', cursor: (newMessage.trim() || stagedFiles.length > 0) ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, opacity: uploading ? 0.3 : (newMessage.trim() || stagedFiles.length > 0) ? 1 : 0.4, color: (newMessage.trim() || stagedFiles.length > 0) ? '#000' : 'var(--secondary-foreground)', fontSize: 16, fontWeight: 700 }}>
                             →
                         </button>
                     </div>
