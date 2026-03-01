@@ -29,7 +29,7 @@ export default function PlateLoader({
     onClose?: () => void
 }) {
     const [mode, setMode] = useState<'calculate' | 'reverse'>('calculate');
-    const [unit, setUnit] = useState<'kg' | 'lb'>('kg');
+    const [unit, setUnit] = useState<'kg' | 'lb'>('lb');
     const [targetStr, setTargetStr] = useState<string>(initialWeight ? String(initialWeight) : '');
     const [barWeight, setBarWeight] = useState<number>(20); // 20kg standard
     const [includeCollars, setIncludeCollars] = useState<boolean>(true); // 2.5kg collars each = 5kg flag
@@ -144,8 +144,8 @@ export default function PlateLoader({
 
                 {/* Visualizer Section */}
                 <div style={{
-                    position: 'relative', height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: 'rgba(0,0,0,0.2)', borderRadius: 12, marginBottom: 20, overflow: 'hidden'
+                    position: 'relative', height: 220, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: 'rgba(0,0,0,0.2)', borderRadius: 12, marginBottom: 12, overflow: 'hidden'
                 }}>
 
                     {/* The Bar */}
@@ -153,19 +153,14 @@ export default function PlateLoader({
                         {/* Center knurling area wrapper */}
                         <div style={{ display: 'flex', alignItems: 'center', width: '100%', maxWidth: 400, transform: 'translateX(-20px)' }}>
 
-                            {/* Inside of bar / Collars area */}
+                            {/* Inside of bar hub */}
                             <div style={{
                                 width: 40, height: 50, background: '#64748b', border: '2px solid #475569',
                                 borderRight: 'none', borderRadius: '4px 0 0 4px', display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 color: 'rgba(255,255,255,0.5)', fontSize: '0.7rem', fontWeight: 700, zIndex: 10, position: 'relative'
                             }}>
                                 {barWeight}
-                                {/* Inner stop collar flange */}
-                                <div style={{ position: 'absolute', right: -4, width: 4, height: 60, background: '#475569', borderRadius: 2 }}></div>
                             </div>
-
-
-
                             {/* The Sleeve where plates go */}
                             <div style={{
                                 flex: 1, height: 30, background: 'linear-gradient(to bottom, #cbd5e1, #94a3b8)', border: '1px solid #64748b',
@@ -203,17 +198,17 @@ export default function PlateLoader({
                                         )
                                     })}
 
-                                    {/* Collar at the end if there are plates OR if collars are toggled ON */}
+                                    {/* Collar at the end if toggled ON */}
                                     {includeCollars && (
                                         <div style={{
-                                            width: 14, height: 65, background: '#cbd5e1', border: '1px solid #94a3b8',
+                                            width: 30, height: 65, background: '#cbd5e1', border: '1px solid #94a3b8',
                                             borderRadius: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center',
                                             zIndex: 20, position: 'relative', boxShadow: '2px 0 5px rgba(0,0,0,0.3)', marginLeft: 4,
                                             flexShrink: 0
                                         }}>
                                             {/* Collar pin */}
                                             <div style={{ position: 'absolute', top: -6, left: '50%', transform: 'translateX(-50%)', width: 6, height: 8, background: '#e2e8f0', borderRadius: '2px 2px 0 0', border: '1px solid #94a3b8', borderBottom: 'none' }}></div>
-                                            <div style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', width: 14, height: 4, background: '#e2e8f0', borderRadius: '2px', border: '1px solid #94a3b8' }}></div>
+                                            <div style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', width: 28, height: 4, background: '#e2e8f0', borderRadius: '2px', border: '1px solid #94a3b8' }}></div>
                                         </div>
                                     )}
                                     {!includeCollars && displayPlates.length > 0 && (
@@ -237,10 +232,10 @@ export default function PlateLoader({
                 </div>
 
                 {/* Total Readout */}
-                <div style={{ textAlign: 'center', marginBottom: 20 }}>
-                    <span style={{ fontSize: '2rem', fontWeight: 800 }}>{totalKg > 0 ? totalKg.toFixed(1).replace('.0', '') : '0'} <span style={{ fontSize: '1rem', color: 'var(--secondary-foreground)' }}>KG</span></span>
+                <div style={{ textAlign: 'center', marginBottom: 12 }}>
+                    <span style={{ fontSize: '1.8rem', fontWeight: 800 }}>{totalKg > 0 ? totalKg.toFixed(1).replace('.0', '') : '0'} <span style={{ fontSize: '0.9rem', color: 'var(--secondary-foreground)' }}>KG</span></span>
                     <span style={{ margin: '0 12px', color: 'var(--card-border)' }}>|</span>
-                    <span style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--secondary-foreground)' }}>{totalLb > 0 ? totalLb.toFixed(1).replace('.0', '') : '0'} <span style={{ fontSize: '0.9rem' }}>LB</span></span>
+                    <span style={{ fontSize: '1.4rem', fontWeight: 600, color: 'var(--secondary-foreground)' }}>{totalLb > 0 ? totalLb.toFixed(1).replace('.0', '') : '0'} <span style={{ fontSize: '0.8rem' }}>LB</span></span>
                 </div>
 
                 {/* Controls */}
@@ -296,7 +291,7 @@ export default function PlateLoader({
                                         fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.2s'
                                     }}
                                 >
-                                    {includeCollars ? '+5KG' : 'OFF'}
+                                    {includeCollars ? 'ON' : 'OFF'}
                                 </button>
                             </div>
                         </div>
@@ -353,7 +348,7 @@ export default function PlateLoader({
                                     fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s'
                                 }}
                             >
-                                {includeCollars ? 'Collars: ON (5kg)' : 'Collars: OFF'}
+                                Collars: {includeCollars ? 'ON' : 'OFF'}
                             </button>
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, alignContent: 'start' }}>
