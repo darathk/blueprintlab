@@ -157,23 +157,14 @@ export default function PlateLoader({
                             <div style={{
                                 width: 40, height: 50, background: '#64748b', border: '2px solid #475569',
                                 borderRight: 'none', borderRadius: '4px 0 0 4px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                color: 'rgba(255,255,255,0.5)', fontSize: '0.7rem', fontWeight: 700, zIndex: 10
+                                color: 'rgba(255,255,255,0.5)', fontSize: '0.7rem', fontWeight: 700, zIndex: 10, position: 'relative'
                             }}>
                                 {barWeight}
+                                {/* Inner stop collar flange */}
+                                <div style={{ position: 'absolute', right: -4, width: 4, height: 60, background: '#475569', borderRadius: 2 }}></div>
                             </div>
 
-                            {/* Optional 2.5kg Collar Rendering */}
-                            {includeCollars && (
-                                <div style={{
-                                    width: 14, height: 65, background: '#cbd5e1', border: '2px solid #94a3b8',
-                                    borderRadius: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    zIndex: 11, position: 'relative', boxShadow: '2px 0 5px rgba(0,0,0,0.3)', marginRight: 2
-                                }}>
-                                    {/* Collar pin */}
-                                    <div style={{ position: 'absolute', top: -6, left: '50%', transform: 'translateX(-50%)', width: 6, height: 8, background: '#e2e8f0', borderRadius: '2px 2px 0 0', border: '1px solid #94a3b8', borderBottom: 'none' }}></div>
-                                    <div style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', width: 14, height: 4, background: '#e2e8f0', borderRadius: '2px', border: '1px solid #94a3b8' }}></div>
-                                </div>
-                            )}
+
 
                             {/* The Sleeve where plates go */}
                             <div style={{
