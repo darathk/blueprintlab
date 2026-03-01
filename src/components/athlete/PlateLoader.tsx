@@ -319,7 +319,7 @@ export default function PlateLoader({
                                     })}
                                 </div>
                                 <div style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginTop: 8 }}>
-                                    Total Bar Includes ± {((totalKg - parseFloat(targetStr || '0')) * (unit === 'lb' ? 2.20462 : 1)).toFixed(1)} mismatch
+                                    Total Bar Includes ± {((totalKg * (unit === 'lb' ? 2.20462 : 1)) - parseFloat(targetStr || '0')).toFixed(2)} {unit.toUpperCase()} mismatch
                                 </div>
                             </div>
                         )}
