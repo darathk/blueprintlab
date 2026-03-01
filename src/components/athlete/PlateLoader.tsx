@@ -4,19 +4,19 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { RotateCcw, Calculator, ArrowRightLeft } from 'lucide-react';
 
 const PLATES = [
-    { weight: 25, color: '#ef4444', label: '25', text: '#fff', width: 24, height: 210 },   // Red
-    { weight: 20, color: '#3b82f6', label: '20', text: '#fff', width: 24, height: 210 },   // Blue
-    { weight: 15, color: '#eab308', label: '15', text: '#000', width: 24, height: 180 },   // Yellow
-    { weight: 10, color: '#22c55e', label: '10', text: '#fff', width: 24, height: 155 },   // Green
-    { weight: 5, color: '#f8fafc', label: '5', text: '#000', width: 20, height: 120, border: '#cbd5e1' },     // White
-    { weight: 2.5, color: '#1e293b', label: '2.5', text: '#fff', width: 18, height: 100 }, // Black
-    { weight: 2, color: '#3b82f6', label: '2', text: '#fff', width: 16, height: 90 }, // Blue
-    { weight: 1.5, color: '#eab308', label: '1.5', text: '#000', width: 14, height: 85 }, // Yellow
-    { weight: 1.25, color: '#e2e8f0', label: '1.25', text: '#000', width: 14, height: 80, border: '#cbd5e1' }, // Silver
-    { weight: 1, color: '#22c55e', label: '1', text: '#fff', width: 12, height: 70 }, // Green
-    { weight: 0.5, color: '#f8fafc', label: '0.5', text: '#000', width: 10, height: 65, border: '#cbd5e1' }, // White
-    { weight: 0.25, color: '#e2e8f0', label: '0.25', text: '#000', width: 8, height: 60, border: '#cbd5e1' }, // Silver
-    { weight: 0.125, color: '#e2e8f0', label: '0.125', text: '#000', width: 6, height: 55, border: '#cbd5e1' } // Silver
+    { weight: 25, color: '#ef4444', label: '25', text: '#fff', width: 24, height: 240 },   // Red
+    { weight: 20, color: '#3b82f6', label: '20', text: '#fff', width: 24, height: 240 },   // Blue
+    { weight: 15, color: '#eab308', label: '15', text: '#000', width: 24, height: 210 },   // Yellow
+    { weight: 10, color: '#22c55e', label: '10', text: '#fff', width: 24, height: 180 },   // Green
+    { weight: 5, color: '#f8fafc', label: '5', text: '#000', width: 20, height: 140, border: '#cbd5e1' },     // White
+    { weight: 2.5, color: '#1e293b', label: '2.5', text: '#fff', width: 18, height: 115 }, // Black
+    { weight: 2, color: '#3b82f6', label: '2', text: '#fff', width: 16, height: 100 }, // Blue
+    { weight: 1.5, color: '#eab308', label: '1.5', text: '#000', width: 14, height: 95 }, // Yellow
+    { weight: 1.25, color: '#e2e8f0', label: '1.25', text: '#000', width: 14, height: 90, border: '#cbd5e1' }, // Silver
+    { weight: 1, color: '#22c55e', label: '1', text: '#fff', width: 12, height: 80 }, // Green
+    { weight: 0.5, color: '#f8fafc', label: '0.5', text: '#000', width: 10, height: 75, border: '#cbd5e1' }, // White
+    { weight: 0.25, color: '#e2e8f0', label: '0.25', text: '#000', width: 8, height: 70, border: '#cbd5e1' }, // Silver
+    { weight: 0.125, color: '#e2e8f0', label: '0.125', text: '#000', width: 6, height: 65, border: '#cbd5e1' } // Silver
 ];
 
 export default function PlateLoader({
@@ -144,7 +144,7 @@ export default function PlateLoader({
 
                 {/* Visualizer Section */}
                 <div style={{
-                    position: 'relative', height: 260, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    position: 'relative', height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center',
                     background: 'rgba(0,0,0,0.2)', borderRadius: 12, marginBottom: 20, overflow: 'hidden'
                 }}>
 
@@ -212,9 +212,21 @@ export default function PlateLoader({
                                         )
                                     })}
 
-                                    {/* Collar at the end if there are plates */}
-                                    {displayPlates.length > 0 && (
-                                        <div style={{ width: 16, height: 40, background: '#475569', borderRadius: 2, marginLeft: 2, border: '1px solid #1e293b' }}></div>
+                                    {/* Collar at the end if there are plates OR if collars are toggled ON */}
+                                    {includeCollars && (
+                                        <div style={{
+                                            width: 14, height: 65, background: '#cbd5e1', border: '1px solid #94a3b8',
+                                            borderRadius: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            zIndex: 20, position: 'relative', boxShadow: '2px 0 5px rgba(0,0,0,0.3)', marginLeft: 4,
+                                            flexShrink: 0
+                                        }}>
+                                            {/* Collar pin */}
+                                            <div style={{ position: 'absolute', top: -6, left: '50%', transform: 'translateX(-50%)', width: 6, height: 8, background: '#e2e8f0', borderRadius: '2px 2px 0 0', border: '1px solid #94a3b8', borderBottom: 'none' }}></div>
+                                            <div style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', width: 14, height: 4, background: '#e2e8f0', borderRadius: '2px', border: '1px solid #94a3b8' }}></div>
+                                        </div>
+                                    )}
+                                    {!includeCollars && displayPlates.length > 0 && (
+                                        <div style={{ width: 6, height: 40, background: '#475569', borderRadius: 2, marginLeft: 2, border: '1px solid #1e293b' }}></div>
                                     )}
                                 </div>
                             </div>
@@ -243,59 +255,57 @@ export default function PlateLoader({
                 {/* Controls */}
                 {mode === 'calculate' && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                        <div style={{ display: 'flex', gap: 12 }}>
-                            <div style={{ flex: 1 }}>
-                                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginBottom: 4 }}>Target Weight</label>
-                                <div style={{ position: 'relative' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1fr) auto', gap: 8, alignItems: 'end' }}>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--secondary-foreground)', marginBottom: 4, fontWeight: 600 }}>Target Weight</label>
+                                <div style={{ display: 'flex', background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 8, overflow: 'hidden', height: 46 }}>
                                     <input
                                         type="number" inputMode="decimal"
                                         value={targetStr}
                                         onChange={e => setTargetStr(e.target.value)}
-                                        placeholder="e.g. 100"
+                                        placeholder="0"
                                         style={{
-                                            width: '100%', padding: '12px 16px', background: 'var(--card-bg)', border: '1px solid var(--card-border)',
-                                            borderRadius: 8, color: 'var(--foreground)', fontSize: '1.2rem', fontWeight: 600, outlineColor: 'var(--primary)'
+                                            flex: 1, padding: '0 12px', background: 'transparent', border: 'none',
+                                            color: 'var(--foreground)', fontSize: '1.1rem', fontWeight: 700, outline: 'none', minWidth: 0
                                         }}
                                     />
-                                    {/* Unit Toggle inside input */}
                                     <button
                                         onClick={() => setUnit(u => u === 'kg' ? 'lb' : 'kg')}
                                         style={{
-                                            position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
                                             background: 'rgba(125, 135, 210, 0.1)', color: 'var(--primary)', border: 'none',
-                                            padding: '4px 12px', borderRadius: 6, fontSize: '0.8rem', fontWeight: 700, cursor: 'pointer'
+                                            borderLeft: '1px solid var(--card-border)', padding: '0 10px', fontSize: '0.75rem', fontWeight: 800, cursor: 'pointer', transition: 'all 0.2s'
                                         }}>
                                         {unit.toUpperCase()}
                                     </button>
                                 </div>
                             </div>
-                            <div style={{ width: 120 }}>
-                                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginBottom: 4 }}>Bar Weight</label>
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--secondary-foreground)', marginBottom: 4, fontWeight: 600 }}>Bar</label>
                                 <select
                                     value={barWeight}
                                     onChange={e => setBarWeight(Number(e.target.value))}
                                     style={{
-                                        width: '100%', padding: '12px', background: 'var(--card-bg)', border: '1px solid var(--card-border)',
-                                        borderRadius: 8, color: 'var(--foreground)', fontSize: '1rem', outlineColor: 'var(--primary)', appearance: 'none'
+                                        width: '100%', height: 46, padding: '0 8px', background: 'var(--card-bg)', border: '1px solid var(--card-border)',
+                                        borderRadius: 8, color: 'var(--foreground)', fontSize: '0.9rem', outline: 'none', appearance: 'none'
                                     }}
                                 >
-                                    <option value={20}>20 KG</option>
-                                    <option value={25}>25 KG</option>
-                                    <option value={15}>15 KG</option>
+                                    <option value={20}>20kg</option>
+                                    <option value={25}>25kg</option>
+                                    <option value={15}>15kg</option>
                                 </select>
                             </div>
                             <div>
-                                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginBottom: 4 }}>Collars</label>
+                                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--secondary-foreground)', marginBottom: 4, fontWeight: 600 }}>Collars</label>
                                 <button
                                     onClick={() => setIncludeCollars(!includeCollars)}
                                     style={{
-                                        height: '46px', padding: '0 16px', background: includeCollars ? 'var(--primary)' : 'var(--card-bg)',
+                                        height: 46, padding: '0 12px', background: includeCollars ? 'var(--primary)' : 'var(--card-bg)',
                                         border: includeCollars ? '1px solid var(--primary)' : '1px solid var(--card-border)',
-                                        color: includeCollars ? '#fff' : 'var(--foreground)', borderRadius: 8, fontSize: '0.9rem',
-                                        fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.2s'
+                                        color: includeCollars ? '#fff' : 'var(--foreground)', borderRadius: 8, fontSize: '0.8rem',
+                                        fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.2s'
                                     }}
                                 >
-                                    {includeCollars ? '+ 5KG' : 'OFF'}
+                                    {includeCollars ? '+5KG' : 'OFF'}
                                 </button>
                             </div>
                         </div>
