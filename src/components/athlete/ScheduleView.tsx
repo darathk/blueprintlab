@@ -3,19 +3,29 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { calculateSimpleE1RM, calculateStress } from '@/lib/stress-index';
+import { ArrowRight } from 'lucide-react';
 
 /* ─────────── helpers ─────────── */
 function sessionKey(programId: string, weekNum: number, day: number) {
     return `${programId}_w${weekNum}_d${day}`;
 }
 
-function sessionProgress(exercises: any[], log: any): number {
+function sessionProgress(exercises: any[], log: any, editStateData?: any[]): number {
     const totalSets = exercises.reduce((s: number, ex: any) => s + (Array.isArray(ex.sets) ? ex.sets.length : 0), 0);
-    if (!totalSets || !log) return 0;
+    if (!totalSets) return 0;
     let filled = 0;
-    (log.exercises || []).forEach((logEx: any) => {
-        (logEx.sets || []).forEach((s: any) => { if (s.weight || s.reps) filled++; });
-    });
+    if (editStateData) {
+        editStateData.forEach((ex: any) => {
+            (ex.sets || []).forEach((s: any) => {
+                const a = s.actual || {};
+                if (a.weight || a.reps) filled++;
+            });
+        });
+    } else if (log) {
+        (log.exercises || []).forEach((logEx: any) => {
+            (logEx.sets || []).forEach((s: any) => { if (s.weight || s.reps) filled++; });
+        });
+    }
     return Math.min(100, Math.round((filled / totalSets) * 100));
 }
 
@@ -189,6 +199,39 @@ export default function ScheduleView({ programs, athleteId, logs }: {
                 const totalWeeks = weeks.length;
                 const totalSessions = weeks.reduce((s: number, w: any) => s + (Array.isArray(w.sessions) ? w.sessions.length : 0), 0);
 
+                // Calculate Block Progress
+                let bTotalSets = 0;
+                let bFilledSets = 0;
+                weeks.forEach((w: any) => {
+                    const wSessions: any[] = Array.isArray(w.sessions) ? w.sessions : [];
+                    wSessions.forEach((s: any) => {
+                        const sKey = sessionKey(program.id, w.weekNumber || 1, s.day || 1);
+                        const exData: any[] = Array.isArray(s.exercises) ? s.exercises : [];
+                        const log = Array.isArray(logs) ? logs.find(l => l.sessionId === sKey && l.programId === program.id) : undefined;
+                        const esData = editState[sKey];
+
+                        exData.forEach((ex: any) => {
+                            bTotalSets += Array.isArray(ex.sets) ? ex.sets.length : 0;
+                        });
+
+                        if (esData) {
+                            esData.forEach((ex: any) => {
+                                (ex.sets || []).forEach((set: any) => {
+                                    const a = set.actual || {};
+                                    if (a.weight || a.reps) bFilledSets++;
+                                });
+                            });
+                        } else if (log) {
+                            (log.exercises || []).forEach((logEx: any) => {
+                                (logEx.sets || []).forEach((set: any) => {
+                                    if (set.weight || set.reps) bFilledSets++;
+                                });
+                            });
+                        }
+                    });
+                });
+                const blockProgressPct = bTotalSets > 0 ? Math.min(100, Math.round((bFilledSets / bTotalSets) * 100)) : 0;
+
                 return (
                     <div key={program.id} style={{ marginBottom: 16 }}>
                         {/* ═══ Block Header ═══ */}
@@ -196,18 +239,30 @@ export default function ScheduleView({ programs, athleteId, logs }: {
                             onClick={() => toggle(openBlocks, program.id, setOpenBlocks)}
                             style={{
                                 width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                padding: '16px', background: 'var(--brand-dark-blue, #1e3a8a)', // Dark blue like RTS
-                                border: 'none', borderBottom: '1px solid var(--card-border)',
-                                color: '#ffffff', cursor: 'pointer', textAlign: 'left'
+                                padding: '16px', background: 'var(--card-bg)',
+                                border: '1px solid var(--card-border)', borderRadius: blockOpen ? '8px 8px 0 0' : '8px',
+                                color: 'var(--foreground)', cursor: 'pointer', textAlign: 'left'
                             }}
                         >
-                            <div>
+                            <div style={{ flex: 1 }}>
                                 <div style={{ fontSize: '1.2rem', fontWeight: 600 }}>{program.name}</div>
-                                <div style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.7)', marginTop: 2 }}>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginTop: 2 }}>
                                     {totalWeeks} week{totalWeeks !== 1 ? 's' : ''} • {totalSessions} session{totalSessions !== 1 ? 's' : ''}
                                 </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, paddingRight: 24 }}>
+                                    <div style={{ flex: 1, height: 6, borderRadius: 3, background: 'var(--background)', overflow: 'hidden' }}>
+                                        <div style={{
+                                            height: '100%', borderRadius: 3, transition: 'width 300ms',
+                                            width: `${blockProgressPct}%`,
+                                            background: blockProgressPct === 100 ? 'var(--success)' : 'var(--primary)'
+                                        }} />
+                                    </div>
+                                    <span style={{ fontSize: '0.75rem', color: 'var(--foreground)', fontWeight: 600, width: 30 }}>
+                                        {blockProgressPct}%
+                                    </span>
+                                </div>
                             </div>
-                            <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.6)', transition: 'transform 200ms', transform: blockOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+                            <span style={{ fontSize: '0.85rem', color: 'var(--secondary-foreground)', transition: 'transform 200ms', transform: blockOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
                         </button>
 
                         {/* ═══ Weeks ═══ */}
@@ -224,8 +279,8 @@ export default function ScheduleView({ programs, athleteId, logs }: {
                                         onClick={() => toggle(openWeeks, weekKey, setOpenWeeks)}
                                         style={{
                                             width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                            padding: '12px 16px', background: 'var(--card-border)', // Slightly darker grey for week header
-                                            border: 'none', borderBottom: '1px solid #cbd5e1',
+                                            padding: '12px 16px', background: 'var(--background)',
+                                            border: 'none', borderBottom: '1px solid var(--card-border)', borderLeft: '1px solid var(--card-border)', borderRight: '1px solid var(--card-border)',
                                             color: 'var(--foreground)', cursor: 'pointer', fontSize: '1rem', fontWeight: 600
                                         }}
                                     >
@@ -241,10 +296,10 @@ export default function ScheduleView({ programs, athleteId, logs }: {
                                         const sessionOpen = openSessions.has(sKey);
                                         const exercises: any[] = Array.isArray(session.exercises) ? session.exercises : [];
                                         const log = Array.isArray(logs) ? logs.find(l => l.sessionId === sKey && l.programId === program.id) : undefined;
-                                        const progress = sessionProgress(exercises, log);
+                                        const progress = sessionProgress(exercises, log, editState[sKey]);
 
                                         return (
-                                            <div key={sKey} style={{ borderBottom: '1px solid #cbd5e1' }}>
+                                            <div key={sKey} style={{ borderBottom: '1px solid var(--card-border)', borderLeft: '1px solid var(--card-border)', borderRight: '1px solid var(--card-border)' }}>
                                                 {/* Session header */}
                                                 <div style={{ display: 'flex', alignItems: 'center', padding: '12px 16px', background: sessionOpen ? 'rgba(6, 182, 212, 0.1)' : 'var(--card-bg)', color: 'var(--foreground)', transition: 'all 0.2s' }}>
                                                     <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => {
@@ -263,21 +318,19 @@ export default function ScheduleView({ programs, athleteId, logs }: {
                                                             </div>
                                                         </div>
 
-                                                        {/* Progress bar (only show when closed) */}
-                                                        {!sessionOpen && (
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, paddingLeft: 24 }}>
-                                                                <div style={{ flex: 1, height: 6, borderRadius: 3, background: 'var(--card-border)', overflow: 'hidden' }}>
-                                                                    <div style={{
-                                                                        height: '100%', borderRadius: 3, transition: 'width 300ms',
-                                                                        width: `${progress}%`,
-                                                                        background: progress === 100 ? 'var(--success)' : 'var(--primary)'
-                                                                    }} />
-                                                                </div>
-                                                                <span style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', fontWeight: 600, width: 30 }}>
-                                                                    {progress}%
-                                                                </span>
+                                                        {/* Progress bar */}
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, paddingLeft: 24 }}>
+                                                            <div style={{ flex: 1, height: 6, borderRadius: 3, background: 'var(--background)', overflow: 'hidden' }}>
+                                                                <div style={{
+                                                                    height: '100%', borderRadius: 3, transition: 'width 300ms',
+                                                                    width: `${progress}%`,
+                                                                    background: progress === 100 ? 'var(--success)' : 'var(--primary)'
+                                                                }} />
                                                             </div>
-                                                        )}
+                                                            <span style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', fontWeight: 600, width: 30 }}>
+                                                                {progress}%
+                                                            </span>
+                                                        </div>
                                                     </div>
 
                                                     {/* Auto-save status indicator */}
@@ -288,7 +341,7 @@ export default function ScheduleView({ programs, athleteId, logs }: {
                                                             ) : savedKeys.has(sKey) ? (
                                                                 <span style={{ color: 'var(--success)' }}>✓ Saved</span> /* Green */
                                                             ) : (
-                                                                <span style={{ color: 'rgba(255,255,255,0.5)' }}>📝 Edit</span>
+                                                                <span style={{ color: 'var(--secondary-foreground)' }}>Edit</span>
                                                             )}
                                                         </div>
                                                     )}
@@ -298,9 +351,8 @@ export default function ScheduleView({ programs, athleteId, logs }: {
                                                 {sessionOpen && (
                                                     <div style={{ padding: '0', background: 'var(--card-border)' }}> {/* Light grey backdrop for cards */}
                                                         {/* "All Changes Saved" header like RTS */}
-                                                        <div style={{ padding: '6px 16px', fontSize: '0.8rem', fontWeight: 600, color: 'var(--foreground)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid #cbd5e1' }}>
+                                                        <div style={{ padding: '6px 16px', fontSize: '0.8rem', fontWeight: 600, color: 'var(--foreground)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--card-border)' }}>
                                                             <span style={{ color: saving.has(sKey) ? 'var(--warning)' : 'var(--success)' }}>{saving.has(sKey) ? 'Saving changes...' : 'All Changes Saved.'}</span>
-                                                            <span style={{ fontWeight: 'normal', color: 'var(--secondary-foreground)' }}>Edit Mode</span>
                                                         </div>
 
                                                         {(editState[sKey] || exercises).map((ex: any, exIdx: number) => {
@@ -360,8 +412,7 @@ export default function ScheduleView({ programs, athleteId, logs }: {
                                                                             <span style={{ fontSize: '1rem', color: 'var(--primary)', fontWeight: 500 }}>{exerciseData.name || ex.name}</span>
                                                                         </div>
                                                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.9rem', color: 'var(--foreground)', fontWeight: 600 }}>
-                                                                            Sets <div style={{ minWidth: 40, padding: '4px 8px', border: '1px solid #cbd5e1', borderRadius: 4, textAlign: 'center', background: 'var(--background)' }}>{sets.length}</div>
-                                                                            <span style={{ fontSize: '1.2rem', color: 'var(--secondary-foreground)', marginLeft: 4 }}>...</span>
+                                                                            Sets <div style={{ minWidth: 40, padding: '4px 8px', border: '1px solid var(--card-border)', borderRadius: 4, textAlign: 'center', background: 'var(--background)' }}>{sets.length}</div>
                                                                         </div>
                                                                     </div>
 
@@ -388,7 +439,6 @@ export default function ScheduleView({ programs, athleteId, logs }: {
                                                                                     <span style={{ flex: 1, textAlign: 'center' }}>Weight</span>
                                                                                     <span style={{ flex: 1, textAlign: 'center' }}>Reps</span>
                                                                                     <span style={{ flex: 1, textAlign: 'center' }}>RPE</span>
-                                                                                    <div style={{ width: 24 }}></div> {/* Space for the trailing dots */}
                                                                                 </div>
                                                                             </div>
 
@@ -412,7 +462,7 @@ export default function ScheduleView({ programs, athleteId, logs }: {
                                                                                             onClick={() => setIdx > 0 ? copyPrevSet(sKey, exIdx, setIdx, program.id) : copyTargetToActual(sKey, exIdx, setIdx, program.id)}
                                                                                             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 8px', display: 'flex', alignItems: 'center' }}
                                                                                         >
-                                                                                            <span style={{ color: 'var(--success)', fontSize: '1.4rem' }}>➞</span>
+                                                                                            <ArrowRight size={18} color="var(--primary)" />
                                                                                         </button>
 
                                                                                         {/* Actual side */}
@@ -427,7 +477,6 @@ export default function ScheduleView({ programs, athleteId, logs }: {
                                                                                                     }}
                                                                                                 />
                                                                                             ))}
-                                                                                            <span style={{ color: 'var(--secondary-foreground)', fontSize: '1.2rem', padding: '0 4px', fontWeight: 'bold' }}>...</span>
                                                                                         </div>
                                                                                     </div>
                                                                                 );

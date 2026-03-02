@@ -67,7 +67,7 @@ export default async function DashboardLayout({
 
     return (
         <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'radial-gradient(circle at top center, #1e293b 0%, #020617 100%)' }}>
-            <header className="glass-panel dashboard-header" style={{
+            <header className="dashboard-header" style={{
                 height: 'var(--header-height)',
                 borderBottom: '1px solid var(--card-border)',
                 marginBottom: '0',
@@ -77,7 +77,8 @@ export default async function DashboardLayout({
                 borderRight: 'none',
                 position: 'sticky',
                 top: 0,
-                zIndex: 100
+                zIndex: 100,
+                background: '#1e293b'
             }}>
                 <div className="max-w-7xl mx-auto w-full flex items-center justify-between h-full px-4 md:px-8">
                     <div style={{ fontWeight: 800, fontSize: '1.5rem', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>

@@ -23,14 +23,15 @@ export default function MobileBottomNav({ items, children }: { items: NavItem[],
     };
 
     return (
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[1000] glass-panel border-t border-[var(--card-border)] rounded-none px-2 pb-safe-offset-2" style={{
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[1000] border-t border-[var(--card-border)] rounded-none px-2 pb-safe-offset-2" style={{
             height: 'calc(65px + env(safe-area-inset-bottom, 0px))',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-around',
             borderLeft: 'none',
             borderRight: 'none',
-            borderBottom: 'none'
+            borderBottom: 'none',
+            background: 'var(--background)'
         }}>
             {items.map((item) => {
                 const active = isActive(item.href);

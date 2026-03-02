@@ -54,8 +54,9 @@ export default async function AthletePortalLayout({
 
     return (
         <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--background)' }}>
-            <header className="glass-panel border-b border-[var(--card-border)] rounded-none border-t-0 border-l-0 border-r-0 sticky top-0 z-[100] w-full" style={{
-                height: 'var(--header-height)'
+            <header className="border-b border-[var(--card-border)] rounded-none border-t-0 border-l-0 border-r-0 sticky top-0 z-[100] w-full" style={{
+                height: 'var(--header-height)',
+                background: 'var(--background)'
             }}>
                 <div className="max-w-7xl mx-auto w-full flex items-center justify-between px-4 py-3 md:px-8 h-full">
                     <div style={{ fontWeight: 800, fontSize: '1.5rem', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.75rem', overflow: 'hidden' }}>
