@@ -99,75 +99,75 @@ export default function ReverseCalculator() {
         <div className="px-0 md:px-4 py-4" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
             {/* Top Level Selectors */}
-            <div className="px-4 md:px-0" style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ display: 'flex', border: '2px solid rgba(239, 68, 68, 0.5)', borderRadius: '20px', overflow: 'hidden', width: '100%', maxWidth: '280px', flex: '1 1 200px' }}>
+            <div className="px-4 md:px-0" style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center', width: '100%', maxWidth: '400px', margin: '0 auto' }}>
+                <div style={{ display: 'flex', border: '2px solid rgba(239, 68, 68, 0.5)', borderRadius: '20px', overflow: 'hidden', width: '100%' }}>
                     <button onClick={() => setGender('male')} style={{ flex: 1, padding: '8px', background: gender === 'male' ? 'rgba(239, 68, 68, 0.8)' : 'transparent', color: gender === 'male' ? '#fff' : 'rgba(255,255,255,0.7)', fontWeight: 700, border: 'none' }}>Male</button>
                     <button onClick={() => setGender('female')} style={{ flex: 1, padding: '8px', background: gender === 'female' ? 'rgba(239, 68, 68, 0.8)' : 'transparent', color: gender === 'female' ? '#fff' : 'rgba(255,255,255,0.7)', fontWeight: 700, border: 'none' }}>Female</button>
                 </div>
-                <div style={{ display: 'flex', border: '2px solid rgba(239, 68, 68, 0.5)', borderRadius: '20px', overflow: 'hidden', width: '100%', maxWidth: '280px', flex: '1 1 200px' }}>
+                <div style={{ display: 'flex', border: '2px solid rgba(239, 68, 68, 0.5)', borderRadius: '20px', overflow: 'hidden', width: '100%' }}>
                     <button onClick={() => setEquipped('raw')} style={{ flex: 1, padding: '8px', background: equipped === 'raw' ? 'rgba(239, 68, 68, 0.8)' : 'transparent', color: equipped === 'raw' ? '#fff' : 'rgba(255,255,255,0.7)', fontWeight: 700, border: 'none' }}>Raw</button>
                     <button onClick={() => setEquipped('equipped')} style={{ flex: 1, padding: '8px', background: equipped === 'equipped' ? 'rgba(239, 68, 68, 0.8)' : 'transparent', color: equipped === 'equipped' ? '#fff' : 'rgba(255,255,255,0.7)', fontWeight: 700, border: 'none' }}>Equipped</button>
                 </div>
-                <div style={{ display: 'flex', border: '2px solid rgba(239, 68, 68, 0.5)', borderRadius: '20px', overflow: 'hidden', width: '100%', maxWidth: '280px', flex: '1 1 200px' }}>
+                <div style={{ display: 'flex', border: '2px solid rgba(239, 68, 68, 0.5)', borderRadius: '20px', overflow: 'hidden', width: '100%' }}>
                     <button onClick={() => setEvents('sbd')} style={{ flex: 1, padding: '8px', background: events === 'sbd' ? 'rgba(239, 68, 68, 0.8)' : 'transparent', color: events === 'sbd' ? '#fff' : 'rgba(255,255,255,0.7)', fontWeight: 700, border: 'none' }}>S/B/D</button>
                     <button onClick={() => setEvents('bench')} style={{ flex: 1, padding: '8px', background: events === 'bench' ? 'rgba(239, 68, 68, 0.8)' : 'transparent', color: events === 'bench' ? '#fff' : 'rgba(255,255,255,0.7)', fontWeight: 700, border: 'none' }}>Bench</button>
                 </div>
             </div>
 
             {/* Static Bio Inputs */}
-            <div className="px-4 md:px-0 flex-mobile-col" style={{ display: 'flex', gap: '16px', alignItems: 'center', justifyContent: 'center', flexWrap: 'wrap' }}>
-                <div className="flex-mobile-col" style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', maxWidth: '280px', flex: '1 1 200px' }}>
-                    <span style={{ fontWeight: 800, textAlign: 'left', minWidth: '60px' }}>Weight</span>
-                    <div style={{ display: 'flex', flex: 1, width: '100%', alignItems: 'center', gap: '8px' }}>
+            <div className="px-4 md:px-0" style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center', width: '100%', maxWidth: '400px', margin: '0 auto' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
+                    <span style={{ fontWeight: 800, textAlign: 'left', fontSize: '0.9rem', color: 'var(--secondary-foreground)' }}>Weight</span>
+                    <div style={{ display: 'flex', width: '100%', alignItems: 'center', gap: '8px' }}>
                         <input
                             type="number" inputMode="decimal" value={bwStr} onChange={e => setBwStr(e.target.value)}
-                            placeholder="Bodyweight"
-                            style={{ flex: 1, border: '2px solid rgba(239, 68, 68, 0.5)', borderRadius: '24px', padding: '12px 20px', background: 'transparent', color: 'var(--foreground)', fontWeight: 600, textAlign: 'center', width: '100%' }}
+                            placeholder="0"
+                            style={{ flex: 1, border: '2px solid rgba(239, 68, 68, 0.5)', borderRadius: '24px', padding: '12px 20px', background: 'transparent', color: 'var(--foreground)', fontWeight: 600, textAlign: 'center', minWidth: 0 }}
                         />
-                        <button onClick={() => setUnit(u => u === 'lb' ? 'kg' : 'lb')} style={{ fontWeight: 800, color: 'var(--primary)', background: 'none', border: 'none', padding: 0, cursor: 'pointer', width: '22px' }}>{unit.toUpperCase()}</button>
+                        <button onClick={() => setUnit(u => u === 'lb' ? 'kg' : 'lb')} style={{ fontWeight: 800, color: 'var(--primary)', background: 'rgba(239, 68, 68, 0.1)', border: 'none', padding: '12px', borderRadius: '24px', cursor: 'pointer', width: '56px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{unit.toUpperCase()}</button>
                     </div>
                 </div>
-                <div className="flex-mobile-col" style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', maxWidth: '280px', flex: '1 1 200px' }}>
-                    <span style={{ fontWeight: 800, textAlign: 'left', minWidth: '60px' }}>Total</span>
-                    <div style={{ display: 'flex', flex: 1, width: '100%', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
+                    <span style={{ fontWeight: 800, textAlign: 'left', fontSize: '0.9rem', color: 'var(--secondary-foreground)' }}>Total</span>
+                    <div style={{ display: 'flex', width: '100%', alignItems: 'center', gap: '8px' }}>
                         <input
                             type="number" inputMode="decimal" value={totalStr} onChange={e => setTotalStr(e.target.value)}
-                            placeholder="Total"
-                            style={{ flex: 1, border: '2px solid rgba(239, 68, 68, 0.5)', borderRadius: '24px', padding: '12px 20px', background: 'transparent', color: 'var(--foreground)', fontWeight: 600, textAlign: 'center', width: '100%' }}
+                            placeholder="0"
+                            style={{ flex: 1, border: '2px solid rgba(239, 68, 68, 0.5)', borderRadius: '24px', padding: '12px 20px', background: 'transparent', color: 'var(--foreground)', fontWeight: 600, textAlign: 'center', minWidth: 0 }}
                         />
-                        <span style={{ fontWeight: 800, color: 'var(--primary)', width: '22px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{unit.toUpperCase()}</span>
+                        <span style={{ fontWeight: 800, color: 'var(--primary)', background: 'transparent', border: 'none', padding: '12px', borderRadius: '24px', width: '56px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{unit.toUpperCase()}</span>
                     </div>
                 </div>
-                <div className="flex-mobile-col" style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', maxWidth: '280px', flex: '1 1 200px' }}>
-                    <span style={{ fontWeight: 800, textAlign: 'left', minWidth: '60px' }}>Age</span>
-                    <div style={{ display: 'flex', flex: 1, width: '100%', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
+                    <span style={{ fontWeight: 800, textAlign: 'left', fontSize: '0.9rem', color: 'var(--secondary-foreground)' }}>Age</span>
+                    <div style={{ display: 'flex', width: '100%', alignItems: 'center', gap: '8px' }}>
                         <input
                             type="number" inputMode="numeric" value={ageStr} onChange={e => setAgeStr(e.target.value)}
-                            placeholder="Age"
-                            style={{ flex: 1, border: '2px solid rgba(239, 68, 68, 0.5)', borderRadius: '24px', padding: '12px 20px', background: 'transparent', color: 'var(--foreground)', fontWeight: 600, textAlign: 'center', width: '100%' }}
+                            placeholder="0"
+                            style={{ flex: 1, border: '2px solid rgba(239, 68, 68, 0.5)', borderRadius: '24px', padding: '12px 20px', background: 'transparent', color: 'var(--foreground)', fontWeight: 600, textAlign: 'center', minWidth: 0 }}
                         />
-                        <span style={{ width: '22px' }}></span> {/* Spacer to align with unit labels above */}
+                        <span style={{ width: '56px' }}></span> {/* Spacer to align with unit labels above */}
                     </div>
                 </div>
             </div>
 
             {/* Target Score Section */}
-            <div className="glass-panel w-full" style={{ padding: '20px', borderRadius: '16px', display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: '16px' }}>
-                <div className="flex-mobile-col" style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: '1 1 200px' }}>
-                    <span style={{ fontWeight: 800, fontSize: '1.1rem', textAlign: 'left' }}>Target</span>
+            <div className="glass-panel w-full" style={{ padding: '20px', borderRadius: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', margin: '0 auto', maxWidth: '400px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
+                    <span style={{ fontWeight: 800, fontSize: '0.9rem', textAlign: 'left', color: 'var(--secondary-foreground)' }}>Target Formula</span>
                     <select
                         value={formula} onChange={e => setFormula(e.target.value)}
-                        style={{ padding: '8px 16px', borderRadius: '20px', border: 'none', background: 'rgba(255,255,255,0.1)', color: 'var(--foreground)', fontWeight: 700, fontSize: '1rem', width: '100%' }}
+                        style={{ padding: '12px 16px', borderRadius: '20px', border: 'none', background: 'rgba(255,255,255,0.1)', color: 'var(--foreground)', fontWeight: 700, fontSize: '1.1rem', width: '100%', outline: 'none' }}
                     >
                         <option value="dots" style={{ color: '#000' }}>DOTS</option>
                         <option value="gl" style={{ color: '#000' }}>GL Points</option>
                     </select>
                 </div>
-                <div className="flex-mobile-col" style={{ display: 'flex', alignItems: 'center', gap: '12px', flex: '1 1 200px' }}>
-                    <span style={{ fontWeight: 800, fontSize: '1.1rem', textAlign: 'left', display: 'none' }} className="md:hidden">Score</span>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
+                    <span style={{ fontWeight: 800, fontSize: '0.9rem', textAlign: 'left', color: 'var(--secondary-foreground)' }}>Target Score</span>
                     <input
                         type="number" inputMode="decimal" value={targetScoreStr} onChange={e => setTargetScoreStr(e.target.value)}
-                        placeholder="Score"
+                        placeholder="0"
                         style={{ width: '100%', border: '2px solid rgba(239, 68, 68, 0.5)', borderRadius: '24px', padding: '12px 20px', background: 'transparent', color: 'var(--foreground)', fontWeight: 800, fontSize: '1.2rem', textAlign: 'center' }}
                     />
                 </div>
@@ -185,7 +185,7 @@ export default function ReverseCalculator() {
             </div>
 
             {/* Formula Info Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', width: '100%' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', width: '100%', maxWidth: '400px', margin: '0 auto' }}>
                 <div className="glass-panel" onClick={() => setFormula('dots')} style={{ padding: '16px', borderRadius: '16px', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', border: formula === 'dots' ? '1px solid var(--primary)' : '1px solid transparent', opacity: formula === 'dots' ? 1 : 0.5, transition: 'all 0.2s', flex: 1 }}>
                     <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#22c55e', fontWeight: 800, fontStyle: 'italic', fontSize: '12px' }}>i</div>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
