@@ -203,16 +203,16 @@ export default function PlateLoader({
                                         <div style={{
                                             width: 30, height: 65, background: '#cbd5e1', border: '1px solid #94a3b8',
                                             borderRadius: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            zIndex: 20, position: 'relative', boxShadow: '2px 0 5px rgba(0,0,0,0.3)', marginLeft: 4,
-                                            flexShrink: 0
-                                        }}>
+                                            zIndex: 200, position: 'relative', boxShadow: '2px 0 5px rgba(0,0,0,0.3)', marginLeft: 4,
+                                            flexShrink: 0, cursor: 'pointer'
+                                        }} onClick={() => setIncludeCollars(false)}>
                                             {/* Collar pin */}
                                             <div style={{ position: 'absolute', top: -6, left: '50%', transform: 'translateX(-50%)', width: 6, height: 8, background: '#e2e8f0', borderRadius: '2px 2px 0 0', border: '1px solid #94a3b8', borderBottom: 'none' }}></div>
                                             <div style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', width: 28, height: 4, background: '#e2e8f0', borderRadius: '2px', border: '1px solid #94a3b8' }}></div>
                                         </div>
                                     )}
                                     {!includeCollars && displayPlates.length > 0 && (
-                                        <div style={{ width: 6, height: 40, background: '#475569', borderRadius: 2, marginLeft: 2, border: '1px solid #1e293b' }}></div>
+                                        <div style={{ width: 6, height: 40, background: '#475569', borderRadius: 2, marginLeft: 2, border: '1px solid #1e293b', cursor: 'pointer' }} onClick={() => setIncludeCollars(true)}></div>
                                     )}
                                 </div>
                             </div>
@@ -241,7 +241,7 @@ export default function PlateLoader({
                 {/* Controls */}
                 {mode === 'calculate' && (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1fr) auto', gap: 8, alignItems: 'end' }}>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 0.8fr)', gap: 8, alignItems: 'end' }}>
                             <div>
                                 <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--secondary-foreground)', marginBottom: 4, fontWeight: 600 }}>Target Weight</label>
                                 <div style={{ display: 'flex', background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 8, overflow: 'hidden', height: 46 }}>
@@ -325,14 +325,14 @@ export default function PlateLoader({
                 {/* Inventory (Reverse mode) */}
                 {mode === 'reverse' && (
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                        <div style={{ marginBottom: 12, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <span style={{ fontSize: '0.9rem', color: 'var(--secondary-foreground)' }}>Tap to add to bar</span>
+                        <div style={{ marginBottom: 12, display: 'flex', gap: 8, alignItems: 'center' }}>
+                            <span style={{ fontSize: '0.85rem', color: 'var(--secondary-foreground)', flex: 1 }}>Tap plates to load/unload</span>
                             <select
                                 value={barWeight}
                                 onChange={e => setBarWeight(Number(e.target.value))}
                                 style={{
-                                    padding: '6px 12px', background: 'var(--card-bg)', border: '1px solid var(--card-border)',
-                                    borderRadius: 8, color: 'var(--foreground)', fontSize: '0.85rem'
+                                    height: 38, padding: '0 8px', background: 'var(--card-bg)', border: '1px solid var(--card-border)',
+                                    borderRadius: 8, color: 'var(--foreground)', fontSize: '0.85rem', outline: 'none'
                                 }}
                             >
                                 <option value={20}>20 KG Bar</option>
@@ -342,10 +342,10 @@ export default function PlateLoader({
                             <button
                                 onClick={() => setIncludeCollars(!includeCollars)}
                                 style={{
-                                    padding: '6px 12px', background: includeCollars ? 'var(--primary)' : 'var(--card-bg)',
+                                    height: 38, padding: '0 12px', background: includeCollars ? 'var(--primary)' : 'var(--card-bg)',
                                     border: includeCollars ? '1px solid var(--primary)' : '1px solid var(--card-border)',
                                     color: includeCollars ? '#fff' : 'var(--foreground)', borderRadius: 8, fontSize: '0.85rem',
-                                    fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s'
+                                    fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap'
                                 }}
                             >
                                 Collars: {includeCollars ? 'ON' : 'OFF'}
@@ -353,21 +353,48 @@ export default function PlateLoader({
                         </div>
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 10, alignContent: 'start' }}>
                             {PLATES.map(p => (
-                                <button
-                                    key={p.weight}
-                                    onClick={() => addManualPlate(p.weight)}
-                                    style={{
-                                        aspectRatio: '1', borderRadius: '50%', background: p.color, border: p.border ? `2px solid ${p.border}` : 'none',
-                                        color: p.text, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                                        cursor: 'pointer', boxShadow: '0 4px 10px rgba(0,0,0,0.2)', transition: 'transform 0.1s'
-                                    }}
-                                    onMouseDown={e => e.currentTarget.style.transform = 'scale(0.95)'}
-                                    onMouseUp={e => e.currentTarget.style.transform = 'scale(1)'}
-                                >
-                                    <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: p.text === '#fff' ? 'rgba(255,255,255,0.2)' : 'rgba(0,0,0,0.1)', width: '60%', height: '60%', borderRadius: '50%' }}>
-                                        <span style={{ fontSize: '1.1rem', fontWeight: 800 }}>{p.weight}</span>
-                                    </span>
-                                </button>
+                                <div key={p.weight} style={{
+                                    position: 'relative', aspectRatio: '1', borderRadius: '50%',
+                                    background: p.color, border: p.border ? `2px solid ${p.border}` : 'none',
+                                    color: p.text, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    boxShadow: '0 4px 10px rgba(0,0,0,0.2)', overflow: 'hidden'
+                                }}>
+                                    <span style={{ fontSize: '1rem', fontWeight: 800, position: 'relative', zIndex: 1, pointerEvents: 'none' }}>{p.weight}</span>
+
+                                    {/* Hit Areas */}
+                                    <div style={{ position: 'absolute', inset: 0, display: 'flex' }}>
+                                        {/* Add (+) on left as requested */}
+                                        <button
+                                            onClick={() => addManualPlate(p.weight)}
+                                            className="hover-scale"
+                                            style={{
+                                                flex: 1, background: 'transparent', border: 'none', color: p.text,
+                                                fontSize: '1.2rem', fontWeight: 900, cursor: 'pointer', textAlign: 'left', paddingLeft: 8,
+                                                display: 'flex', alignItems: 'center', opacity: 0.6
+                                            }}
+                                        >
+                                            +
+                                        </button>
+                                        {/* Remove (-) on right as requested */}
+                                        <button
+                                            onClick={() => {
+                                                const idx = [...manualPlates].reverse().indexOf(p.weight);
+                                                if (idx !== -1) {
+                                                    const actualIdx = manualPlates.length - 1 - idx;
+                                                    removeManualPlate(actualIdx);
+                                                }
+                                            }}
+                                            className="hover-scale"
+                                            style={{
+                                                flex: 1, background: 'transparent', border: 'none', color: p.text,
+                                                fontSize: '1.2rem', fontWeight: 900, cursor: 'pointer', textAlign: 'right', paddingRight: 8,
+                                                display: 'flex', alignItems: 'center', justifyContent: 'flex-end', opacity: 0.6
+                                            }}
+                                        >
+                                            -
+                                        </button>
+                                    </div>
+                                </div>
                             ))}
                         </div>
                     </div>
