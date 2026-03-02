@@ -8,7 +8,7 @@ export default function LoaderContainer() {
     const [activeTab, setActiveTab] = useState<'loader' | 'strategist'>('loader');
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--background)' }}>
+        <div className="full-bleed-mobile" style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'var(--background)' }}>
             {/* Top Level Tabs for the Section */}
             <div style={{ display: 'flex', borderBottom: '1px solid var(--card-border)', position: 'sticky', top: 0, zIndex: 10, background: 'var(--background)' }}>
                 <button

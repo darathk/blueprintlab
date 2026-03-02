@@ -407,6 +407,23 @@ a {
   body:has(.chat-full-screen) .mobile-bottom-nav {
     display: none !important;
   }
+
+  /* Full bleed override for components that need edge-to-edge on mobile */
+  .full-bleed-mobile {
+    width: 100vw !important;
+    margin-left: calc(-50vw + 50%) !important;
+    margin-right: calc(-50vw + 50%) !important;
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+  }
+
+  /* Strip borders from nested glass panels inside full-bleed */
+  .full-bleed-mobile .glass-panel {
+    border-radius: 0 !important;
+    border-left: none !important;
+    border-right: none !important;
+  }
 }
 
 .chat-full-screen {
