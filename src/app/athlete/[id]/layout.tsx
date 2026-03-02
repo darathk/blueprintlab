@@ -79,7 +79,7 @@ export default async function AthletePortalLayout({
             <main className="athlete-main has-mobile-nav" style={{ flex: 1 }}>
                 {children}
             </main>
-            <MobileBottomNav items={athleteNavItems}>
+            <MobileBottomNav items={athleteNavItems} className="mobile-bottom-nav">
                 <div style={{
                     display: 'flex',
                     flexDirection: 'column',

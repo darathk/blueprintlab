@@ -380,19 +380,32 @@ a {
   }
 }
 
-/* Hide global header on mobile chat for native feel */
+/* Truly edge-to-edge full-screen chat on mobile */
 @media (max-width: 640px) {
-  body:has(.chat-full-screen) .athlete-portal-header {
-    display: none !important;
+
+  /* Use fixed positioning to break out of any parent padding/margins */
+  .chat-full-screen {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    height: 100dvh !important;
+    width: 100vw !important;
+    z-index: 9999 !important;
+    /* Above everything */
+    background: var(--background) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
   }
 
-  .chat-full-screen {
-    height: calc(100dvh - 65px - env(safe-area-inset-bottom, 0px)) !important;
-    position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    z-index: 1000;
+  /* Hide the global header and bottom nav entirely when chat is open */
+  body:has(.chat-full-screen) .athlete-portal-header,
+  body:has(.chat-full-screen) .dashboard-header,
+  body:has(.chat-full-screen) .mobile-bottom-nav {
+    display: none !important;
   }
 }
 

@@ -425,13 +425,27 @@ export default function ChatInterface({
             display: 'flex',
             flexDirection: 'column',
             height: isEmbedded ? '100%' : '100dvh',
+            width: '100%',
             flex: 1,
             minHeight: 0,
             background: 'var(--background)',
-            overscrollBehavior: 'none'
+            overscrollBehavior: 'none',
+            borderRadius: 0,
+            border: 'none'
         }}>
             {/* Header */}
-            <div style={{ padding: '12px 16px', background: 'var(--card-bg)', borderBottom: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, height: 'var(--header-height)' }}>
+            <div style={{
+                padding: '12px 16px',
+                paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))',
+                background: 'var(--card-bg)',
+                borderBottom: '1px solid var(--card-border)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                flexShrink: 0,
+                height: 'calc(var(--header-height) + env(safe-area-inset-top, 0px))',
+                width: '100%'
+            }}>
                 {isMultiSelecting ? (
                     <>
                         <button onClick={() => setSelectedMessageIds(new Set())} style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><X size={20} /></button>
@@ -631,7 +645,13 @@ export default function ChatInterface({
             }
 
             {/* Input */}
-            <div style={{ padding: '8px 12px 12px', background: 'var(--card-bg)', borderTop: '1px solid var(--card-border)', flexShrink: 0 }}>
+            <div style={{
+                padding: '8px 12px',
+                paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
+                background: 'var(--card-bg)',
+                borderTop: '1px solid var(--card-border)',
+                flexShrink: 0
+            }}>
                 <input ref={fileRef} type="file" multiple accept="video/*,image/*" onChange={handleMedia} style={{ display: 'none' }} />
                 {isCompressing && stagedFiles.length === 0 ? (
                     <div style={{ textAlign: 'center', fontSize: 12, padding: 6, color: 'var(--secondary-foreground)' }}>Processing…</div>

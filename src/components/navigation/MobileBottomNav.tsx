@@ -11,7 +11,7 @@ export interface NavItem {
     unreadCount?: number;
 }
 
-export default function MobileBottomNav({ items, children }: { items: NavItem[], children?: React.ReactNode }) {
+export default function MobileBottomNav({ items, children, className }: { items: NavItem[], children?: React.ReactNode, className?: string }) {
     const pathname = usePathname();
 
     const isActive = (href: string) => {
@@ -23,7 +23,7 @@ export default function MobileBottomNav({ items, children }: { items: NavItem[],
     };
 
     return (
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 z-[1000] border-t border-[var(--card-border)] rounded-none px-2 pb-safe-offset-2" style={{
+        <nav className={`md:hidden fixed bottom-0 left-0 right-0 z-[1000] border-t border-[var(--card-border)] rounded-none px-2 pb-safe-offset-2 ${className || ''}`} style={{
             height: 'calc(65px + env(safe-area-inset-bottom, 0px))',
             display: 'flex',
             alignItems: 'center',

@@ -104,7 +104,7 @@ export default async function DashboardLayout({
                 </div>
             </main>
 
-            <MobileBottomNav items={coachNavItems}>
+            <MobileBottomNav items={coachNavItems} className="mobile-bottom-nav">
                 <div style={{
                     display: 'flex',
                     flexDirection: 'column',
