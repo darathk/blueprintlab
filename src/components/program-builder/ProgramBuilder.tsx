@@ -184,7 +184,7 @@ const BuilderExerciseCard = ({ exercise, onUpdate, onRemove }) => {
 
 
 
-export default function ProgramBuilder({ athleteId, initialData = null, athletes = [] }: { athleteId?: string, initialData?: any, athletes?: any[] }) {
+export default function ProgramBuilder({ athleteId, initialData = null, athletes = [], initialExercises = null }: { athleteId?: string, initialData?: any, athletes?: any[], initialExercises?: any }) {
     const router = useRouter();
     const [programName, setProgramName] = useState('');
     const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
@@ -844,7 +844,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
             {/* LEFTSIDE BAR: Exercise Picker (ALWAYS VISIBLE - "Same as previously") */}
             <div className="program-builder-sidebar" style={{ display: 'flex', flexDirection: 'column', gap: '2rem', height: '100%', overflow: 'hidden' }}>
                 <div style={{ flex: 1, overflow: 'hidden' }}>
-                    <ExercisePicker onAdd={addExerciseToActiveSession} onDragStart={() => { }} />
+                    <ExercisePicker initialExercises={initialExercises} onAdd={addExerciseToActiveSession} onDragStart={() => { }} />
                 </div>
             </div>
 
@@ -954,88 +954,90 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                             <button onClick={() => addSession(wIndex)} className="btn btn-secondary" style={{ fontSize: '0.8rem' }}>+ Session</button>
                                         </div>
                                     </div>
-                                    <div style={{ display: 'grid', gap: '1.5rem' }}>
-                                        {week.sessions.map((session, sIndex) => (
-                                            <div
-                                                key={session.id}
-                                                className="card"
-                                                onClick={() => setActiveLocation({ w: wIndex, s: sIndex })}
-                                                style={{
-                                                    border: (activeLocation.w === wIndex && activeLocation.s === sIndex) ? '1px solid var(--accent)' : '1px solid var(--card-border)',
-                                                    transition: 'all 0.2s',
-                                                    position: 'relative' // Added for absolute positioning of ACTIVE tag
-                                                }}
-                                            >
-                                                {/* Selection Indicator */}
-                                                {(activeLocation.w === wIndex && activeLocation.s === sIndex) && (
-                                                    <div style={{
-                                                        position: 'absolute', top: 10, right: 10,
-                                                        background: 'var(--accent)', color: 'black',
-                                                        padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold'
-                                                    }}>
-                                                        ACTIVE
-                                                    </div>
-                                                )}
+                                    <div style={{ overflowX: 'auto', paddingBottom: '1rem', margin: '0 -1rem', padding: '0 1rem 1rem 1rem' }}>
+                                        <div style={{ display: 'grid', gap: '1.5rem', minWidth: '700px' }}>
+                                            {week.sessions.map((session, sIndex) => (
+                                                <div
+                                                    key={session.id}
+                                                    className="card"
+                                                    onClick={() => setActiveLocation({ w: wIndex, s: sIndex })}
+                                                    style={{
+                                                        border: (activeLocation.w === wIndex && activeLocation.s === sIndex) ? '1px solid var(--accent)' : '1px solid var(--card-border)',
+                                                        transition: 'all 0.2s',
+                                                        position: 'relative' // Added for absolute positioning of ACTIVE tag
+                                                    }}
+                                                >
+                                                    {/* Selection Indicator */}
+                                                    {(activeLocation.w === wIndex && activeLocation.s === sIndex) && (
+                                                        <div style={{
+                                                            position: 'absolute', top: 10, right: 10,
+                                                            background: 'var(--accent)', color: 'black',
+                                                            padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold'
+                                                        }}>
+                                                            ACTIVE
+                                                        </div>
+                                                    )}
 
-                                                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', alignItems: 'center', gap: '1rem' }}>
-                                                    <input
-                                                        value={session.name}
-                                                        onChange={e => {
-                                                            const newWeeks = [...weeks];
-                                                            newWeeks[wIndex].sessions[sIndex].name = e.target.value;
-                                                            setWeeks(newWeeks);
-                                                        }}
-                                                        style={{ background: 'transparent', border: 'none', color: 'var(--foreground)', fontSize: '1.1rem', fontWeight: 600, flex: 1 }}
-                                                        placeholder="Session Name"
-                                                    />
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                        <span style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)' }}>Date:</span>
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', alignItems: 'center', gap: '1rem' }}>
                                                         <input
-                                                            type="date"
-                                                            className="input"
-                                                            style={{ padding: '2px 8px', fontSize: '0.8rem', width: 'auto' }}
-                                                            value={session.scheduledDate || ''}
+                                                            value={session.name}
                                                             onChange={e => {
                                                                 const newWeeks = [...weeks];
-                                                                newWeeks[wIndex].sessions[sIndex].scheduledDate = e.target.value;
+                                                                newWeeks[wIndex].sessions[sIndex].name = e.target.value;
                                                                 setWeeks(newWeeks);
                                                             }}
+                                                            style={{ background: 'transparent', border: 'none', color: 'var(--foreground)', fontSize: '1.1rem', fontWeight: 600, flex: 1 }}
+                                                            placeholder="Session Name"
                                                         />
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); duplicateSession(wIndex, sIndex); }}
-                                                            title="Duplicate Session"
-                                                            style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1rem' }}
-                                                        >
-                                                            ❐
-                                                        </button>
-                                                        <button
-                                                            onClick={(e) => { e.stopPropagation(); removeSession(wIndex, sIndex); }}
-                                                            title="Delete Session"
-                                                            style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1rem', color: 'var(--error)' }}
-                                                        >
-                                                            🗑️
-                                                        </button>
-                                                    </div>
-                                                </div>
-
-                                                {session.exercises.length === 0 ? (
-                                                    <div style={{ padding: '2rem', textAlign: 'center', border: '2px dashed var(--card-border)', borderRadius: '8px', color: 'var(--secondary-foreground)' }}>
-                                                        Select cards to "Active" then add exercises from sidebar
-                                                    </div>
-                                                ) : (
-                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                                        {session.exercises.map((ex, exIndex) => (
-                                                            <BuilderExerciseCard
-                                                                key={ex.id}
-                                                                exercise={ex}
-                                                                onUpdate={(field, val) => updateExercise(wIndex, sIndex, exIndex, field, val)}
-                                                                onRemove={() => removeExercise(wIndex, sIndex, exIndex)}
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                                            <span style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)' }}>Date:</span>
+                                                            <input
+                                                                type="date"
+                                                                className="input"
+                                                                style={{ padding: '2px 8px', fontSize: '0.8rem', width: 'auto' }}
+                                                                value={session.scheduledDate || ''}
+                                                                onChange={e => {
+                                                                    const newWeeks = [...weeks];
+                                                                    newWeeks[wIndex].sessions[sIndex].scheduledDate = e.target.value;
+                                                                    setWeeks(newWeeks);
+                                                                }}
                                                             />
-                                                        ))}
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); duplicateSession(wIndex, sIndex); }}
+                                                                title="Duplicate Session"
+                                                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1rem' }}
+                                                            >
+                                                                ❐
+                                                            </button>
+                                                            <button
+                                                                onClick={(e) => { e.stopPropagation(); removeSession(wIndex, sIndex); }}
+                                                                title="Delete Session"
+                                                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1rem', color: 'var(--error)' }}
+                                                            >
+                                                                🗑️
+                                                            </button>
+                                                        </div>
                                                     </div>
-                                                )}
-                                            </div>
-                                        ))}
+
+                                                    {session.exercises.length === 0 ? (
+                                                        <div style={{ padding: '2rem', textAlign: 'center', border: '2px dashed var(--card-border)', borderRadius: '8px', color: 'var(--secondary-foreground)' }}>
+                                                            Select cards to "Active" then add exercises from sidebar
+                                                        </div>
+                                                    ) : (
+                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                                            {session.exercises.map((ex, exIndex) => (
+                                                                <BuilderExerciseCard
+                                                                    key={ex.id}
+                                                                    exercise={ex}
+                                                                    onUpdate={(field, val) => updateExercise(wIndex, sIndex, exIndex, field, val)}
+                                                                    onRemove={() => removeExercise(wIndex, sIndex, exIndex)}
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            ))}
+                                        </div>
                                     </div>
                                 </div>
                             ))}
@@ -1063,6 +1065,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                         {/* Sidebar */}
                         <div style={{ width: '300px', borderRight: '1px solid var(--card-border)', padding: '1rem', background: 'var(--card-bg)' }}>
                             <ExercisePicker
+                                initialExercises={initialExercises}
                                 onAdd={(name) => {
                                     // Add to currently editing session
                                     const { w, s } = editingSession;

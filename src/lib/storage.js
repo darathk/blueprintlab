@@ -1,17 +1,29 @@
 import { prisma } from '@/lib/prisma';
 import { cache } from 'react';
+import { EXERCISE_DB } from '@/lib/exercise-db';
 
-export async function getAthletes(coachId) {
+export const getAthletes = cache(async (coachId) => {
     if (!coachId) {
-        // Fallback or admin override: if no coachId provided, return none to be safe, 
-        // or we could throw an error. For now, let's strictly require a coach.
         return [];
     }
 
     const athletes = await prisma.athlete.findMany({
         where: { coachId },
-        include: { programs: { where: { status: 'active' } } }
+        select: {
+            id: true,
+            name: true,
+            email: true,
+            role: true,
+            coachId: true,
+            nextMeetName: true,
+            nextMeetDate: true,
+            programs: {
+                where: { status: 'active' },
+                select: { id: true, name: true, status: true, startDate: true, endDate: true }
+            }
+        }
     });
+
     return athletes.map(a => {
         const { programs, ...rest } = a;
         return {
@@ -19,7 +31,7 @@ export async function getAthletes(coachId) {
             currentProgramId: programs.length > 0 ? programs[0].id : null
         };
     });
-}
+});
 
 export async function saveAthlete(athlete) {
     const { id, name, email, nextMeetName, nextMeetDate, periodization, currentProgramId } = athlete;
@@ -49,12 +61,12 @@ export async function saveAthlete(athlete) {
     }
 }
 
-export async function getPrograms(coachId) {
+export const getPrograms = cache(async (coachId) => {
     if (!coachId) return [];
     return prisma.program.findMany({
         where: { athlete: { coachId } }
     });
-}
+});
 
 export async function updateProgram(program) {
     const { id, athleteId, name, startDate, endDate, weeks, status } = program;
@@ -75,7 +87,7 @@ export async function deleteProgram(id) {
     return true;
 }
 
-export async function getLogs(coachId) {
+export const getLogs = cache(async (coachId) => {
     if (!coachId) return [];
     const logs = await prisma.log.findMany({
         where: { program: { athlete: { coachId } } },
@@ -88,7 +100,7 @@ export async function getLogs(coachId) {
             athleteId: program ? program.athleteId : null
         };
     });
-}
+});
 
 export async function saveLog(logEntry) {
     const existing = await prisma.log.findFirst({
@@ -113,12 +125,12 @@ export async function saveLog(logEntry) {
     }
 }
 
-export async function getReadiness(coachId) {
+export const getReadiness = cache(async (coachId) => {
     if (!coachId) return [];
     return prisma.readiness.findMany({
         where: { athlete: { coachId } }
     });
-}
+});
 
 export async function saveReadiness(log) {
     const newLog = await prisma.readiness.create({
@@ -186,6 +198,79 @@ export const getLogSummariesForDashboard = cache(async (coachId) => {
             }
         }
     });
+});
+
+export const getMessagesByAthlete = cache(async (athleteId) => {
+    return prisma.message.findMany({
+        where: {
+            OR: [
+                { senderId: athleteId },
+                { receiverId: athleteId }
+            ]
+        },
+        orderBy: { createdAt: 'asc' },
+        include: {
+            sender: { select: { id: true, name: true, email: true } },
+            receiver: { select: { id: true, name: true, email: true } },
+            replyTo: {
+                select: {
+                    id: true,
+                    content: true,
+                    mediaUrl: true,
+                    mediaType: true,
+                    sender: { select: { name: true } }
+                }
+            }
+        }
+    });
+});
+
+export const getExerciseLibrary = cache(async () => {
+    const customExercisesRaw = await prisma.customExercise.findMany();
+    const combined = {};
+    Object.entries(EXERCISE_DB).forEach(([name, details]) => {
+        combined[name] = { name, ...details };
+    });
+    customExercisesRaw.forEach(ex => {
+        combined[ex.name] = ex;
+    });
+    return combined;
+});
+
+export const getCoachInbox = cache(async (coachId) => {
+    if (!coachId) return [];
+    const sql = `
+        SELECT 
+            a.id AS "athleteId",
+            a.name AS "athleteName",
+            latest_msg.content AS "lastMessage",
+            COALESCE(latest_msg."createdAt", '1970-01-01T00:00:00Z') AS "lastMessageAt",
+            COALESCE(unread_count.count, 0)::int AS "unreadCount"
+        FROM "Athlete" a
+        LEFT JOIN (
+            SELECT DISTINCT ON (partner_id)
+                partner_id,
+                content,
+                "createdAt"
+            FROM (
+                SELECT 
+                    "senderId", "receiverId", content, "createdAt",
+                    CASE WHEN "senderId" = $1 THEN "receiverId" ELSE "senderId" END AS partner_id
+                FROM "Message"
+                WHERE "senderId" = $1 OR "receiverId" = $1
+            ) m
+            ORDER BY partner_id, "createdAt" DESC
+        ) latest_msg ON latest_msg.partner_id = a.id
+        LEFT JOIN (
+            SELECT "senderId", COUNT(*) as count
+            FROM "Message"
+            WHERE "receiverId" = $1 AND read = false
+            GROUP BY "senderId"
+        ) unread_count ON unread_count."senderId" = a.id
+        WHERE a.id != $1 AND a."coachId" = $1
+        ORDER BY "lastMessageAt" DESC;
+    `;
+    return prisma.$queryRawUnsafe(sql, coachId);
 });
 
 // Dummy functions to prevent older unused routes from crashing during import tree parsing

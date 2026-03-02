@@ -1,9 +1,8 @@
-'use client';
-
-import { use } from 'react';
 import ProgramBuilder from '@/components/program-builder/ProgramBuilder';
+import { getExerciseLibrary } from '@/lib/storage';
 
-export default function NewProgramPage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = use(params);
-    return <ProgramBuilder athleteId={id} />;
+export default async function NewProgramPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = await params;
+    const initialExercises = await getExerciseLibrary();
+    return <ProgramBuilder athleteId={id} initialExercises={initialExercises} />;
 }

@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { ChatInterface } from '@/components/chat/ClientChatInterface';
+import { getMessagesByAthlete } from '@/lib/storage';
 
 export default async function AthleteChatPage({ params }: { params: Promise<{ id: string }> }) {
     const { id: athleteId } = await params;
@@ -20,12 +21,15 @@ export default async function AthleteChatPage({ params }: { params: Promise<{ id
         );
     }
 
+    const initialMessages = await getMessagesByAthlete(athlete.id);
+
     return (
         <div style={{
             display: 'flex',
             flexDirection: 'column',
             flex: 1,
-            height: '100%'
+            height: 'calc(100vh - 210px)',
+            overflow: 'hidden'
         }}>
             <ChatInterface
                 currentUserId={athlete.id}
@@ -33,6 +37,7 @@ export default async function AthleteChatPage({ params }: { params: Promise<{ id
                 currentUserName={athlete.name}
                 otherUserName="Coach"
                 athleteId={athlete.id}
+                initialMessages={initialMessages}
             />
         </div>
     );

@@ -1,27 +1,17 @@
-'use client';
-
-import { useState, useEffect } from 'react';
-import { use } from 'react';
 import ProgramBuilder from '@/components/program-builder/ProgramBuilder';
+import { prisma } from '@/lib/prisma';
+import { getExerciseLibrary } from '@/lib/storage';
 
-export default function EditProgramPage({ params }: { params: Promise<{ id: string; programId: string }> }) {
-    const { id, programId } = use(params);
-    const [program, setProgram] = useState(null);
-    const [loading, setLoading] = useState(true);
+export default async function EditProgramPage({ params }: { params: Promise<{ id: string; programId: string }> }) {
+    const { id, programId } = await params;
 
-    useEffect(() => {
-        const fetchProgram = async () => {
-            const res = await fetch('/api/programs');
-            const programs = await res.json();
-            const found = programs.find((p: any) => p.id === programId);
-            setProgram(found);
-            setLoading(false);
-        };
-        fetchProgram();
-    }, [programId]);
+    // Server-side fetch
+    const program = await prisma.program.findUnique({
+        where: { id: programId }
+    });
 
-    if (loading) return <div style={{ padding: '2rem' }}>Loading Program...</div>;
     if (!program) return <div style={{ padding: '2rem' }}>Program not found.</div>;
 
-    return <ProgramBuilder athleteId={id} initialData={program} />;
+    const initialExercises = await getExerciseLibrary();
+    return <ProgramBuilder athleteId={id} initialData={program} initialExercises={initialExercises} />;
 }

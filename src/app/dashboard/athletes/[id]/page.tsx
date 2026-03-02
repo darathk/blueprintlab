@@ -11,6 +11,8 @@ const AthleteCharts = dynamic(() => import('@/components/dashboard/AthleteCharts
     loading: () => <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="pulse">Loading performance charts...</div>
 });
 
+import { MessageSquare } from 'lucide-react';
+
 // Extracted Async Components for Granular Streaming
 
 async function AthleteHeader({ id }) {
@@ -21,8 +23,8 @@ async function AthleteHeader({ id }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <h1 style={{ fontSize: '1.875rem', fontWeight: 700 }}>{athlete?.name || 'Athlete'} Analytics</h1>
                 <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
-                    <Link href={`/dashboard/athletes/${id}/chat`} className="btn btn-secondary" style={{ fontSize: '0.9rem' }}>
-                        💬 Chat
+                    <Link href={`/dashboard/messages?athleteId=${id}`} className="btn btn-secondary" style={{ fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <MessageSquare size={16} /> Chat
                     </Link>
                     <Link href={`/dashboard/athletes/${id}/reports`} className="btn btn-secondary" style={{ fontSize: '0.9rem' }}>
                         View Meta-Analytics Reports

@@ -1,4 +1,4 @@
-import { getAthletes } from '@/lib/storage';
+import { getAthletes, getExerciseLibrary } from '@/lib/storage';
 import ProgramBuilder from '@/components/program-builder/ProgramBuilder';
 
 import { currentUser } from '@clerk/nextjs/server';
@@ -10,10 +10,11 @@ export default async function NewProgramPage() {
     const coach = await prisma.athlete.findUnique({ where: { email } });
 
     const athletes = await getAthletes(coach?.id);
+    const initialExercises = await getExerciseLibrary();
 
     return (
         <div>
-            <ProgramBuilder athletes={athletes} />
+            <ProgramBuilder athletes={athletes} initialExercises={initialExercises} />
         </div>
     );
 }

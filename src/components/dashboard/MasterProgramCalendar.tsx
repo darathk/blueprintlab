@@ -136,9 +136,9 @@ export default function MasterProgramCalendar({ programs, athleteId, currentProg
                 <button onClick={nextMonth} className="btn-icon">→</button>
             </div>
 
-            <div style={{ overflowX: 'hidden' }}>
-                <div style={{ minWidth: '100%', width: '100%' }}>
-                    <div className="calendar-grid-header" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', background: 'rgba(15, 23, 42, 0.5)', padding: '0.75rem 0', borderBottom: '1px solid var(--card-border)' }}>
+            <div style={{ overflowX: 'hidden', boxSizing: 'border-box' }}>
+                <div style={{ minWidth: '100%', width: '100%', boxSizing: 'border-box' }}>
+                    <div className="calendar-grid-header" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', background: 'rgba(15, 23, 42, 0.5)', padding: '0.5rem 0', borderBottom: '1px solid var(--card-border)', boxSizing: 'border-box' }}>
                         {weekDays.map(d => <div key={d} style={{ textAlign: 'center', fontSize: 'clamp(0.6rem, 2vw, 0.75rem)', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase' }}>{d}</div>)}
                     </div>
 
@@ -179,7 +179,7 @@ export default function MasterProgramCalendar({ programs, athleteId, currentProg
                                             </div>
                                         </div>
                                         <div className="session-icon">
-                                            <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'linear-gradient(135deg, #06b6d4, #10b981)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', fontSize: 10 }}>
+                                            <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'linear-gradient(135deg, #38bdf8, #34d399)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', fontSize: 10 }}>
                                                 📋
                                             </div>
                                         </div>
@@ -234,14 +234,16 @@ export default function MasterProgramCalendar({ programs, athleteId, currentProg
                     .calendar-cell {
                         min-height: auto;
                         aspect-ratio: 1;
-                        padding: 0.25rem !important;
+                        padding: 0 !important;
                         border-right: 1px solid var(--card-border) !important;
                         border-bottom: 1px solid var(--card-border) !important;
+                        box-sizing: border-box !important;
                     }
                     .date-number {
-                        font-size: 0.75rem;
+                        font-size: 0.7rem;
                         font-weight: 500 !important;
-                        margin-bottom: 2px;
+                        margin-bottom: 0px;
+                        margin-top: 2px;
                         display: block;
                         text-align: center;
                         width: 100%;

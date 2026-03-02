@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
+import { Mic, Video as VideoIcon, Image as ImageIcon, MoreVertical, Reply, Copy, Download, Paperclip, X, Send } from 'lucide-react';
 
 interface Message {
     id: string;
@@ -11,7 +12,7 @@ interface Message {
     content: string;
     mediaUrl?: string | null;
     mediaType?: string | null;
-    createdAt: string;
+    createdAt: string | Date;
     read: boolean;
     replyToId?: string | null;
     replyTo?: { id: string; content: string; mediaUrl?: string | null; mediaType?: string | null; sender: { name: string } } | null;
@@ -25,10 +26,11 @@ interface Props {
     currentUserName: string;
     otherUserName: string;
     athleteId: string;
+    initialMessages?: Message[];
 }
 
-export default function ChatInterface({ currentUserId, otherUserId, currentUserName, otherUserName, athleteId }: Props) {
-    const [messages, setMessages] = useState<Message[]>([]);
+export default function ChatInterface({ currentUserId, otherUserId, currentUserName, otherUserName, athleteId, initialMessages = [] }: Props) {
+    const [messages, setMessages] = useState<Message[]>(initialMessages);
     const [newMessage, setNewMessage] = useState('');
     const [uploading, setUploading] = useState(false);
     const [sending, setSending] = useState(false);
@@ -46,9 +48,13 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
 
     // Initial fetch — once
     useEffect(() => {
-        fetch(`/api/messages?athleteId=${athleteId}`)
-            .then(r => r.ok ? r.json() : [])
-            .then(data => { setMessages(data); setLoaded(true); });
+        if (initialMessages.length === 0) {
+            fetch(`/api/messages?athleteId=${athleteId}`)
+                .then(r => r.ok ? r.json() : [])
+                .then(data => { setMessages(data); setLoaded(true); });
+        } else {
+            setLoaded(true);
+        }
         // Mark as read
         fetch('/api/messages', {
             method: 'PATCH', headers: { 'Content-Type': 'application/json' },
@@ -113,6 +119,70 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
 
 
 
+    // Voice Recording State
+    const [isRecording, setIsRecording] = useState(false);
+    const [recordingTime, setRecordingTime] = useState(0);
+    const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+    const audioChunksRef = useRef<Blob[]>([]);
+    const timerRef = useRef<NodeJS.Timeout | null>(null);
+
+    const formatRecordingTime = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = seconds % 60;
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    const startRecording = async () => {
+        try {
+            const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            const mediaRecorder = new MediaRecorder(stream);
+            mediaRecorderRef.current = mediaRecorder;
+            audioChunksRef.current = [];
+
+            mediaRecorder.ondataavailable = (e) => {
+                if (e.data.size > 0) audioChunksRef.current.push(e.data);
+            };
+
+            mediaRecorder.onstop = () => {
+                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+                const audioFile = new File([audioBlob], 'voice_message.webm', { type: 'audio/webm' });
+                setStagedFiles(prev => [...prev, audioFile]);
+                setStagedFileUrls(prev => [...prev, URL.createObjectURL(audioBlob)]);
+                setIsRecording(false);
+                setRecordingTime(0);
+                if (timerRef.current) clearInterval(timerRef.current);
+                stream.getTracks().forEach(track => track.stop());
+            };
+
+            mediaRecorder.start();
+            setIsRecording(true);
+            setRecordingTime(0);
+            timerRef.current = setInterval(() => {
+                setRecordingTime(prev => prev + 1);
+            }, 1000);
+        } catch (err) {
+            console.error('Error accessing microphone:', err);
+            alert('Could not access microphone.');
+        }
+    };
+
+    const stopRecording = () => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+            mediaRecorderRef.current.stop();
+        }
+    };
+
+    const cancelRecording = () => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
+            mediaRecorderRef.current.onstop = null;
+            mediaRecorderRef.current.stop();
+            mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+            setIsRecording(false);
+            setRecordingTime(0);
+            if (timerRef.current) clearInterval(timerRef.current);
+        }
+    };
+
     // Close action menu on click outside
     useEffect(() => { const c = () => setActiveMenu(null); window.addEventListener('click', c); return () => window.removeEventListener('click', c); }, []);
 
@@ -150,7 +220,8 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
             filesToSend.forEach((file, index) => {
                 const tempId = `temp-${Date.now()}-${index}`;
                 const isVid = file.type.startsWith('video/');
-                const content = index === 0 && text ? text : (isVid ? '📎 Video' : '📷 Photo');
+                const isAudio = file.type.startsWith('audio/');
+                const content = index === 0 && text ? text : isAudio ? 'Voice Message' : (isVid ? 'Video' : 'Photo');
                 optimisticMessages.push({
                     id: tempId, senderId: currentUserId, receiverId: otherUserId, content,
                     mediaUrl: urlsToSend[index],
@@ -201,7 +272,7 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
                     }
 
                     setCompressProgress(80);
-                    const ext = mime.includes('png') ? '.png' : mime.includes('jpeg') || mime.includes('jpg') ? '.jpg' : mime.includes('quicktime') ? '.mov' : '.mp4';
+                    const ext = mime.includes('png') ? '.png' : mime.includes('jpeg') || mime.includes('jpg') ? '.jpg' : mime.includes('quicktime') ? '.mov' : mime.includes('webm') ? '.webm' : '.mp4';
                     const { data, error } = await supabase.storage.from('lift-videos').upload(`${athleteId}/${Date.now()}-${i}${ext}`, blob, { cacheControl: '3600', upsert: false, contentType: mime });
 
                     if (error) {
@@ -212,7 +283,8 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
                     setCompressProgress(100);
                     const { data: u } = supabase.storage.from('lift-videos').getPublicUrl(data.path);
 
-                    const content = i === 0 && text ? text : (isVid ? '📎 Video' : '📷 Photo');
+                    const isAudio = file.type.startsWith('audio/');
+                    const content = i === 0 && text ? text : isAudio ? 'Voice Message' : (isVid ? 'Video' : 'Photo');
                     const replyToId = i === 0 ? (replyingTo?.id || null) : null;
 
                     const res = await fetch('/api/messages', {
@@ -243,8 +315,8 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
         if (files.length === 0) return;
 
         const validFiles = files.filter(f => {
-            const isVid = f.type.startsWith('video/'), isImg = f.type.startsWith('image/');
-            return (isVid || isImg) && f.size <= 200 * 1024 * 1024;
+            const isVid = f.type.startsWith('video/'), isImg = f.type.startsWith('image/'), isAudio = f.type.startsWith('audio/');
+            return (isVid || isImg || isAudio) && f.size <= 200 * 1024 * 1024;
         });
 
         if (validFiles.length < files.length) {
@@ -280,13 +352,13 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
         } catch { window.open(url, '_blank'); }
     };
 
-    const fmtTime = (s: string) => {
+    const fmtTime = (s: string | Date) => {
         const d = new Date(s), n = new Date();
         return d.toDateString() === n.toDateString() ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
             : d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
     };
 
-    const fmtDate = (s: string) => {
+    const fmtDate = (s: string | Date) => {
         const d = new Date(s), n = new Date(), y = new Date(n); y.setDate(y.getDate() - 1);
         return d.toDateString() === n.toDateString() ? 'Today' : d.toDateString() === y.toDateString() ? 'Yesterday'
             : d.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
@@ -316,6 +388,7 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
                     const mine = msg.senderId === currentUserId;
                     const isVid = msg.mediaType?.startsWith('video');
                     const isImg = msg.mediaType?.startsWith('image');
+                    const isAudio = msg.mediaType?.startsWith('audio');
                     const dateSep = showDateSep(i);
                     const timeSep = showTime(i);
 
@@ -327,10 +400,12 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
                             <div style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start', alignItems: 'center', marginTop: timeSep && i > 0 ? 8 : 2, gap: 4, position: 'relative' }}>
 
                                 {/* Action button — left side for own messages */}
-                                {mine && (
+                                {mine ? (
                                     <button onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === msg.id ? null : msg.id); }}
-                                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'rgba(255,255,255,0.2)', padding: '2px 4px', flexShrink: 0, lineHeight: 1 }}
-                                        title="Actions">⋮</button>
+                                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)', padding: '2px 4px', flexShrink: 0, display: 'flex', alignItems: 'center' }}
+                                        title="Actions"><MoreVertical size={16} /></button>
+                                ) : (
+                                    <div style={{ width: 16, flexShrink: 0 }} /> // Spacer for alignment
                                 )}
 
                                 <div style={{ position: 'relative', maxWidth: '75%' }}>
@@ -347,7 +422,7 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
                                             <div style={{ margin: msg.mediaUrl ? '4px 8px 6px' : '0 0 6px', padding: '6px 8px', borderRadius: 10, background: 'rgba(255,255,255,0.04)', borderLeft: '2px solid rgba(6,182,212,0.5)', fontSize: 11 }}>
                                                 <div style={{ fontWeight: 600, color: 'rgba(6,182,212,0.7)', marginBottom: 2 }}>{msg.replyTo.sender.name}</div>
                                                 <div style={{ color: 'rgba(255,255,255,0.35)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                    {msg.replyTo.mediaUrl ? (msg.replyTo.mediaType?.startsWith('image') ? '📷 Photo' : '📹 Video') : msg.replyTo.content}
+                                                    {msg.replyTo.mediaUrl ? (msg.replyTo.mediaType?.startsWith('image') ? 'Photo' : msg.replyTo.mediaType?.startsWith('audio') ? 'Voice' : 'Video') : msg.replyTo.content}
                                                 </div>
                                             </div>
                                         )}
@@ -369,6 +444,15 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
                                             </div>
                                         )}
 
+                                        {/* Audio */}
+                                        {msg.mediaUrl && isAudio && (
+                                            <div style={{ padding: '4px 0' }}>
+                                                <audio controls preload="metadata" style={{ width: '100%', minWidth: 200, height: 40, borderRadius: 20 }}>
+                                                    <source src={msg.mediaUrl} />
+                                                </audio>
+                                            </div>
+                                        )}
+
                                         {/* Text */}
                                         <div style={{ fontSize: 14, lineHeight: 1.4, color: 'rgba(255,255,255,0.9)', padding: msg.mediaUrl ? '0 10px' : 0 }}>{msg.content}</div>
 
@@ -383,11 +467,11 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
                                             background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 10, boxShadow: '0 6px 20px rgba(0,0,0,0.5)', padding: '3px 0', minWidth: 120, whiteSpace: 'nowrap'
                                         }}>
                                             <button onClick={() => { setReplyingTo(msg); setActiveMenu(null); }}
-                                                style={{ display: 'block', width: '100%', textAlign: 'left', padding: '7px 12px', background: 'none', border: 'none', fontSize: 12, color: 'var(--foreground)', cursor: 'pointer' }}>↩️ Reply</button>
+                                                style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', textAlign: 'left', padding: '7px 12px', background: 'none', border: 'none', fontSize: 12, color: 'var(--foreground)', cursor: 'pointer' }}><Reply size={14} /> Reply</button>
                                             <button onClick={() => { navigator.clipboard.writeText(msg.content); setActiveMenu(null); }}
-                                                style={{ display: 'block', width: '100%', textAlign: 'left', padding: '7px 12px', background: 'none', border: 'none', fontSize: 12, color: 'var(--foreground)', cursor: 'pointer' }}>📋 Copy</button>
+                                                style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', textAlign: 'left', padding: '7px 12px', background: 'none', border: 'none', fontSize: 12, color: 'var(--foreground)', cursor: 'pointer' }}><Copy size={14} /> Copy</button>
                                             {msg.mediaUrl && <button onClick={() => { saveMedia(msg.mediaUrl!, msg.mediaType?.startsWith('image')); setActiveMenu(null); }}
-                                                style={{ display: 'block', width: '100%', textAlign: 'left', padding: '7px 12px', background: 'none', border: 'none', fontSize: 12, color: 'var(--foreground)', cursor: 'pointer' }}>💾 Save</button>}
+                                                style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', textAlign: 'left', padding: '7px 12px', background: 'none', border: 'none', fontSize: 12, color: 'var(--foreground)', cursor: 'pointer' }}><Download size={14} /> Save</button>}
                                         </div>
                                     )}
                                 </div>
@@ -395,8 +479,8 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
                                 {/* Action button — right side for other's messages */}
                                 {!mine && (
                                     <button onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === msg.id ? null : msg.id); }}
-                                        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'rgba(255,255,255,0.2)', padding: '2px 4px', flexShrink: 0, lineHeight: 1 }}
-                                        title="Actions">⋮</button>
+                                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)', padding: '2px 4px', flexShrink: 0, display: 'flex', alignItems: 'center' }}
+                                        title="Actions"><MoreVertical size={16} /></button>
                                 )}
                             </div>
                         </div>
@@ -413,10 +497,10 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
                     <div style={{ flex: 1, paddingLeft: 10, borderLeft: '2px solid var(--primary)', minWidth: 0 }}>
                         <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--primary)' }}>Replying to {replyingTo.sender.name}</div>
                         <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {replyingTo.mediaUrl ? (replyingTo.mediaType?.startsWith('image') ? '📷 Photo' : '📹 Video') : replyingTo.content}
+                            {replyingTo.mediaUrl ? (replyingTo.mediaType?.startsWith('image') ? 'Photo' : replyingTo.mediaType?.startsWith('audio') ? 'Voice' : 'Video') : replyingTo.content}
                         </div>
                     </div>
-                    <button onClick={() => setReplyingTo(null)} style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', fontSize: 16 }}>✕</button>
+                    <button onClick={() => setReplyingTo(null)} style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><X size={16} /></button>
                 </div>
             )}
 
@@ -439,14 +523,18 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
                         <div key={i} style={{ width: 80, height: 80, borderRadius: 8, overflow: 'hidden', position: 'relative', border: '1px solid var(--card-border)', background: '#000', flexShrink: 0 }}>
                             {f.type.startsWith('image/') ? (
                                 <img src={stagedFileUrls[i]} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            ) : f.type.startsWith('audio/') ? (
+                                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.7)' }}>
+                                    <Mic size={24} />
+                                </div>
                             ) : (
-                                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.7)', fontSize: 24 }}>
-                                    📹
+                                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.7)' }}>
+                                    <VideoIcon size={24} />
                                 </div>
                             )}
                             <button onClick={() => clearStagedMedia(i)} disabled={uploading} style={{
-                                position: 'absolute', top: 4, right: 4, width: 20, height: 20, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: 'none', color: '#fff', fontSize: 10, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
-                            }}>✕</button>
+                                position: 'absolute', top: 4, right: 4, width: 22, height: 22, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            }}><X size={12} /></button>
                         </div>
                     ))}
                 </div>
@@ -457,21 +545,42 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
                 <input ref={fileRef} type="file" multiple accept="video/*,image/*" onChange={handleMedia} style={{ display: 'none' }} />
                 {isCompressing && stagedFiles.length === 0 ? (
                     <div style={{ textAlign: 'center', fontSize: 12, padding: 6, color: 'var(--secondary-foreground)' }}>Processing…</div>
+                ) : isRecording ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, padding: '0 8px' }}>
+                        <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ef4444', animation: 'pulse 1.5s infinite' }} />
+                        <div style={{ color: '#ef4444', fontWeight: 600, fontSize: 14, flex: 1 }}>
+                            {formatRecordingTime(recordingTime)}
+                        </div>
+                        <button onClick={cancelRecording} style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', fontSize: 13, cursor: 'pointer', padding: '6px 12px' }}>
+                            Cancel
+                        </button>
+                        <button onClick={stopRecording} style={{ background: 'linear-gradient(135deg, #06b6d4, #10b981)', border: 'none', borderRadius: 20, color: '#000', fontSize: 13, fontWeight: 600, padding: '6px 16px', cursor: 'pointer' }}>
+                            Done
+                        </button>
+                    </div>
                 ) : (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <button onClick={() => fileRef.current?.click()} disabled={uploading}
-                            style={{ width: 34, height: 34, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'var(--secondary-foreground)', cursor: 'pointer', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            📎
+                            style={{ width: 34, height: 34, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'var(--secondary-foreground)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <Paperclip size={16} />
                         </button>
                         <input type="text" value={newMessage} onChange={e => setNewMessage(e.target.value)}
                             onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
                             placeholder={(stagedFiles.length > 0 && !newMessage) ? "Add a caption..." : "Message"}
                             disabled={uploading}
                             style={{ flex: 1, padding: '8px 16px', borderRadius: 20, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'var(--foreground)', fontSize: 14, outline: 'none', minWidth: 0, opacity: uploading ? 0.5 : 1 }} />
-                        <button onClick={() => handleSend()} disabled={uploading || (!newMessage.trim() && stagedFiles.length === 0)}
-                            style={{ width: 34, height: 34, borderRadius: '50%', background: (newMessage.trim() || stagedFiles.length > 0) ? 'linear-gradient(135deg, #06b6d4, #10b981)' : 'rgba(255,255,255,0.05)', border: 'none', cursor: (newMessage.trim() || stagedFiles.length > 0) ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, opacity: uploading ? 0.3 : (newMessage.trim() || stagedFiles.length > 0) ? 1 : 0.4, color: (newMessage.trim() || stagedFiles.length > 0) ? '#000' : 'var(--secondary-foreground)', fontSize: 16, fontWeight: 700 }}>
-                            →
-                        </button>
+
+                        {!newMessage.trim() && stagedFiles.length === 0 ? (
+                            <button onClick={startRecording} disabled={uploading}
+                                style={{ width: 34, height: 34, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'var(--secondary-foreground)' }}>
+                                <Mic size={16} />
+                            </button>
+                        ) : (
+                            <button onClick={() => handleSend()} disabled={uploading}
+                                style={{ width: 34, height: 34, borderRadius: '50%', background: 'linear-gradient(135deg, #06b6d4, #10b981)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, opacity: uploading ? 0.3 : 1, color: '#000' }}>
+                                <Send size={15} style={{ marginLeft: 2 }} />
+                            </button>
+                        )}
                     </div>
                 )}
             </div>

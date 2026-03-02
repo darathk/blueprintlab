@@ -13,11 +13,11 @@ interface Message {
 
 interface ConvSummary { athleteId: string; athleteName: string; lastMessage: string; lastMessageAt: string; unreadCount: number; }
 
-interface Props { coachId: string; coachName: string; }
+interface Props { coachId: string; coachName: string; initialConvos?: ConvSummary[]; initialAthleteId?: string; }
 
-export default function CoachInbox({ coachId, coachName }: Props) {
-    const [convos, setConvos] = useState<ConvSummary[]>([]);
-    const [selectedId, setSelectedId] = useState<string | null>(null);
+export default function CoachInbox({ coachId, coachName, initialConvos = [], initialAthleteId }: Props) {
+    const [convos, setConvos] = useState<ConvSummary[]>(initialConvos);
+    const [selectedId, setSelectedId] = useState<string | null>(initialAthleteId || null);
     const [messages, setMessages] = useState<Message[]>([]);
     const [msgLoading, setMsgLoading] = useState(false);
     const [newMsg, setNewMsg] = useState('');
@@ -61,7 +61,9 @@ export default function CoachInbox({ coachId, coachName }: Props) {
         }).then(() => fetchConvos());
     }, [coachId, fetchConvos]);
 
-    useEffect(() => { fetchConvos(); }, [fetchConvos]);
+    useEffect(() => {
+        if (initialConvos.length === 0) fetchConvos();
+    }, [fetchConvos, initialConvos]);
 
     // When selecting a conversation, load its messages
     useEffect(() => { if (selectedId) { setMessages([]); fetchMessages(selectedId); } }, [selectedId, fetchMessages]);
@@ -200,7 +202,7 @@ export default function CoachInbox({ coachId, coachName }: Props) {
         new Date(messages[i].createdAt).getTime() - new Date(messages[i - 1].createdAt).getTime() > 300000;
 
     return (
-        <div className={isMobile && selectedId ? "" : "glass-panel"} style={isMobile && selectedId ? { position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 9999, display: 'flex', background: 'var(--background)' } : { display: 'flex', height: isMobile ? 'calc(100vh - 180px)' : 580, overflow: 'hidden', borderRadius: 12 }}>
+        <div className="glass-panel" style={{ display: 'flex', height: isMobile ? 'calc(100vh - 210px)' : 580, overflow: 'hidden', borderRadius: 12 }}>
             {/* Sidebar */}
             <div style={{ width: isMobile ? '100%' : 260, flexShrink: 0, borderRight: isMobile ? 'none' : '1px solid var(--card-border)', display: isMobile && selectedId ? 'none' : 'flex', flexDirection: 'column', background: 'rgba(15,23,42,0.3)' }}>
                 <div style={{ padding: '12px 16px', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

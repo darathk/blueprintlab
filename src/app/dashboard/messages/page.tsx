@@ -1,13 +1,18 @@
 import { prisma } from '@/lib/prisma';
 import { CoachInbox } from '@/components/chat/ClientCoachInbox';
+import { getCoachInbox } from '@/lib/storage';
 
-export default async function MessagesPage() {
+export default async function MessagesPage({ searchParams }: { searchParams: Promise<{ athleteId?: string }> }) {
+    const params = await searchParams;
+    const initialAthleteId = params?.athleteId;
     // Look up coach's Athlete record for the inbox
     const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.ADMIN_EMAIL || '';
     let coach = await prisma.athlete.findUnique({ where: { email: adminEmail } });
     if (!coach) {
         coach = await prisma.athlete.create({ data: { name: 'Coach', email: adminEmail } });
     }
+
+    const initialConvos = (await getCoachInbox(coach.id)) as any[];
 
     return (
         <div>
@@ -17,7 +22,7 @@ export default async function MessagesPage() {
                 </h1>
             </div>
 
-            <CoachInbox coachId={coach.id} coachName={coach.name} />
+            <CoachInbox coachId={coach.id} coachName={coach.name} initialConvos={initialConvos} initialAthleteId={initialAthleteId} />
         </div>
     );
 }

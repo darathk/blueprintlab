@@ -24,6 +24,8 @@ model Athlete {
   readiness        Readiness[]
   sentMessages     Message[]   @relation("SentMessages")
   receivedMessages Message[]   @relation("ReceivedMessages")
+
+  @@index([coachId])
 }
 
 model Program {
@@ -36,6 +38,8 @@ model Program {
   weeks     Json // Storing complex nested structure easily
   status    String  @default("active")
   logs      Log[]
+
+  @@index([athleteId, status])
 }
 
 model Log {
@@ -45,6 +49,8 @@ model Log {
   sessionId String
   date      String
   exercises Json // Completed sets, reps, rpes
+
+  @@index([programId])
 }
 
 model Report {
@@ -72,6 +78,8 @@ model Readiness {
   date      String
   scores    Json
   timestamp DateTime @default(now())
+
+  @@index([athleteId, date])
 }
 
 model Message {

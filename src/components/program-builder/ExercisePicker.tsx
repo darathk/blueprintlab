@@ -3,9 +3,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { EXERCISE_DB, EXERCISE_CATEGORIES } from '@/lib/exercise-db';
 
-export default function ExercisePicker({ onDragStart, onAdd }) {
+export default function ExercisePicker({ onDragStart, onAdd, initialExercises = null }: { onDragStart?: any, onAdd?: any, initialExercises?: any }) {
     // Combined DB state
-    const [exerciseDB, setExerciseDB] = useState({});
+    const [exerciseDB, setExerciseDB] = useState(initialExercises || {});
     const [searchTerm, setSearchTerm] = useState('');
 
     // Custom Exercise State
@@ -53,8 +53,12 @@ export default function ExercisePicker({ onDragStart, onAdd }) {
     };
 
     useEffect(() => {
-        refreshExercises();
-    }, []);
+        if (!initialExercises || Object.keys(initialExercises).length === 0) {
+            refreshExercises();
+        } else {
+            setExerciseDB(initialExercises);
+        }
+    }, [initialExercises]);
 
     const groupedExercises = useMemo(() => {
         const groups: Record<string, string[]> = {};
