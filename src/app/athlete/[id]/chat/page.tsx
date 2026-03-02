@@ -22,15 +22,10 @@ export default async function AthleteChatPage({ params }: { params: Promise<{ id
 
     return (
         <div style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            zIndex: 9999,
-            background: 'var(--background)',
             display: 'flex',
-            flexDirection: 'column'
+            flexDirection: 'column',
+            flex: 1,
+            height: '100%'
         }}>
             <ChatInterface
                 currentUserId={athlete.id}
