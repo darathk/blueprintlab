@@ -1,7 +1,7 @@
 'use client';
 import React, { useState, useMemo, useEffect } from 'react';
 import { Calculator } from 'lucide-react';
-import { solveForRequiredTotal, calculateDots, calculateGL } from '@/lib/calculators';
+import { solveForRequiredTotal, calculateDots, calculateGL, calculateWilks } from '@/lib/calculators';
 
 type LiftTarget = 'squat' | 'bench' | 'deadlift';
 
@@ -43,6 +43,12 @@ export default function ReverseCalculator() {
         if (bwKg <= 0 || currentEnteredTotal <= 0) return 0;
         const totalKg = unit === 'lb' ? currentEnteredTotal / 2.20462 : currentEnteredTotal;
         return calculateDots(totalKg, bwKg, gender === 'male');
+    }, [currentEnteredTotal, bwKg, gender, unit]);
+
+    const currentWilks = useMemo(() => {
+        if (bwKg <= 0 || currentEnteredTotal <= 0) return 0;
+        const totalKg = unit === 'lb' ? currentEnteredTotal / 2.20462 : currentEnteredTotal;
+        return calculateWilks(totalKg, bwKg, gender === 'male');
     }, [currentEnteredTotal, bwKg, gender, unit]);
 
     const currentGl = useMemo(() => {
@@ -96,108 +102,113 @@ export default function ReverseCalculator() {
     const fmt = (val: number) => val.toFixed(1).replace('.0', '');
 
     return (
-        <div className="px-0 md:px-4 py-4" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        <div className="px-0 md:px-4 py-2" style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
 
-            {/* Top Level Selectors */}
-            <div className="px-4 md:px-0" style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center', width: '100%', maxWidth: '400px', margin: '0 auto' }}>
-                <div style={{ display: 'flex', border: '2px solid rgba(239, 68, 68, 0.5)', borderRadius: '20px', overflow: 'hidden', width: '100%' }}>
-                    <button onClick={() => setGender('male')} style={{ flex: 1, padding: '8px', background: gender === 'male' ? 'rgba(239, 68, 68, 0.8)' : 'transparent', color: gender === 'male' ? '#fff' : 'rgba(255,255,255,0.7)', fontWeight: 700, border: 'none' }}>Male</button>
-                    <button onClick={() => setGender('female')} style={{ flex: 1, padding: '8px', background: gender === 'female' ? 'rgba(239, 68, 68, 0.8)' : 'transparent', color: gender === 'female' ? '#fff' : 'rgba(255,255,255,0.7)', fontWeight: 700, border: 'none' }}>Female</button>
+            {/* Top Level Selectors - 2 Column Grid */}
+            <div className="px-4 md:px-0" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', width: '100%', maxWidth: '400px', margin: '0 auto' }}>
+                <div style={{ display: 'flex', border: '1px solid rgba(239, 68, 68, 0.5)', borderRadius: '12px', overflow: 'hidden', width: '100%', gridColumn: 'span 2' }}>
+                    <button onClick={() => setGender('male')} style={{ flex: 1, padding: '6px', fontSize: '0.85rem', background: gender === 'male' ? 'rgba(239, 68, 68, 0.8)' : 'transparent', color: gender === 'male' ? '#fff' : 'rgba(255,255,255,0.7)', fontWeight: 700, border: 'none' }}>Male</button>
+                    <button onClick={() => setGender('female')} style={{ flex: 1, padding: '6px', fontSize: '0.85rem', background: gender === 'female' ? 'rgba(239, 68, 68, 0.8)' : 'transparent', color: gender === 'female' ? '#fff' : 'rgba(255,255,255,0.7)', fontWeight: 700, border: 'none' }}>Female</button>
                 </div>
-                <div style={{ display: 'flex', border: '2px solid rgba(239, 68, 68, 0.5)', borderRadius: '20px', overflow: 'hidden', width: '100%' }}>
-                    <button onClick={() => setEquipped('raw')} style={{ flex: 1, padding: '8px', background: equipped === 'raw' ? 'rgba(239, 68, 68, 0.8)' : 'transparent', color: equipped === 'raw' ? '#fff' : 'rgba(255,255,255,0.7)', fontWeight: 700, border: 'none' }}>Raw</button>
-                    <button onClick={() => setEquipped('equipped')} style={{ flex: 1, padding: '8px', background: equipped === 'equipped' ? 'rgba(239, 68, 68, 0.8)' : 'transparent', color: equipped === 'equipped' ? '#fff' : 'rgba(255,255,255,0.7)', fontWeight: 700, border: 'none' }}>Equipped</button>
+                <div style={{ display: 'flex', border: '1px solid rgba(239, 68, 68, 0.5)', borderRadius: '12px', overflow: 'hidden', width: '100%' }}>
+                    <button onClick={() => setEquipped('raw')} style={{ flex: 1, padding: '6px', fontSize: '0.85rem', background: equipped === 'raw' ? 'rgba(239, 68, 68, 0.8)' : 'transparent', color: equipped === 'raw' ? '#fff' : 'rgba(255,255,255,0.7)', fontWeight: 700, border: 'none' }}>Raw</button>
+                    <button onClick={() => setEquipped('equipped')} style={{ flex: 1, padding: '6px', fontSize: '0.85rem', background: equipped === 'equipped' ? 'rgba(239, 68, 68, 0.8)' : 'transparent', color: equipped === 'equipped' ? '#fff' : 'rgba(255,255,255,0.7)', fontWeight: 700, border: 'none' }}>Eqp</button>
                 </div>
-                <div style={{ display: 'flex', border: '2px solid rgba(239, 68, 68, 0.5)', borderRadius: '20px', overflow: 'hidden', width: '100%' }}>
-                    <button onClick={() => setEvents('sbd')} style={{ flex: 1, padding: '8px', background: events === 'sbd' ? 'rgba(239, 68, 68, 0.8)' : 'transparent', color: events === 'sbd' ? '#fff' : 'rgba(255,255,255,0.7)', fontWeight: 700, border: 'none' }}>S/B/D</button>
-                    <button onClick={() => setEvents('bench')} style={{ flex: 1, padding: '8px', background: events === 'bench' ? 'rgba(239, 68, 68, 0.8)' : 'transparent', color: events === 'bench' ? '#fff' : 'rgba(255,255,255,0.7)', fontWeight: 700, border: 'none' }}>Bench</button>
+                <div style={{ display: 'flex', border: '1px solid rgba(239, 68, 68, 0.5)', borderRadius: '12px', overflow: 'hidden', width: '100%' }}>
+                    <button onClick={() => setEvents('sbd')} style={{ flex: 1, padding: '6px', fontSize: '0.85rem', background: events === 'sbd' ? 'rgba(239, 68, 68, 0.8)' : 'transparent', color: events === 'sbd' ? '#fff' : 'rgba(255,255,255,0.7)', fontWeight: 700, border: 'none' }}>SBD</button>
+                    <button onClick={() => setEvents('bench')} style={{ flex: 1, padding: '6px', fontSize: '0.85rem', background: events === 'bench' ? 'rgba(239, 68, 68, 0.8)' : 'transparent', color: events === 'bench' ? '#fff' : 'rgba(255,255,255,0.7)', fontWeight: 700, border: 'none' }}>Bench</button>
                 </div>
             </div>
 
             {/* Static Bio Inputs */}
-            <div className="px-4 md:px-0" style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center', width: '100%', maxWidth: '400px', margin: '0 auto' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
-                    <span style={{ fontWeight: 800, textAlign: 'left', fontSize: '0.9rem', color: 'var(--secondary-foreground)' }}>Weight</span>
-                    <div style={{ display: 'flex', width: '100%', alignItems: 'center', gap: '8px' }}>
+            <div className="px-4 md:px-0" style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center', width: '100%', maxWidth: '400px', margin: '0 auto' }}>
+                <div style={{ display: 'flex', width: '100%', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                    <span style={{ fontWeight: 800, textAlign: 'left', fontSize: '0.9rem', color: 'var(--secondary-foreground)', width: '60px' }}>Weight</span>
+                    <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
                         <input
                             type="number" inputMode="decimal" value={bwStr} onChange={e => setBwStr(e.target.value)}
                             placeholder="0"
-                            style={{ flex: 1, border: '2px solid rgba(239, 68, 68, 0.5)', borderRadius: '24px', padding: '12px 20px', background: 'transparent', color: 'var(--foreground)', fontWeight: 600, textAlign: 'center', minWidth: 0 }}
+                            style={{ width: '50%', border: '1px solid rgba(239, 68, 68, 0.5)', borderRadius: '24px', padding: '8px 16px', background: 'transparent', color: 'var(--foreground)', fontWeight: 600, textAlign: 'center', minWidth: 0, fontSize: '0.9rem' }}
                         />
-                        <button onClick={() => setUnit(u => u === 'lb' ? 'kg' : 'lb')} style={{ fontWeight: 800, color: 'var(--primary)', background: 'rgba(239, 68, 68, 0.1)', border: 'none', padding: '12px', borderRadius: '24px', cursor: 'pointer', width: '56px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{unit.toUpperCase()}</button>
+                        <button onClick={() => setUnit(u => u === 'lb' ? 'kg' : 'lb')} style={{ fontWeight: 800, color: 'var(--primary)', background: 'rgba(239, 68, 68, 0.1)', border: 'none', padding: '8px', borderRadius: '24px', cursor: 'pointer', width: '48px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{unit.toUpperCase()}</button>
                     </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
-                    <span style={{ fontWeight: 800, textAlign: 'left', fontSize: '0.9rem', color: 'var(--secondary-foreground)' }}>Total</span>
-                    <div style={{ display: 'flex', width: '100%', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', width: '100%', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                    <span style={{ fontWeight: 800, textAlign: 'left', fontSize: '0.9rem', color: 'var(--secondary-foreground)', width: '60px' }}>Total</span>
+                    <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
                         <input
                             type="number" inputMode="decimal" value={totalStr} onChange={e => setTotalStr(e.target.value)}
                             placeholder="0"
-                            style={{ flex: 1, border: '2px solid rgba(239, 68, 68, 0.5)', borderRadius: '24px', padding: '12px 20px', background: 'transparent', color: 'var(--foreground)', fontWeight: 600, textAlign: 'center', minWidth: 0 }}
+                            style={{ width: '50%', border: '1px solid rgba(239, 68, 68, 0.5)', borderRadius: '24px', padding: '8px 16px', background: 'transparent', color: 'var(--foreground)', fontWeight: 600, textAlign: 'center', minWidth: 0, fontSize: '0.9rem' }}
                         />
-                        <span style={{ fontWeight: 800, color: 'var(--primary)', background: 'transparent', border: 'none', padding: '12px', borderRadius: '24px', width: '56px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{unit.toUpperCase()}</span>
+                        <span style={{ fontWeight: 800, color: 'var(--primary)', background: 'transparent', border: 'none', padding: '8px', width: '48px', fontSize: '0.8rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{unit.toUpperCase()}</span>
                     </div>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
-                    <span style={{ fontWeight: 800, textAlign: 'left', fontSize: '0.9rem', color: 'var(--secondary-foreground)' }}>Age</span>
-                    <div style={{ display: 'flex', width: '100%', alignItems: 'center', gap: '8px' }}>
+                <div style={{ display: 'flex', width: '100%', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+                    <span style={{ fontWeight: 800, textAlign: 'left', fontSize: '0.9rem', color: 'var(--secondary-foreground)', width: '60px' }}>Age</span>
+                    <div style={{ display: 'flex', flex: 1, alignItems: 'center', justifyContent: 'flex-end', gap: '8px' }}>
                         <input
                             type="number" inputMode="numeric" value={ageStr} onChange={e => setAgeStr(e.target.value)}
                             placeholder="0"
-                            style={{ flex: 1, border: '2px solid rgba(239, 68, 68, 0.5)', borderRadius: '24px', padding: '12px 20px', background: 'transparent', color: 'var(--foreground)', fontWeight: 600, textAlign: 'center', minWidth: 0 }}
+                            style={{ width: '50%', border: '1px solid rgba(239, 68, 68, 0.5)', borderRadius: '24px', padding: '8px 16px', background: 'transparent', color: 'var(--foreground)', fontWeight: 600, textAlign: 'center', minWidth: 0, fontSize: '0.9rem' }}
                         />
-                        <span style={{ width: '56px' }}></span> {/* Spacer to align with unit labels above */}
+                        <span style={{ width: '48px' }}></span>
                     </div>
                 </div>
             </div>
 
             {/* Target Score Section */}
-            <div className="glass-panel w-full" style={{ padding: '20px', borderRadius: '16px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px', margin: '0 auto', maxWidth: '400px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
-                    <span style={{ fontWeight: 800, fontSize: '0.9rem', textAlign: 'left', color: 'var(--secondary-foreground)' }}>Target Formula</span>
+            <div className="glass-panel w-full" style={{ padding: '12px 16px', borderRadius: '16px', display: 'flex', flexDirection: 'column', gap: '12px', margin: '0 auto', maxWidth: '400px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', width: '100%' }}>
+                    <span style={{ fontWeight: 800, fontSize: '0.9rem', textAlign: 'left', color: 'var(--secondary-foreground)' }}>Target</span>
                     <select
                         value={formula} onChange={e => setFormula(e.target.value)}
-                        style={{ padding: '12px 16px', borderRadius: '20px', border: 'none', background: 'rgba(255,255,255,0.1)', color: 'var(--foreground)', fontWeight: 700, fontSize: '1.1rem', width: '100%', outline: 'none' }}
+                        style={{ padding: '6px 12px', borderRadius: '16px', border: 'none', background: 'rgba(255,255,255,0.1)', color: 'var(--foreground)', fontWeight: 700, fontSize: '0.9rem', width: '50%', outline: 'none' }}
                     >
                         <option value="dots" style={{ color: '#000' }}>DOTS</option>
                         <option value="gl" style={{ color: '#000' }}>GL Points</option>
+                        <option value="wilks" style={{ color: '#000' }}>Wilks</option>
                     </select>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', width: '100%' }}>
-                    <span style={{ fontWeight: 800, fontSize: '0.9rem', textAlign: 'left', color: 'var(--secondary-foreground)' }}>Target Score</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', width: '100%' }}>
+                    <span style={{ fontWeight: 800, fontSize: '0.9rem', textAlign: 'left', color: 'var(--secondary-foreground)' }}>Score</span>
                     <input
                         type="number" inputMode="decimal" value={targetScoreStr} onChange={e => setTargetScoreStr(e.target.value)}
                         placeholder="0"
-                        style={{ width: '100%', border: '2px solid rgba(239, 68, 68, 0.5)', borderRadius: '24px', padding: '12px 20px', background: 'transparent', color: 'var(--foreground)', fontWeight: 800, fontSize: '1.2rem', textAlign: 'center' }}
+                        style={{ width: '50%', border: '1px solid rgba(239, 68, 68, 0.5)', borderRadius: '20px', padding: '6px 12px', background: 'transparent', color: 'var(--foreground)', fontWeight: 800, fontSize: '1rem', textAlign: 'center' }}
                     />
                 </div>
 
                 <div
                     onClick={() => setShowLiftBreakdown(true)}
-                    style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '12px', paddingTop: '16px', borderTop: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }}
+                    style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px', paddingTop: '12px', borderTop: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer' }}
                 >
-                    <span style={{ fontWeight: 700, fontSize: '1.1rem' }}>Required Total</span>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <span style={{ fontWeight: 900, fontSize: '1.3rem', color: 'var(--primary)' }}>{reqTotalDisplay > 0 ? fmt(reqTotalDisplay) : '0'} {unit.toUpperCase()}</span>
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
+                    <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>Required Total</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <span style={{ fontWeight: 900, fontSize: '1.1rem', color: 'var(--primary)' }}>{reqTotalDisplay > 0 ? fmt(reqTotalDisplay) : '0'} {unit.toUpperCase()}</span>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--primary)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6" /></svg>
                     </div>
                 </div>
             </div>
 
             {/* Formula Info Cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px', width: '100%', maxWidth: '400px', margin: '0 auto' }}>
-                <div className="glass-panel" onClick={() => setFormula('dots')} style={{ padding: '16px', borderRadius: '16px', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', border: formula === 'dots' ? '1px solid var(--primary)' : '1px solid transparent', opacity: formula === 'dots' ? 1 : 0.5, transition: 'all 0.2s', flex: 1 }}>
-                    <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#22c55e', fontWeight: 800, fontStyle: 'italic', fontSize: '12px' }}>i</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1fr)', gap: '8px', width: '100%', maxWidth: '400px', margin: '0 auto' }}>
+                <div className="glass-panel" onClick={() => setFormula('dots')} style={{ padding: '12px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', border: formula === 'dots' ? '1px solid var(--primary)' : '1px solid transparent', opacity: formula === 'dots' ? 1 : 0.5, transition: 'all 0.2s' }}>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'rgba(255,255,255,0.8)' }}>DOTS</span>
-                        <span style={{ fontWeight: 800, fontSize: '1.2rem', color: '#22c55e', marginTop: '2px' }}>{currentDots > 0 ? fmt(currentDots) : '-'}</span>
+                        <span style={{ fontWeight: 700, fontSize: '0.75rem', color: 'rgba(255,255,255,0.8)' }}>DOTS</span>
+                        <span style={{ fontWeight: 800, fontSize: '1.1rem', color: '#22c55e' }}>{currentDots > 0 ? fmt(currentDots) : '-'}</span>
                     </div>
                 </div>
-                <div className="glass-panel" onClick={() => setFormula('gl')} style={{ padding: '16px', borderRadius: '16px', display: 'flex', alignItems: 'center', gap: '12px', cursor: 'pointer', border: formula === 'gl' ? '1px solid var(--primary)' : '1px solid transparent', opacity: formula === 'gl' ? 1 : 0.5, transition: 'all 0.2s', flex: 1 }}>
-                    <div style={{ width: '24px', height: '24px', borderRadius: '50%', background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#eab308', fontWeight: 800, fontStyle: 'italic', fontSize: '12px' }}>i</div>
+                <div className="glass-panel" onClick={() => setFormula('gl')} style={{ padding: '12px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', border: formula === 'gl' ? '1px solid var(--primary)' : '1px solid transparent', opacity: formula === 'gl' ? 1 : 0.5, transition: 'all 0.2s' }}>
                     <div style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span style={{ fontWeight: 700, fontSize: '0.9rem', color: 'rgba(255,255,255,0.8)' }}>GL Points</span>
-                        <span style={{ fontWeight: 800, fontSize: '1.2rem', color: '#eab308', marginTop: '2px' }}>{currentGl > 0 ? currentGl.toFixed(2) : '-'}</span>
+                        <span style={{ fontWeight: 700, fontSize: '0.75rem', color: 'rgba(255,255,255,0.8)' }}>GL Points</span>
+                        <span style={{ fontWeight: 800, fontSize: '1.1rem', color: '#eab308' }}>{currentGl > 0 ? currentGl.toFixed(2) : '-'}</span>
+                    </div>
+                </div>
+                <div className="glass-panel" onClick={() => setFormula('wilks')} style={{ padding: '12px', borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', border: formula === 'wilks' ? '1px solid var(--primary)' : '1px solid transparent', opacity: formula === 'wilks' ? 1 : 0.5, transition: 'all 0.2s', gridColumn: 'span 2' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column' }}>
+                        <span style={{ fontWeight: 700, fontSize: '0.75rem', color: 'rgba(255,255,255,0.8)' }}>Wilks</span>
+                        <span style={{ fontWeight: 800, fontSize: '1.1rem', color: '#3b82f6' }}>{currentWilks > 0 ? currentWilks.toFixed(2) : '-'}</span>
                     </div>
                 </div>
             </div>

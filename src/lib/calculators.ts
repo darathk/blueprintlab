@@ -1,4 +1,43 @@
 /**
+ * calculateWilks
+ * Uses the pre-2020 Wilks formula coefficients.
+ */
+export function calculateWilks(totalKg: number, bwKg: number, isMale: boolean): number {
+    if (bwKg <= 0 || totalKg <= 0) return 0;
+
+    const x = bwKg;
+    const x2 = Math.pow(x, 2);
+    const x3 = Math.pow(x, 3);
+    const x4 = Math.pow(x, 4);
+    const x5 = Math.pow(x, 5);
+
+    let a, b, c, d, e, f;
+
+    if (isMale) {
+        a = -216.0475144;
+        b = 16.2606339;
+        c = -0.002388645;
+        d = -0.00113732;
+        e = 7.01863e-06;
+        f = -1.291e-08;
+    } else {
+        a = 594.31747775582;
+        b = -27.23842536447;
+        c = 0.82112226871;
+        d = -0.00930733913;
+        e = 4.731582e-05;
+        f = -9.054e-08;
+    }
+
+    const denominator = a + (b * x) + (c * x2) + (d * x3) + (e * x4) + (f * x5);
+    if (denominator === 0) return 0;
+
+    // Original Wilks formulation gives coefficient as 500 / denominator
+    const coeff = 500 / denominator;
+    return totalKg * coeff;
+}
+
+/**
  * calculateDots
  * Uses the exact DOTS (2020) formula coefficients.
  * Formula: SCORE = TOTAL * (500 / (a + b(BW) + c(BW^2) + d(BW^3) + e(BW^4)))
@@ -86,7 +125,7 @@ export function solveForRequiredTotal(
     targetScore: number,
     bwKg: number,
     isMale: boolean,
-    formulaType: 'dots' | 'gl' = 'dots',
+    formulaType: 'dots' | 'gl' | 'wilks' = 'dots',
     isEquipped: boolean = false,
     isBenchOnly: boolean = false
 ): number {
@@ -108,6 +147,8 @@ export function solveForRequiredTotal(
             currentScore = calculateDots(midTotal, bwKg, isMale);
         } else if (formulaType === 'gl') {
             currentScore = calculateGL(midTotal, bwKg, isMale, isEquipped, isBenchOnly);
+        } else if (formulaType === 'wilks') {
+            currentScore = calculateWilks(midTotal, bwKg, isMale);
         }
 
         const diff = currentScore - targetScore;
