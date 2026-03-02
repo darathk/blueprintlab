@@ -52,81 +52,126 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
         setProcessing(true);
         setProgress(0);
 
-        const video = videoRef.current;
-        const originalWidth = video.videoWidth;
-        const originalHeight = video.videoHeight;
+        const noCroppingApplied = crop.width <= 0.01 || crop.height <= 0.01;
+        const noTrimmingApplied = Math.abs(startTime) < 0.1 && Math.abs(endTime - duration) < 0.1;
 
-        const targetWidth = originalWidth * crop.width;
-        const targetHeight = originalHeight * crop.height;
-        const startX = originalWidth * crop.x;
-        const startY = originalHeight * crop.y;
-
-        const canvas = document.createElement('canvas');
-        canvas.width = targetWidth;
-        canvas.height = targetHeight;
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        const stream = canvas.captureStream(30); // 30 FPS
-
-        // Audio handling
-        const audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-        const source = audioCtx.createMediaElementSource(video);
-        const destination = audioCtx.createMediaStreamDestination();
-        source.connect(destination);
-        source.connect(audioCtx.destination); // Also play to user
-
-        const combinedStream = new MediaStream([
-            ...stream.getVideoTracks(),
-            ...destination.stream.getAudioTracks()
-        ]);
-
-        const mimeType = MediaRecorder.isTypeSupported('video/mp4;codecs=avc1,mp4a.40.2')
-            ? 'video/mp4;codecs=avc1,mp4a.40.2'
-            : 'video/webm;codecs=vp8,opus';
-
-        const recorder = new MediaRecorder(combinedStream, { mimeType });
-        const chunks: Blob[] = [];
-
-        recorder.ondataavailable = (e) => chunks.push(e.data);
-        recorder.onstop = () => {
-            const finalMime = mimeType.split(';')[0];
-            const blob = new Blob(chunks, { type: finalMime });
-            const ext = finalMime.includes('mp4') ? 'mp4' : 'webm';
-            const croppedFile = new File([blob], `cropped_${file.name.split('.')[0]}.${ext}`, { type: finalMime });
-            onComplete(croppedFile);
+        // Fast path: no meaningful changes — just pass original file through
+        if (noCroppingApplied && noTrimmingApplied) {
+            onComplete(file);
             setProcessing(false);
-        };
+            return;
+        }
 
-        video.pause();
-        video.currentTime = startTime;
-        video.playbackRate = 1.0;
-        video.muted = false; // Need audio to record it
+        // Slow path: attempt canvas re-encode for crop/trim
+        try {
+            const video = videoRef.current;
+            const originalWidth = video.videoWidth;
+            const originalHeight = video.videoHeight;
 
-        await new Promise(r => video.onseeked = r);
+            // Determine target area; if no crop was applied, use full frame
+            const cropX = noCroppingApplied ? 0 : crop.x;
+            const cropY = noCroppingApplied ? 0 : crop.y;
+            const cropWidth = noCroppingApplied ? 1 : crop.width;
+            const cropHeight = noCroppingApplied ? 1 : crop.height;
 
-        recorder.start();
-        video.play();
+            const srcX = Math.round(originalWidth * cropX);
+            const srcY = Math.round(originalHeight * cropY);
+            const srcW = Math.round(originalWidth * cropWidth);
+            const srcH = Math.round(originalHeight * cropHeight);
 
-        const totalTime = endTime - startTime;
-        const updateInterval = setInterval(() => {
-            const elapsed = video.currentTime - startTime;
-            setProgress(Math.min((elapsed / totalTime) * 100, 100));
+            const canvas = document.createElement('canvas');
+            canvas.width = srcW;
+            canvas.height = srcH;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) throw new Error('Canvas 2d context unavailable');
 
-            // Draw frame to canvas
-            ctx.drawImage(
-                video,
-                startX, startY, targetWidth, targetHeight,
-                0, 0, targetWidth, targetHeight
-            );
-
-            if (video.currentTime >= endTime || video.ended) {
-                clearInterval(updateInterval);
-                video.pause();
-                recorder.stop();
-                audioCtx.close();
+            // captureStream is not on iOS Safari — check first
+            if (typeof (canvas as any).captureStream !== 'function') {
+                throw new Error('captureStream not supported');
             }
-        }, 1000 / 30);
+
+            const stream = (canvas as any).captureStream(30) as MediaStream;
+
+            // Detect best recording format
+            const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+                ? 'video/webm;codecs=vp9'
+                : MediaRecorder.isTypeSupported('video/webm;codecs=vp8')
+                    ? 'video/webm;codecs=vp8'
+                    : MediaRecorder.isTypeSupported('video/webm')
+                        ? 'video/webm'
+                        : '';
+
+            if (!mimeType) throw new Error('No supported recording format');
+
+            const recorder = new MediaRecorder(stream, { mimeType });
+            const chunks: Blob[] = [];
+
+            recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
+
+            const finished = new Promise<File>((resolve, reject) => {
+                recorder.onstop = () => {
+                    try {
+                        const finalMime = mimeType.split(';')[0];
+                        const blob = new Blob(chunks, { type: finalMime });
+                        if (blob.size < 1000) {
+                            // Too small — likely empty recording
+                            reject(new Error('Empty recording'));
+                            return;
+                        }
+                        const ext = 'webm';
+                        const outFile = new File([blob], `cropped_${file.name.split('.')[0]}.${ext}`, { type: finalMime });
+                        resolve(outFile);
+                    } catch (e) {
+                        reject(e);
+                    }
+                };
+                recorder.onerror = reject;
+            });
+
+            // Seek and record
+            video.pause();
+            video.muted = true; // muted for autoplay/recording policy
+            video.currentTime = startTime;
+            await new Promise<void>((r) => { video.onseeked = () => r(); });
+
+            recorder.start(100); // collect chunks every 100ms
+            await video.play();
+
+            const totalTime = endTime - startTime;
+            await new Promise<void>((resolve) => {
+                const interval = setInterval(() => {
+                    const elapsed = video.currentTime - startTime;
+                    setProgress(Math.min((elapsed / totalTime) * 100, 99));
+
+                    ctx.drawImage(video, srcX, srcY, srcW, srcH, 0, 0, srcW, srcH);
+
+                    if (video.currentTime >= endTime || video.ended || video.paused) {
+                        clearInterval(interval);
+                        video.pause();
+                        recorder.stop();
+                        resolve();
+                    }
+                }, 1000 / 30);
+
+                // Safety timeout
+                setTimeout(() => {
+                    clearInterval(interval);
+                    if (video) video.pause();
+                    if (recorder.state !== 'inactive') recorder.stop();
+                    resolve();
+                }, (totalTime + 5) * 1000);
+            });
+
+            const outFile = await finished;
+            setProgress(100);
+            onComplete(outFile);
+        } catch (err) {
+            console.warn('Video processing failed, using original file:', err);
+            // Gracefully fall back to the original file
+            onComplete(file);
+        } finally {
+            setProcessing(false);
+        }
     };
 
     // Spatial Selector Logic
