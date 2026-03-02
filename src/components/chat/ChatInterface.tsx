@@ -28,9 +28,14 @@ interface Props {
     otherUserName: string;
     athleteId: string;
     initialMessages?: Message[];
+    isEmbedded?: boolean;
+    onBack?: () => void;
 }
 
-export default function ChatInterface({ currentUserId, otherUserId, currentUserName, otherUserName, athleteId, initialMessages = [] }: Props) {
+export default function ChatInterface({
+    currentUserId, otherUserId, currentUserName, otherUserName, athleteId,
+    initialMessages = [], isEmbedded = false, onBack
+}: Props) {
     const [messages, setMessages] = useState<Message[]>(initialMessages);
     const [newMessage, setNewMessage] = useState('');
     const [uploading, setUploading] = useState(false);
@@ -169,7 +174,8 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
             mediaRecorder.onstop = () => {
                 const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
                 const ext = mimeType.includes('mp4') ? 'm4a' : 'webm';
-                const audioFile = new File([audioBlob], `voice_message.${ext}`, { type: mimeType });
+                // Use a more descriptive filename but keep content clean
+                const audioFile = new File([audioBlob], `voice_${Date.now()}.${ext}`, { type: mimeType });
                 setStagedFiles(prev => [...prev, audioFile]);
                 setStagedFileUrls(prev => [...prev, URL.createObjectURL(audioBlob)]);
                 setIsRecording(false);
@@ -245,6 +251,7 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
                 const tempId = `temp-${Date.now()}-${index}`;
                 const isVid = file.type.startsWith('video/');
                 const isAudio = file.type.startsWith('audio/');
+                // Ensure no emojis in content
                 const content = index === 0 && text ? text : isAudio ? 'Voice Message' : (isVid ? 'Video' : 'Photo');
                 optimisticMessages.push({
                     id: tempId, senderId: currentUserId, receiverId: otherUserId, content,
@@ -414,9 +421,17 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
     };
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', flex: 1, minHeight: 0, background: 'var(--background)' }}>
+        <div style={{
+            display: 'flex',
+            flexDirection: 'column',
+            height: isEmbedded ? '100%' : '100dvh',
+            flex: 1,
+            minHeight: 0,
+            background: 'var(--background)',
+            overscrollBehavior: 'none'
+        }}>
             {/* Header */}
-            <div style={{ padding: '12px 16px', background: 'var(--card-bg)', borderBottom: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+            <div style={{ padding: '12px 16px', background: 'var(--card-bg)', borderBottom: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, height: 'var(--header-height)' }}>
                 {isMultiSelecting ? (
                     <>
                         <button onClick={() => setSelectedMessageIds(new Set())} style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><X size={20} /></button>
@@ -425,7 +440,11 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
                     </>
                 ) : (
                     <>
-                        <Link href={`/athlete/${athleteId}/dashboard`} style={{ color: 'var(--primary)', background: 'none', border: 'none', textDecoration: 'none', fontSize: 14, fontWeight: 500 }}>← Back</Link>
+                        {onBack ? (
+                            <button onClick={onBack} style={{ color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 500 }}>← Back</button>
+                        ) : (
+                            <Link href={`/athlete/${athleteId}/dashboard`} style={{ color: 'var(--primary)', background: 'none', border: 'none', textDecoration: 'none', fontSize: 14, fontWeight: 500 }}>← Back</Link>
+                        )}
                         <div style={{ flex: 1, textAlign: 'center', fontWeight: 600, color: 'var(--foreground)', fontSize: 15 }}>{otherUserName}</div>
                         <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'linear-gradient(135deg, #06b6d4, #10b981)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#000', fontSize: 13 }}>
                             {otherUserName.charAt(0).toUpperCase()}

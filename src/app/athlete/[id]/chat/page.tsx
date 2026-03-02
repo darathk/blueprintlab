@@ -24,13 +24,7 @@ export default async function AthleteChatPage({ params }: { params: Promise<{ id
     const initialMessages = await getMessagesByAthlete(athlete.id);
 
     return (
-        <div style={{
-            display: 'flex',
-            flexDirection: 'column',
-            flex: 1,
-            height: 'calc(100dvh - var(--header-height) - 65px - env(safe-area-inset-bottom, 0px))',
-            overflow: 'hidden'
-        }}>
+        <div className="chat-full-screen">
             <ChatInterface
                 currentUserId={athlete.id}
                 otherUserId={coach.id}
@@ -38,6 +32,7 @@ export default async function AthleteChatPage({ params }: { params: Promise<{ id
                 otherUserName="Coach"
                 athleteId={athlete.id}
                 initialMessages={initialMessages}
+                isEmbedded={true}
             />
         </div>
     );
