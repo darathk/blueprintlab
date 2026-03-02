@@ -4,19 +4,19 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { RotateCcw, Calculator, ArrowRightLeft } from 'lucide-react';
 
 const PLATES = [
-    { weight: 25, color: '#ef4444', label: '25', text: '#fff', width: 24, height: 260 },   // Red
-    { weight: 20, color: '#3b82f6', label: '20', text: '#fff', width: 24, height: 260 },   // Blue
-    { weight: 15, color: '#eab308', label: '15', text: '#000', width: 24, height: 230 },   // Yellow
-    { weight: 10, color: '#22c55e', label: '10', text: '#fff', width: 24, height: 200 },   // Green
-    { weight: 5, color: '#f8fafc', label: '5', text: '#000', width: 20, height: 160, border: '#cbd5e1' },     // White
-    { weight: 2.5, color: '#1e293b', label: '2.5', text: '#fff', width: 18, height: 130 }, // Black
-    { weight: 2, color: '#e2e8f0', label: '2', text: '#000', width: 16, height: 110, border: '#cbd5e1' }, // Silver
-    { weight: 1.5, color: '#e2e8f0', label: '1.5', text: '#000', width: 14, height: 105, border: '#cbd5e1' }, // Silver
-    { weight: 1.25, color: '#e2e8f0', label: '1.25', text: '#000', width: 14, height: 100, border: '#cbd5e1' }, // Silver
-    { weight: 1, color: '#e2e8f0', label: '1', text: '#000', width: 12, height: 90, border: '#cbd5e1' }, // Silver
-    { weight: 0.5, color: '#f8fafc', label: '0.5', text: '#000', width: 10, height: 85, border: '#cbd5e1' }, // White
-    { weight: 0.25, color: '#e2e8f0', label: '0.25', text: '#000', width: 8, height: 80, border: '#cbd5e1' }, // Silver
-    { weight: 0.125, color: '#e2e8f0', label: '0.125', text: '#000', width: 6, height: 75, border: '#cbd5e1' } // Silver
+    { weight: 25, color: '#ef4444', label: '25', text: '#fff', width: 24, height: 280 },   // Red
+    { weight: 20, color: '#3b82f6', label: '20', text: '#fff', width: 24, height: 280 },   // Blue
+    { weight: 15, color: '#eab308', label: '15', text: '#000', width: 24, height: 250 },   // Yellow
+    { weight: 10, color: '#22c55e', label: '10', text: '#fff', width: 24, height: 220 },   // Green
+    { weight: 5, color: '#f8fafc', label: '5', text: '#000', width: 20, height: 180, border: '#cbd5e1' },     // White
+    { weight: 2.5, color: '#1e293b', label: '2.5', text: '#fff', width: 18, height: 140 }, // Black
+    { weight: 2, color: '#e2e8f0', label: '2', text: '#000', width: 16, height: 120, border: '#cbd5e1' }, // Silver
+    { weight: 1.5, color: '#e2e8f0', label: '1.5', text: '#000', width: 14, height: 115, border: '#cbd5e1' }, // Silver
+    { weight: 1.25, color: '#e2e8f0', label: '1.25', text: '#000', width: 14, height: 110, border: '#cbd5e1' }, // Silver
+    { weight: 1, color: '#e2e8f0', label: '1', text: '#000', width: 12, height: 100, border: '#cbd5e1' }, // Silver
+    { weight: 0.5, color: '#f8fafc', label: '0.5', text: '#000', width: 10, height: 95, border: '#cbd5e1' }, // White
+    { weight: 0.25, color: '#e2e8f0', label: '0.25', text: '#000', width: 8, height: 90, border: '#cbd5e1' }, // Silver
+    { weight: 0.125, color: '#e2e8f0', label: '0.125', text: '#000', width: 6, height: 85, border: '#cbd5e1' } // Silver
 ];
 
 export default function PlateLoader({
@@ -144,7 +144,7 @@ export default function PlateLoader({
 
                 {/* Visualizer Section */}
                 <div style={{
-                    position: 'relative', height: 280, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    position: 'relative', height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center',
                     background: 'rgba(0,0,0,0.2)', borderRadius: 12, marginBottom: 12, overflow: 'hidden'
                 }}>
 
@@ -167,7 +167,7 @@ export default function PlateLoader({
                                 borderLeft: 'none', position: 'relative', display: 'flex', alignItems: 'center', paddingLeft: 2
                             }}>
                                 <div style={{
-                                    display: 'flex', gap: '1px', alignItems: 'center', height: '100%', width: '100%'
+                                    display: 'flex', gap: '0px', alignItems: 'center', height: '100%', width: '100%'
                                 }}>
                                     {displayPlates.map((pw, i) => {
                                         const pInfo = PLATES.find(p => p.weight === pw) || PLATES[0];
@@ -203,7 +203,7 @@ export default function PlateLoader({
                                         <div style={{
                                             width: 30, height: 65, background: '#cbd5e1', border: '1px solid #94a3b8',
                                             borderRadius: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            zIndex: 200, position: 'relative', boxShadow: '2px 0 5px rgba(0,0,0,0.3)', marginLeft: 4,
+                                            zIndex: 200, position: 'relative', boxShadow: '2px 0 5px rgba(0,0,0,0.3)', marginLeft: 0,
                                             flexShrink: 0, cursor: 'pointer'
                                         }} onClick={() => setIncludeCollars(false)}>
                                             {/* Collar pin */}
@@ -212,7 +212,7 @@ export default function PlateLoader({
                                         </div>
                                     )}
                                     {!includeCollars && displayPlates.length > 0 && (
-                                        <div style={{ width: 6, height: 40, background: '#475569', borderRadius: 2, marginLeft: 2, border: '1px solid #1e293b', cursor: 'pointer' }} onClick={() => setIncludeCollars(true)}></div>
+                                        <div style={{ width: 6, height: 40, background: '#475569', borderRadius: 2, marginLeft: 0, border: '1px solid #1e293b', cursor: 'pointer' }} onClick={() => setIncludeCollars(true)}></div>
                                     )}
                                 </div>
                             </div>
