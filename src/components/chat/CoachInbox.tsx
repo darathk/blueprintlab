@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
+import { MessageSquare, Paperclip, ArrowRight, MoreVertical, Reply, Copy, Download, X } from 'lucide-react';
 
 interface Message {
     id: string; senderId: string; receiverId: string; content: string;
@@ -180,7 +181,7 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
     const saveMedia = async (url: string, isImg?: boolean) => {
         try {
             const r = await fetch(url); const b = await r.blob(); const a = document.createElement('a');
-            const ext = isImg ? '.jpg' : url.includes('.webm') ? '.webm' : '.mp4';
+            const ext = isImg ? '.jpg' : url.includes('.webm') ? '.webm' : url.includes('.m4a') ? '.m4a' : '.mp4';
             a.href = URL.createObjectURL(b); a.download = `lift_${Date.now()}${ext}`; a.click(); URL.revokeObjectURL(a.href);
         } catch { window.open(url, '_blank'); }
     };
@@ -240,7 +241,7 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
             <div style={{ flex: 1, display: isMobile && !selectedId ? 'none' : 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0, overflow: 'hidden' }}>
                 {!selectedConvo ? (
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 8, color: 'var(--secondary-foreground)' }}>
-                        <span style={{ fontSize: 40 }}>💬</span>
+                        <MessageSquare size={40} style={{ opacity: 0.5 }} />
                         <span style={{ fontSize: 13 }}>Select a conversation</span>
                     </div>
                 ) : (
@@ -276,8 +277,8 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
 
                                             {mine && (
                                                 <button onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === msg.id ? null : msg.id); }}
-                                                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'rgba(255,255,255,0.2)', padding: '2px 4px', flexShrink: 0, lineHeight: 1 }}
-                                                    title="Actions">⋮</button>
+                                                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ffffff', padding: '2px 4px', flexShrink: 0, display: 'flex', alignItems: 'center' }}
+                                                    title="Actions"><MoreVertical size={16} color="#ffffff" /></button>
                                             )}
 
                                             <div style={{ position: 'relative', maxWidth: '75%' }}>
@@ -312,19 +313,19 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                                                         background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 10, boxShadow: '0 6px 20px rgba(0,0,0,0.5)', padding: '3px 0', minWidth: 120, whiteSpace: 'nowrap'
                                                     }}>
                                                         <button onClick={() => { setReplyingTo(msg); setActiveMenu(null); }}
-                                                            style={{ display: 'block', width: '100%', textAlign: 'left', padding: '7px 12px', background: 'none', border: 'none', fontSize: 12, color: 'var(--foreground)', cursor: 'pointer' }}>↩️ Reply</button>
+                                                            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', textAlign: 'left', padding: '7px 12px', background: 'none', border: 'none', fontSize: 13, color: '#ffffff', cursor: 'pointer', fontWeight: 500 }}><Reply size={16} color="#fff" /> Reply</button>
                                                         <button onClick={() => { navigator.clipboard.writeText(msg.content); setActiveMenu(null); }}
-                                                            style={{ display: 'block', width: '100%', textAlign: 'left', padding: '7px 12px', background: 'none', border: 'none', fontSize: 12, color: 'var(--foreground)', cursor: 'pointer' }}>📋 Copy</button>
+                                                            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', textAlign: 'left', padding: '7px 12px', background: 'none', border: 'none', fontSize: 13, color: '#ffffff', cursor: 'pointer', fontWeight: 500 }}><Copy size={16} color="#fff" /> Copy</button>
                                                         {msg.mediaUrl && <button onClick={() => { saveMedia(msg.mediaUrl!, msg.mediaType?.startsWith('image')); setActiveMenu(null); }}
-                                                            style={{ display: 'block', width: '100%', textAlign: 'left', padding: '7px 12px', background: 'none', border: 'none', fontSize: 12, color: 'var(--foreground)', cursor: 'pointer' }}>💾 Save</button>}
+                                                            style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', textAlign: 'left', padding: '7px 12px', background: 'none', border: 'none', fontSize: 13, color: '#ffffff', cursor: 'pointer', fontWeight: 500 }}><Download size={16} color="#fff" /> Save</button>}
                                                     </div>
                                                 )}
                                             </div>
 
                                             {!mine && (
                                                 <button onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === msg.id ? null : msg.id); }}
-                                                    style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: 'rgba(255,255,255,0.2)', padding: '2px 4px', flexShrink: 0, lineHeight: 1 }}
-                                                    title="Actions">⋮</button>
+                                                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ffffff', padding: '2px 4px', flexShrink: 0, display: 'flex', alignItems: 'center' }}
+                                                    title="Actions"><MoreVertical size={16} color="#ffffff" /></button>
                                             )}
                                         </div>
                                     </div>
@@ -340,7 +341,7 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                                     <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--primary)' }}>Replying to {replyingTo.sender.name}</div>
                                     <div style={{ fontSize: 10, color: 'var(--secondary-foreground)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{replyingTo.content}</div>
                                 </div>
-                                <button onClick={() => setReplyingTo(null)} style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', fontSize: 14 }}>✕</button>
+                                <button onClick={() => setReplyingTo(null)} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', padding: 4 }}><X size={16} /></button>
                             </div>
                         )}
 
@@ -362,16 +363,16 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                             ) : (
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                     <button onClick={() => fileRef.current?.click()} disabled={uploading}
-                                        style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'var(--secondary-foreground)', cursor: 'pointer', fontSize: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                                        📎
+                                        style={{ width: 30, height: 30, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'var(--secondary-foreground)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                                        <Paperclip size={14} />
                                     </button>
                                     <input type="text" value={newMsg} onChange={e => setNewMsg(e.target.value)}
                                         onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
                                         placeholder="Message"
                                         style={{ flex: 1, padding: '6px 14px', borderRadius: 18, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'var(--foreground)', fontSize: 13, outline: 'none', minWidth: 0 }} />
                                     <button onClick={() => handleSend()} disabled={sending || !newMsg.trim()}
-                                        style={{ width: 30, height: 30, borderRadius: '50%', background: newMsg.trim() ? 'linear-gradient(135deg, #06b6d4, #10b981)' : 'rgba(255,255,255,0.05)', border: 'none', cursor: newMsg.trim() ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, opacity: newMsg.trim() ? 1 : 0.4, color: newMsg.trim() ? '#000' : 'var(--secondary-foreground)', fontSize: 14, fontWeight: 700 }}>
-                                        →
+                                        style={{ width: 30, height: 30, borderRadius: '50%', background: newMsg.trim() ? 'linear-gradient(135deg, #06b6d4, #10b981)' : 'rgba(255,255,255,0.05)', border: 'none', cursor: newMsg.trim() ? 'pointer' : 'default', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, opacity: newMsg.trim() ? 1 : 0.4, color: newMsg.trim() ? '#000' : 'var(--secondary-foreground)' }}>
+                                        <ArrowRight size={16} color={newMsg.trim() ? "#000" : "var(--secondary-foreground)"} />
                                     </button>
                                 </div>
                             )}

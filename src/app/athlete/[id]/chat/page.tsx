@@ -28,7 +28,7 @@ export default async function AthleteChatPage({ params }: { params: Promise<{ id
             display: 'flex',
             flexDirection: 'column',
             flex: 1,
-            height: 'calc(100vh - 210px)',
+            height: 'calc(100vh - var(--header-height) - 65px - env(safe-area-inset-bottom, 0px))',
             overflow: 'hidden'
         }}>
             <ChatInterface

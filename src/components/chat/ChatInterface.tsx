@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { Mic, Video as VideoIcon, Image as ImageIcon, MoreVertical, Reply, Copy, Download, Paperclip, X, Send } from 'lucide-react';
+import VideoCropper from './VideoCropper';
 
 interface Message {
     id: string;
@@ -42,6 +43,22 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
     const [activeMenu, setActiveMenu] = useState<string | null>(null);
     const [loaded, setLoaded] = useState(false);
 
+    // Video Cropper state
+    const [cropFile, setCropFile] = useState<File | null>(null);
+
+    // Multi-select state
+    const [selectedMessageIds, setSelectedMessageIds] = useState<Set<string>>(new Set());
+    const isMultiSelecting = selectedMessageIds.size > 0;
+
+    const toggleSelection = (msgId: string) => {
+        setSelectedMessageIds(prev => {
+            const next = new Set(prev);
+            if (next.has(msgId)) next.delete(msgId);
+            else next.add(msgId);
+            return next;
+        });
+    };
+
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const fileRef = useRef<HTMLInputElement>(null);
     const isCompressing = compressProgress >= 0 && compressProgress <= 100;
@@ -66,12 +83,17 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
 
     // Scroll to bottom after render — use multiple attempts for slow devices
     useEffect(() => {
-        const scroll = () => messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+        const scroll = () => {
+            if (scrollContainerRef.current) {
+                scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+            }
+        };
         scroll();
         const t1 = setTimeout(scroll, 100);
         const t2 = setTimeout(scroll, 300);
-        return () => { clearTimeout(t1); clearTimeout(t2); };
-    }, [messages]);
+        const t3 = setTimeout(scroll, 600); // extra attempt for heavier image loads
+        return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+    }, [messages, loaded]);
 
     // Realtime — append only, no re-fetch
     useEffect(() => {
@@ -135,7 +157,8 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
     const startRecording = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const mediaRecorder = new MediaRecorder(stream);
+            const mimeType = MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : 'audio/webm';
+            const mediaRecorder = new MediaRecorder(stream, { mimeType });
             mediaRecorderRef.current = mediaRecorder;
             audioChunksRef.current = [];
 
@@ -144,8 +167,9 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
             };
 
             mediaRecorder.onstop = () => {
-                const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-                const audioFile = new File([audioBlob], 'voice_message.webm', { type: 'audio/webm' });
+                const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
+                const ext = mimeType.includes('mp4') ? 'm4a' : 'webm';
+                const audioFile = new File([audioBlob], `voice_message.${ext}`, { type: mimeType });
                 setStagedFiles(prev => [...prev, audioFile]);
                 setStagedFileUrls(prev => [...prev, URL.createObjectURL(audioBlob)]);
                 setIsRecording(false);
@@ -183,7 +207,7 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
         }
     };
 
-    // Close action menu on click outside
+    // Close action menu on click outside but ignore if multi-selecting
     useEffect(() => { const c = () => setActiveMenu(null); window.addEventListener('click', c); return () => window.removeEventListener('click', c); }, []);
 
     // Send — optimistic
@@ -324,11 +348,25 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
         }
         if (validFiles.length === 0) return;
 
+        // If there's a video, crop the first one (for simplicity, only crop 1 at a time if batch uploading multiple)
+        const firstVideo = validFiles.find(f => f.type.startsWith('video/'));
+        if (firstVideo && validFiles.length === 1) {
+            setCropFile(firstVideo);
+            if (fileRef.current) fileRef.current.value = '';
+            return;
+        }
+
         setStagedFiles(prev => [...prev, ...validFiles]);
         setStagedFileUrls(prev => [...prev, ...validFiles.map(f => URL.createObjectURL(f))]);
 
         // Reset input so selecting the same file again triggers onChange
         if (fileRef.current) fileRef.current.value = '';
+    };
+
+    const handleCropComplete = (croppedFile: File) => {
+        setStagedFiles(prev => [...prev, croppedFile]);
+        setStagedFileUrls(prev => [...prev, URL.createObjectURL(croppedFile)]);
+        setCropFile(null);
     };
 
     const clearStagedMedia = (index?: number) => {
@@ -368,15 +406,32 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
     const showTime = (i: number) => i === 0 || messages[i].senderId !== messages[i - 1].senderId ||
         new Date(messages[i].createdAt).getTime() - new Date(messages[i - 1].createdAt).getTime() > 300000;
 
+    const handleCopyMultiple = () => {
+        const selectedMsgs = messages.filter(m => selectedMessageIds.has(m.id)).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        const textToCopy = selectedMsgs.map(m => `[${fmtTime(m.createdAt)}] ${m.sender.name}: ${m.content}`).join('\n');
+        navigator.clipboard.writeText(textToCopy);
+        setSelectedMessageIds(new Set());
+    };
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', height: '100%', flex: 1, minHeight: 0, background: 'var(--background)' }}>
             {/* Header */}
             <div style={{ padding: '12px 16px', background: 'var(--card-bg)', borderBottom: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-                <Link href={`/athlete/${athleteId}/dashboard`} style={{ color: 'var(--primary)', background: 'none', border: 'none', textDecoration: 'none', fontSize: 14, fontWeight: 500 }}>← Back</Link>
-                <div style={{ flex: 1, textAlign: 'center', fontWeight: 600, color: 'var(--foreground)', fontSize: 15 }}>{otherUserName}</div>
-                <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'linear-gradient(135deg, #06b6d4, #10b981)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#000', fontSize: 13 }}>
-                    {otherUserName.charAt(0).toUpperCase()}
-                </div>
+                {isMultiSelecting ? (
+                    <>
+                        <button onClick={() => setSelectedMessageIds(new Set())} style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><X size={20} /></button>
+                        <div style={{ flex: 1, fontWeight: 600, color: 'var(--primary)', fontSize: 16 }}>{selectedMessageIds.size} Selected</div>
+                        <button onClick={handleCopyMultiple} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: '#fff', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}><Copy size={16} color="#fff" /> Copy</button>
+                    </>
+                ) : (
+                    <>
+                        <Link href={`/athlete/${athleteId}/dashboard`} style={{ color: 'var(--primary)', background: 'none', border: 'none', textDecoration: 'none', fontSize: 14, fontWeight: 500 }}>← Back</Link>
+                        <div style={{ flex: 1, textAlign: 'center', fontWeight: 600, color: 'var(--foreground)', fontSize: 15 }}>{otherUserName}</div>
+                        <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'linear-gradient(135deg, #06b6d4, #10b981)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#000', fontSize: 13 }}>
+                            {otherUserName.charAt(0).toUpperCase()}
+                        </div>
+                    </>
+                )}
             </div>
 
             {/* Messages */}
@@ -392,96 +447,108 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
                     const dateSep = showDateSep(i);
                     const timeSep = showTime(i);
 
+                    const isSelected = selectedMessageIds.has(msg.id);
+
                     return (
-                        <div key={msg.id}>
-                            {dateSep && <div style={{ textAlign: 'center', margin: '16px 0 8px', fontSize: 11, color: 'rgba(255,255,255,0.3)', fontWeight: 500 }}>{fmtDate(msg.createdAt)}</div>}
-                            {timeSep && !dateSep && <div style={{ textAlign: 'center', margin: '10px 0 4px', fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>{fmtTime(msg.createdAt)}</div>}
+                        <div key={msg.id} style={{ position: 'relative' }}>
+                            {isSelected && <div style={{ position: 'absolute', inset: -4, background: 'rgba(6, 182, 212, 0.1)', zIndex: 0, borderRadius: 8, pointerEvents: 'none' }} />}
+                            <div style={{ position: 'relative', zIndex: 1 }} onClick={() => isMultiSelecting && toggleSelection(msg.id)}>
+                                {dateSep && <div style={{ textAlign: 'center', margin: '16px 0 8px', fontSize: 11, color: 'rgba(255,255,255,0.3)', fontWeight: 500 }}>{fmtDate(msg.createdAt)}</div>}
+                                {timeSep && !dateSep && <div style={{ textAlign: 'center', margin: '10px 0 4px', fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>{fmtTime(msg.createdAt)}</div>}
 
-                            <div style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start', alignItems: 'center', marginTop: timeSep && i > 0 ? 8 : 2, gap: 4, position: 'relative' }}>
+                                <div style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start', alignItems: 'center', marginTop: timeSep && i > 0 ? 8 : 2, gap: 4, position: 'relative' }}>
 
-                                {/* Action button — left side for own messages */}
-                                {mine ? (
-                                    <button onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === msg.id ? null : msg.id); }}
-                                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)', padding: '2px 4px', flexShrink: 0, display: 'flex', alignItems: 'center' }}
-                                        title="Actions"><MoreVertical size={16} /></button>
-                                ) : (
-                                    <div style={{ width: 16, flexShrink: 0 }} /> // Spacer for alignment
-                                )}
+                                    {/* Action button — left side for own messages */}
+                                    {mine ? (
+                                        <button onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === msg.id ? null : msg.id); }}
+                                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ffffff', padding: '2px 4px', flexShrink: 0, display: 'flex', alignItems: 'center' }}
+                                            title="Actions"><MoreVertical size={16} color="#ffffff" /></button>
+                                    ) : (
+                                        <div style={{ width: 16, flexShrink: 0 }} /> // Spacer for alignment
+                                    )}
 
-                                <div style={{ position: 'relative', maxWidth: '75%' }}>
-                                    <div style={{
-                                        padding: msg.mediaUrl ? '4px 4px 8px' : '8px 14px',
-                                        borderRadius: mine ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                                        background: mine ? 'linear-gradient(135deg, rgba(6,182,212,0.3), rgba(16,185,129,0.2))' : 'var(--card-bg)',
-                                        border: mine ? '1px solid rgba(6,182,212,0.12)' : '1px solid var(--card-border)',
-                                        wordBreak: 'break-word',
-                                        overflowWrap: 'break-word',
-                                    }}>
-                                        {/* Reply */}
-                                        {msg.replyTo && (
-                                            <div style={{ margin: msg.mediaUrl ? '4px 8px 6px' : '0 0 6px', padding: '6px 8px', borderRadius: 10, background: 'rgba(255,255,255,0.04)', borderLeft: '2px solid rgba(6,182,212,0.5)', fontSize: 11 }}>
-                                                <div style={{ fontWeight: 600, color: 'rgba(6,182,212,0.7)', marginBottom: 2 }}>{msg.replyTo.sender.name}</div>
-                                                <div style={{ color: 'rgba(255,255,255,0.35)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                    {msg.replyTo.mediaUrl ? (msg.replyTo.mediaType?.startsWith('image') ? 'Photo' : msg.replyTo.mediaType?.startsWith('audio') ? 'Voice' : 'Video') : msg.replyTo.content}
+                                    <div style={{ position: 'relative', maxWidth: '75%', cursor: isMultiSelecting ? 'pointer' : 'default' }}>
+                                        <div
+                                            onClick={(e) => {
+                                                if (isMultiSelecting) { e.stopPropagation(); toggleSelection(msg.id); }
+                                            }}
+                                            style={{
+                                                padding: msg.mediaUrl ? '4px 4px 8px' : '8px 14px',
+                                                borderRadius: mine ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
+                                                background: isSelected ? 'rgba(6,182,212,0.4)' : mine ? 'linear-gradient(135deg, rgba(6,182,212,0.3), rgba(16,185,129,0.2))' : 'var(--card-bg)',
+                                                border: isSelected ? '1px solid var(--primary)' : mine ? '1px solid rgba(6,182,212,0.12)' : '1px solid var(--card-border)',
+                                                wordBreak: 'break-word',
+                                                overflowWrap: 'break-word',
+                                                transition: 'all 0.2s ease',
+                                            }}>
+                                            {/* Reply */}
+                                            {msg.replyTo && (
+                                                <div style={{ margin: msg.mediaUrl ? '4px 8px 6px' : '0 0 6px', padding: '6px 8px', borderRadius: 10, background: 'rgba(255,255,255,0.04)', borderLeft: '2px solid rgba(6,182,212,0.5)', fontSize: 11 }}>
+                                                    <div style={{ fontWeight: 600, color: 'rgba(6,182,212,0.7)', marginBottom: 2 }}>{msg.replyTo.sender.name}</div>
+                                                    <div style={{ color: 'rgba(255,255,255,0.35)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                        {msg.replyTo.mediaUrl ? (msg.replyTo.mediaType?.startsWith('image') ? 'Photo' : msg.replyTo.mediaType?.startsWith('audio') ? 'Voice' : 'Video') : msg.replyTo.content}
+                                                    </div>
                                                 </div>
+                                            )}
+
+                                            {/* Video */}
+                                            {msg.mediaUrl && isVid && (
+                                                <div>
+                                                    <video controls playsInline muted preload="metadata" style={{ width: '100%', maxWidth: '100%', maxHeight: 200, borderRadius: 14, background: '#000', display: 'block', objectFit: 'cover' }}>
+                                                        <source src={`${msg.mediaUrl}#t=0.001`} />
+                                                    </video>
+                                                </div>
+                                            )}
+
+                                            {/* Image */}
+                                            {msg.mediaUrl && isImg && (
+                                                <div>
+                                                    <img src={msg.mediaUrl} alt="" loading="lazy" onClick={() => window.open(msg.mediaUrl!, '_blank')}
+                                                        style={{ width: '100%', maxWidth: '100%', maxHeight: 200, borderRadius: 14, display: 'block', cursor: 'pointer', objectFit: 'cover' }} />
+                                                </div>
+                                            )}
+
+                                            {/* Audio */}
+                                            {msg.mediaUrl && isAudio && (
+                                                <div style={{ padding: '4px 0' }}>
+                                                    <audio controls preload="metadata" style={{ width: '100%', minWidth: 200, height: 40, borderRadius: 20 }}>
+                                                        <source src={msg.mediaUrl} />
+                                                    </audio>
+                                                </div>
+                                            )}
+
+                                            {/* Text */}
+                                            <div style={{ fontSize: 14, lineHeight: 1.4, color: 'rgba(255,255,255,0.9)', padding: msg.mediaUrl ? '0 10px' : 0 }}>{msg.content}</div>
+
+                                            {/* Time */}
+                                            <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.18)', marginTop: 2, textAlign: mine ? 'right' : 'left', padding: msg.mediaUrl ? '0 10px' : 0 }}>{fmtTime(msg.createdAt)}</div>
+                                        </div>
+
+                                        {/* Inline action menu */}
+                                        {activeMenu === msg.id && !isMultiSelecting && (
+                                            <div onClick={e => e.stopPropagation()} style={{
+                                                position: 'absolute', zIndex: 50, top: 0, ...(mine ? { right: '100%', marginRight: 4 } : { left: '100%', marginLeft: 4 }),
+                                                background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 10, boxShadow: '0 6px 20px rgba(0,0,0,0.5)', padding: '3px 0', minWidth: 120, whiteSpace: 'nowrap'
+                                            }}>
+                                                <button onClick={() => { setReplyingTo(msg); setActiveMenu(null); }}
+                                                    style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', textAlign: 'left', padding: '7px 12px', background: 'none', border: 'none', fontSize: 13, color: '#ffffff', cursor: 'pointer', fontWeight: 500 }}><Reply size={16} color="#fff" /> Reply</button>
+                                                <button onClick={() => { navigator.clipboard.writeText(msg.content); setActiveMenu(null); }}
+                                                    style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', textAlign: 'left', padding: '7px 12px', background: 'none', border: 'none', fontSize: 13, color: '#ffffff', cursor: 'pointer', fontWeight: 500 }}><Copy size={16} color="#fff" /> Copy</button>
+                                                <button onClick={() => { toggleSelection(msg.id); setActiveMenu(null); }}
+                                                    style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', textAlign: 'left', padding: '7px 12px', background: 'none', border: 'none', fontSize: 13, color: '#ffffff', cursor: 'pointer', fontWeight: 500 }}><MoreVertical size={16} color="#fff" /> Select Multiple</button>
+                                                {msg.mediaUrl && <button onClick={() => { saveMedia(msg.mediaUrl!, msg.mediaType?.startsWith('image')); setActiveMenu(null); }}
+                                                    style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', textAlign: 'left', padding: '7px 12px', background: 'none', border: 'none', fontSize: 13, color: '#ffffff', cursor: 'pointer', fontWeight: 500 }}><Download size={16} color="#fff" /> Save</button>}
                                             </div>
                                         )}
-
-                                        {/* Video */}
-                                        {msg.mediaUrl && isVid && (
-                                            <div>
-                                                <video controls playsInline muted preload="metadata" style={{ width: '100%', maxWidth: '100%', maxHeight: 200, borderRadius: 14, background: '#000', display: 'block', objectFit: 'cover' }}>
-                                                    <source src={`${msg.mediaUrl}#t=0.001`} />
-                                                </video>
-                                            </div>
-                                        )}
-
-                                        {/* Image */}
-                                        {msg.mediaUrl && isImg && (
-                                            <div>
-                                                <img src={msg.mediaUrl} alt="" loading="lazy" onClick={() => window.open(msg.mediaUrl!, '_blank')}
-                                                    style={{ width: '100%', maxWidth: '100%', maxHeight: 200, borderRadius: 14, display: 'block', cursor: 'pointer', objectFit: 'cover' }} />
-                                            </div>
-                                        )}
-
-                                        {/* Audio */}
-                                        {msg.mediaUrl && isAudio && (
-                                            <div style={{ padding: '4px 0' }}>
-                                                <audio controls preload="metadata" style={{ width: '100%', minWidth: 200, height: 40, borderRadius: 20 }}>
-                                                    <source src={msg.mediaUrl} />
-                                                </audio>
-                                            </div>
-                                        )}
-
-                                        {/* Text */}
-                                        <div style={{ fontSize: 14, lineHeight: 1.4, color: 'rgba(255,255,255,0.9)', padding: msg.mediaUrl ? '0 10px' : 0 }}>{msg.content}</div>
-
-                                        {/* Time */}
-                                        <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.18)', marginTop: 2, textAlign: mine ? 'right' : 'left', padding: msg.mediaUrl ? '0 10px' : 0 }}>{fmtTime(msg.createdAt)}</div>
                                     </div>
 
-                                    {/* Inline action menu */}
-                                    {activeMenu === msg.id && (
-                                        <div onClick={e => e.stopPropagation()} style={{
-                                            position: 'absolute', zIndex: 50, top: 0, ...(mine ? { right: '100%', marginRight: 4 } : { left: '100%', marginLeft: 4 }),
-                                            background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 10, boxShadow: '0 6px 20px rgba(0,0,0,0.5)', padding: '3px 0', minWidth: 120, whiteSpace: 'nowrap'
-                                        }}>
-                                            <button onClick={() => { setReplyingTo(msg); setActiveMenu(null); }}
-                                                style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', textAlign: 'left', padding: '7px 12px', background: 'none', border: 'none', fontSize: 12, color: 'var(--foreground)', cursor: 'pointer' }}><Reply size={14} /> Reply</button>
-                                            <button onClick={() => { navigator.clipboard.writeText(msg.content); setActiveMenu(null); }}
-                                                style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', textAlign: 'left', padding: '7px 12px', background: 'none', border: 'none', fontSize: 12, color: 'var(--foreground)', cursor: 'pointer' }}><Copy size={14} /> Copy</button>
-                                            {msg.mediaUrl && <button onClick={() => { saveMedia(msg.mediaUrl!, msg.mediaType?.startsWith('image')); setActiveMenu(null); }}
-                                                style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', textAlign: 'left', padding: '7px 12px', background: 'none', border: 'none', fontSize: 12, color: 'var(--foreground)', cursor: 'pointer' }}><Download size={14} /> Save</button>}
-                                        </div>
+                                    {/* Action button — right side for other's messages */}
+                                    {!mine && (
+                                        <button onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === msg.id ? null : msg.id); }}
+                                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ffffff', padding: '2px 4px', flexShrink: 0, display: 'flex', alignItems: 'center' }}
+                                            title="Actions"><MoreVertical size={16} color="#ffffff" /></button>
                                     )}
                                 </div>
-
-                                {/* Action button — right side for other's messages */}
-                                {!mine && (
-                                    <button onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === msg.id ? null : msg.id); }}
-                                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.4)', padding: '2px 4px', flexShrink: 0, display: 'flex', alignItems: 'center' }}
-                                        title="Actions"><MoreVertical size={16} /></button>
-                                )}
                             </div>
                         </div>
                     );
@@ -489,56 +556,60 @@ export default function ChatInterface({ currentUserId, otherUserId, currentUserN
                 <div ref={messagesEndRef} />
             </div>
 
-
-
             {/* Reply bar */}
-            {replyingTo && (
-                <div style={{ padding: '8px 16px', background: 'var(--card-bg)', borderTop: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
-                    <div style={{ flex: 1, paddingLeft: 10, borderLeft: '2px solid var(--primary)', minWidth: 0 }}>
-                        <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--primary)' }}>Replying to {replyingTo.sender.name}</div>
-                        <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                            {replyingTo.mediaUrl ? (replyingTo.mediaType?.startsWith('image') ? 'Photo' : replyingTo.mediaType?.startsWith('audio') ? 'Voice' : 'Video') : replyingTo.content}
+            {
+                replyingTo && (
+                    <div style={{ padding: '8px 16px', background: 'var(--card-bg)', borderTop: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+                        <div style={{ flex: 1, paddingLeft: 10, borderLeft: '2px solid var(--primary)', minWidth: 0 }}>
+                            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--primary)' }}>Replying to {replyingTo.sender.name}</div>
+                            <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {replyingTo.mediaUrl ? (replyingTo.mediaType?.startsWith('image') ? 'Photo' : replyingTo.mediaType?.startsWith('audio') ? 'Voice' : 'Video') : replyingTo.content}
+                            </div>
                         </div>
+                        <button onClick={() => setReplyingTo(null)} style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><X size={16} /></button>
                     </div>
-                    <button onClick={() => setReplyingTo(null)} style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><X size={16} /></button>
-                </div>
-            )}
+                )
+            }
 
             {/* Upload progress */}
-            {uploading && (
-                <div style={{ padding: '8px 16px', borderTop: '1px solid var(--card-border)', flexShrink: 0 }}>
-                    <div style={{ fontSize: 12, color: 'var(--primary)', fontWeight: 600, marginBottom: 4 }}>
-                        {isCompressing ? `${statusText} ${compressProgress}%` : statusText || 'Uploading…'}
+            {
+                uploading && (
+                    <div style={{ padding: '8px 16px', borderTop: '1px solid var(--card-border)', flexShrink: 0 }}>
+                        <div style={{ fontSize: 12, color: 'var(--primary)', fontWeight: 600, marginBottom: 4 }}>
+                            {isCompressing ? `${statusText} ${compressProgress}%` : statusText || 'Uploading…'}
+                        </div>
+                        <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
+                            <div style={{ height: '100%', borderRadius: 2, background: 'linear-gradient(90deg, #06b6d4, #10b981)', transition: 'width 200ms', width: isCompressing ? `${compressProgress}%` : '100%' }} />
+                        </div>
                     </div>
-                    <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
-                        <div style={{ height: '100%', borderRadius: 2, background: 'linear-gradient(90deg, #06b6d4, #10b981)', transition: 'width 200ms', width: isCompressing ? `${compressProgress}%` : '100%' }} />
-                    </div>
-                </div>
-            )}
+                )
+            }
 
             {/* Staged Media Preview */}
-            {stagedFiles.length > 0 && (
-                <div style={{ padding: '8px 16px', background: 'var(--card-bg)', borderTop: '1px solid var(--card-border)', flexShrink: 0, display: 'flex', gap: 8, overflowX: 'auto' }}>
-                    {stagedFiles.map((f, i) => (
-                        <div key={i} style={{ width: 80, height: 80, borderRadius: 8, overflow: 'hidden', position: 'relative', border: '1px solid var(--card-border)', background: '#000', flexShrink: 0 }}>
-                            {f.type.startsWith('image/') ? (
-                                <img src={stagedFileUrls[i]} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                            ) : f.type.startsWith('audio/') ? (
-                                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.7)' }}>
-                                    <Mic size={24} />
-                                </div>
-                            ) : (
-                                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.7)' }}>
-                                    <VideoIcon size={24} />
-                                </div>
-                            )}
-                            <button onClick={() => clearStagedMedia(i)} disabled={uploading} style={{
-                                position: 'absolute', top: 4, right: 4, width: 22, height: 22, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
-                            }}><X size={12} /></button>
-                        </div>
-                    ))}
-                </div>
-            )}
+            {
+                stagedFiles.length > 0 && (
+                    <div style={{ padding: '8px 16px', background: 'var(--card-bg)', borderTop: '1px solid var(--card-border)', flexShrink: 0, display: 'flex', gap: 8, overflowX: 'auto' }}>
+                        {stagedFiles.map((f, i) => (
+                            <div key={i} style={{ width: 80, height: 80, borderRadius: 8, overflow: 'hidden', position: 'relative', border: '1px solid var(--card-border)', background: '#000', flexShrink: 0 }}>
+                                {f.type.startsWith('image/') ? (
+                                    <img src={stagedFileUrls[i]} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                ) : f.type.startsWith('audio/') ? (
+                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.7)' }}>
+                                        <Mic size={24} />
+                                    </div>
+                                ) : (
+                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.7)' }}>
+                                        <VideoIcon size={24} />
+                                    </div>
+                                )}
+                                <button onClick={() => clearStagedMedia(i)} disabled={uploading} style={{
+                                    position: 'absolute', top: 4, right: 4, width: 22, height: 22, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                }}><X size={12} /></button>
+                            </div>
+                        ))}
+                    </div>
+                )
+            }
 
             {/* Input */}
             <div style={{ padding: '8px 12px 12px', background: 'var(--card-bg)', borderTop: '1px solid var(--card-border)', flexShrink: 0 }}>
