@@ -162,7 +162,15 @@ export default function ChatInterface({
     const startRecording = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            const mimeType = MediaRecorder.isTypeSupported('audio/mp4') ? 'audio/mp4' : 'audio/webm';
+
+            // Critical: iOS/Safari needs audio/mp4 for smooth recording/playback in native players
+            let mimeType = 'audio/webm';
+            if (MediaRecorder.isTypeSupported('audio/mp4')) {
+                mimeType = 'audio/mp4';
+            } else if (MediaRecorder.isTypeSupported('audio/mpeg')) {
+                mimeType = 'audio/mpeg';
+            }
+
             const mediaRecorder = new MediaRecorder(stream, { mimeType });
             mediaRecorderRef.current = mediaRecorder;
             audioChunksRef.current = [];
@@ -173,7 +181,7 @@ export default function ChatInterface({
 
             mediaRecorder.onstop = () => {
                 const audioBlob = new Blob(audioChunksRef.current, { type: mimeType });
-                const ext = mimeType.includes('mp4') ? 'm4a' : 'webm';
+                const ext = mimeType.includes('mp4') || mimeType.includes('mpeg') ? 'm4a' : 'webm';
                 // Use a more descriptive filename but keep content clean
                 const audioFile = new File([audioBlob], `voice_${Date.now()}.${ext}`, { type: mimeType });
                 setStagedFiles(prev => [...prev, audioFile]);
@@ -544,8 +552,14 @@ export default function ChatInterface({
                                             {/* Audio */}
                                             {msg.mediaUrl && isAudio && (
                                                 <div style={{ padding: '4px 0' }}>
-                                                    <audio controls preload="metadata" style={{ width: '100%', minWidth: 200, height: 40, borderRadius: 20 }}>
-                                                        <source src={msg.mediaUrl} />
+                                                    <audio
+                                                        controls
+                                                        preload="metadata"
+                                                        playsInline
+                                                        style={{ width: '100%', minWidth: 200, height: 40, borderRadius: 20 }}
+                                                    >
+                                                        <source src={msg.mediaUrl} type={msg.mediaType || 'audio/mpeg'} />
+                                                        Your browser does not support the audio element.
                                                     </audio>
                                                 </div>
                                             )}
