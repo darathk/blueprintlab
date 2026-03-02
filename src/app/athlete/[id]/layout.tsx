@@ -53,7 +53,7 @@ export default async function AthletePortalLayout({
     ];
 
     return (
-        <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--background)' }}>
+        <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: 'var(--background)' }}>
             <header className="border-b border-[var(--card-border)] rounded-none border-t-0 border-l-0 border-r-0 sticky top-0 z-[100] w-full" style={{
                 height: 'var(--header-height)',
                 background: 'var(--background)'
