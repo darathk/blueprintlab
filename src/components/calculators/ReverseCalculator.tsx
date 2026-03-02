@@ -120,7 +120,7 @@ export default function ReverseCalculator() {
                     <span style={{ fontWeight: 800, textAlign: 'right', fontSize: '1.05rem', width: '65px' }}>Weight</span>
                     <input
                         type="number" inputMode="decimal" value={bwStr} onChange={e => setBwStr(e.target.value)}
-                        placeholder="148"
+                        placeholder="Weight"
                         style={{ width: '135px', border: '1px solid rgba(239, 68, 68, 0.5)', borderRadius: '24px', padding: '8px 16px', background: 'transparent', color: 'var(--foreground)', fontWeight: 600, textAlign: 'center', fontSize: '1rem', outline: 'none' }}
                     />
                     <button onClick={() => setUnit(u => u === 'lb' ? 'kg' : 'lb')} style={{ fontWeight: 800, color: 'var(--primary)', background: 'transparent', border: 'none', padding: '8px 0', cursor: 'pointer', width: '35px', fontSize: '1rem', textAlign: 'left', outline: 'none' }}>{unit.toUpperCase()}</button>
