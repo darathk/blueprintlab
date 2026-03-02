@@ -10,8 +10,8 @@ const PLATES = [
     { weight: 10, color: '#22c55e', label: '10', text: '#fff', width: 24, height: 180 },   // Green
     { weight: 5, color: '#f8fafc', label: '5', text: '#000', width: 20, height: 140, border: '#cbd5e1' },     // White
     { weight: 2.5, color: '#1e293b', label: '2.5', text: '#fff', width: 18, height: 115 }, // Black
-    { weight: 2, color: '#3b82f6', label: '2', text: '#fff', width: 16, height: 100 }, // Blue
-    { weight: 1.5, color: '#eab308', label: '1.5', text: '#000', width: 14, height: 95 }, // Yellow
+    { weight: 2, color: '#e2e8f0', label: '2', text: '#000', width: 16, height: 100, border: '#cbd5e1' }, // Silver
+    { weight: 1.5, color: '#e2e8f0', label: '1.5', text: '#000', width: 14, height: 95, border: '#cbd5e1' }, // Silver
     { weight: 1.25, color: '#e2e8f0', label: '1.25', text: '#000', width: 14, height: 90, border: '#cbd5e1' }, // Silver
     { weight: 1, color: '#e2e8f0', label: '1', text: '#000', width: 12, height: 80, border: '#cbd5e1' }, // Silver
     { weight: 0.5, color: '#f8fafc', label: '0.5', text: '#000', width: 10, height: 75, border: '#cbd5e1' }, // White
