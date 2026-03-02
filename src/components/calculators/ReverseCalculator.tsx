@@ -218,11 +218,11 @@ export default function ReverseCalculator() {
                                 <input type="radio" checked={solveFor === 'squat'} onChange={() => setSolveFor('squat')} style={{ accentColor: 'var(--primary)' }} />
                                 <span style={{ fontWeight: 700, width: '70px' }}>Squat:</span>
                                 {solveFor === 'squat' ? (
-                                    <div style={{ flex: 1, padding: '12px', textAlign: 'center', fontWeight: 800, color: 'var(--primary)', border: '2px dashed var(--primary)', borderRadius: '24px' }}>
+                                    <div style={{ flex: 1, padding: '12px', textAlign: 'center', fontWeight: 800, color: 'var(--primary)', border: '2px dashed var(--primary)', borderRadius: '24px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                         {fmt(calculatedLiftValue)}
                                     </div>
                                 ) : (
-                                    <input type="number" value={squatStr} onChange={e => setSquatStr(e.target.value)} placeholder="0" style={{ flex: 1, border: '1px solid rgba(255,255,255,0.2)', borderRadius: '24px', padding: '12px', background: 'transparent', color: 'var(--foreground)', fontWeight: 600, textAlign: 'center' }} />
+                                    <input type="number" value={squatStr} onChange={e => setSquatStr(e.target.value)} placeholder="0" style={{ flex: 1, border: '2px solid rgba(239, 68, 68, 0.5)', borderRadius: '24px', padding: '12px', background: 'transparent', color: 'var(--foreground)', fontWeight: 600, textAlign: 'center', height: '48px', minWidth: 0 }} />
                                 )}
                             </div>
 
@@ -230,11 +230,11 @@ export default function ReverseCalculator() {
                                 <input type="radio" checked={solveFor === 'bench'} onChange={() => setSolveFor('bench')} style={{ accentColor: 'var(--primary)' }} />
                                 <span style={{ fontWeight: 700, width: '70px' }}>Bench:</span>
                                 {solveFor === 'bench' ? (
-                                    <div style={{ flex: 1, padding: '12px', textAlign: 'center', fontWeight: 800, color: 'var(--primary)', border: '2px dashed var(--primary)', borderRadius: '24px' }}>
+                                    <div style={{ flex: 1, padding: '12px', textAlign: 'center', fontWeight: 800, color: 'var(--primary)', border: '2px dashed var(--primary)', borderRadius: '24px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                         {fmt(calculatedLiftValue)}
                                     </div>
                                 ) : (
-                                    <input type="number" value={benchStr} onChange={e => setBenchStr(e.target.value)} placeholder="0" style={{ flex: 1, border: '1px solid rgba(255,255,255,0.2)', borderRadius: '24px', padding: '12px', background: 'transparent', color: 'var(--foreground)', fontWeight: 600, textAlign: 'center' }} />
+                                    <input type="number" value={benchStr} onChange={e => setBenchStr(e.target.value)} placeholder="0" style={{ flex: 1, border: '2px solid rgba(239, 68, 68, 0.5)', borderRadius: '24px', padding: '12px', background: 'transparent', color: 'var(--foreground)', fontWeight: 600, textAlign: 'center', height: '48px', minWidth: 0 }} />
                                 )}
                             </div>
 
@@ -242,11 +242,11 @@ export default function ReverseCalculator() {
                                 <input type="radio" checked={solveFor === 'deadlift'} onChange={() => setSolveFor('deadlift')} style={{ accentColor: 'var(--primary)' }} />
                                 <span style={{ fontWeight: 700, width: '70px' }}>Deadlift:</span>
                                 {solveFor === 'deadlift' ? (
-                                    <div style={{ flex: 1, padding: '12px', textAlign: 'center', fontWeight: 800, color: 'var(--primary)', border: '2px dashed var(--primary)', borderRadius: '24px' }}>
+                                    <div style={{ flex: 1, padding: '12px', textAlign: 'center', fontWeight: 800, color: 'var(--primary)', border: '2px dashed var(--primary)', borderRadius: '24px', height: '48px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                         {fmt(calculatedLiftValue)}
                                     </div>
                                 ) : (
-                                    <input type="number" value={deadliftStr} onChange={e => setDeadliftStr(e.target.value)} placeholder="0" style={{ flex: 1, border: '1px solid rgba(255,255,255,0.2)', borderRadius: '24px', padding: '12px', background: 'transparent', color: 'var(--foreground)', fontWeight: 600, textAlign: 'center' }} />
+                                    <input type="number" value={deadliftStr} onChange={e => setDeadliftStr(e.target.value)} placeholder="0" style={{ flex: 1, border: '2px solid rgba(239, 68, 68, 0.5)', borderRadius: '24px', padding: '12px', background: 'transparent', color: 'var(--foreground)', fontWeight: 600, textAlign: 'center', height: '48px', minWidth: 0 }} />
                                 )}
                             </div>
                         </div>
