@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { supabase } from '@/lib/supabase';
 
 export const dynamic = 'force-dynamic';
 
@@ -86,5 +87,50 @@ export async function PATCH(request: Request) {
     } catch (error) {
         console.error('PATCH /api/messages error:', error);
         return NextResponse.json({ error: 'Failed to mark as read' }, { status: 500 });
+    }
+}
+// DELETE /api/messages — delete a message
+export async function DELETE(request: Request) {
+    try {
+        const { searchParams } = new URL(request.url);
+        const id = searchParams.get('id');
+
+        if (!id) {
+            return NextResponse.json({ error: 'Message ID is required' }, { status: 400 });
+        }
+
+        // 1. Get message info to check for media
+        const msg = await prisma.message.findUnique({
+            where: { id },
+            select: { mediaUrl: true }
+        });
+
+        if (!msg) {
+            return NextResponse.json({ error: 'Message not found' }, { status: 404 });
+        }
+
+        // 2. Delete media from Supabase if it exists
+        if (msg.mediaUrl) {
+            try {
+                // Extract path from public URL
+                // URL looks like: https://.../storage/v1/object/public/lift-videos/ATHLETE_ID/FILENAME
+                const urlParts = msg.mediaUrl.split('/lift-videos/');
+                if (urlParts.length > 1) {
+                    const filePath = urlParts[1];
+                    const { error } = await supabase.storage.from('lift-videos').remove([filePath]);
+                    if (error) console.error('Supabase media deletion error:', error);
+                }
+            } catch (mediaError) {
+                console.error('Failed to parse media URL for deletion:', mediaError);
+            }
+        }
+
+        // 3. Delete from DB
+        await prisma.message.delete({ where: { id } });
+
+        return NextResponse.json({ success: true });
+    } catch (error) {
+        console.error('DELETE /api/messages error:', error);
+        return NextResponse.json({ error: 'Failed to delete message' }, { status: 500 });
     }
 }

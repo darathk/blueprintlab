@@ -428,6 +428,28 @@ export default function ChatInterface({
         setSelectedMessageIds(new Set());
     };
 
+    const handleDeleteMessage = async (msgId: string) => {
+        if (!confirm('Are you sure you want to delete this message? This will also remove any attached media.')) return;
+
+        // Optimistic UI
+        setMessages(prev => prev.filter(m => m.id !== msgId));
+        setActiveMenu(null);
+
+        try {
+            const res = await fetch(`/api/messages?id=${msgId}`, { method: 'DELETE' });
+            if (!res.ok) {
+                const err = await res.json();
+                console.error('Delete failed:', err);
+                alert('Failed to delete message. Refreshing…');
+                window.location.reload();
+            }
+        } catch (e) {
+            console.error('Delete error:', e);
+            alert('Delete failed.');
+            window.location.reload();
+        }
+    };
+
     return (
         <div style={{
             display: 'flex',
@@ -585,6 +607,8 @@ export default function ChatInterface({
                                                     style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', textAlign: 'left', padding: '7px 12px', background: 'none', border: 'none', fontSize: 13, color: '#ffffff', cursor: 'pointer', fontWeight: 500 }}><MoreVertical size={16} color="#fff" /> Select Multiple</button>
                                                 {msg.mediaUrl && <button onClick={() => { saveMedia(msg.mediaUrl!, msg.mediaType?.startsWith('image')); setActiveMenu(null); }}
                                                     style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', textAlign: 'left', padding: '7px 12px', background: 'none', border: 'none', fontSize: 13, color: '#ffffff', cursor: 'pointer', fontWeight: 500 }}><Download size={16} color="#fff" /> Save</button>}
+                                                <button onClick={() => handleDeleteMessage(msg.id)}
+                                                    style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', textAlign: 'left', padding: '7px 12px', background: 'none', border: 'none', fontSize: 13, color: '#ef4444', cursor: 'pointer', fontWeight: 600 }}><X size={16} color="#ef4444" /> Delete</button>
                                             </div>
                                         )}
                                     </div>

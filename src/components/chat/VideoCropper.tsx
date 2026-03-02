@@ -81,13 +81,19 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
             ...destination.stream.getAudioTracks()
         ]);
 
-        const recorder = new MediaRecorder(combinedStream, { mimeType: 'video/webm;codecs=vp8,opus' });
+        const mimeType = MediaRecorder.isTypeSupported('video/mp4;codecs=avc1,mp4a.40.2')
+            ? 'video/mp4;codecs=avc1,mp4a.40.2'
+            : 'video/webm;codecs=vp8,opus';
+
+        const recorder = new MediaRecorder(combinedStream, { mimeType });
         const chunks: Blob[] = [];
 
         recorder.ondataavailable = (e) => chunks.push(e.data);
         recorder.onstop = () => {
-            const blob = new Blob(chunks, { type: 'video/webm' });
-            const croppedFile = new File([blob], `cropped_${file.name.split('.')[0]}.webm`, { type: 'video/webm' });
+            const finalMime = mimeType.split(';')[0];
+            const blob = new Blob(chunks, { type: finalMime });
+            const ext = finalMime.includes('mp4') ? 'mp4' : 'webm';
+            const croppedFile = new File([blob], `cropped_${file.name.split('.')[0]}.${ext}`, { type: finalMime });
             onComplete(croppedFile);
             setProcessing(false);
         };
@@ -123,26 +129,31 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
         }, 1000 / 30);
     };
 
-    // Very basic spatial selector logic
+    // Spatial Selector Logic
+    const [anchor, setAnchor] = useState({ x: 0, y: 0 });
+
     const handleCropMouseDown = (e: React.MouseEvent) => {
         if (!containerRef.current) return;
         setIsSelectingCrop(true);
         const rect = containerRef.current.getBoundingClientRect();
-        const startX = (e.clientX - rect.left) / rect.width;
-        const startY = (e.clientY - rect.top) / rect.height;
-        setCrop(prev => ({ ...prev, x: startX, y: startY, width: 0.1, height: 0.1 }));
+        const startX = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+        const startY = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+        setAnchor({ x: startX, y: startY });
+        setCrop({ x: startX, y: startY, width: 0, height: 0 });
     };
 
     const handleCropMouseMove = (e: React.MouseEvent) => {
         if (!isSelectingCrop || !containerRef.current) return;
         const rect = containerRef.current.getBoundingClientRect();
-        const currentX = (e.clientX - rect.left) / rect.width;
-        const currentY = (e.clientY - rect.top) / rect.height;
-        setCrop(prev => ({
-            ...prev,
-            width: Math.abs(currentX - prev.x),
-            height: Math.abs(currentY - prev.y)
-        }));
+        const currentX = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+        const currentY = Math.max(0, Math.min(1, (e.clientY - rect.top) / rect.height));
+
+        setCrop({
+            x: Math.min(anchor.x, currentX),
+            y: Math.min(anchor.y, currentY),
+            width: Math.abs(currentX - anchor.x),
+            height: Math.abs(currentY - anchor.y)
+        });
     };
 
     const handleCropMouseUp = () => setIsSelectingCrop(false);
@@ -152,22 +163,25 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
         setIsSelectingCrop(true);
         const touch = e.touches[0];
         const rect = containerRef.current.getBoundingClientRect();
-        const startX = (touch.clientX - rect.left) / rect.width;
-        const startY = (touch.clientY - rect.top) / rect.height;
-        setCrop(prev => ({ ...prev, x: startX, y: startY, width: 0.1, height: 0.1 }));
+        const startX = Math.max(0, Math.min(1, (touch.clientX - rect.left) / rect.width));
+        const startY = Math.max(0, Math.min(1, (touch.clientY - rect.top) / rect.height));
+        setAnchor({ x: startX, y: startY });
+        setCrop({ x: startX, y: startY, width: 0, height: 0 });
     };
 
     const handleTouchMove = (e: React.TouchEvent) => {
         if (!isSelectingCrop || !containerRef.current) return;
         const touch = e.touches[0];
         const rect = containerRef.current.getBoundingClientRect();
-        const currentX = (touch.clientX - rect.left) / rect.width;
-        const currentY = (touch.clientY - rect.top) / rect.height;
-        setCrop(prev => ({
-            ...prev,
-            width: Math.abs(currentX - prev.x),
-            height: Math.abs(currentY - prev.y)
-        }));
+        const currentX = Math.max(0, Math.min(1, (touch.clientX - rect.left) / rect.width));
+        const currentY = Math.max(0, Math.min(1, (touch.clientY - rect.top) / rect.height));
+
+        setCrop({
+            x: Math.min(anchor.x, currentX),
+            y: Math.min(anchor.y, currentY),
+            width: Math.abs(currentX - anchor.x),
+            height: Math.abs(currentY - anchor.y)
+        });
     };
 
     if (!videoUrl) return null;
