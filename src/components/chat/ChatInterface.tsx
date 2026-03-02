@@ -305,14 +305,14 @@ export default function ChatInterface({
                     if (!isVid) {
                         try {
                             const imageCompression = (await import('browser-image-compression')).default;
-                            const c = await (imageCompression as any)(file, { maxSizeMB: 1, maxWidthOrHeight: 1920, useWebWorker: false });
+                            const c = await (imageCompression as any)(file, { maxSizeMB: 0.5, maxWidthOrHeight: 1280, useWebWorker: false });
                             blob = c; mime = c.type; setCompressProgress(40);
                         } catch { /* skip compression */ }
                     }
 
                     setCompressProgress(80);
                     const ext = mime.includes('png') ? '.png' : mime.includes('jpeg') || mime.includes('jpg') ? '.jpg' : mime.includes('quicktime') ? '.mov' : mime.includes('webm') ? '.webm' : '.mp4';
-                    const { data, error } = await supabase.storage.from('lift-videos').upload(`${athleteId}/${Date.now()}-${i}${ext}`, blob, { cacheControl: '3600', upsert: false, contentType: mime });
+                    const { data, error } = await supabase.storage.from('lift-videos').upload(`${athleteId}/${Date.now()}-${i}${ext}`, blob, { cacheControl: '604800', upsert: false, contentType: mime });
 
                     if (error) {
                         console.error('Upload failed:', error);
