@@ -413,6 +413,7 @@ a {
     width: 100vw !important;
     margin-left: calc(-50vw + 50%) !important;
     margin-right: calc(-50vw + 50%) !important;
+    max-width: 100vw !important;
     border-radius: 0 !important;
     border-left: none !important;
     border-right: none !important;
