@@ -96,10 +96,10 @@ export default function ReverseCalculator() {
     const fmt = (val: number) => val.toFixed(1).replace('.0', '');
 
     return (
-        <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        <div className="px-0 md:px-4 py-4" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
             {/* Top Level Selectors */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
+            <div className="px-4 md:px-0" style={{ display: 'flex', flexDirection: 'column', gap: '8px', alignItems: 'center' }}>
                 <div style={{ display: 'flex', border: '2px solid rgba(239, 68, 68, 0.5)', borderRadius: '20px', overflow: 'hidden', width: '100%', maxWidth: '280px' }}>
                     <button onClick={() => setGender('male')} style={{ flex: 1, padding: '8px', background: gender === 'male' ? 'rgba(239, 68, 68, 0.8)' : 'transparent', color: gender === 'male' ? '#fff' : 'rgba(255,255,255,0.7)', fontWeight: 700, border: 'none' }}>Male</button>
                     <button onClick={() => setGender('female')} style={{ flex: 1, padding: '8px', background: gender === 'female' ? 'rgba(239, 68, 68, 0.8)' : 'transparent', color: gender === 'female' ? '#fff' : 'rgba(255,255,255,0.7)', fontWeight: 700, border: 'none' }}>Female</button>
@@ -115,7 +115,7 @@ export default function ReverseCalculator() {
             </div>
 
             {/* Static Bio Inputs */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center' }}>
+            <div className="px-4 md:px-0" style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', maxWidth: '280px' }}>
                     <span style={{ fontWeight: 800, width: '60px', textAlign: 'right' }}>Weight</span>
                     <input
