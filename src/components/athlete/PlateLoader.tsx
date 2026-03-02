@@ -359,18 +359,23 @@ export default function PlateLoader({
                                     color: p.text, display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     boxShadow: '0 4px 10px rgba(0,0,0,0.2)', overflow: 'hidden'
                                 }}>
-                                    <span style={{ fontSize: '1rem', fontWeight: 800, position: 'relative', zIndex: 1, pointerEvents: 'none' }}>{p.weight}</span>
+                                    <span style={{
+                                        fontSize: p.weight >= 10 ? '1rem' : '0.85rem',
+                                        fontWeight: 800, position: 'relative', zIndex: 1, pointerEvents: 'none',
+                                        background: p.text === '#fff' ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.05)',
+                                        padding: '2px 6px',
+                                        borderRadius: 8
+                                    }}>{p.weight}</span>
 
                                     {/* Hit Areas */}
                                     <div style={{ position: 'absolute', inset: 0, display: 'flex' }}>
                                         {/* Add (+) on left as requested */}
                                         <button
                                             onClick={() => addManualPlate(p.weight)}
-                                            className="hover-scale"
                                             style={{
                                                 flex: 1, background: 'transparent', border: 'none', color: p.text,
-                                                fontSize: '1.2rem', fontWeight: 900, cursor: 'pointer', textAlign: 'left', paddingLeft: 8,
-                                                display: 'flex', alignItems: 'center', opacity: 0.6
+                                                fontSize: '1.2rem', fontWeight: 900, cursor: 'pointer', textAlign: 'left', paddingLeft: 4,
+                                                display: 'flex', alignItems: 'center', opacity: 0.25
                                             }}
                                         >
                                             +
@@ -384,11 +389,10 @@ export default function PlateLoader({
                                                     removeManualPlate(actualIdx);
                                                 }
                                             }}
-                                            className="hover-scale"
                                             style={{
                                                 flex: 1, background: 'transparent', border: 'none', color: p.text,
-                                                fontSize: '1.2rem', fontWeight: 900, cursor: 'pointer', textAlign: 'right', paddingRight: 8,
-                                                display: 'flex', alignItems: 'center', justifyContent: 'flex-end', opacity: 0.6
+                                                fontSize: '1.2rem', fontWeight: 900, cursor: 'pointer', textAlign: 'right', paddingRight: 4,
+                                                display: 'flex', alignItems: 'center', justifyContent: 'flex-end', opacity: 0.25
                                             }}
                                         >
                                             -
