@@ -8,15 +8,15 @@ const PLATES = [
     { weight: 20, color: '#2563eb', label: '20', text: '#fff', width: 24, height: 280, border: '#1e40af' },   // Blue - deeper
     { weight: 15, color: '#eab308', label: '15', text: '#000', width: 24, height: 250, border: '#a16207' },   // Yellow
     { weight: 10, color: '#16a34a', label: '10', text: '#fff', width: 24, height: 220, border: '#166534' },   // Green - deeper
-    { weight: 5, color: '#e2e8f0', label: '5', text: '#000', width: 20, height: 180, border: '#94a3b8' },     // White/Silver
-    { weight: 2.5, color: '#1e293b', label: '2.5', text: '#fff', width: 18, height: 140, border: '#0f172a' }, // Black
-    { weight: 2, color: 'var(--card)', label: '2', text: 'var(--foreground)', width: 16, height: 120, border: 'var(--card-border)' }, // Silver/Theme
-    { weight: 1.5, color: 'var(--card)', label: '1.5', text: 'var(--foreground)', width: 14, height: 115, border: 'var(--card-border)' },
-    { weight: 1.25, color: 'var(--card)', label: '1.25', text: 'var(--foreground)', width: 14, height: 110, border: 'var(--card-border)' },
-    { weight: 1, color: 'var(--card)', label: '1', text: 'var(--foreground)', width: 12, height: 100, border: 'var(--card-border)' },
-    { weight: 0.5, color: 'var(--card-bg)', label: '0.5', text: 'var(--foreground)', width: 10, height: 95, border: 'var(--card-border)' },
-    { weight: 0.25, color: 'var(--card)', label: '0.25', text: 'var(--foreground)', width: 8, height: 90, border: 'var(--card-border)' },
-    { weight: 0.125, color: 'var(--card)', label: '0.125', text: 'var(--foreground)', width: 6, height: 85, border: 'var(--card-border)' }
+    { weight: 5, color: '#e2e8f0', label: '5', text: '#000', width: 20, height: 180, border: '#94a3b8' },
+    { weight: 2.5, color: '#e2e8f0', label: '2.5', text: '#000', width: 18, height: 140, border: '#94a3b8' },
+    { weight: 2, color: '#e2e8f0', label: '2', text: '#000', width: 16, height: 120, border: '#94a3b8' },
+    { weight: 1.5, color: '#e2e8f0', label: '1.5', text: '#000', width: 14, height: 115, border: '#94a3b8' },
+    { weight: 1.25, color: '#e2e8f0', label: '1.25', text: '#000', width: 14, height: 110, border: '#94a3b8' },
+    { weight: 1, color: '#e2e8f0', label: '1', text: '#000', width: 12, height: 100, border: '#94a3b8' },
+    { weight: 0.5, color: '#e2e8f0', label: '0.5', text: '#000', width: 10, height: 95, border: '#94a3b8' },
+    { weight: 0.25, color: '#e2e8f0', label: '0.25', text: '#000', width: 8, height: 90, border: '#94a3b8' },
+    { weight: 0.125, color: '#e2e8f0', label: '0.125', text: '#000', width: 6, height: 85, border: '#94a3b8' }
 ];
 
 export default function PlateLoader({
