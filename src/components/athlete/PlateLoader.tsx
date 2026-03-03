@@ -155,15 +155,15 @@ export default function PlateLoader({
 
                             {/* Inside of bar hub */}
                             <div style={{
-                                width: 40, height: 50, background: 'var(--card-bg)', border: '2px solid var(--card-border)',
+                                width: 40, height: 50, background: '#64748b', border: '2px solid #475569',
                                 borderRight: 'none', borderRadius: '4px 0 0 4px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                color: 'var(--secondary-foreground)', fontSize: '0.7rem', fontWeight: 700, zIndex: 10, position: 'relative'
+                                color: 'rgba(255,255,255,0.8)', fontSize: '0.7rem', fontWeight: 700, zIndex: 10, position: 'relative'
                             }}>
                                 {barWeight}
                             </div>
                             {/* The Sleeve where plates go */}
                             <div style={{
-                                flex: 1, height: 30, background: 'linear-gradient(to bottom, var(--card), var(--background))', border: '1px solid var(--card-border)',
+                                flex: 1, height: 30, background: 'linear-gradient(to bottom, #cbd5e1, #94a3b8)', border: '1px solid #64748b',
                                 borderLeft: 'none', position: 'relative', display: 'flex', alignItems: 'center', paddingLeft: 2
                             }}>
                                 <div style={{
@@ -201,18 +201,18 @@ export default function PlateLoader({
                                     {/* Collar at the end if toggled ON */}
                                     {includeCollars && (
                                         <div style={{
-                                            width: 30, height: 65, background: 'var(--card-bg)', border: '1px solid var(--card-border)',
+                                            width: 30, height: 65, background: '#cbd5e1', border: '1px solid #94a3b8',
                                             borderRadius: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center',
                                             zIndex: 200, position: 'relative', boxShadow: '2px 0 5px rgba(0,0,0,0.5)', marginLeft: 0,
                                             flexShrink: 0, cursor: 'pointer'
                                         }} onClick={() => setIncludeCollars(false)}>
                                             {/* Collar pin */}
-                                            <div style={{ position: 'absolute', top: -6, left: '50%', transform: 'translateX(-50%)', width: 6, height: 8, background: 'var(--card)', borderRadius: '2px 2px 0 0', border: '1px solid var(--card-border)', borderBottom: 'none' }}></div>
-                                            <div style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', width: 28, height: 4, background: 'var(--card)', borderRadius: '2px', border: '1px solid var(--card-border)' }}></div>
+                                            <div style={{ position: 'absolute', top: -6, left: '50%', transform: 'translateX(-50%)', width: 6, height: 8, background: '#e2e8f0', borderRadius: '2px 2px 0 0', border: '1px solid #94a3b8', borderBottom: 'none' }}></div>
+                                            <div style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', width: 28, height: 4, background: '#e2e8f0', borderRadius: '2px', border: '1px solid #94a3b8' }}></div>
                                         </div>
                                     )}
                                     {!includeCollars && displayPlates.length > 0 && (
-                                        <div style={{ width: 6, height: 40, background: 'var(--primary)', opacity: 0.5, borderRadius: 2, marginLeft: 0, border: '1px solid var(--primary)', cursor: 'pointer' }} onClick={() => setIncludeCollars(true)}></div>
+                                        <div style={{ width: 6, height: 40, background: '#475569', opacity: 0.5, borderRadius: 2, marginLeft: 0, border: '1px solid #1e293b', cursor: 'pointer' }} onClick={() => setIncludeCollars(true)}></div>
                                     )}
                                 </div>
                             </div>
