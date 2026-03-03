@@ -498,7 +498,7 @@ export default function ChatInterface({
                             <Link href={`/athlete/${athleteId}/dashboard`} style={{ color: 'var(--primary)', background: 'none', border: 'none', textDecoration: 'none', fontSize: 14, fontWeight: 500 }}>← Back</Link>
                         )}
                         <div style={{ flex: 1, textAlign: 'center', fontWeight: 600, color: 'var(--foreground)', fontSize: 15 }}>{otherUserName}</div>
-                        <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'linear-gradient(135deg, #06b6d4, #10b981)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#000', fontSize: 13 }}>
+                        <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'linear-gradient(135deg, #7d87d2, #a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 13 }}>
                             {otherUserName.charAt(0).toUpperCase()}
                         </div>
                     </>
@@ -546,11 +546,11 @@ export default function ChatInterface({
                                             style={{
                                                 padding: msg.mediaUrl ? '4px 4px 8px' : '8px 14px',
                                                 borderRadius: mine ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                                                background: isSelected ? 'rgba(6,182,212,0.4)' : mine ? 'linear-gradient(135deg, rgba(6,182,212,0.85), rgba(16,185,129,0.75))' : 'rgba(30, 41, 59, 0.85)',
+                                                background: isSelected ? 'rgba(125,135,210,0.4)' : mine ? 'linear-gradient(135deg, rgba(125,135,210,0.9), rgba(168,85,247,0.7))' : 'rgba(30, 41, 59, 0.85)',
                                                 backdropFilter: !mine && !isSelected ? 'blur(10px)' : 'none',
                                                 WebkitBackdropFilter: !mine && !isSelected ? 'blur(10px)' : 'none',
                                                 border: isSelected ? '1px solid var(--primary)' : mine ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.08)',
-                                                boxShadow: mine ? '0 4px 12px rgba(6,182,212,0.15)' : '0 4px 12px rgba(0,0,0,0.2)',
+                                                boxShadow: mine ? '0 4px 12px rgba(125,135,210,0.2)' : '0 4px 12px rgba(0,0,0,0.2)',
                                                 wordBreak: 'break-word',
                                                 overflowWrap: 'break-word',
                                                 transition: 'all 0.2s ease',
@@ -661,7 +661,7 @@ export default function ChatInterface({
                             {isCompressing ? `${statusText} ${compressProgress}%` : statusText || 'Uploading…'}
                         </div>
                         <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
-                            <div style={{ height: '100%', borderRadius: 2, background: 'linear-gradient(90deg, #06b6d4, #10b981)', transition: 'width 200ms', width: isCompressing ? `${compressProgress}%` : '100%' }} />
+                            <div style={{ height: '100%', borderRadius: 2, background: 'linear-gradient(90deg, #7d87d2, #a855f7)', transition: 'width 200ms', width: isCompressing ? `${compressProgress}%` : '100%' }} />
                         </div>
                     </div>
                 )
@@ -720,7 +720,7 @@ export default function ChatInterface({
                         <button onClick={cancelRecording} style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', fontSize: 13, cursor: 'pointer', padding: '6px 12px' }}>
                             Cancel
                         </button>
-                        <button onClick={stopRecording} style={{ background: 'linear-gradient(135deg, #06b6d4, #10b981)', border: 'none', borderRadius: 20, color: '#000', fontSize: 13, fontWeight: 600, padding: '6px 16px', cursor: 'pointer' }}>
+                        <button onClick={stopRecording} style={{ background: 'linear-gradient(135deg, #7d87d2, #a855f7)', border: 'none', borderRadius: 20, color: '#fff', fontSize: 13, fontWeight: 600, padding: '6px 16px', cursor: 'pointer' }}>
                             Done
                         </button>
                     </div>
@@ -743,7 +743,7 @@ export default function ChatInterface({
                             </button>
                         ) : (
                             <button onClick={() => handleSend()} disabled={uploading}
-                                style={{ width: 34, height: 34, borderRadius: '50%', background: 'linear-gradient(135deg, #06b6d4, #10b981)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, opacity: uploading ? 0.3 : 1, color: '#000' }}>
+                                style={{ width: 34, height: 34, borderRadius: '50%', background: 'linear-gradient(135deg, #7d87d2, #a855f7)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, opacity: uploading ? 0.3 : 1, color: '#fff' }}>
                                 <Send size={15} style={{ marginLeft: 2 }} />
                             </button>
                         )}
