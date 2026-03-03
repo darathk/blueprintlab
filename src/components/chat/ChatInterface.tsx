@@ -461,20 +461,28 @@ export default function ChatInterface({
             background: 'var(--background)',
             overscrollBehavior: 'none',
             borderRadius: 0,
-            border: 'none'
+            border: 'none',
+            position: 'relative' // Added for absolute positioning of glass elements
         }}>
             {/* Header */}
             <div style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                right: 0,
                 padding: '12px 16px',
                 paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))',
-                background: 'var(--card-bg)',
-                borderBottom: '1px solid var(--card-border)',
+                background: 'rgba(15, 23, 42, 0.75)', // Glassmorphic background
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                borderBottom: '1px solid rgba(255,255,255,0.08)',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 12,
                 flexShrink: 0,
                 height: 'calc(var(--header-height) + env(safe-area-inset-top, 0px))',
-                width: '100%'
+                width: '100%',
+                zIndex: 40 // Keep above messages
             }}>
                 {isMultiSelecting ? (
                     <>
@@ -498,7 +506,7 @@ export default function ChatInterface({
             </div>
 
             {/* Messages */}
-            <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '12px 16px', minHeight: 0 }}>
+            <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '12px 16px', minHeight: 0, paddingTop: 'calc(var(--header-height) + 16px + env(safe-area-inset-top, 0px))' }}>
                 {!loaded && <div style={{ textAlign: 'center', padding: 40, color: 'var(--secondary-foreground)' }}>Loading…</div>}
                 {loaded && messages.length === 0 && <div style={{ textAlign: 'center', padding: 60, color: 'var(--secondary-foreground)', fontSize: 14 }}>No messages yet. Start the conversation!</div>}
 
@@ -538,17 +546,20 @@ export default function ChatInterface({
                                             style={{
                                                 padding: msg.mediaUrl ? '4px 4px 8px' : '8px 14px',
                                                 borderRadius: mine ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                                                background: isSelected ? 'rgba(6,182,212,0.4)' : mine ? 'linear-gradient(135deg, rgba(6,182,212,0.3), rgba(16,185,129,0.2))' : 'var(--card-bg)',
-                                                border: isSelected ? '1px solid var(--primary)' : mine ? '1px solid rgba(6,182,212,0.12)' : '1px solid var(--card-border)',
+                                                background: isSelected ? 'rgba(6,182,212,0.4)' : mine ? 'linear-gradient(135deg, rgba(6,182,212,0.85), rgba(16,185,129,0.75))' : 'rgba(30, 41, 59, 0.85)',
+                                                backdropFilter: !mine && !isSelected ? 'blur(10px)' : 'none',
+                                                WebkitBackdropFilter: !mine && !isSelected ? 'blur(10px)' : 'none',
+                                                border: isSelected ? '1px solid var(--primary)' : mine ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.08)',
+                                                boxShadow: mine ? '0 4px 12px rgba(6,182,212,0.15)' : '0 4px 12px rgba(0,0,0,0.2)',
                                                 wordBreak: 'break-word',
                                                 overflowWrap: 'break-word',
                                                 transition: 'all 0.2s ease',
                                             }}>
                                             {/* Reply */}
                                             {msg.replyTo && (
-                                                <div style={{ margin: msg.mediaUrl ? '4px 8px 6px' : '0 0 6px', padding: '6px 8px', borderRadius: 10, background: 'rgba(255,255,255,0.04)', borderLeft: '2px solid rgba(6,182,212,0.5)', fontSize: 11 }}>
-                                                    <div style={{ fontWeight: 600, color: 'rgba(6,182,212,0.7)', marginBottom: 2 }}>{msg.replyTo.sender.name}</div>
-                                                    <div style={{ color: 'rgba(255,255,255,0.35)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                <div style={{ margin: msg.mediaUrl ? '4px 8px 6px' : '0 0 6px', padding: '6px 8px', borderRadius: 10, background: 'rgba(0,0,0,0.15)', borderLeft: mine ? '2px solid rgba(255,255,255,0.7)' : '2px solid var(--primary)', fontSize: 11 }}>
+                                                    <div style={{ fontWeight: 600, color: mine ? '#fff' : 'var(--primary)', marginBottom: 2 }}>{msg.replyTo.sender.name}</div>
+                                                    <div style={{ color: mine ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.4)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                         {msg.replyTo.mediaUrl ? (msg.replyTo.mediaType?.startsWith('image') ? 'Photo' : msg.replyTo.mediaType?.startsWith('audio') ? 'Voice' : 'Video') : msg.replyTo.content}
                                                     </div>
                                                 </div>
@@ -684,11 +695,18 @@ export default function ChatInterface({
 
             {/* Input */}
             <div style={{
+                position: 'absolute',
+                bottom: 0,
+                left: 0,
+                right: 0,
                 padding: '8px 12px',
                 paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
-                background: 'var(--card-bg)',
-                borderTop: '1px solid var(--card-border)',
-                flexShrink: 0
+                background: 'rgba(15, 23, 42, 0.75)', // Glassmorphism background
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                borderTop: '1px solid rgba(255,255,255,0.08)',
+                flexShrink: 0,
+                zIndex: 40
             }}>
                 <input ref={fileRef} type="file" multiple accept="video/*,image/*" onChange={handleMedia} style={{ display: 'none' }} />
                 {isCompressing && stagedFiles.length === 0 ? (
@@ -716,7 +734,7 @@ export default function ChatInterface({
                             onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
                             placeholder={(stagedFiles.length > 0 && !newMessage) ? "Add a caption..." : "Message"}
                             disabled={uploading}
-                            style={{ flex: 1, padding: '8px 16px', borderRadius: 20, background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'var(--foreground)', fontSize: 14, outline: 'none', minWidth: 0, opacity: uploading ? 0.5 : 1 }} />
+                            style={{ flex: 1, padding: '8px 16px', borderRadius: 20, background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)', color: 'var(--foreground)', fontSize: 14, outline: 'none', minWidth: 0, opacity: uploading ? 0.5 : 1 }} />
 
                         {!newMessage.trim() && stagedFiles.length === 0 ? (
                             <button onClick={startRecording} disabled={uploading}
