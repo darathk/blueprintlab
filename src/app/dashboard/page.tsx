@@ -1,8 +1,10 @@
-import Link from 'next/link';
 import { getAthletes, getPrograms, getLogSummariesForDashboard } from '@/lib/storage';
 import { prisma } from '@/lib/prisma';
-import ActivePersonnelList from '@/components/dashboard/ActivePersonnelList';
-import CollapsibleSection from '@/components/ui/CollapsibleSection';
+import dynamic from 'next/dynamic';
+
+const ActivePersonnelList = dynamic(() => import('@/components/dashboard/ActivePersonnelList'), {
+    loading: () => <div style={{ textAlign: 'center', padding: '50px', color: 'var(--muted)' }}>Loading Command Center...</div>
+});
 
 import { currentUser } from '@clerk/nextjs/server';
 
