@@ -8,8 +8,8 @@ const PLATES = [
     { weight: 20, color: '#2563eb', label: '20', text: '#fff', width: 24, height: 280, border: '#1e40af' },   // Blue - deeper
     { weight: 15, color: '#eab308', label: '15', text: '#000', width: 24, height: 250, border: '#a16207' },   // Yellow
     { weight: 10, color: '#16a34a', label: '10', text: '#fff', width: 24, height: 220, border: '#166534' },   // Green - deeper
-    { weight: 5, color: '#e2e8f0', label: '5', text: '#000', width: 20, height: 180, border: '#94a3b8' },
-    { weight: 2.5, color: '#e2e8f0', label: '2.5', text: '#000', width: 18, height: 140, border: '#94a3b8' },
+    { weight: 5, color: '#f8fafc', label: '5', text: '#000', width: 20, height: 180, border: '#cbd5e1' },     // White
+    { weight: 2.5, color: '#1e293b', label: '2.5', text: '#fff', width: 18, height: 140, border: '#0f172a' }, // Black
     { weight: 2, color: '#e2e8f0', label: '2', text: '#000', width: 16, height: 120, border: '#94a3b8' },
     { weight: 1.5, color: '#e2e8f0', label: '1.5', text: '#000', width: 14, height: 115, border: '#94a3b8' },
     { weight: 1.25, color: '#e2e8f0', label: '1.25', text: '#000', width: 14, height: 110, border: '#94a3b8' },
