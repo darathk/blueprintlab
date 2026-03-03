@@ -3,7 +3,7 @@ import { Suspense } from 'react';
 import { getAthleteById, getProgramsByAthlete, getLogsByAthlete } from '@/lib/storage';
 import dynamic from 'next/dynamic';
 
-const ScheduleView = dynamic(() => import('@/components/athlete/ScheduleView'), { ssr: false });
+const ScheduleView = dynamic(() => import('@/components/athlete/ScheduleView'));
 
 async function AsyncSchedule({ id }: { id: string }) {
     try {
