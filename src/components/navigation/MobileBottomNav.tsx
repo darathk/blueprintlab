@@ -24,7 +24,7 @@ export default function MobileBottomNav({ items, children, className }: { items:
 
     return (
         <nav className={`md:hidden fixed bottom-0 left-0 right-0 z-[1000] border-t border-[var(--card-border)] rounded-none px-2 pb-safe-offset-2 ${className || ''}`} style={{
-            height: 'calc(65px + env(safe-area-inset-bottom, 0px))',
+            height: 'calc(75px + env(safe-area-inset-bottom, 0px))',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-around',
@@ -61,14 +61,14 @@ export default function MobileBottomNav({ items, children, className }: { items:
                         }}
                     >
                         <div style={{
-                            fontSize: '1.2rem',
+                            fontSize: '1.5rem',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             color: active ? 'var(--primary)' : 'var(--secondary-foreground)',
                             filter: active ? 'drop-shadow(0 0 8px rgba(125, 135, 210, 0.4))' : 'none',
                             transition: 'transform 0.2s ease',
-                            transform: active ? 'scale(1.1)' : 'scale(1)'
+                            transform: active ? 'scale(1.15)' : 'scale(1)'
                         }}>
                             {item.icon}
                         </div>

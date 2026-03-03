@@ -96,7 +96,7 @@ export default function ReverseCalculator() {
     const fmt = (val: number) => val.toFixed(1).replace('.0', '');
 
     return (
-        <div className="px-0 md:px-4 py-2" style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center' }}>
+        <div className="px-0 md:px-4 pt-8 pb-4" style={{ display: 'flex', flexDirection: 'column', gap: '16px', alignItems: 'center' }}>
 
             {/* Top Level Selectors - Pill Styling */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', alignItems: 'center' }}>

@@ -6,7 +6,8 @@ export default function DashboardPlateLoaderPage() {
             display: 'flex',
             flexDirection: 'column',
             height: '100%',
-            overflow: 'hidden'
+            overflow: 'hidden',
+            margin: '0 -1.5rem'
         }}>
             <LoaderContainer />
         </div>
