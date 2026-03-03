@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { Mic, Video as VideoIcon, Image as ImageIcon, MoreVertical, Reply, Copy, Download, Paperclip, X, Send } from 'lucide-react';
@@ -85,20 +85,38 @@ export default function ChatInterface({
     }, [athleteId, currentUserId, otherUserId]);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    // Track if user has scrolled up — if so, don't auto-jump on polling updates
+    const userScrolledUp = useRef(false);
 
-    // Scroll to bottom after render — use multiple attempts for slow devices
+    const scrollToBottom = useCallback((force = false) => {
+        const el = scrollContainerRef.current;
+        if (!el) return;
+        const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+        if (force || distFromBottom < 120) {
+            el.scrollTop = el.scrollHeight;
+            userScrolledUp.current = false;
+        }
+    }, []);
+
+    // Only force-scroll when user sends/receives a new message (not on background polls)
+    const prevMsgCount = useRef(0);
     useEffect(() => {
-        const scroll = () => {
-            if (scrollContainerRef.current) {
-                scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
-            }
-        };
-        scroll();
-        const t1 = setTimeout(scroll, 100);
-        const t2 = setTimeout(scroll, 300);
-        const t3 = setTimeout(scroll, 600); // extra attempt for heavier image loads
-        return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
-    }, [messages, loaded]);
+        if (!loaded) return;
+        const newCount = messages.length;
+        const isNewMsg = newCount > prevMsgCount.current;
+        prevMsgCount.current = newCount;
+        if (isNewMsg) {
+            // New message: scroll to bottom only if user was already near bottom
+            scrollToBottom(false);
+        }
+    }, [messages, loaded, scrollToBottom]);
+
+    // Force scroll to bottom on initial load
+    useEffect(() => {
+        if (loaded) {
+            scrollToBottom(true);
+        }
+    }, [loaded, scrollToBottom]);
 
     // Realtime — append only, no re-fetch
     useEffect(() => {
@@ -125,7 +143,7 @@ export default function ChatInterface({
                 .then(data => {
                     if (data && data.length > 0) {
                         setMessages(prev => {
-                            // Only trigger expensive render and PATCH if new messages arrived
+                            // Only trigger re-render if new messages arrived
                             if (prev.length !== data.length || prev[prev.length - 1]?.id !== data[data.length - 1]?.id) {
                                 const hasUnread = data.some((m: any) => m.receiverId === currentUserId && !m.read);
                                 if (hasUnread) {
@@ -140,7 +158,7 @@ export default function ChatInterface({
                         });
                     }
                 });
-        }, 3000);
+        }, 10000); // Increased from 3s to 10s — Supabase realtime handles instant delivery
         return () => clearInterval(poll);
     }, [athleteId, currentUserId, otherUserId]);
 
@@ -506,7 +524,7 @@ export default function ChatInterface({
             </div>
 
             {/* Messages */}
-            <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '12px 16px', minHeight: 0, paddingTop: 'calc(var(--header-height) + 16px + env(safe-area-inset-top, 0px))' }}>
+            <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '12px 16px', minHeight: 0, paddingTop: 'calc(var(--header-height) + 16px + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(56px + env(safe-area-inset-bottom, 0px))', willChange: 'scroll-position', transform: 'translateZ(0)', WebkitOverflowScrolling: 'touch' as any, overscrollBehavior: 'contain' }}>
                 {!loaded && <div style={{ textAlign: 'center', padding: 40, color: 'var(--secondary-foreground)' }}>Loading…</div>}
                 {loaded && messages.length === 0 && <div style={{ textAlign: 'center', padding: 60, color: 'var(--secondary-foreground)', fontSize: 14 }}>No messages yet. Start the conversation!</div>}
 
@@ -547,13 +565,12 @@ export default function ChatInterface({
                                                 padding: msg.mediaUrl ? '4px 4px 8px' : '8px 14px',
                                                 borderRadius: mine ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
                                                 background: isSelected ? 'rgba(125,135,210,0.4)' : mine ? 'linear-gradient(135deg, rgba(125,135,210,0.9), rgba(168,85,247,0.7))' : 'rgba(30, 41, 59, 0.85)',
-                                                backdropFilter: !mine && !isSelected ? 'blur(10px)' : 'none',
-                                                WebkitBackdropFilter: !mine && !isSelected ? 'blur(10px)' : 'none',
+                                                // Removed backdropFilter from per-bubble: caused GPU repaint on every scroll frame
                                                 border: isSelected ? '1px solid var(--primary)' : mine ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.08)',
-                                                boxShadow: mine ? '0 4px 12px rgba(125,135,210,0.2)' : '0 4px 12px rgba(0,0,0,0.2)',
+                                                boxShadow: mine ? '0 4px 12px rgba(125,135,210,0.2)' : '0 2px 8px rgba(0,0,0,0.2)',
                                                 wordBreak: 'break-word',
                                                 overflowWrap: 'break-word',
-                                                transition: 'all 0.2s ease',
+                                                transition: 'background 0.15s ease',
                                             }}>
                                             {/* Reply */}
                                             {msg.replyTo && (
