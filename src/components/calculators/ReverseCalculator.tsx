@@ -100,15 +100,15 @@ export default function ReverseCalculator() {
 
             {/* Top Level Selectors - Pill Styling */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%', alignItems: 'center' }}>
-                <div style={{ display: 'flex', background: 'rgba(239, 68, 68, 0.15)', borderRadius: '24px', padding: '4px', width: '240px' }}>
+                <div style={{ display: 'flex', background: 'var(--card)', border: '1px solid var(--card-border)', borderRadius: '24px', padding: '4px', width: '240px' }}>
                     <button onClick={() => setGender('male')} style={{ flex: 1, padding: '4px 8px', fontSize: '0.9rem', background: gender === 'male' ? 'var(--primary)' : 'transparent', color: gender === 'male' ? '#fff' : 'var(--foreground)', fontWeight: 700, border: 'none', borderRadius: '20px', transition: 'all 0.2s', outline: 'none', cursor: 'pointer' }}>Male</button>
                     <button onClick={() => setGender('female')} style={{ flex: 1, padding: '4px 8px', fontSize: '0.9rem', background: gender === 'female' ? 'var(--primary)' : 'transparent', color: gender === 'female' ? '#fff' : 'var(--foreground)', fontWeight: 700, border: 'none', borderRadius: '20px', transition: 'all 0.2s', outline: 'none', cursor: 'pointer' }}>Female</button>
                 </div>
-                <div style={{ display: 'flex', background: 'rgba(239, 68, 68, 0.15)', borderRadius: '24px', padding: '4px', width: '240px' }}>
+                <div style={{ display: 'flex', background: 'var(--card)', border: '1px solid var(--card-border)', borderRadius: '24px', padding: '4px', width: '240px' }}>
                     <button onClick={() => setEquipped('raw')} style={{ flex: 1, padding: '4px 8px', fontSize: '0.9rem', background: equipped === 'raw' ? 'var(--primary)' : 'transparent', color: equipped === 'raw' ? '#fff' : 'var(--foreground)', fontWeight: 700, border: 'none', borderRadius: '20px', transition: 'all 0.2s', outline: 'none', cursor: 'pointer' }}>Raw</button>
                     <button onClick={() => setEquipped('equipped')} style={{ flex: 1, padding: '4px 8px', fontSize: '0.9rem', background: equipped === 'equipped' ? 'var(--primary)' : 'transparent', color: equipped === 'equipped' ? '#fff' : 'var(--foreground)', fontWeight: 700, border: 'none', borderRadius: '20px', transition: 'all 0.2s', outline: 'none', cursor: 'pointer' }}>Equipped</button>
                 </div>
-                <div style={{ display: 'flex', background: 'rgba(239, 68, 68, 0.15)', borderRadius: '24px', padding: '4px', width: '240px' }}>
+                <div style={{ display: 'flex', background: 'var(--card)', border: '1px solid var(--card-border)', borderRadius: '24px', padding: '4px', width: '240px' }}>
                     <button onClick={() => setEvents('sbd')} style={{ flex: 1, padding: '4px 8px', fontSize: '0.9rem', background: events === 'sbd' ? 'var(--primary)' : 'transparent', color: events === 'sbd' ? '#fff' : 'var(--foreground)', fontWeight: 700, border: 'none', borderRadius: '20px', transition: 'all 0.2s', outline: 'none', cursor: 'pointer' }}>S/B/D</button>
                     <button onClick={() => setEvents('bench')} style={{ flex: 1, padding: '4px 8px', fontSize: '0.9rem', background: events === 'bench' ? 'var(--primary)' : 'transparent', color: events === 'bench' ? '#fff' : 'var(--foreground)', fontWeight: 700, border: 'none', borderRadius: '20px', transition: 'all 0.2s', outline: 'none', cursor: 'pointer' }}>Bench</button>
                 </div>
@@ -121,7 +121,8 @@ export default function ReverseCalculator() {
                     <input
                         type="number" inputMode="decimal" value={bwStr} onChange={e => setBwStr(e.target.value)}
                         placeholder="Weight"
-                        style={{ width: '135px', border: '1px solid rgba(239, 68, 68, 0.5)', borderRadius: '24px', padding: '8px 16px', background: 'transparent', color: 'var(--foreground)', fontWeight: 600, textAlign: 'center', fontSize: '1rem', outline: 'none' }}
+                        className="glass-panel"
+                        style={{ width: '135px', borderRadius: '24px', padding: '8px 16px', background: 'var(--card)', color: 'var(--foreground)', fontWeight: 600, textAlign: 'center', fontSize: '1rem', outline: 'none' }}
                     />
                     <button onClick={() => setUnit(u => u === 'lb' ? 'kg' : 'lb')} style={{ fontWeight: 800, color: 'var(--primary)', background: 'transparent', border: 'none', padding: '8px 0', cursor: 'pointer', width: '35px', fontSize: '1rem', textAlign: 'left', outline: 'none' }}>{unit.toUpperCase()}</button>
                 </div>
@@ -130,7 +131,8 @@ export default function ReverseCalculator() {
                     <input
                         type="number" inputMode="decimal" value={totalStr} onChange={e => setTotalStr(e.target.value)}
                         placeholder="Total"
-                        style={{ width: '135px', border: '1px solid rgba(239, 68, 68, 0.5)', borderRadius: '24px', padding: '8px 16px', background: 'transparent', color: 'var(--foreground)', fontWeight: 600, textAlign: 'center', fontSize: '1rem', outline: 'none' }}
+                        className="glass-panel"
+                        style={{ width: '135px', borderRadius: '24px', padding: '8px 16px', background: 'var(--card)', color: 'var(--foreground)', fontWeight: 600, textAlign: 'center', fontSize: '1rem', outline: 'none' }}
                     />
                     <span style={{ fontWeight: 800, color: 'var(--primary)', background: 'transparent', border: 'none', width: '35px', fontSize: '1rem', textAlign: 'left' }}>{unit.toUpperCase()}</span>
                 </div>
@@ -139,7 +141,8 @@ export default function ReverseCalculator() {
                     <input
                         type="number" inputMode="numeric" value={ageStr} onChange={e => setAgeStr(e.target.value)}
                         placeholder="Age"
-                        style={{ width: '135px', border: '1px solid rgba(239, 68, 68, 0.5)', borderRadius: '24px', padding: '8px 16px', background: 'transparent', color: 'var(--foreground)', fontWeight: 600, textAlign: 'center', fontSize: '1rem', outline: 'none' }}
+                        className="glass-panel"
+                        style={{ width: '135px', borderRadius: '24px', padding: '8px 16px', background: 'var(--card)', color: 'var(--foreground)', fontWeight: 600, textAlign: 'center', fontSize: '1rem', outline: 'none' }}
                     />
                     <span style={{ width: '35px' }}></span>
                 </div>
@@ -162,7 +165,8 @@ export default function ReverseCalculator() {
                     <input
                         type="number" inputMode="decimal" value={targetScoreStr} onChange={e => setTargetScoreStr(e.target.value)}
                         placeholder="100"
-                        style={{ width: '90px', border: '1px solid rgba(239, 68, 68, 0.5)', borderRadius: '20px', padding: '6px 12px', background: 'transparent', color: 'var(--foreground)', fontWeight: 700, fontSize: '1rem', textAlign: 'center', outline: 'none' }}
+                        className="glass-panel"
+                        style={{ width: '90px', borderRadius: '20px', padding: '6px 12px', background: 'var(--card)', color: 'var(--foreground)', fontWeight: 700, fontSize: '1rem', textAlign: 'center', outline: 'none' }}
                     />
                 </div>
 
@@ -225,7 +229,7 @@ export default function ReverseCalculator() {
                                         {fmt(calculatedLiftValue)}
                                     </div>
                                 ) : (
-                                    <input type="number" value={squatStr} onChange={e => setSquatStr(e.target.value)} placeholder="0" style={{ flex: '1 1 150px', border: '2px solid rgba(239, 68, 68, 0.5)', borderRadius: '24px', padding: '12px', background: 'transparent', color: 'var(--foreground)', fontWeight: 600, textAlign: 'center', height: '48px', minWidth: 0 }} />
+                                    <input type="number" value={squatStr} onChange={e => setSquatStr(e.target.value)} placeholder="0" className="glass-panel" style={{ flex: '1 1 150px', borderRadius: '24px', padding: '12px', background: 'var(--card)', color: 'var(--foreground)', fontWeight: 600, textAlign: 'center', height: '48px', minWidth: 0, outline: 'none' }} />
                                 )}
                             </div>
 
@@ -239,7 +243,7 @@ export default function ReverseCalculator() {
                                         {fmt(calculatedLiftValue)}
                                     </div>
                                 ) : (
-                                    <input type="number" value={benchStr} onChange={e => setBenchStr(e.target.value)} placeholder="0" style={{ flex: '1 1 150px', border: '2px solid rgba(239, 68, 68, 0.5)', borderRadius: '24px', padding: '12px', background: 'transparent', color: 'var(--foreground)', fontWeight: 600, textAlign: 'center', height: '48px', minWidth: 0 }} />
+                                    <input type="number" value={benchStr} onChange={e => setBenchStr(e.target.value)} placeholder="0" className="glass-panel" style={{ flex: '1 1 150px', borderRadius: '24px', padding: '12px', background: 'var(--card)', color: 'var(--foreground)', fontWeight: 600, textAlign: 'center', height: '48px', minWidth: 0, outline: 'none' }} />
                                 )}
                             </div>
 
@@ -253,7 +257,7 @@ export default function ReverseCalculator() {
                                         {fmt(calculatedLiftValue)}
                                     </div>
                                 ) : (
-                                    <input type="number" value={deadliftStr} onChange={e => setDeadliftStr(e.target.value)} placeholder="0" style={{ flex: '1 1 150px', border: '2px solid rgba(239, 68, 68, 0.5)', borderRadius: '24px', padding: '12px', background: 'transparent', color: 'var(--foreground)', fontWeight: 600, textAlign: 'center', height: '48px', minWidth: 0 }} />
+                                    <input type="number" value={deadliftStr} onChange={e => setDeadliftStr(e.target.value)} placeholder="0" className="glass-panel" style={{ flex: '1 1 150px', borderRadius: '24px', padding: '12px', background: 'var(--card)', color: 'var(--foreground)', fontWeight: 600, textAlign: 'center', height: '48px', minWidth: 0, outline: 'none' }} />
                                 )}
                             </div>
                         </div>

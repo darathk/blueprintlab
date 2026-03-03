@@ -4,19 +4,19 @@ import React, { useState, useMemo, useEffect } from 'react';
 import { RotateCcw, Calculator, ArrowRightLeft } from 'lucide-react';
 
 const PLATES = [
-    { weight: 25, color: '#ef4444', label: '25', text: '#fff', width: 24, height: 280 },   // Red
-    { weight: 20, color: '#3b82f6', label: '20', text: '#fff', width: 24, height: 280 },   // Blue
-    { weight: 15, color: '#eab308', label: '15', text: '#000', width: 24, height: 250 },   // Yellow
-    { weight: 10, color: '#22c55e', label: '10', text: '#fff', width: 24, height: 220 },   // Green
-    { weight: 5, color: '#f8fafc', label: '5', text: '#000', width: 20, height: 180, border: '#cbd5e1' },     // White
-    { weight: 2.5, color: '#1e293b', label: '2.5', text: '#fff', width: 18, height: 140 }, // Black
-    { weight: 2, color: '#e2e8f0', label: '2', text: '#000', width: 16, height: 120, border: '#cbd5e1' }, // Silver
-    { weight: 1.5, color: '#e2e8f0', label: '1.5', text: '#000', width: 14, height: 115, border: '#cbd5e1' }, // Silver
-    { weight: 1.25, color: '#e2e8f0', label: '1.25', text: '#000', width: 14, height: 110, border: '#cbd5e1' }, // Silver
-    { weight: 1, color: '#e2e8f0', label: '1', text: '#000', width: 12, height: 100, border: '#cbd5e1' }, // Silver
-    { weight: 0.5, color: '#f8fafc', label: '0.5', text: '#000', width: 10, height: 95, border: '#cbd5e1' }, // White
-    { weight: 0.25, color: '#e2e8f0', label: '0.25', text: '#000', width: 8, height: 90, border: '#cbd5e1' }, // Silver
-    { weight: 0.125, color: '#e2e8f0', label: '0.125', text: '#000', width: 6, height: 85, border: '#cbd5e1' } // Silver
+    { weight: 25, color: '#dc2626', label: '25', text: '#fff', width: 24, height: 280, border: '#991b1b' },   // Red - deeper
+    { weight: 20, color: '#2563eb', label: '20', text: '#fff', width: 24, height: 280, border: '#1e40af' },   // Blue - deeper
+    { weight: 15, color: '#eab308', label: '15', text: '#000', width: 24, height: 250, border: '#a16207' },   // Yellow
+    { weight: 10, color: '#16a34a', label: '10', text: '#fff', width: 24, height: 220, border: '#166534' },   // Green - deeper
+    { weight: 5, color: '#e2e8f0', label: '5', text: '#000', width: 20, height: 180, border: '#94a3b8' },     // White/Silver
+    { weight: 2.5, color: '#1e293b', label: '2.5', text: '#fff', width: 18, height: 140, border: '#0f172a' }, // Black
+    { weight: 2, color: 'var(--card)', label: '2', text: 'var(--foreground)', width: 16, height: 120, border: 'var(--card-border)' }, // Silver/Theme
+    { weight: 1.5, color: 'var(--card)', label: '1.5', text: 'var(--foreground)', width: 14, height: 115, border: 'var(--card-border)' },
+    { weight: 1.25, color: 'var(--card)', label: '1.25', text: 'var(--foreground)', width: 14, height: 110, border: 'var(--card-border)' },
+    { weight: 1, color: 'var(--card)', label: '1', text: 'var(--foreground)', width: 12, height: 100, border: 'var(--card-border)' },
+    { weight: 0.5, color: 'var(--card-bg)', label: '0.5', text: 'var(--foreground)', width: 10, height: 95, border: 'var(--card-border)' },
+    { weight: 0.25, color: 'var(--card)', label: '0.25', text: 'var(--foreground)', width: 8, height: 90, border: 'var(--card-border)' },
+    { weight: 0.125, color: 'var(--card)', label: '0.125', text: 'var(--foreground)', width: 6, height: 85, border: 'var(--card-border)' }
 ];
 
 export default function PlateLoader({
@@ -155,15 +155,15 @@ export default function PlateLoader({
 
                             {/* Inside of bar hub */}
                             <div style={{
-                                width: 40, height: 50, background: '#64748b', border: '2px solid #475569',
+                                width: 40, height: 50, background: 'var(--card-bg)', border: '2px solid var(--card-border)',
                                 borderRight: 'none', borderRadius: '4px 0 0 4px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                color: 'rgba(255,255,255,0.5)', fontSize: '0.7rem', fontWeight: 700, zIndex: 10, position: 'relative'
+                                color: 'var(--secondary-foreground)', fontSize: '0.7rem', fontWeight: 700, zIndex: 10, position: 'relative'
                             }}>
                                 {barWeight}
                             </div>
                             {/* The Sleeve where plates go */}
                             <div style={{
-                                flex: 1, height: 30, background: 'linear-gradient(to bottom, #cbd5e1, #94a3b8)', border: '1px solid #64748b',
+                                flex: 1, height: 30, background: 'linear-gradient(to bottom, var(--card), var(--background))', border: '1px solid var(--card-border)',
                                 borderLeft: 'none', position: 'relative', display: 'flex', alignItems: 'center', paddingLeft: 2
                             }}>
                                 <div style={{
@@ -201,18 +201,18 @@ export default function PlateLoader({
                                     {/* Collar at the end if toggled ON */}
                                     {includeCollars && (
                                         <div style={{
-                                            width: 30, height: 65, background: '#cbd5e1', border: '1px solid #94a3b8',
+                                            width: 30, height: 65, background: 'var(--card-bg)', border: '1px solid var(--card-border)',
                                             borderRadius: '2px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            zIndex: 200, position: 'relative', boxShadow: '2px 0 5px rgba(0,0,0,0.3)', marginLeft: 0,
+                                            zIndex: 200, position: 'relative', boxShadow: '2px 0 5px rgba(0,0,0,0.5)', marginLeft: 0,
                                             flexShrink: 0, cursor: 'pointer'
                                         }} onClick={() => setIncludeCollars(false)}>
                                             {/* Collar pin */}
-                                            <div style={{ position: 'absolute', top: -6, left: '50%', transform: 'translateX(-50%)', width: 6, height: 8, background: '#e2e8f0', borderRadius: '2px 2px 0 0', border: '1px solid #94a3b8', borderBottom: 'none' }}></div>
-                                            <div style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', width: 28, height: 4, background: '#e2e8f0', borderRadius: '2px', border: '1px solid #94a3b8' }}></div>
+                                            <div style={{ position: 'absolute', top: -6, left: '50%', transform: 'translateX(-50%)', width: 6, height: 8, background: 'var(--card)', borderRadius: '2px 2px 0 0', border: '1px solid var(--card-border)', borderBottom: 'none' }}></div>
+                                            <div style={{ position: 'absolute', top: -10, left: '50%', transform: 'translateX(-50%)', width: 28, height: 4, background: 'var(--card)', borderRadius: '2px', border: '1px solid var(--card-border)' }}></div>
                                         </div>
                                     )}
                                     {!includeCollars && displayPlates.length > 0 && (
-                                        <div style={{ width: 6, height: 40, background: '#475569', borderRadius: 2, marginLeft: 0, border: '1px solid #1e293b', cursor: 'pointer' }} onClick={() => setIncludeCollars(true)}></div>
+                                        <div style={{ width: 6, height: 40, background: 'var(--primary)', opacity: 0.5, borderRadius: 2, marginLeft: 0, border: '1px solid var(--primary)', cursor: 'pointer' }} onClick={() => setIncludeCollars(true)}></div>
                                     )}
                                 </div>
                             </div>
