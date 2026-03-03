@@ -80,6 +80,7 @@ export default function WorkoutLogger({ athleteId, programId, sessionId, exercis
     }, [exerciseLogs]);
 
     // Calculate Completion for Progress Bar
+    // A set counts as complete only when ALL 3 inputs are filled: weight, reps AND rpe
     const validationStats = useMemo(() => {
         let totalSets = 0;
         let completedSets = 0;
@@ -87,8 +88,11 @@ export default function WorkoutLogger({ athleteId, programId, sessionId, exercis
         exerciseLogs.forEach(ex => {
             ex.sets.forEach(set => {
                 totalSets++;
-                // Check if filled (weight and reps are minimum needed)
-                if (set.actual.weight && set.actual.reps) {
+                // Require weight, reps, AND rpe to be filled
+                const w = String(set.actual.weight).trim();
+                const r = String(set.actual.reps).trim();
+                const rpe = String(set.actual.rpe).trim();
+                if (w && w !== '0' && r && r !== '0' && rpe && rpe !== '0') {
                     completedSets++;
                 }
             });
@@ -250,7 +254,7 @@ export default function WorkoutLogger({ athleteId, programId, sessionId, exercis
                         width: `${validationStats.percentage}%`,
                         height: '100%',
                         background: validationStats.percentage === 100 ? 'var(--success)' : 'var(--primary)',
-                        transition: 'width 0.3s ease'
+                        transition: 'width 0.08s linear' // Near-instant update
                     }} />
                 </div>
             </div>
