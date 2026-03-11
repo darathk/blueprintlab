@@ -77,7 +77,8 @@ export interface CompetitionDataPoint {
     squat: number;    // E1RM lbs
     bench: number;    // E1RM lbs
     deadlift: number; // E1RM lbs
-    total: number;    // SBD total kg
+    totalLbs: number; // squat + bench + deadlift E1RM in lbs
+    total: number;    // SBD total kg (for DOTs)
     dots: number;     // 0 if no weight class / gender
 }
 
@@ -134,6 +135,11 @@ export function getCompetitionDataPoints(
             squat: squatE1rm > 0 ? Math.round(squatE1rm) : 0,
             bench: benchE1rm > 0 ? Math.round(benchE1rm) : 0,
             deadlift: deadliftE1rm > 0 ? Math.round(deadliftE1rm) : 0,
+            totalLbs: Math.round(
+                (squatE1rm > 0 ? squatE1rm : lastKnown.squat) +
+                (benchE1rm > 0 ? benchE1rm : lastKnown.bench) +
+                (deadliftE1rm > 0 ? deadliftE1rm : lastKnown.deadlift)
+            ),
             total: Math.round(totalKg),
             dots,
         });

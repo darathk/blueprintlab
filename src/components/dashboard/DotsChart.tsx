@@ -32,6 +32,7 @@ const CHART_COLORS = {
     squat: '#7d87d2',
     bench: '#a855f7',
     deadlift: '#10b981',
+    totalLbs: '#f97316',
     dots: '#f59e0b',
 };
 
@@ -57,7 +58,7 @@ export default function DotsChart({ athleteId, logs, initialGender, initialWeigh
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
     const [timeline, setTimeline] = useState<string>('ALL');
-    const [activeLines, setActiveLines] = useState({ squat: true, bench: true, deadlift: true, dots: true });
+    const [activeLines, setActiveLines] = useState({ squat: true, bench: true, deadlift: true, totalLbs: true, dots: true });
 
     const handleSave = async () => {
         setSaving(true);
@@ -162,6 +163,7 @@ export default function DotsChart({ athleteId, logs, initialGender, initialWeigh
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                     {[
                         { label: 'Latest DOTs', value: latestDots > 0 ? latestDots.toFixed(1) : '—', color: CHART_COLORS.dots },
+                        { label: 'Total E1RM', value: data[data.length - 1].totalLbs > 0 ? `${data[data.length - 1].totalLbs} lbs` : '—', color: CHART_COLORS.totalLbs },
                         { label: 'Latest Squat E1RM', value: data[data.length - 1].squat > 0 ? `${data[data.length - 1].squat} lbs` : '—', color: CHART_COLORS.squat },
                         { label: 'Latest Bench E1RM', value: data[data.length - 1].bench > 0 ? `${data[data.length - 1].bench} lbs` : '—', color: CHART_COLORS.bench },
                         { label: 'Latest Deadlift E1RM', value: data[data.length - 1].deadlift > 0 ? `${data[data.length - 1].deadlift} lbs` : '—', color: CHART_COLORS.deadlift },
@@ -191,6 +193,7 @@ export default function DotsChart({ athleteId, logs, initialGender, initialWeigh
                                 { key: 'squat', label: 'Squat' },
                                 { key: 'bench', label: 'Bench' },
                                 { key: 'deadlift', label: 'Deadlift' },
+                                { key: 'totalLbs', label: 'Total E1RM' },
                                 { key: 'dots', label: 'DOTs' },
                             ].map(({ key, label }) => {
                                 const k = key as keyof typeof activeLines;
@@ -233,6 +236,7 @@ export default function DotsChart({ athleteId, logs, initialGender, initialWeigh
                             {activeLines.squat && <Line yAxisId="lbs" type="monotone" dataKey="squat" name="Squat E1RM" stroke={CHART_COLORS.squat} strokeWidth={2} dot={{ r: 4, fill: CHART_COLORS.squat }} activeDot={{ r: 6 }} connectNulls />}
                             {activeLines.bench && <Line yAxisId="lbs" type="monotone" dataKey="bench" name="Bench E1RM" stroke={CHART_COLORS.bench} strokeWidth={2} dot={{ r: 4, fill: CHART_COLORS.bench }} activeDot={{ r: 6 }} connectNulls />}
                             {activeLines.deadlift && <Line yAxisId="lbs" type="monotone" dataKey="deadlift" name="Deadlift E1RM" stroke={CHART_COLORS.deadlift} strokeWidth={2} dot={{ r: 4, fill: CHART_COLORS.deadlift }} activeDot={{ r: 6 }} connectNulls />}
+                            {activeLines.totalLbs && <Line yAxisId="lbs" type="monotone" dataKey="totalLbs" name="Total E1RM" stroke={CHART_COLORS.totalLbs} strokeWidth={2.5} dot={{ r: 4, fill: CHART_COLORS.totalLbs }} activeDot={{ r: 6 }} connectNulls />}
                             {activeLines.dots && genderKey && wc > 0 && (
                                 <Line yAxisId="dots" type="monotone" dataKey="dots" name="DOTs Score" stroke={CHART_COLORS.dots} strokeWidth={2.5} dot={{ r: 4, fill: CHART_COLORS.dots }} activeDot={{ r: 6 }} connectNulls />
                             )}
