@@ -1,4 +1,4 @@
-import { getProgramsByAthlete, getLogsByAthlete } from '@/lib/storage';
+import { getProgramsByAthlete, getLogsByAthlete, getAthleteById } from '@/lib/storage';
 import WorkoutLogger from './workout-logger';
 
 export default async function WorkoutPage({ params }) {
@@ -12,9 +12,10 @@ export default async function WorkoutPage({ params }) {
     const weekNum = parseInt(parts[1].substring(1));
     const dayNum = parseInt(parts[2].substring(1));
 
-    const [programs, athleteLogs] = await Promise.all([
+    const [programs, athleteLogs, athlete] = await Promise.all([
         getProgramsByAthlete(athleteId),
-        getLogsByAthlete(athleteId)
+        getLogsByAthlete(athleteId),
+        getAthleteById(athleteId),
     ]);
     const program = programs.find(p => p.id === programId);
 
@@ -41,8 +42,12 @@ export default async function WorkoutPage({ params }) {
 
             <WorkoutLogger
                 athleteId={athleteId}
+                coachId={athlete?.coachId ?? ''}
                 programId={programId}
                 sessionId={sessionId}
+                weekNum={weekNum}
+                dayNum={dayNum}
+                blockName={program.name}
                 exercises={session.exercises}
                 initialLog={existingLog}
             />

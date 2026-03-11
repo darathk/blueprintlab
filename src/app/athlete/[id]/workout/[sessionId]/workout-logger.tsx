@@ -5,8 +5,9 @@ import { useRouter } from 'next/navigation';
 import { calculateSimpleE1RM, calculateStress } from '@/lib/stress-index';
 import { getExerciseCategory } from '@/lib/exercise-db';
 import Link from 'next/link';
+import ExerciseFeedback from '@/components/athlete/ExerciseFeedback';
 
-export default function WorkoutLogger({ athleteId, programId, sessionId, exercises, initialLog }) {
+export default function WorkoutLogger({ athleteId, coachId = '', programId, sessionId, weekNum = 1, dayNum = 1, blockName = 'Block', exercises, initialLog }) {
     const router = useRouter();
     const [isSaving, setIsSaving] = useState(false);
     const [lastSaved, setLastSaved] = useState(Date.now());
@@ -461,6 +462,19 @@ export default function WorkoutLogger({ athleteId, programId, sessionId, exercis
                                                 }}
                                             />
                                         </div>
+
+                                        {/* Send Coach Feedback */}
+                                        {coachId && (
+                                            <ExerciseFeedback
+                                                athleteId={athleteId}
+                                                coachId={coachId}
+                                                exerciseName={ex.name}
+                                                weekNum={weekNum}
+                                                dayNum={dayNum}
+                                                blockName={blockName}
+                                                sets={ex.sets}
+                                            />
+                                        )}
                                     </div>
                                 )}
                             </div>
