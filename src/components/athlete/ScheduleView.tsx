@@ -341,9 +341,7 @@ export default function ScheduleView({ programs, athleteId, logs }: {
                                                                 <span style={{ color: 'var(--warning)' }}>Saving...</span> /* Yellow */
                                                             ) : savedKeys.has(sKey) ? (
                                                                 <span style={{ color: 'var(--success)' }}>✓ Saved</span> /* Green */
-                                                            ) : (
-                                                                <span style={{ color: 'var(--secondary-foreground)' }}>Edit</span>
-                                                            )}
+                                                            ) : null}
                                                         </div>
                                                     )}
                                                 </div>

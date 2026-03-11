@@ -49,7 +49,7 @@ export default function ExerciseFeedback({
             .join('\n');
 
         return [
-            `📋 Coach Feedback`,
+            `Coach Feedback`,
             `Block: ${blockName}`,
             `Week: ${weekNum} | Session: ${dayNum}`,
             `Exercise: ${exerciseName}`,
@@ -203,8 +203,7 @@ export default function ExerciseFeedback({
                         <input
                             ref={fileRef}
                             type="file"
-                            accept="video/*"
-                            capture="environment"
+                            accept="video/*,image/*"
                             onChange={handleVideoSelect}
                             style={{ display: 'none' }}
                             id={`feedback-video-${athleteId}-${exerciseName.replace(/\s/g, '-')}`}
