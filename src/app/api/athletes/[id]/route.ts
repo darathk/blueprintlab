@@ -2,6 +2,29 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { currentUser } from '@clerk/nextjs/server';
 
+export async function PATCH(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const { id } = await params;
+        const body = await request.json();
+        const { weightClass, gender } = body;
+
+        await prisma.athlete.update({
+            where: { id },
+            data: {
+                ...(weightClass !== undefined && { weightClass: weightClass === null ? null : parseFloat(weightClass) }),
+                ...(gender !== undefined && { gender }),
+            },
+        });
+        return NextResponse.json({ success: true });
+    } catch (error: any) {
+        console.error('Error updating athlete dots profile:', error);
+        return NextResponse.json({ error: error.message }, { status: 500 });
+    }
+}
+
 export async function DELETE(
     request: Request,
     { params }: { params: Promise<{ id: string }> }

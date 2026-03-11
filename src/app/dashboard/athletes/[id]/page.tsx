@@ -13,6 +13,10 @@ const AthleteCharts = dynamic(() => import('@/components/dashboard/AthleteCharts
 
 import { MessageSquare } from 'lucide-react';
 
+const DotsChart = dynamic(() => import('@/components/dashboard/DotsChart'), {
+    loading: () => <div style={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="pulse">Loading DOTs chart...</div>
+});
+
 // Extracted Async Components for Granular Streaming
 
 async function AthleteHeader({ id }) {
@@ -64,6 +68,21 @@ async function AsyncCharts({ id }) {
     return <AthleteCharts logs={athleteLogs} readinessLogs={athleteReadiness} programs={programs} />;
 }
 
+async function AsyncDotsChart({ id }) {
+    const [athlete, logs] = await Promise.all([
+        getAthleteById(id),
+        getLogsByAthlete(id),
+    ]);
+    return (
+        <DotsChart
+            athleteId={id}
+            logs={logs}
+            initialGender={athlete?.gender ?? null}
+            initialWeightClass={athlete?.weightClass ?? null}
+        />
+    );
+}
+
 // Main Page Skeleton Layout (Renders Instantly)
 export default async function AthleteAnalyticsPage({ params }) {
     const { id } = await params;
@@ -75,6 +94,12 @@ export default async function AthleteAnalyticsPage({ params }) {
             <Suspense fallback={<div style={{ height: '100px' }} className="pulse">Loading Header...</div>}>
                 <AthleteHeader id={id} />
             </Suspense>
+
+            <CollapsibleSection title="DOTs Score Progress" defaultOpen={true}>
+                <Suspense fallback={<Loader />}>
+                    <AsyncDotsChart id={id} />
+                </Suspense>
+            </CollapsibleSection>
 
             <CollapsibleSection title="Performance Analytics" defaultOpen={false}>
                 <Suspense fallback={<Loader />}>

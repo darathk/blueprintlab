@@ -34,18 +34,20 @@ export const getAthletes = cache(async (coachId) => {
 });
 
 export async function saveAthlete(athlete) {
-    const { id, name, email, nextMeetName, nextMeetDate, periodization, currentProgramId } = athlete;
+    const { id, name, email, nextMeetName, nextMeetDate, periodization, currentProgramId, weightClass, gender } = athlete;
 
     await prisma.athlete.upsert({
         where: { id: id || '' },
-        update: { name, email, nextMeetName, nextMeetDate, periodization },
+        update: { name, email, nextMeetName, nextMeetDate, periodization, weightClass, gender },
         create: {
             id: id || Math.random().toString(36).substring(7),
             name: name || 'Unknown',
             email: email || `${id || Math.random()}@example.com`,
             nextMeetName,
             nextMeetDate,
-            periodization
+            periodization,
+            weightClass,
+            gender
         }
     });
 
@@ -154,7 +156,7 @@ export const getAthleteById = cache(async (id) => {
     if (!athlete) return null;
     const { programs, ...rest } = athlete;
     return {
-        ...rest,
+        ...rest, // includes weightClass, gender, and all other fields
         currentProgramId: programs.length > 0 ? programs[0].id : null
     };
 });

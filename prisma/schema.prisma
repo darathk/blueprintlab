@@ -18,6 +18,8 @@ model Athlete {
   guidedAthletes   Athlete[]   @relation("CoachToAthlete")
   nextMeetName     String?
   nextMeetDate     String?
+  weightClass      Float?   // kg, e.g. 83.0
+  gender           String?  // "male" or "female"
   periodization    Json?
   programs         Program[]
   reports          Report[]
