@@ -7,7 +7,8 @@ const ScheduleView = dynamic(() => import('@/components/athlete/ScheduleView'));
 
 async function AsyncSchedule({ id }: { id: string }) {
     try {
-        const [programs, logs] = await Promise.all([
+        const [athlete, programs, logs] = await Promise.all([
+            getAthleteById(id),
             getProgramsByAthlete(id),
             getLogsByAthlete(id)
         ]);
@@ -16,6 +17,7 @@ async function AsyncSchedule({ id }: { id: string }) {
             <ScheduleView
                 programs={programs as any}
                 athleteId={id}
+                coachId={athlete?.coachId || ''}
                 logs={logs as any}
             />
         );

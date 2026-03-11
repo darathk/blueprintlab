@@ -31,9 +31,10 @@ function sessionProgress(exercises: any[], log: any, editStateData?: any[]): num
 }
 
 /* ─────────── component ─────────── */
-export default function ScheduleView({ programs, athleteId, logs }: {
+export default function ScheduleView({ programs, athleteId, coachId, logs }: {
     programs: any[];
     athleteId: string;
+    coachId?: string;
     logs: any[];
 }) {
     const router = useRouter();
@@ -498,7 +499,7 @@ export default function ScheduleView({ programs, athleteId, logs }: {
 
                                                                             {/* Notes field */}
                                                                             <div style={{ display: 'flex', padding: '12px 0', alignItems: 'flex-start' }}>
-                                                                                <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--foreground)', marginRight: 12, marginTop: 4 }}>Notes:</span>
+                                                                                <span style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--foreground)', marginRight: 12, marginTop: 4 }}>Athlete Feedback:</span>
                                                                                 <textarea
                                                                                     value={exerciseData.notes || ''}
                                                                                     onChange={e => updateNotes(sKey, exIdx, e.target.value, program.id)}
@@ -514,7 +515,7 @@ export default function ScheduleView({ programs, athleteId, logs }: {
                                                                             {/* Send Coach Feedback */}
                                                                             <ExerciseFeedback
                                                                                 athleteId={athleteId}
-                                                                                coachId={''}
+                                                                                coachId={coachId || ''}
                                                                                 exerciseName={exerciseData.name || ex.name}
                                                                                 weekNum={weekNum}
                                                                                 dayNum={day}
