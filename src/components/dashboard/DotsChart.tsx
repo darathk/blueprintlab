@@ -229,9 +229,9 @@ export default function DotsChart({ athleteId, logs, initialGender, initialWeigh
                     <ResponsiveContainer width="100%" height={300}>
                         <LineChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
                             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                            <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
-                            <YAxis yAxisId="lbs" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={50} />
-                            <YAxis yAxisId="dots" orientation="right" tick={{ fill: CHART_COLORS.dots, fontSize: 11 }} axisLine={false} tickLine={false} width={45} />
+                            <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} label={{ value: 'Session Date', position: 'insideBottom', offset: -2, fill: '#64748b', fontSize: 10 }} height={40} />
+                            <YAxis yAxisId="lbs" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={62} label={{ value: 'E1RM (lbs)', angle: -90, position: 'insideLeft', offset: 10, fill: '#94a3b8', fontSize: 10 }} />
+                            <YAxis yAxisId="dots" orientation="right" tick={{ fill: CHART_COLORS.dots, fontSize: 11 }} axisLine={false} tickLine={false} width={58} label={{ value: 'DOTs Score', angle: 90, position: 'insideRight', offset: -4, fill: CHART_COLORS.dots, fontSize: 10 }} />
                             <Tooltip content={<CustomTooltip />} />
                             {activeLines.squat && <Line yAxisId="lbs" type="monotone" dataKey="squat" name="Squat E1RM" stroke={CHART_COLORS.squat} strokeWidth={2} dot={{ r: 4, fill: CHART_COLORS.squat }} activeDot={{ r: 6 }} connectNulls />}
                             {activeLines.bench && <Line yAxisId="lbs" type="monotone" dataKey="bench" name="Bench E1RM" stroke={CHART_COLORS.bench} strokeWidth={2} dot={{ r: 4, fill: CHART_COLORS.bench }} activeDot={{ r: 6 }} connectNulls />}
