@@ -114,7 +114,11 @@ export default function ChatInterface({
     // Force scroll to bottom on initial load
     useEffect(() => {
         if (loaded) {
-            scrollToBottom(true);
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    scrollToBottom(true);
+                });
+            });
         }
     }, [loaded, scrollToBottom]);
 
@@ -739,33 +743,46 @@ export default function ChatInterface({
                         <button onClick={cancelRecording} style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', fontSize: 13, cursor: 'pointer', padding: '6px 12px' }}>
                             Cancel
                         </button>
-                        <button onClick={stopRecording} style={{ background: 'linear-gradient(135deg, #7d87d2, #a855f7)', border: 'none', borderRadius: 20, color: '#fff', fontSize: 13, fontWeight: 600, padding: '6px 16px', cursor: 'pointer' }}>
+                        <button onClick={stopRecording} style={{ background: 'var(--primary)', border: 'none', borderRadius: 20, color: '#fff', fontSize: 13, fontWeight: 600, padding: '6px 16px', cursor: 'pointer' }}>
                             Done
                         </button>
                     </div>
                 ) : (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        {/* Plus button outside */}
                         <button onClick={() => fileRef.current?.click()} disabled={uploading}
-                            style={{ width: 34, height: 34, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)', color: 'var(--secondary-foreground)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            <Paperclip size={16} />
+                            style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', border: 'none', color: 'rgba(255,255,255,0.9)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            <div style={{ fontSize: 24, fontWeight: 300, lineHeight: 1, marginTop: -2 }}>+</div>
                         </button>
-                        <input type="text" value={newMessage} onChange={e => setNewMessage(e.target.value)}
-                            onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
-                            placeholder={(stagedFiles.length > 0 && !newMessage) ? "Add a caption..." : "Message"}
-                            disabled={uploading}
-                            style={{ flex: 1, padding: '8px 16px', borderRadius: 20, background: 'rgba(0,0,0,0.2)', border: '1px solid rgba(255,255,255,0.1)', boxShadow: 'inset 0 2px 4px rgba(0,0,0,0.2)', color: 'var(--foreground)', fontSize: 14, outline: 'none', minWidth: 0, opacity: uploading ? 0.5 : 1 }} />
 
-                        {!newMessage.trim() && stagedFiles.length === 0 ? (
-                            <button onClick={startRecording} disabled={uploading}
-                                style={{ width: 34, height: 34, borderRadius: '50%', background: 'rgba(255,255,255,0.05)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: 'var(--secondary-foreground)' }}>
-                                <Mic size={16} />
-                            </button>
-                        ) : (
-                            <button onClick={() => handleSend()} disabled={uploading}
-                                style={{ width: 34, height: 34, borderRadius: '50%', background: 'linear-gradient(135deg, #7d87d2, #a855f7)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, opacity: uploading ? 0.3 : 1, color: '#fff' }}>
-                                <Send size={15} style={{ marginLeft: 2 }} />
-                            </button>
-                        )}
+                        {/* Input Pill */}
+                        <div style={{
+                            flex: 1, display: 'flex', alignItems: 'center',
+                            background: 'rgba(255, 255, 255, 0.95)',
+                            borderRadius: 20,
+                            padding: '4px 12px',
+                            border: '1px solid rgba(255,255,255,0.2)',
+                            boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
+                        }}>
+                            <input type="text" value={newMessage} onChange={e => setNewMessage(e.target.value)}
+                                onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
+                                placeholder={(stagedFiles.length > 0 && !newMessage) ? "Add a caption..." : "Message"}
+                                disabled={uploading}
+                                style={{ flex: 1, padding: '6px 4px', background: 'transparent', border: 'none', color: '#000', fontSize: 15, outline: 'none', minWidth: 0, opacity: uploading ? 0.5 : 1 }} />
+
+                            {/* Mic/Send inside pill */}
+                            {!newMessage.trim() && stagedFiles.length === 0 ? (
+                                <button onClick={startRecording} disabled={uploading}
+                                    style={{ width: 28, height: 28, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: '#94a3b8' }}>
+                                    <Mic size={18} />
+                                </button>
+                            ) : (
+                                <button onClick={() => handleSend()} disabled={uploading}
+                                    style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--primary)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, opacity: uploading ? 0.3 : 1, color: '#fff' }}>
+                                    <Send size={14} style={{ marginLeft: 2 }} />
+                                </button>
+                            )}
+                        </div>
                     </div>
                 )}
             </div>
