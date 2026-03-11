@@ -203,14 +203,15 @@ export const getLogSummariesForDashboard = cache(async (coachId) => {
 });
 
 export const getMessagesByAthlete = cache(async (athleteId) => {
-    return prisma.message.findMany({
+    const messages = await prisma.message.findMany({
         where: {
             OR: [
                 { senderId: athleteId },
                 { receiverId: athleteId }
             ]
         },
-        orderBy: { createdAt: 'asc' },
+        orderBy: { createdAt: 'desc' },
+        take: 100,
         include: {
             sender: { select: { id: true, name: true, email: true } },
             receiver: { select: { id: true, name: true, email: true } },
@@ -225,6 +226,7 @@ export const getMessagesByAthlete = cache(async (athleteId) => {
             }
         }
     });
+    return messages.reverse();
 });
 
 export const getExerciseLibrary = cache(async () => {

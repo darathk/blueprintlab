@@ -29,11 +29,11 @@ export async function GET(request: Request) {
                 receiver: { select: { id: true, name: true, email: true } },
                 replyTo: { select: { id: true, content: true, mediaUrl: true, mediaType: true, sender: { select: { name: true } } } }
             },
-            orderBy: { createdAt: 'asc' },
+            orderBy: { createdAt: 'desc' },
             take: 100
         });
 
-        return NextResponse.json(all);
+        return NextResponse.json(all.reverse());
     } catch (error) {
         console.error('GET /api/messages error:', error);
         return NextResponse.json({ error: 'Failed to fetch messages' }, { status: 500 });

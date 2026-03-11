@@ -85,19 +85,33 @@ export default function ChatInterface({
     }, [athleteId, currentUserId, otherUserId]);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     // Track if user has scrolled up — if so, don't auto-jump on polling updates
     const userScrolledUp = useRef(false);
 
     const scrollToBottom = useCallback((force = false) => {
+        if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
         const el = scrollContainerRef.current;
         if (!el) return;
-        setTimeout(() => {
-            const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-            if (force || distFromBottom < 120) {
-                el.scrollTop = el.scrollHeight;
+
+        const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+        const shouldScroll = force || distFromBottom < 150;
+
+        if (shouldScroll) {
+            if (force) el.style.scrollBehavior = 'auto'; // Prevent Safari bounce
+            el.scrollTop = el.scrollHeight;
+            if (force) el.style.scrollBehavior = '';
+            userScrolledUp.current = false;
+        }
+
+        scrollTimeoutRef.current = setTimeout(() => {
+            if (!scrollContainerRef.current) return;
+            const dist = scrollContainerRef.current.scrollHeight - scrollContainerRef.current.scrollTop - scrollContainerRef.current.clientHeight;
+            if (force || dist < 150) {
+                scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
                 userScrolledUp.current = false;
             }
-        }, 250); // Wait for render and layouts to fully finish
+        }, 300); // Wait for images/DOM to fully settle
     }, []);
 
     // Only force-scroll when user sends/receives a new message (not on background polls)

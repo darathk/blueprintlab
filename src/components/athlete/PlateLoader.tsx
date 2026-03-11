@@ -48,7 +48,8 @@ export default function PlateLoader({
         let target = parseFloat(targetStr);
         if (isNaN(target) || target <= 0) return [];
 
-        let targetKg = unit === 'lb' ? target / 2.20462 : target;
+        // In Powerlifting, LB targets map to the nearest 2.5kg increment
+        let targetKg = unit === 'lb' ? Math.round((target / 2.20462) / 2.5) * 2.5 : target;
         let effectiveBarWeight = barWeight + (includeCollars ? 5 : 0);
         let remaining = targetKg - effectiveBarWeight;
 
@@ -68,16 +69,11 @@ export default function PlateLoader({
 
     const displayPlates = mode === 'calculate' ? calculatedPlates : manualPlates;
 
-    // Derived totals for display
+    // Derived totals for display (Actual Bar Weight from visual plates)
     const totalKg = useMemo(() => {
-        if (mode === 'calculate') {
-            const t = parseFloat(targetStr);
-            if (isNaN(t)) return 0;
-            return unit === 'kg' ? t : t / 2.20462;
-        } else {
-            return barWeight + (includeCollars ? 5 : 0) + (manualPlates.reduce((a, b) => a + b, 0) * 2);
-        }
-    }, [mode, targetStr, unit, barWeight, manualPlates, includeCollars]);
+        const activePlates = mode === 'calculate' ? calculatedPlates : manualPlates;
+        return barWeight + (includeCollars ? 5 : 0) + (activePlates.reduce((a, b) => a + b, 0) * 2);
+    }, [mode, barWeight, includeCollars, calculatedPlates, manualPlates]);
 
     const totalLb = totalKg * 2.20462;
 
