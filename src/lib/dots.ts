@@ -98,26 +98,26 @@ export function getCompetitionDataPoints(
     );
 
     const points: CompetitionDataPoint[] = [];
-    // Running best — so DOTs chart advances even if athlete only logged one lift that day
-    let runningBest = { squat: 0, bench: 0, deadlift: 0 };
+    // Track most recently logged E1RM per lift (not all-time best)
+    let lastKnown = { squat: 0, bench: 0, deadlift: 0 };
 
     for (const log of sorted) {
         const squatE1rm = getBestE1RMForLift(log, 'squat');
         const benchE1rm = getBestE1RMForLift(log, 'bench');
         const deadliftE1rm = getBestE1RMForLift(log, 'deadlift');
 
-        // Update running bests
-        if (squatE1rm > runningBest.squat) runningBest.squat = squatE1rm;
-        if (benchE1rm > runningBest.bench) runningBest.bench = benchE1rm;
-        if (deadliftE1rm > runningBest.deadlift) runningBest.deadlift = deadliftE1rm;
+        // Update last known with the most recent value (overwrite, not max)
+        if (squatE1rm > 0) lastKnown.squat = squatE1rm;
+        if (benchE1rm > 0) lastKnown.bench = benchE1rm;
+        if (deadliftE1rm > 0) lastKnown.deadlift = deadliftE1rm;
 
         // Skip sessions with no competition lift data at all
         if (squatE1rm === 0 && benchE1rm === 0 && deadliftE1rm === 0) continue;
 
-        // Use THIS session's values for per-session lines; running best for DOTs total
-        const sqKg = lbsToKg(runningBest.squat);
-        const bnKg = lbsToKg(runningBest.bench);
-        const dlKg = lbsToKg(runningBest.deadlift);
+        // DOTs uses latest known for each lift (so the total is always up-to-date)
+        const sqKg = lbsToKg(lastKnown.squat);
+        const bnKg = lbsToKg(lastKnown.bench);
+        const dlKg = lbsToKg(lastKnown.deadlift);
         const totalKg = sqKg + bnKg + dlKg;
 
         const dots = (gender && weightClassKg > 0 && totalKg > 0)
@@ -130,9 +130,10 @@ export function getCompetitionDataPoints(
 
         points.push({
             date: dateLabel,
-            squat: squatE1rm > 0 ? Math.round(squatE1rm) : (runningBest.squat > 0 ? Math.round(runningBest.squat) : 0),
-            bench: benchE1rm > 0 ? Math.round(benchE1rm) : (runningBest.bench > 0 ? Math.round(runningBest.bench) : 0),
-            deadlift: deadliftE1rm > 0 ? Math.round(deadliftE1rm) : (runningBest.deadlift > 0 ? Math.round(runningBest.deadlift) : 0),
+            // Show this session's E1RM for individual lift lines; null shows as gap (connectNulls bridges it)
+            squat: squatE1rm > 0 ? Math.round(squatE1rm) : 0,
+            bench: benchE1rm > 0 ? Math.round(benchE1rm) : 0,
+            deadlift: deadliftE1rm > 0 ? Math.round(deadliftE1rm) : 0,
             total: Math.round(totalKg),
             dots,
         });
