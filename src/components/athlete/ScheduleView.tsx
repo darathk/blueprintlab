@@ -4,6 +4,7 @@ import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { calculateSimpleE1RM, calculateStress } from '@/lib/stress-index';
 import { ArrowRight } from 'lucide-react';
+import ExerciseFeedback from '@/components/athlete/ExerciseFeedback';
 
 /* ─────────── helpers ─────────── */
 function sessionKey(programId: string, weekNum: number, day: number) {
@@ -511,6 +512,16 @@ export default function ScheduleView({ programs, athleteId, logs }: {
                                                                                 />
                                                                             </div>
 
+                                                                            {/* Send Coach Feedback */}
+                                                                            <ExerciseFeedback
+                                                                                athleteId={athleteId}
+                                                                                coachId={''}
+                                                                                exerciseName={exerciseData.name || ex.name}
+                                                                                weekNum={weekNum}
+                                                                                dayNum={day}
+                                                                                blockName={program.name}
+                                                                                sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any, i: number) => ({ setNumber: i + 1, actual: s.actual || { weight: '', reps: '', rpe: '' } }))}
+                                                                            />
                                                                         </div>
                                                                     )}
                                                                 </div>
