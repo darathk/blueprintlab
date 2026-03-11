@@ -97,7 +97,7 @@ export default function ChatInterface({
                 el.scrollTop = el.scrollHeight;
                 userScrolledUp.current = false;
             }
-        }, 100); // Wait for render to finish
+        }, 250); // Wait for render and layouts to fully finish
     }, []);
 
     // Only force-scroll when user sends/receives a new message (not on background polls)
@@ -527,7 +527,7 @@ export default function ChatInterface({
             </div>
 
             {/* Messages */}
-            <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '12px 16px', minHeight: 0, paddingTop: 'calc(var(--header-height) + 16px + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(56px + env(safe-area-inset-bottom, 0px))', willChange: 'scroll-position', transform: 'translateZ(0)', WebkitOverflowScrolling: 'touch' as any, overscrollBehavior: 'contain' }}>
+            <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '12px 16px', minHeight: 0, paddingTop: 'calc(var(--header-height) + 16px + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(100px + env(safe-area-inset-bottom, 0px))', willChange: 'scroll-position', transform: 'translateZ(0)', WebkitOverflowScrolling: 'touch' as any, overscrollBehavior: 'contain' }}>
                 {!loaded && <div style={{ textAlign: 'center', padding: 40, color: 'var(--secondary-foreground)' }}>Loading…</div>}
                 {loaded && messages.length === 0 && <div style={{ textAlign: 'center', padding: 60, color: 'var(--secondary-foreground)', fontSize: 14 }}>No messages yet. Start the conversation!</div>}
 
