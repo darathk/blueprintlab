@@ -91,11 +91,13 @@ export default function ChatInterface({
     const scrollToBottom = useCallback((force = false) => {
         const el = scrollContainerRef.current;
         if (!el) return;
-        const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-        if (force || distFromBottom < 120) {
-            el.scrollTop = el.scrollHeight;
-            userScrolledUp.current = false;
-        }
+        setTimeout(() => {
+            const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+            if (force || distFromBottom < 120) {
+                el.scrollTop = el.scrollHeight;
+                userScrolledUp.current = false;
+            }
+        }, 100); // Wait for render to finish
     }, []);
 
     // Only force-scroll when user sends/receives a new message (not on background polls)
@@ -114,11 +116,7 @@ export default function ChatInterface({
     // Force scroll to bottom on initial load
     useEffect(() => {
         if (loaded) {
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                    scrollToBottom(true);
-                });
-            });
+            scrollToBottom(true);
         }
     }, [loaded, scrollToBottom]);
 
@@ -529,7 +527,7 @@ export default function ChatInterface({
             </div>
 
             {/* Messages */}
-            <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '12px 16px', minHeight: 0, paddingTop: 'calc(var(--header-height) + 16px + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(120px + env(safe-area-inset-bottom, 0px))', willChange: 'scroll-position', transform: 'translateZ(0)', WebkitOverflowScrolling: 'touch' as any, overscrollBehavior: 'contain' }}>
+            <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '12px 16px', minHeight: 0, paddingTop: 'calc(var(--header-height) + 16px + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(76px + env(safe-area-inset-bottom, 0px))', willChange: 'scroll-position', transform: 'translateZ(0)', WebkitOverflowScrolling: 'touch' as any, overscrollBehavior: 'contain' }}>
                 {!loaded && <div style={{ textAlign: 'center', padding: 40, color: 'var(--secondary-foreground)' }}>Loading…</div>}
                 {loaded && messages.length === 0 && <div style={{ textAlign: 'center', padding: 60, color: 'var(--secondary-foreground)', fontSize: 14 }}>No messages yet. Start the conversation!</div>}
 
@@ -722,8 +720,7 @@ export default function ChatInterface({
                 left: 0,
                 right: 0,
                 padding: '8px 12px',
-                paddingBottom: 'calc(20px + env(safe-area-inset-bottom, 0px) + 56px)',
-                marginBottom: 0,
+                paddingBottom: 'calc(8px + env(safe-area-inset-bottom, 4px))',
                 background: 'rgba(15, 23, 42, 0.75)', // Glassmorphism background
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',
