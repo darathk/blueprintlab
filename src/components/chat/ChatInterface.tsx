@@ -341,7 +341,7 @@ export default function ChatInterface({
                     const { data: u } = supabase.storage.from('lift-videos').getPublicUrl(data.path);
 
                     const isAudio = file.type.startsWith('audio/');
-                    const content = i === 0 && text ? text : isAudio ? 'Voice Message' : (isVid ? 'Video' : 'Photo');
+                    const content = i === 0 && text ? text : isAudio ? 'Voice Message' : '';
                     const replyToId = i === 0 ? (replyingTo?.id || null) : null;
 
                     const res = await fetch('/api/messages', {
@@ -506,7 +506,8 @@ export default function ChatInterface({
                     <>
                         <button onClick={() => setSelectedMessageIds(new Set())} style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><X size={20} /></button>
                         <div style={{ flex: 1, fontWeight: 600, color: 'var(--primary)', fontSize: 16 }}>{selectedMessageIds.size} Selected</div>
-                        <button onClick={handleCopyMultiple} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: '#fff', fontSize: 14, fontWeight: 500, cursor: 'pointer' }}><Copy size={16} color="#fff" /> Copy</button>
+                        <button onClick={handleCopyMultiple} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: '#fff', fontSize: 14, fontWeight: 500, cursor: 'pointer', marginRight: 8 }}><Copy size={16} color="#fff" /> Copy</button>
+                        <button onClick={async () => { if (!confirm(`Delete ${selectedMessageIds.size} message(s)?`)) return; for (const id of selectedMessageIds) { setMessages(prev => prev.filter(m => m.id !== id)); await fetch(`/api/messages?id=${id}`, { method: 'DELETE' }); } setSelectedMessageIds(new Set()); }} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: '#ef4444', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}><X size={16} color="#ef4444" /> Delete</button>
                     </>
                 ) : (
                     <>
@@ -717,7 +718,8 @@ export default function ChatInterface({
                 left: 0,
                 right: 0,
                 padding: '8px 12px',
-                paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
+                paddingBottom: 'calc(20px + env(safe-area-inset-bottom, 0px) + 56px)',
+                marginBottom: 0,
                 background: 'rgba(15, 23, 42, 0.75)', // Glassmorphism background
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',

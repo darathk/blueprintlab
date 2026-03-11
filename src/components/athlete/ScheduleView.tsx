@@ -396,18 +396,19 @@ export default function ScheduleView({ programs, athleteId, logs }: {
                                                                     {/* Exercise header */}
                                                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--card-bg)', borderBottom: '1px solid #e2e8f0' }}>
                                                                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                                                            <button
+                                                                            <div
                                                                                 onClick={() => {
                                                                                     toggle(openExercises, exKey, setOpenExercises);
                                                                                     if (!editState[sKey]) initEdit(sKey, exercises, log);
                                                                                 }}
                                                                                 style={{
-                                                                                    width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                                                    border: '2px solid #64748b', background: 'var(--background)', color: 'var(--foreground)', fontWeight: 'bold', cursor: 'pointer', padding: 0
+                                                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                                                    color: 'var(--secondary-foreground)', cursor: 'pointer', padding: '4px',
+                                                                                    transition: 'transform 0.2s', transform: exOpen ? 'rotate(90deg)' : 'rotate(0deg)'
                                                                                 }}
                                                                             >
-                                                                                {exOpen ? '−' : '+'}
-                                                                            </button>
+                                                                                ▶
+                                                                            </div>
                                                                             <span style={{ fontSize: '1rem', color: 'var(--primary)', fontWeight: 500 }}>{exerciseData.name || ex.name}</span>
                                                                         </div>
                                                                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.9rem', color: 'var(--foreground)', fontWeight: 600 }}>
