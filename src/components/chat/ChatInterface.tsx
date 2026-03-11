@@ -527,7 +527,7 @@ export default function ChatInterface({
             </div>
 
             {/* Messages */}
-            <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '12px 16px', minHeight: 0, paddingTop: 'calc(var(--header-height) + 16px + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(76px + env(safe-area-inset-bottom, 0px))', willChange: 'scroll-position', transform: 'translateZ(0)', WebkitOverflowScrolling: 'touch' as any, overscrollBehavior: 'contain' }}>
+            <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '12px 16px', minHeight: 0, paddingTop: 'calc(var(--header-height) + 16px + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(56px + env(safe-area-inset-bottom, 0px))', willChange: 'scroll-position', transform: 'translateZ(0)', WebkitOverflowScrolling: 'touch' as any, overscrollBehavior: 'contain' }}>
                 {!loaded && <div style={{ textAlign: 'center', padding: 40, color: 'var(--secondary-foreground)' }}>Loading…</div>}
                 {loaded && messages.length === 0 && <div style={{ textAlign: 'center', padding: 60, color: 'var(--secondary-foreground)', fontSize: 14 }}>No messages yet. Start the conversation!</div>}
 
@@ -588,7 +588,7 @@ export default function ChatInterface({
                                             {/* Video */}
                                             {msg.mediaUrl && isVid && (
                                                 <div>
-                                                    <video controls playsInline muted preload="metadata" style={{ width: '100%', maxWidth: '100%', maxHeight: 200, borderRadius: 14, background: '#000', display: 'block', objectFit: 'cover' }}>
+                                                    <video controls playsInline muted preload="metadata" onLoadedData={() => scrollToBottom(false)} style={{ width: '100%', maxWidth: '100%', maxHeight: 200, borderRadius: 14, background: '#000', display: 'block', objectFit: 'cover' }}>
                                                         <source src={`${msg.mediaUrl}#t=0.001`} />
                                                     </video>
                                                 </div>
@@ -597,7 +597,7 @@ export default function ChatInterface({
                                             {/* Image */}
                                             {msg.mediaUrl && isImg && (
                                                 <div>
-                                                    <img src={msg.mediaUrl} alt="" loading="lazy" onClick={() => window.open(msg.mediaUrl!, '_blank')}
+                                                    <img src={msg.mediaUrl} alt="" loading="lazy" onClick={() => window.open(msg.mediaUrl!, '_blank')} onLoad={() => scrollToBottom(false)}
                                                         style={{ width: '100%', maxWidth: '100%', maxHeight: 200, borderRadius: 14, display: 'block', cursor: 'pointer', objectFit: 'cover' }} />
                                                 </div>
                                             )}
