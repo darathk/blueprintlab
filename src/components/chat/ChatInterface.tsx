@@ -525,7 +525,7 @@ export default function ChatInterface({
             </div>
 
             {/* Messages */}
-            <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '12px 16px', minHeight: 0, paddingTop: 'calc(var(--header-height) + 16px + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(56px + env(safe-area-inset-bottom, 0px))', willChange: 'scroll-position', transform: 'translateZ(0)', WebkitOverflowScrolling: 'touch' as any, overscrollBehavior: 'contain' }}>
+            <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '12px 16px', minHeight: 0, paddingTop: 'calc(var(--header-height) + 16px + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(120px + env(safe-area-inset-bottom, 0px))', willChange: 'scroll-position', transform: 'translateZ(0)', WebkitOverflowScrolling: 'touch' as any, overscrollBehavior: 'contain' }}>
                 {!loaded && <div style={{ textAlign: 'center', padding: 40, color: 'var(--secondary-foreground)' }}>Loading…</div>}
                 {loaded && messages.length === 0 && <div style={{ textAlign: 'center', padding: 60, color: 'var(--secondary-foreground)', fontSize: 14 }}>No messages yet. Start the conversation!</div>}
 
@@ -616,7 +616,7 @@ export default function ChatInterface({
                                             )}
 
                                             {/* Text */}
-                                            <div style={{ fontSize: 14, lineHeight: 1.4, color: 'rgba(255,255,255,0.9)', padding: msg.mediaUrl ? '0 10px' : 0 }}>{msg.content}</div>
+                                            <div style={{ fontSize: 14, lineHeight: 1.4, color: 'rgba(255,255,255,0.9)', padding: msg.mediaUrl ? '0 10px' : 0, whiteSpace: 'pre-wrap' }}>{msg.content}</div>
 
                                             {/* Time */}
                                             <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.18)', marginTop: 2, textAlign: mine ? 'right' : 'left', padding: msg.mediaUrl ? '0 10px' : 0 }}>{fmtTime(msg.createdAt)}</div>
