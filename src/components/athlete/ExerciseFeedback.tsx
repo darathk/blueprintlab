@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { MessageCircle, Video, X, Send, CheckCircle } from 'lucide-react';
 
@@ -18,7 +18,7 @@ interface Props {
 }
 
 export default function ExerciseFeedback({
-    athleteId, coachId, exerciseName, weekNum, dayNum, blockName, sets
+    athleteId, coachId: coachIdProp, exerciseName, weekNum, dayNum, blockName, sets
 }: Props) {
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState('');
@@ -27,9 +27,21 @@ export default function ExerciseFeedback({
     const [sending, setSending] = useState(false);
     const [sent, setSent] = useState(false);
     const [error, setError] = useState('');
+    const [resolvedCoachId, setResolvedCoachId] = useState(coachIdProp || '');
     const fileRef = useRef<HTMLInputElement>(null);
 
-    // Build the auto-filled message from session context + logged sets
+    // If no coachId provided, try to resolve it from the athlete record
+    useEffect(() => {
+        if (resolvedCoachId) return;
+        fetch(`/api/athletes/${athleteId}`)
+            .then(r => r.json())
+            .then(data => {
+                const cid = data?.coachId || data?.athlete?.coachId || '';
+                if (cid) setResolvedCoachId(cid);
+            })
+            .catch(() => { });
+    }, [athleteId, resolvedCoachId]);
+
     const buildAutoMessage = () => {
         const setLines = sets
             .filter(s => s.actual.weight || s.actual.reps || s.actual.rpe)
@@ -69,6 +81,11 @@ export default function ExerciseFeedback({
 
     const handleSend = async () => {
         if (!message.trim() && !video) return;
+        if (!resolvedCoachId) {
+            setError('Could not find coach — please contact support.');
+            return;
+        }
+
         setSending(true);
         setError('');
 
@@ -99,7 +116,7 @@ export default function ExerciseFeedback({
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     senderId: athleteId,
-                    receiverId: coachId,
+                    receiverId: resolvedCoachId,
                     content,
                     mediaUrl,
                     mediaType,
@@ -152,7 +169,7 @@ export default function ExerciseFeedback({
                     <textarea
                         value={message}
                         onChange={e => setMessage(e.target.value)}
-                        rows={8}
+                        rows={9}
                         style={{
                             width: '100%', background: 'rgba(15,23,42,0.8)',
                             border: '1px solid rgba(99,102,241,0.3)', borderRadius: 8,
@@ -190,10 +207,10 @@ export default function ExerciseFeedback({
                             capture="environment"
                             onChange={handleVideoSelect}
                             style={{ display: 'none' }}
-                            id={`feedback-video-${exerciseName}`}
+                            id={`feedback-video-${athleteId}-${exerciseName.replace(/\s/g, '-')}`}
                         />
                         <label
-                            htmlFor={`feedback-video-${exerciseName}`}
+                            htmlFor={`feedback-video-${athleteId}-${exerciseName.replace(/\s/g, '-')}`}
                             style={{
                                 display: 'flex', alignItems: 'center', gap: 5,
                                 background: video ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.06)',

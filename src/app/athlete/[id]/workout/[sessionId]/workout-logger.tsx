@@ -464,17 +464,15 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                         </div>
 
                                         {/* Send Coach Feedback */}
-                                        {coachId && (
-                                            <ExerciseFeedback
-                                                athleteId={athleteId}
-                                                coachId={coachId}
-                                                exerciseName={ex.name}
-                                                weekNum={weekNum}
-                                                dayNum={dayNum}
-                                                blockName={blockName}
-                                                sets={ex.sets}
-                                            />
-                                        )}
+                                        <ExerciseFeedback
+                                            athleteId={athleteId}
+                                            coachId={coachId}
+                                            exerciseName={ex.name}
+                                            weekNum={weekNum}
+                                            dayNum={dayNum}
+                                            blockName={blockName}
+                                            sets={ex.sets}
+                                        />
                                     </div>
                                 )}
                             </div>
