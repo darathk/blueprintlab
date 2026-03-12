@@ -5,7 +5,7 @@ import { UserButton } from '@clerk/nextjs';
 import Link from 'next/link';
 import AthleteNav from '@/components/athlete/AthleteNav';
 import MobileBottomNav, { NavItem } from '@/components/navigation/MobileBottomNav';
-import { LayoutDashboard, MessageSquare, Dumbbell, Calculator } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, Dumbbell, Calculator, Trophy } from 'lucide-react';
 
 export default async function AthletePortalLayout({
     children,
@@ -50,6 +50,11 @@ export default async function AthletePortalLayout({
         { label: 'Messages', href: `/athlete/${id}/chat`, icon: <MessageSquare size={20} />, unreadCount },
         { label: 'Loader', href: `/athlete/${id}/plate-loader`, icon: <Dumbbell size={20} /> }
     ];
+
+    if (requestedAthlete.meetAttempts) {
+        // Insert right after Messages
+        athleteNavItems.splice(2, 0, { label: 'Meet', href: `/athlete/${id}/meet`, icon: <Trophy size={20} /> });
+    }
 
     return (
         <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: 'var(--background)' }}>

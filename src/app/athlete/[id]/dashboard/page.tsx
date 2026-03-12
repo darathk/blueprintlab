@@ -2,8 +2,6 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { getAthleteById, getProgramsByAthlete, getLogsByAthlete } from '@/lib/storage';
 import dynamic from 'next/dynamic';
-import CollapsibleSection from '@/components/ui/CollapsibleSection';
-import MeetAttempts from '@/components/dashboard/MeetAttempts';
 
 const ScheduleView = dynamic(() => import('@/components/athlete/ScheduleView'));
 
@@ -54,14 +52,6 @@ export default async function AthleteDashboard({ params }) {
                     <AsyncSchedule id={id} />
                 </Suspense>
             </div>
-
-            {athlete.meetAttempts && (
-                <div style={{ marginTop: '1.5rem' }}>
-                    <CollapsibleSection title="Meet Planner - Attempts" defaultOpen={false}>
-                        <MeetAttempts athlete={athlete} isReadOnly={true} />
-                    </CollapsibleSection>
-                </div>
-            )}
         </div>
     );
 }

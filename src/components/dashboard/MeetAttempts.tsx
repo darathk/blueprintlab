@@ -24,7 +24,6 @@ export default function MeetAttempts({ athlete, isReadOnly = false }) {
     const kgToLbs = (kg) => (kg * 2.20462).toFixed(1);
     const lbsToKg = (lbs) => round25(lbs / 2.20462);
 
-    // Render calculated values
     const renderValue = (val) => {
         if (!val) return '-';
         if (data.unit === 'kg') {
@@ -32,8 +31,8 @@ export default function MeetAttempts({ athlete, isReadOnly = false }) {
             const lbs = kgToLbs(kg);
             return (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <span style={{ fontWeight: 'bold' }}>{kg} kg</span>
-                    <span style={{ fontSize: '0.8em', color: 'var(--secondary-foreground)' }}>{lbs} lbs</span>
+                    <span style={{ fontWeight: 'bold', fontSize: isReadOnly ? '0.9rem' : '1rem' }}>{kg} kg</span>
+                    <span style={{ fontSize: isReadOnly ? '0.7em' : '0.8em', color: 'var(--secondary-foreground)' }}>{lbs} lbs</span>
                 </div>
             );
         } else {
@@ -41,8 +40,8 @@ export default function MeetAttempts({ athlete, isReadOnly = false }) {
             const kg = lbsToKg(lbs);
             return (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                    <span style={{ fontWeight: 'bold' }}>{kg} kg</span>
-                    <span style={{ fontSize: '0.8em', color: 'var(--secondary-foreground)' }}>{lbs} lbs</span>
+                    <span style={{ fontWeight: 'bold', fontSize: isReadOnly ? '0.9rem' : '1rem' }}>{kg} kg</span>
+                    <span style={{ fontSize: isReadOnly ? '0.7em' : '0.8em', color: 'var(--secondary-foreground)' }}>{lbs} lbs</span>
                 </div>
             );
         }
@@ -104,27 +103,27 @@ export default function MeetAttempts({ athlete, isReadOnly = false }) {
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'center' }}>
                         <thead>
                             <tr style={{ background: 'rgba(255,255,255,0.05)' }}>
-                                <th style={{ padding: '0.5rem', borderBottom: '1px solid var(--card-border)' }}>Attempt</th>
-                                <th style={{ padding: '0.5rem', borderBottom: '1px solid var(--card-border)', color: '#94a3b8' }}>Conservative</th>
-                                <th style={{ padding: '0.5rem', borderBottom: '1px solid var(--card-border)', color: '#38bdf8' }}>Planned</th>
-                                <th style={{ padding: '0.5rem', borderBottom: '1px solid var(--card-border)', color: '#a855f7' }}>Reach</th>
+                                <th style={{ padding: isReadOnly ? '0.5rem 0.25rem' : '0.5rem', borderBottom: '1px solid var(--card-border)', fontSize: isReadOnly ? '0.8rem' : '1rem' }}>Attempt</th>
+                                <th style={{ padding: isReadOnly ? '0.5rem 0.25rem' : '0.5rem', borderBottom: '1px solid var(--card-border)', color: '#94a3b8', fontSize: isReadOnly ? '0.8rem' : '1rem' }}>Cons<span className="hidden md:inline">ervative</span></th>
+                                <th style={{ padding: isReadOnly ? '0.5rem 0.25rem' : '0.5rem', borderBottom: '1px solid var(--card-border)', color: '#38bdf8', fontSize: isReadOnly ? '0.8rem' : '1rem' }}>Planned</th>
+                                <th style={{ padding: isReadOnly ? '0.5rem 0.25rem' : '0.5rem', borderBottom: '1px solid var(--card-border)', color: '#a855f7', fontSize: isReadOnly ? '0.8rem' : '1rem' }}>Reach</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td style={{ padding: '1rem 0.5rem', fontWeight: 600 }}>1st (Opener)</td>
-                                <td style={{ padding: '1rem 0.5rem' }}>{renderValue(cons1st)}</td>
-                                <td style={{ padding: '1rem 0.5rem', background: 'rgba(56, 189, 248, 0.05)' }}>{renderValue(plan1st)}</td>
-                                <td style={{ padding: '1rem 0.5rem' }}>{renderValue(reach1st)}</td>
+                                <td style={{ padding: isReadOnly ? '0.75rem 0.25rem' : '1rem 0.5rem', fontWeight: 600, fontSize: isReadOnly ? '0.85rem' : '1rem' }}>1st<span className="hidden md:inline"> (Opener)</span></td>
+                                <td style={{ padding: isReadOnly ? '0.75rem 0.25rem' : '1rem 0.5rem' }}>{renderValue(cons1st)}</td>
+                                <td style={{ padding: isReadOnly ? '0.75rem 0.25rem' : '1rem 0.5rem', background: 'rgba(56, 189, 248, 0.05)' }}>{renderValue(plan1st)}</td>
+                                <td style={{ padding: isReadOnly ? '0.75rem 0.25rem' : '1rem 0.5rem' }}>{renderValue(reach1st)}</td>
                             </tr>
                             <tr style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                                <td style={{ padding: '1rem 0.5rem', fontWeight: 600 }}>2nd</td>
-                                <td style={{ padding: '1rem 0.5rem' }}>{renderValue(cons2nd)}</td>
-                                <td style={{ padding: '1rem 0.5rem', background: 'rgba(56, 189, 248, 0.05)' }}>{renderValue(plan2nd)}</td>
-                                <td style={{ padding: '1rem 0.5rem' }}>{renderValue(reach2nd)}</td>
+                                <td style={{ padding: isReadOnly ? '0.75rem 0.25rem' : '1rem 0.5rem', fontWeight: 600, fontSize: isReadOnly ? '0.85rem' : '1rem' }}>2nd</td>
+                                <td style={{ padding: isReadOnly ? '0.75rem 0.25rem' : '1rem 0.5rem' }}>{renderValue(cons2nd)}</td>
+                                <td style={{ padding: isReadOnly ? '0.75rem 0.25rem' : '1rem 0.5rem', background: 'rgba(56, 189, 248, 0.05)' }}>{renderValue(plan2nd)}</td>
+                                <td style={{ padding: isReadOnly ? '0.75rem 0.25rem' : '1rem 0.5rem' }}>{renderValue(reach2nd)}</td>
                             </tr>
                             <tr style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-                                <td style={{ padding: '1rem 0.5rem', fontWeight: 600 }}>3rd (Target)</td>
+                                <td style={{ padding: isReadOnly ? '0.75rem 0.25rem' : '1rem 0.5rem', fontWeight: 600, fontSize: isReadOnly ? '0.85rem' : '1rem' }}>3rd<span className="hidden md:inline"> (Target)</span></td>
 
                                 {isEditing && !isReadOnly ? (
                                     <>
