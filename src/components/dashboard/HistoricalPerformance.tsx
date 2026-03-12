@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Papa from 'papaparse';
 import { Upload, Trash2, Plus, X } from 'lucide-react';
@@ -34,6 +34,34 @@ export default function HistoricalPerformance({ athlete }) {
         bench: '',
         deadlift: ''
     });
+
+    // Chart toggles & units
+    const [activeLines, setActiveLines] = useState({ squat: true, bench: true, deadlift: true, total: true, dots: true });
+    const [unit, setUnit] = useState<'kg' | 'lbs'>('kg');
+
+    const CHART_COLORS = {
+        squat: '#7d87d2',
+        bench: '#a855f7',
+        deadlift: '#10b981',
+        total: '#f97316',
+        dots: '#f59e0b',
+    };
+
+    const chartData = useMemo(() => {
+        const mult = unit === 'lbs' ? 2.20462 : 1;
+        return [...pastMeets].reverse().map(m => ({
+            ...m,
+            // Convert to display unit
+            squatDisp: Math.round((m.squat || 0) * mult * 10) / 10,
+            benchDisp: Math.round((m.bench || 0) * mult * 10) / 10,
+            deadliftDisp: Math.round((m.deadlift || 0) * mult * 10) / 10,
+            totalDisp: Math.round((m.total || 0) * mult * 10) / 10,
+            // Dots is unitless
+        }));
+    }, [pastMeets, unit]);
+
+    const toggleLine = (key: keyof typeof activeLines) =>
+        setActiveLines(prev => ({ ...prev, [key]: !prev[key] }));
 
     const handleAddMeet = (e) => {
         e.preventDefault();
@@ -207,14 +235,64 @@ export default function HistoricalPerformance({ athlete }) {
             )}
 
             {/* Chart */}
-            {pastMeets.length > 1 && (
+            {pastMeets.length > 0 && (
                 <div style={{ background: 'rgba(15,23,42,0.4)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.07)', padding: '16px 8px 8px', marginBottom: '2rem' }}>
-                    <div style={{ paddingLeft: '1rem', paddingBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <span style={{ color: 'var(--primary)' }}>///</span> Meet Progression
+                    <div style={{ paddingLeft: '1rem', paddingBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span style={{ color: 'var(--primary)' }}>///</span> Meet Progression
+                        </div>
+
+                        {/* Unit Toggle */}
+                        <div style={{ display: 'flex', background: 'rgba(15, 23, 42, 0.6)', borderRadius: '8px', padding: '4px', border: '1px solid var(--card-border)' }}>
+                            {(['kg', 'lbs'] as const).map(u => (
+                                <button
+                                    key={u}
+                                    onClick={() => setUnit(u)}
+                                    style={{
+                                        padding: '0.4rem 1rem',
+                                        background: unit === u ? 'var(--primary)' : 'transparent',
+                                        color: unit === u ? 'white' : 'var(--foreground)',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        fontSize: '0.75rem',
+                                        fontWeight: 700,
+                                        borderRadius: '6px',
+                                        transition: 'all 0.2s',
+                                        boxShadow: unit === u ? '0 0 10px rgba(6, 182, 212, 0.3)' : 'none'
+                                    }}
+                                >
+                                    {u.toUpperCase()}
+                                </button>
+                            ))}
+                        </div>
                     </div>
-                    <ResponsiveContainer width="100%" height={280}>
-                        <LineChart data={[...pastMeets].reverse()} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+
+                    {/* Line Toggles */}
+                    <div style={{ display: 'flex', justifyContent: 'flex-start', flexWrap: 'wrap', gap: 8, paddingLeft: 16, marginBottom: 16 }}>
+                        {[
+                            { key: 'squat', label: 'Squat', color: CHART_COLORS.squat },
+                            { key: 'bench', label: 'Bench', color: CHART_COLORS.bench },
+                            { key: 'deadlift', label: 'Deadlift', color: CHART_COLORS.deadlift },
+                            { key: 'total', label: 'Total', color: CHART_COLORS.total },
+                            { key: 'dots', label: 'DOTs', color: CHART_COLORS.dots },
+                        ].map(({ key, label, color }) => {
+                            const active = activeLines[key as keyof typeof activeLines];
+                            return (
+                                <button key={key} onClick={() => toggleLine(key as keyof typeof activeLines)} style={{
+                                    padding: '4px 10px', borderRadius: 6, border: `1px solid ${color}`,
+                                    background: active ? `${color}22` : 'transparent',
+                                    color: active ? color : 'rgba(255,255,255,0.3)',
+                                    fontSize: 11, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s',
+                                }}>
+                                    {label}
+                                </button>
+                            );
+                        })}
+                    </div>
+
+                    <ResponsiveContainer width="100%" height={320}>
+                        <LineChart data={chartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                             <XAxis
                                 dataKey="date"
                                 tick={{ fill: '#94a3b8', fontSize: 11 }}
@@ -222,14 +300,34 @@ export default function HistoricalPerformance({ athlete }) {
                                 tickLine={false}
                                 tickFormatter={(val) => new Date(val).toLocaleDateString(undefined, { month: 'short', year: '2-digit' })}
                             />
-                            <YAxis yAxisId="total" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={62} label={{ value: 'Total (kg)', angle: -90, position: 'insideLeft', offset: 10, fill: '#94a3b8', fontSize: 10 }} />
-                            <YAxis yAxisId="dots" orientation="right" tick={{ fill: 'var(--accent)', fontSize: 11 }} axisLine={false} tickLine={false} width={58} label={{ value: 'DOTs', angle: 90, position: 'insideRight', offset: -4, fill: 'var(--accent)', fontSize: 10 }} />
-                            <Tooltip
-                                contentStyle={{ background: 'rgba(15, 23, 42, 0.95)', border: '1px solid var(--card-border)', borderRadius: '8px', color: 'white' }}
-                                labelStyle={{ color: 'var(--secondary-foreground)', marginBottom: '4px' }}
+                            <YAxis
+                                yAxisId="weight"
+                                tick={{ fill: '#94a3b8', fontSize: 11 }}
+                                axisLine={false}
+                                tickLine={false}
+                                width={50}
+                                label={{ value: `Weight (${unit})`, angle: -90, position: 'insideLeft', offset: -5, fill: '#94a3b8', fontSize: 10 }}
                             />
-                            <Line yAxisId="total" type="monotone" dataKey="total" name="Total (kg)" stroke="var(--primary)" strokeWidth={2.5} dot={{ r: 4, fill: 'var(--primary)' }} activeDot={{ r: 6 }} />
-                            <Line yAxisId="dots" type="monotone" dataKey="dots" name="DOTs Score" stroke="var(--accent)" strokeWidth={2.5} dot={{ r: 4, fill: 'var(--accent)' }} activeDot={{ r: 6 }} />
+                            <YAxis
+                                yAxisId="dots"
+                                orientation="right"
+                                tick={{ fill: CHART_COLORS.dots, fontSize: 11 }}
+                                axisLine={false}
+                                tickLine={false}
+                                width={50}
+                                label={{ value: 'DOTs', angle: 90, position: 'insideRight', offset: 0, fill: CHART_COLORS.dots, fontSize: 10 }}
+                            />
+                            <Tooltip
+                                contentStyle={{ background: 'rgba(15, 23, 42, 0.95)', border: '1px solid var(--card-border)', borderRadius: '8px', color: 'white', fontSize: 12 }}
+                                labelStyle={{ color: 'var(--secondary-foreground)', marginBottom: '4px' }}
+                                formatter={(value: number, name: string) => [value, name === 'DOTs Score' ? value.toFixed(2) : `${value} ${unit}`]}
+                            />
+
+                            {activeLines.squat && <Line yAxisId="weight" type="monotone" dataKey="squatDisp" name="Squat" stroke={CHART_COLORS.squat} strokeWidth={2} dot={{ r: 3, fill: CHART_COLORS.squat }} activeDot={{ r: 5 }} />}
+                            {activeLines.bench && <Line yAxisId="weight" type="monotone" dataKey="benchDisp" name="Bench" stroke={CHART_COLORS.bench} strokeWidth={2} dot={{ r: 3, fill: CHART_COLORS.bench }} activeDot={{ r: 5 }} />}
+                            {activeLines.deadlift && <Line yAxisId="weight" type="monotone" dataKey="deadliftDisp" name="Deadlift" stroke={CHART_COLORS.deadlift} strokeWidth={2} dot={{ r: 3, fill: CHART_COLORS.deadlift }} activeDot={{ r: 5 }} />}
+                            {activeLines.total && <Line yAxisId="weight" type="monotone" dataKey="totalDisp" name="Total" stroke={CHART_COLORS.total} strokeWidth={3} dot={{ r: 4, fill: CHART_COLORS.total }} activeDot={{ r: 6 }} />}
+                            {activeLines.dots && <Line yAxisId="dots" type="monotone" dataKey="dots" name="DOTs Score" stroke={CHART_COLORS.dots} strokeWidth={2} dot={{ r: 3, fill: CHART_COLORS.dots }} activeDot={{ r: 5 }} />}
                         </LineChart>
                     </ResponsiveContainer>
                 </div>
