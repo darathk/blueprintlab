@@ -129,13 +129,13 @@ export default function MeetAttempts({ athlete, isReadOnly = false }) {
                                 {isEditing && !isReadOnly ? (
                                     <>
                                         <td style={{ padding: '1rem 0.5rem' }}>
-                                            <input type="number" className="input" value={liftData.conservative || ''} onChange={(e) => updateLift(liftKey, 'conservative', e.target.value)} style={{ width: '70px', textAlign: 'center' }} />
+                                            <input type="number" className="input" value={liftData.conservative || ''} onChange={(e) => updateLift(liftKey, 'conservative', e.target.value)} style={{ width: '80px', textAlign: 'center' }} />
                                         </td>
                                         <td style={{ padding: '1rem 0.5rem', background: 'rgba(56, 189, 248, 0.05)' }}>
-                                            <input type="number" className="input" value={liftData.planned || ''} onChange={(e) => updateLift(liftKey, 'planned', e.target.value)} style={{ width: '70px', textAlign: 'center', borderColor: '#38bdf8' }} />
+                                            <input type="number" className="input" value={liftData.planned || ''} onChange={(e) => updateLift(liftKey, 'planned', e.target.value)} style={{ width: '80px', textAlign: 'center', borderColor: '#38bdf8' }} />
                                         </td>
                                         <td style={{ padding: '1rem 0.5rem' }}>
-                                            <input type="number" className="input" value={liftData.reach || ''} onChange={(e) => updateLift(liftKey, 'reach', e.target.value)} style={{ width: '70px', textAlign: 'center', borderColor: '#a855f7' }} />
+                                            <input type="number" className="input" value={liftData.reach || ''} onChange={(e) => updateLift(liftKey, 'reach', e.target.value)} style={{ width: '80px', textAlign: 'center', borderColor: '#a855f7' }} />
                                         </td>
                                     </>
                                 ) : (
@@ -163,7 +163,7 @@ export default function MeetAttempts({ athlete, isReadOnly = false }) {
                         <p style={{ color: 'var(--secondary-foreground)', fontSize: '0.9rem' }}>Work backwards from target 3rd attempts</p>
                     </div>
                     <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                        <select className="input" value={data.unit} onChange={(e) => setData({ ...data, unit: e.target.value })} disabled={!isEditing} style={{ width: 'auto' }}>
+                        <select className="input" value={data.unit} onChange={(e) => setData({ ...data, unit: e.target.value })} disabled={!isEditing} style={{ paddingRight: '32px', minWidth: '130px' }}>
                             <option value="kg">Inputs in KG</option>
                             <option value="lbs">Inputs in LBS</option>
                         </select>
