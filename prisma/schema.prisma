@@ -21,6 +21,7 @@ model Athlete {
   weightClass      Float?   // kg, e.g. 83.0
   gender           String?  // "male" or "female"
   periodization    Json?
+  meetAttempts     Json?
   programs         Program[]
   reports          Report[]
   readiness        Readiness[]

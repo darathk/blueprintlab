@@ -3,6 +3,7 @@ import { getAthleteById, getLogsByAthlete, getReadinessByAthlete, getProgramsByA
 import Link from 'next/link';
 import ProgramList from '@/components/program-builder/ProgramList';
 import BlockOrganizer from '@/components/dashboard/BlockOrganizer';
+import MeetAttempts from '@/components/dashboard/MeetAttempts';
 import AthleteCalendarContainer from '@/components/dashboard/AthleteCalendarContainer';
 import CollapsibleSection from '@/components/ui/CollapsibleSection';
 import dynamic from 'next/dynamic';
@@ -45,6 +46,11 @@ async function AthleteHeader({ id }) {
 async function AsyncBlockOrganizer({ id }) {
     const athlete = await getAthleteById(id);
     return <BlockOrganizer athlete={athlete} />;
+}
+
+async function AsyncMeetAttempts({ id }) {
+    const athlete = await getAthleteById(id);
+    return <MeetAttempts athlete={athlete} isReadOnly={false} />;
 }
 
 async function AsyncCalendar({ id }) {
@@ -115,6 +121,7 @@ export default async function AthleteAnalyticsPage({ params }) {
 
             <CollapsibleSection title="Meet Planner" defaultOpen={false}>
                 <Suspense fallback={<Loader />}>
+                    <AsyncMeetAttempts id={id} />
                     <AsyncBlockOrganizer id={id} />
                 </Suspense>
             </CollapsibleSection>

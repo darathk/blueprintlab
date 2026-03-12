@@ -32,7 +32,7 @@ export async function POST(request: Request) {
         }
 
         const body = await request.json();
-        const { id, name, email, nextMeetName, nextMeetDate, periodization } = body;
+        const { id, name, email, nextMeetName, nextMeetDate, periodization, meetAttempts } = body;
 
         let athlete;
 
@@ -57,6 +57,7 @@ export async function POST(request: Request) {
                         nextMeetName: nextMeetName !== undefined ? nextMeetName : existingUser.nextMeetName,
                         nextMeetDate: nextMeetDate !== undefined ? nextMeetDate : existingUser.nextMeetDate,
                         periodization: periodization !== undefined ? periodization : existingUser.periodization,
+                        meetAttempts: meetAttempts !== undefined ? meetAttempts : existingUser.meetAttempts,
                     }
                 });
                 return NextResponse.json(athlete);
@@ -74,6 +75,7 @@ export async function POST(request: Request) {
                 nextMeetName: nextMeetName !== undefined ? nextMeetName : undefined,
                 nextMeetDate: nextMeetDate !== undefined ? nextMeetDate : undefined,
                 periodization: periodization !== undefined ? periodization : undefined,
+                meetAttempts: meetAttempts !== undefined ? meetAttempts : undefined,
             },
             create: {
                 id: athleteId,
@@ -82,6 +84,7 @@ export async function POST(request: Request) {
                 nextMeetName: nextMeetName || null,
                 nextMeetDate: nextMeetDate || null,
                 periodization: periodization || null,
+                meetAttempts: meetAttempts || null,
                 coachId: coach.id, // Forcefully link to the logged-in coach
                 role: 'athlete'
             }
