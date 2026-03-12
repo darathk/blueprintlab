@@ -94,24 +94,25 @@ export default function ChatInterface({
         const el = scrollContainerRef.current;
         if (!el) return;
 
-        const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
-        const shouldScroll = force || distFromBottom < 150;
+        requestAnimationFrame(() => {
+            const distFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+            const shouldScroll = force || distFromBottom < 200;
 
-        if (shouldScroll) {
-            if (force) el.style.scrollBehavior = 'auto'; // Prevent Safari bounce
-            el.scrollTop = el.scrollHeight;
-            if (force) el.style.scrollBehavior = '';
-            userScrolledUp.current = false;
-        }
-
-        scrollTimeoutRef.current = setTimeout(() => {
-            if (!scrollContainerRef.current) return;
-            const dist = scrollContainerRef.current.scrollHeight - scrollContainerRef.current.scrollTop - scrollContainerRef.current.clientHeight;
-            if (force || dist < 150) {
-                scrollContainerRef.current.scrollTop = scrollContainerRef.current.scrollHeight;
+            if (shouldScroll && messagesEndRef.current) {
+                messagesEndRef.current.scrollIntoView({ behavior: force ? 'auto' : 'smooth', block: 'end' });
                 userScrolledUp.current = false;
             }
-        }, 300); // Wait for images/DOM to fully settle
+
+            scrollTimeoutRef.current = setTimeout(() => {
+                const elAfter = scrollContainerRef.current;
+                if (!elAfter) return;
+                const dist = elAfter.scrollHeight - elAfter.scrollTop - elAfter.clientHeight;
+                if ((force || dist < 200) && messagesEndRef.current) {
+                    messagesEndRef.current.scrollIntoView({ behavior: 'auto', block: 'end' });
+                    userScrolledUp.current = false;
+                }
+            }, 300); // Wait for images/DOM to fully settle
+        });
     }, []);
 
     // Only force-scroll when user sends/receives a new message (not on background polls)
@@ -541,7 +542,7 @@ export default function ChatInterface({
             </div>
 
             {/* Messages */}
-            <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '12px 16px', minHeight: 0, paddingTop: 'calc(var(--header-height) + 16px + env(safe-area-inset-top, 0px))', paddingBottom: 'calc(100px + env(safe-area-inset-bottom, 0px))', willChange: 'scroll-position', transform: 'translateZ(0)', WebkitOverflowScrolling: 'touch' as any, overscrollBehavior: 'contain' }}>
+            <div ref={scrollContainerRef} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '12px 16px', minHeight: 0, paddingTop: 'calc(var(--header-height) + 16px + env(safe-area-inset-top, 0px))', paddingBottom: 0, willChange: 'scroll-position', transform: 'translateZ(0)', WebkitOverflowScrolling: 'touch' as any, overscrollBehavior: 'contain' }}>
                 {!loaded && <div style={{ textAlign: 'center', padding: 40, color: 'var(--secondary-foreground)' }}>Loading…</div>}
                 {loaded && messages.length === 0 && <div style={{ textAlign: 'center', padding: 60, color: 'var(--secondary-foreground)', fontSize: 14 }}>No messages yet. Start the conversation!</div>}
 
@@ -669,7 +670,7 @@ export default function ChatInterface({
                         </div>
                     );
                 })}
-                <div ref={messagesEndRef} />
+                <div ref={messagesEndRef} style={{ height: 'calc(80px + env(safe-area-inset-bottom, 0px))', flexShrink: 0, width: '100%' }} />
             </div>
 
             {/* Reply bar */}
