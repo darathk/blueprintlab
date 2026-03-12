@@ -197,8 +197,54 @@ export default function DotsChart({ athleteId, logs, programs = [], initialGende
                 </div>
             ) : (
                 <div style={{ background: 'rgba(15,23,42,0.4)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.07)', padding: '16px 8px 8px' }}>
-                    {/* Timeline + line toggles in one row */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8, paddingLeft: 12, paddingRight: 12, marginBottom: 14 }}>
+                    {/* Controls Row 1: Mission Filter and Timeline */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', paddingLeft: 12, paddingRight: 12 }}>
+                        {/* Program Filter */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                            <label style={{ fontSize: '0.85rem', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Mission Filter:</label>
+                            <div style={{ position: 'relative' }}>
+                                <select
+                                    className="input"
+                                    style={{ width: 'auto', padding: '0.5rem 2rem 0.5rem 1rem', appearance: 'none', background: 'var(--card-bg)', border: '1px solid var(--primary)', color: 'var(--primary)' }}
+                                    value={selectedProgramId}
+                                    onChange={(e) => setSelectedProgramId(e.target.value)}
+                                >
+                                    <option value="ALL">All Missions</option>
+                                    {programs && programs.map(p => (
+                                        <option key={p.id} value={p.id}>{p.name}</option>
+                                    ))}
+                                </select>
+                                <div style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--primary)', fontSize: '0.8rem' }}>▼</div>
+                            </div>
+                        </div>
+
+                        {/* Timeline */}
+                        <div style={{ display: 'flex', background: 'rgba(15, 23, 42, 0.6)', borderRadius: '8px', padding: '4px', border: '1px solid var(--card-border)' }}>
+                            {Object.keys(TIMELINES).map(tl => (
+                                <button
+                                    key={tl}
+                                    onClick={() => setTimeline(tl)}
+                                    style={{
+                                        padding: '0.4rem 1rem',
+                                        background: timeline === tl ? 'var(--primary)' : 'transparent',
+                                        color: timeline === tl ? 'white' : 'var(--foreground)',
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        fontSize: '0.75rem',
+                                        fontWeight: 700,
+                                        borderRadius: '6px',
+                                        transition: 'all 0.2s',
+                                        boxShadow: timeline === tl ? '0 0 10px rgba(6, 182, 212, 0.3)' : 'none'
+                                    }}
+                                >
+                                    {tl}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* Controls Row 2: Line toggles */}
+                    <div style={{ display: 'flex', justifyContent: 'flex-start', flexWrap: 'wrap', gap: 8, paddingLeft: 12, paddingRight: 12, marginBottom: 14 }}>
                         {/* Line toggles */}
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                             {[
@@ -222,68 +268,7 @@ export default function DotsChart({ athleteId, logs, programs = [], initialGende
                                 );
                             })}
                         </div>
-
-                        {/* Filters */}
-                        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
-                            {programs && programs.length > 0 && (
-                                <select
-                                    value={selectedProgramId}
-                                    onChange={(e) => setSelectedProgramId(e.target.value)}
-                                    style={{
-                                        background: 'rgba(15,23,42,0.6)',
-                                        border: '1px solid rgba(255,255,255,0.06)',
-                                        borderRadius: 8,
-                                        padding: '4px 30px 4px 10px',
-                                        color: 'var(--secondary-foreground)',
-                                        fontSize: 11,
-                                        fontWeight: 700,
-                                        outline: 'none',
-                                        cursor: 'pointer',
-                                        appearance: 'none',
-                                        backgroundImage: `url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2394a3b8%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E")`,
-                                        backgroundRepeat: 'no-repeat',
-                                        backgroundPosition: 'right 10px top 50%',
-                                        backgroundSize: '8px auto',
-                                    }}
-                                >
-                                    <option value="ALL">All Programs</option>
-                                    {programs.map(p => (
-                                        <option key={p.id} value={p.id}>{p.name}</option>
-                                    ))}
-                                </select>
-                            )}
-                            <div style={{ display: 'flex', background: 'rgba(15,23,42,0.6)', borderRadius: 8, padding: 3, border: '1px solid rgba(255,255,255,0.06)' }}>
-                                {Object.keys(TIMELINES).map(tl => (
-                                    <button key={tl} onClick={() => setTimeline(tl)} style={{
-                                        padding: '4px 10px', borderRadius: 6, border: 'none', cursor: 'pointer',
-                                        background: timeline === tl ? 'var(--primary)' : 'transparent',
-                                        color: timeline === tl ? '#fff' : 'var(--secondary-foreground)',
-                                        fontSize: 11, fontWeight: 700, transition: 'all 0.15s',
-                                    }}>
-                                        {tl}
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-
-                        <ResponsiveContainer width="100%" height={300}>
-                            <LineChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                                <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} label={{ value: 'Session Date', position: 'insideBottom', offset: -2, fill: '#64748b', fontSize: 10 }} height={40} />
-                                <YAxis yAxisId="lbs" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={62} label={{ value: 'E1RM (lbs)', angle: -90, position: 'insideLeft', offset: 10, fill: '#94a3b8', fontSize: 10 }} />
-                                <YAxis yAxisId="dots" orientation="right" tick={{ fill: CHART_COLORS.dots, fontSize: 11 }} axisLine={false} tickLine={false} width={58} label={{ value: 'DOTs Score', angle: 90, position: 'insideRight', offset: -4, fill: CHART_COLORS.dots, fontSize: 10 }} />
-                                <Tooltip content={<CustomTooltip />} />
-                                {activeLines.squat && <Line yAxisId="lbs" type="monotone" dataKey="squat" name="Squat E1RM" stroke={CHART_COLORS.squat} strokeWidth={2} dot={{ r: 4, fill: CHART_COLORS.squat }} activeDot={{ r: 6 }} connectNulls />}
-                                {activeLines.bench && <Line yAxisId="lbs" type="monotone" dataKey="bench" name="Bench E1RM" stroke={CHART_COLORS.bench} strokeWidth={2} dot={{ r: 4, fill: CHART_COLORS.bench }} activeDot={{ r: 6 }} connectNulls />}
-                                {activeLines.deadlift && <Line yAxisId="lbs" type="monotone" dataKey="deadlift" name="Deadlift E1RM" stroke={CHART_COLORS.deadlift} strokeWidth={2} dot={{ r: 4, fill: CHART_COLORS.deadlift }} activeDot={{ r: 6 }} connectNulls />}
-                                {activeLines.totalLbs && <Line yAxisId="lbs" type="monotone" dataKey="totalLbs" name="Total E1RM" stroke={CHART_COLORS.totalLbs} strokeWidth={2.5} dot={{ r: 4, fill: CHART_COLORS.totalLbs }} activeDot={{ r: 6 }} connectNulls />}
-                                {activeLines.dots && genderKey && wc > 0 && (
-                                    <Line yAxisId="dots" type="monotone" dataKey="dots" name="DOTs Score" stroke={CHART_COLORS.dots} strokeWidth={2.5} dot={{ r: 4, fill: CHART_COLORS.dots }} activeDot={{ r: 6 }} connectNulls />
-                                )}
-                            </LineChart>
-                        </ResponsiveContainer>
-
-                    </div> {/* Closing div for Timeline + line toggles row */}
+                    </div>
 
                     <ResponsiveContainer width="100%" height={300}>
                         <LineChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
