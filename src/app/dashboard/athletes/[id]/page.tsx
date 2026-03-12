@@ -81,14 +81,16 @@ async function AsyncCharts({ id }) {
 }
 
 async function AsyncDotsChart({ id }) {
-    const [athlete, logs] = await Promise.all([
+    const [athlete, logs, programs] = await Promise.all([
         getAthleteById(id),
         getLogsByAthlete(id),
+        getProgramsByAthlete(id)
     ]);
     return (
         <DotsChart
             athleteId={id}
             logs={logs}
+            programs={programs}
             initialGender={athlete?.gender ?? null}
             initialWeightClass={athlete?.weightClass ?? null}
         />

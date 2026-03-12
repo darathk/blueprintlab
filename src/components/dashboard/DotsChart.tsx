@@ -24,6 +24,7 @@ const TIMELINES: Record<string, number> = {
 interface Props {
     athleteId: string;
     logs: any[];
+    programs?: any[];
     initialGender?: string | null;
     initialWeightClass?: number | null;
 }
@@ -52,12 +53,13 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     );
 };
 
-export default function DotsChart({ athleteId, logs, initialGender, initialWeightClass }: Props) {
+export default function DotsChart({ athleteId, logs, programs = [], initialGender, initialWeightClass }: Props) {
     const [gender, setGender] = useState<string>(initialGender ?? '');
     const [weightClass, setWeightClass] = useState<string>(initialWeightClass?.toString() ?? '');
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
     const [timeline, setTimeline] = useState<string>('ALL');
+    const [selectedProgramId, setSelectedProgramId] = useState<string>('ALL');
     const [activeLines, setActiveLines] = useState({ squat: true, bench: true, deadlift: true, totalLbs: true, dots: true });
 
     const handleSave = async () => {
@@ -79,15 +81,25 @@ export default function DotsChart({ athleteId, logs, initialGender, initialWeigh
     const genderKey = (gender === 'male' || gender === 'female') ? gender : null;
     const classes = gender && WEIGHT_CLASSES[gender as 'male' | 'female'] ? WEIGHT_CLASSES[gender as 'male' | 'female'] : [];
 
-    // Filter logs by selected timeline before computing data points
+    // Filter logs by selected timeline and program before computing data points
     const filteredLogs = useMemo(() => {
         if (!logs?.length) return [];
+        let result = logs;
+
+        // Apply program filter if not 'ALL'
+        if (selectedProgramId !== 'ALL') {
+            result = result.filter(l => l.programId === selectedProgramId);
+        }
+
         const days = TIMELINES[timeline];
-        if (days === Infinity) return logs;
-        const cutoff = new Date();
-        cutoff.setDate(cutoff.getDate() - days);
-        return logs.filter(l => l.date && new Date(l.date) >= cutoff);
-    }, [logs, timeline]);
+        if (days !== Infinity) {
+            const cutoff = new Date();
+            cutoff.setDate(cutoff.getDate() - days);
+            result = result.filter(l => l.date && new Date(l.date) >= cutoff);
+        }
+
+        return result;
+    }, [logs, timeline, selectedProgramId]);
 
     // Compute data points — one per logged session that has a competition lift
     const data: CompetitionDataPoint[] = useMemo(
@@ -211,20 +223,67 @@ export default function DotsChart({ athleteId, logs, initialGender, initialWeigh
                             })}
                         </div>
 
-                        {/* Timeline filter */}
-                        <div style={{ display: 'flex', background: 'rgba(15,23,42,0.6)', borderRadius: 8, padding: 3, border: '1px solid rgba(255,255,255,0.06)' }}>
-                            {Object.keys(TIMELINES).map(tl => (
-                                <button key={tl} onClick={() => setTimeline(tl)} style={{
-                                    padding: '4px 10px', borderRadius: 6, border: 'none', cursor: 'pointer',
-                                    background: timeline === tl ? 'var(--primary)' : 'transparent',
-                                    color: timeline === tl ? '#fff' : 'var(--secondary-foreground)',
-                                    fontSize: 11, fontWeight: 700, transition: 'all 0.15s',
-                                }}>
-                                    {tl}
-                                </button>
-                            ))}
+                        {/* Filters */}
+                        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                            {programs && programs.length > 0 && (
+                                <select
+                                    value={selectedProgramId}
+                                    onChange={(e) => setSelectedProgramId(e.target.value)}
+                                    style={{
+                                        background: 'rgba(15,23,42,0.6)',
+                                        border: '1px solid rgba(255,255,255,0.06)',
+                                        borderRadius: 8,
+                                        padding: '4px 30px 4px 10px',
+                                        color: 'var(--secondary-foreground)',
+                                        fontSize: 11,
+                                        fontWeight: 700,
+                                        outline: 'none',
+                                        cursor: 'pointer',
+                                        appearance: 'none',
+                                        backgroundImage: `url("data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%2394a3b8%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%200-13-5.4H18.4c-5%200-9.3%201.8-12.9%205.4A17.6%2017.6%200%200%200%200%2082.2c0%205%201.8%209.3%205.4%2012.9l128%20127.9c3.6%203.6%207.8%205.4%2012.8%205.4s9.2-1.8%2012.8-5.4L287%2095c3.5-3.5%205.4-7.8%205.4-12.8%200-5-1.9-9.2-5.5-12.8z%22%2F%3E%3C%2Fsvg%3E")`,
+                                        backgroundRepeat: 'no-repeat',
+                                        backgroundPosition: 'right 10px top 50%',
+                                        backgroundSize: '8px auto',
+                                    }}
+                                >
+                                    <option value="ALL">All Programs</option>
+                                    {programs.map(p => (
+                                        <option key={p.id} value={p.id}>{p.name}</option>
+                                    ))}
+                                </select>
+                            )}
+                            <div style={{ display: 'flex', background: 'rgba(15,23,42,0.6)', borderRadius: 8, padding: 3, border: '1px solid rgba(255,255,255,0.06)' }}>
+                                {Object.keys(TIMELINES).map(tl => (
+                                    <button key={tl} onClick={() => setTimeline(tl)} style={{
+                                        padding: '4px 10px', borderRadius: 6, border: 'none', cursor: 'pointer',
+                                        background: timeline === tl ? 'var(--primary)' : 'transparent',
+                                        color: timeline === tl ? '#fff' : 'var(--secondary-foreground)',
+                                        fontSize: 11, fontWeight: 700, transition: 'all 0.15s',
+                                    }}>
+                                        {tl}
+                                    </button>
+                                ))}
+                            </div>
                         </div>
-                    </div>
+
+                        <ResponsiveContainer width="100%" height={300}>
+                            <LineChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                                <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} label={{ value: 'Session Date', position: 'insideBottom', offset: -2, fill: '#64748b', fontSize: 10 }} height={40} />
+                                <YAxis yAxisId="lbs" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={62} label={{ value: 'E1RM (lbs)', angle: -90, position: 'insideLeft', offset: 10, fill: '#94a3b8', fontSize: 10 }} />
+                                <YAxis yAxisId="dots" orientation="right" tick={{ fill: CHART_COLORS.dots, fontSize: 11 }} axisLine={false} tickLine={false} width={58} label={{ value: 'DOTs Score', angle: 90, position: 'insideRight', offset: -4, fill: CHART_COLORS.dots, fontSize: 10 }} />
+                                <Tooltip content={<CustomTooltip />} />
+                                {activeLines.squat && <Line yAxisId="lbs" type="monotone" dataKey="squat" name="Squat E1RM" stroke={CHART_COLORS.squat} strokeWidth={2} dot={{ r: 4, fill: CHART_COLORS.squat }} activeDot={{ r: 6 }} connectNulls />}
+                                {activeLines.bench && <Line yAxisId="lbs" type="monotone" dataKey="bench" name="Bench E1RM" stroke={CHART_COLORS.bench} strokeWidth={2} dot={{ r: 4, fill: CHART_COLORS.bench }} activeDot={{ r: 6 }} connectNulls />}
+                                {activeLines.deadlift && <Line yAxisId="lbs" type="monotone" dataKey="deadlift" name="Deadlift E1RM" stroke={CHART_COLORS.deadlift} strokeWidth={2} dot={{ r: 4, fill: CHART_COLORS.deadlift }} activeDot={{ r: 6 }} connectNulls />}
+                                {activeLines.totalLbs && <Line yAxisId="lbs" type="monotone" dataKey="totalLbs" name="Total E1RM" stroke={CHART_COLORS.totalLbs} strokeWidth={2.5} dot={{ r: 4, fill: CHART_COLORS.totalLbs }} activeDot={{ r: 6 }} connectNulls />}
+                                {activeLines.dots && genderKey && wc > 0 && (
+                                    <Line yAxisId="dots" type="monotone" dataKey="dots" name="DOTs Score" stroke={CHART_COLORS.dots} strokeWidth={2.5} dot={{ r: 4, fill: CHART_COLORS.dots }} activeDot={{ r: 6 }} connectNulls />
+                                )}
+                            </LineChart>
+                        </ResponsiveContainer>
+
+                    </div> {/* Closing div for Timeline + line toggles row */}
 
                     <ResponsiveContainer width="100%" height={300}>
                         <LineChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
