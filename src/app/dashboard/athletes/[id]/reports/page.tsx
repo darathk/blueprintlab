@@ -5,7 +5,6 @@ import { use } from 'react';
 import Link from 'next/link';
 import ReportList from '@/components/reporting/ReportList';
 import ReportWizard from '@/components/reporting/ReportWizard';
-import AthleteCharts from '@/components/dashboard/AthleteCharts';
 import MetaBlockReview from '@/components/reporting/meta/MetaBlockReview';
 import BlockReview from '@/components/reporting/meta/BlockReview';
 import StressBalanceReport from '@/components/reporting/meta/StressBalanceReport';
@@ -182,11 +181,9 @@ export default function ReportsPage({ params }: { params: Promise<{ id: string }
 
                             {/* Fallback / Default Charts */}
                             {!['Meta Block Review', 'Block Review', 'Stress Balance'].includes(selectedReport.type) && (
-                                <AthleteCharts
-                                    logs={athleteData.logs}
-                                    readinessLogs={athleteData.readiness}
-                                    programs={athleteData.programs}
-                                />
+                                <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--secondary-foreground)' }}>
+                                    Report type not supported for detailed view.
+                                </div>
                             )}
                         </div>
                     </div>
