@@ -9,9 +9,7 @@ import AthleteCalendarContainer from '@/components/dashboard/AthleteCalendarCont
 import CollapsibleSection from '@/components/ui/CollapsibleSection';
 import dynamic from 'next/dynamic';
 
-const AthleteCharts = dynamic(() => import('@/components/dashboard/AthleteCharts'), {
-    loading: () => <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="pulse">Loading performance charts...</div>
-});
+
 
 import { MessageSquare } from 'lucide-react';
 
@@ -73,12 +71,7 @@ async function AsyncCalendar({ id }) {
     );
 }
 
-async function AsyncCharts({ id }) {
-    const athleteLogs = await getLogsByAthlete(id);
-    const athleteReadiness = await getReadinessByAthlete(id);
-    const programs = await getProgramsByAthlete(id);
-    return <AthleteCharts logs={athleteLogs} readinessLogs={athleteReadiness} programs={programs} />;
-}
+
 
 async function AsyncDotsChart({ id }) {
     const [athlete, logs, programs] = await Promise.all([
@@ -115,11 +108,7 @@ export default async function AthleteAnalyticsPage({ params }) {
                 </Suspense>
             </CollapsibleSection>
 
-            <CollapsibleSection title="Performance Analytics" defaultOpen={false}>
-                <Suspense fallback={<Loader />}>
-                    <AsyncCharts id={id} />
-                </Suspense>
-            </CollapsibleSection>
+
 
             <CollapsibleSection title="Training Calendar" defaultOpen={false}>
                 <Suspense fallback={<Loader />}>
