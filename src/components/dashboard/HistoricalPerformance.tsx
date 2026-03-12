@@ -175,6 +175,20 @@ export default function HistoricalPerformance({ athlete }) {
         }
     };
 
+    const CustomHistoricalTooltip = ({ active, payload, label }: any) => {
+        if (!active || !payload?.length) return null;
+        return (
+            <div style={{ background: 'rgba(15,23,42,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 14px', fontSize: 12 }}>
+                <p style={{ fontWeight: 700, color: '#f8fafc', marginBottom: 6 }}>{label}</p>
+                {payload.map((p: any) => (
+                    <p key={p.dataKey} style={{ color: p.color, margin: '2px 0' }}>
+                        {p.name}: <strong>{p.name === 'DOTs Score' ? p.value.toFixed(2) : p.value}{p.name === 'DOTs Score' ? '' : ` ${unit}`}</strong>
+                    </p>
+                ))}
+            </div>
+        );
+    };
+
     return (
         <div style={{ marginBottom: '2rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
@@ -317,11 +331,7 @@ export default function HistoricalPerformance({ athlete }) {
                                 width={50}
                                 label={{ value: 'DOTs', angle: 90, position: 'insideRight', offset: 0, fill: CHART_COLORS.dots, fontSize: 10 }}
                             />
-                            <Tooltip
-                                contentStyle={{ background: 'rgba(15, 23, 42, 0.95)', border: '1px solid var(--card-border)', borderRadius: '8px', color: 'white', fontSize: 12 }}
-                                labelStyle={{ color: 'var(--secondary-foreground)', marginBottom: '4px' }}
-                                formatter={(value: number, name: string) => [value, name === 'DOTs Score' ? value.toFixed(2) : `${value} ${unit}`]}
-                            />
+                            <Tooltip content={<CustomHistoricalTooltip />} />
 
                             {activeLines.squat && <Line yAxisId="weight" type="monotone" dataKey="squatDisp" name="Squat" stroke={CHART_COLORS.squat} strokeWidth={2} dot={{ r: 3, fill: CHART_COLORS.squat }} activeDot={{ r: 5 }} />}
                             {activeLines.bench && <Line yAxisId="weight" type="monotone" dataKey="benchDisp" name="Bench" stroke={CHART_COLORS.bench} strokeWidth={2} dot={{ r: 3, fill: CHART_COLORS.bench }} activeDot={{ r: 5 }} />}
