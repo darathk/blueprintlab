@@ -4,6 +4,7 @@ import Link from 'next/link';
 import ProgramList from '@/components/program-builder/ProgramList';
 import BlockOrganizer from '@/components/dashboard/BlockOrganizer';
 import MeetAttempts from '@/components/dashboard/MeetAttempts';
+import HistoricalPerformance from '@/components/dashboard/HistoricalPerformance';
 import AthleteCalendarContainer from '@/components/dashboard/AthleteCalendarContainer';
 import CollapsibleSection from '@/components/ui/CollapsibleSection';
 import dynamic from 'next/dynamic';
@@ -51,6 +52,11 @@ async function AsyncBlockOrganizer({ id }) {
 async function AsyncMeetAttempts({ id }) {
     const athlete = await getAthleteById(id);
     return <MeetAttempts athlete={athlete} isReadOnly={false} />;
+}
+
+async function AsyncHistoricalPerformance({ id }) {
+    const athlete = await getAthleteById(id);
+    return <HistoricalPerformance athlete={athlete} />;
 }
 
 async function AsyncCalendar({ id }) {
@@ -123,6 +129,12 @@ export default async function AthleteAnalyticsPage({ params }) {
                 <Suspense fallback={<Loader />}>
                     <AsyncMeetAttempts id={id} />
                     <AsyncBlockOrganizer id={id} />
+                </Suspense>
+            </CollapsibleSection>
+
+            <CollapsibleSection title="Historical Performance" defaultOpen={false}>
+                <Suspense fallback={<Loader />}>
+                    <AsyncHistoricalPerformance id={id} />
                 </Suspense>
             </CollapsibleSection>
 

@@ -22,6 +22,7 @@ model Athlete {
   gender           String?  // "male" or "female"
   periodization    Json?
   meetAttempts     Json?
+  pastMeets        Json?
   programs         Program[]
   reports          Report[]
   readiness        Readiness[]
