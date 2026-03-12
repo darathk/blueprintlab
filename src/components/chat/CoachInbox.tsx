@@ -2,8 +2,9 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, Calendar as CalendarIcon } from 'lucide-react';
 import ChatInterface from './ChatInterface';
+import AthleteProgramPane from './AthleteProgramPane';
 
 interface Message {
     id: string; senderId: string; receiverId: string; content: string;
@@ -22,6 +23,7 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
     const [selectedId, setSelectedId] = useState<string | null>(initialAthleteId || null);
     const selectedConvo = convos.find(c => c.athleteId === selectedId);
     const [isMobile, setIsMobile] = useState(false);
+    const [showProgram, setShowProgram] = useState(false);
     const totalUnread = convos.reduce((s, c) => s + c.unreadCount, 0);
 
     useEffect(() => {
@@ -55,7 +57,7 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                 <div style={{ flex: 1, overflowY: 'auto' }}>
                     {convos.length === 0 && <div style={{ textAlign: 'center', padding: 32, fontSize: 12, color: 'var(--secondary-foreground)' }}>No conversations</div>}
                     {convos.map(c => (
-                        <button key={c.athleteId} onClick={() => setSelectedId(c.athleteId)}
+                        <button key={c.athleteId} onClick={() => { setSelectedId(c.athleteId); setShowProgram(false); }}
                             style={{
                                 display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 14px', border: 'none', cursor: 'pointer', textAlign: 'left' as const,
                                 background: selectedId === c.athleteId ? 'linear-gradient(90deg, rgba(125,135,210,0.15), transparent)' : 'transparent',
@@ -98,9 +100,45 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                         athleteId={selectedId}
                         isEmbedded={true}
                         onBack={isMobile ? () => setSelectedId(null) : undefined}
+                        headerActions={
+                            <button
+                                onClick={() => setShowProgram(!showProgram)}
+                                style={{
+                                    display: 'flex', alignItems: 'center', gap: 6,
+                                    background: showProgram ? 'var(--primary)' : 'rgba(255,255,255,0.1)',
+                                    border: 'none', borderRadius: 6, padding: '6px 10px',
+                                    color: '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                                    marginRight: 8, transition: 'background 0.2s'
+                                }}
+                            >
+                                <CalendarIcon size={14} />
+                                {showProgram ? 'Hide Program' : 'View Program'}
+                            </button>
+                        }
                     />
                 )}
             </div>
+
+            {/* Athlete Program Pane */}
+            {showProgram && selectedId && (
+                <div style={{
+                    position: isMobile ? 'absolute' : 'relative',
+                    top: 0, right: 0, bottom: 0, zIndex: 50,
+                    width: isMobile ? '100%' : 400,
+                    flexShrink: 0,
+                    borderLeft: isMobile ? 'none' : '1px solid rgba(255,255,255,0.08)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    overflow: 'hidden',
+                    background: 'var(--background)'
+                }}>
+                    <AthleteProgramPane
+                        athleteId={selectedId}
+                        coachId={coachId}
+                        onClose={() => setShowProgram(false)}
+                    />
+                </div>
+            )}
         </div>
     );
 }

@@ -30,11 +30,12 @@ interface Props {
     initialMessages?: Message[];
     isEmbedded?: boolean;
     onBack?: () => void;
+    headerActions?: React.ReactNode;
 }
 
 export default function ChatInterface({
     currentUserId, otherUserId, currentUserName, otherUserName, athleteId,
-    initialMessages = [], isEmbedded = false, onBack
+    initialMessages = [], isEmbedded = false, onBack, headerActions
 }: Props) {
     const [messages, setMessages] = useState<Message[]>(initialMessages);
     const [newMessage, setNewMessage] = useState('');
@@ -540,7 +541,10 @@ export default function ChatInterface({
                             <Link href={`/athlete/${athleteId}/dashboard`} style={{ color: 'var(--primary)', background: 'none', border: 'none', textDecoration: 'none', fontSize: 14, fontWeight: 500 }}>← Back</Link>
                         )}
                         <div style={{ flex: 1, textAlign: 'center', fontWeight: 600, color: 'var(--foreground)', fontSize: 15 }}>{otherUserName}</div>
-                        <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'linear-gradient(135deg, #7d87d2, #a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 13 }}>
+
+                        {headerActions}
+
+                        <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'linear-gradient(135deg, #7d87d2, #a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 13, flexShrink: 0 }}>
                             {otherUserName.charAt(0).toUpperCase()}
                         </div>
                     </>
