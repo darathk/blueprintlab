@@ -32,13 +32,25 @@ export default async function AthletePortalLayout({
     // Is the logged in user actually THIS athlete?
     if (requestedAthlete.email !== email) {
         // If not this athlete, check if they are the coach (i.e. not an athlete at all)
-        const loggedInAsAthlete = await prisma.athlete.findUnique({
+        const loggedInUser = await prisma.athlete.findUnique({
             where: { email }
         });
 
+        // If they are a coach, redirect to the coach dashboard
+        // Coaches should NOT be in the athlete portal side of things
+        if (loggedInUser?.role === 'coach') {
+            redirect('/dashboard');
+        }
+
         // If they are an athlete trying to snoop on another athlete, block them
-        if (loggedInAsAthlete) {
-            redirect(`/athlete/${loggedInAsAthlete.id}/dashboard`);
+        if (loggedInUser) {
+            redirect(`/athlete/${loggedInUser.id}/dashboard`);
+        }
+    } else {
+        // Even if they ARE the requested athlete, if their role is coach, 
+        // they should still go to the dashboard (prevents "Combined Chat" view)
+        if (requestedAthlete.role === 'coach') {
+            redirect('/dashboard');
         }
     }
 
