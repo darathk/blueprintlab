@@ -95,11 +95,18 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
         if (videoRef.current) {
             const ct = videoRef.current.currentTime;
             setCurrentTime(ct);
+            // Loop back to start of trim range when reaching the end
             if (ct >= endTimeRef.current) {
                 videoRef.current.currentTime = startTimeRef.current;
-                videoRef.current.pause();
-                setIsPlaying(false);
+                // Keep playing — continuous loop
             }
+        }
+    };
+
+    // Auto-play video on load, looping within trim range
+    const handleVideoReady = () => {
+        if (videoRef.current && !isPlaying) {
+            videoRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
         }
     };
 
@@ -143,14 +150,27 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
                 const newStart = Math.max(0, Math.min(time, endTimeRef.current - 0.5));
                 startTimeRef.current = newStart;
                 setStartTime(newStart);
+                // Seek video to new start so preview matches the trim
+                if (videoRef.current) {
+                    videoRef.current.currentTime = newStart;
+                }
             } else if (draggingRef.current === 'end') {
                 const newEnd = Math.max(startTimeRef.current + 0.5, Math.min(time, durationRef.current));
                 endTimeRef.current = newEnd;
                 setEndTime(newEnd);
+                // Seek near the end so user can see where they're trimming to
+                if (videoRef.current && videoRef.current.currentTime > newEnd) {
+                    videoRef.current.currentTime = Math.max(startTimeRef.current, newEnd - 0.5);
+                }
             }
         };
 
         const handleUp = () => {
+            if (draggingRef.current && videoRef.current) {
+                // Resume playing from start of trim range after drag ends
+                videoRef.current.currentTime = startTimeRef.current;
+                videoRef.current.play().then(() => setIsPlaying(true)).catch(() => {});
+            }
             draggingRef.current = null;
         };
 
@@ -530,7 +550,10 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
                             boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
                         }}
                         playsInline
+                        muted
+                        autoPlay
                         onLoadedMetadata={handleLoadedMetadata}
+                        onCanPlay={handleVideoReady}
                         onTimeUpdate={handleTimeUpdate}
                         onPause={() => setIsPlaying(false)}
                         onPlay={() => setIsPlaying(true)}
