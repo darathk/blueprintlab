@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
-import { Mic, Video as VideoIcon, Image as ImageIcon, MoreVertical, Reply, Copy, Download, Paperclip, X, Send, Search } from 'lucide-react';
+import { Mic, Video as VideoIcon, Image as ImageIcon, MoreVertical, Reply, Copy, Download, Paperclip, X, Send, Search, Scissors } from 'lucide-react';
 import VideoCropper from './VideoCropper';
 
 interface Message {
@@ -466,8 +466,17 @@ export default function ChatInterface({
     };
 
     const handleCropComplete = (croppedFile: File) => {
-        setStagedFiles(prev => [...prev, croppedFile]);
-        setStagedFileUrls(prev => [...prev, URL.createObjectURL(croppedFile)]);
+        // Check if we're re-trimming an already staged file
+        const existingIndex = stagedFiles.findIndex(f => f === cropFile);
+        if (existingIndex >= 0) {
+            // Replace the existing staged file with the trimmed version
+            URL.revokeObjectURL(stagedFileUrls[existingIndex]);
+            setStagedFiles(prev => prev.map((f, i) => i === existingIndex ? croppedFile : f));
+            setStagedFileUrls(prev => prev.map((url, i) => i === existingIndex ? URL.createObjectURL(croppedFile) : url));
+        } else {
+            setStagedFiles(prev => [...prev, croppedFile]);
+            setStagedFileUrls(prev => [...prev, URL.createObjectURL(croppedFile)]);
+        }
         setCropFile(null);
     };
 
@@ -1105,31 +1114,50 @@ export default function ChatInterface({
                     </div>
                 )}
             </div>
-            {/* Full Screen Media Staging Overlay */}
+            {/* Full Screen Media Staging Overlay (WhatsApp-style) */}
             {stagedFiles.length > 0 && (
                 <div style={{
                     position: 'fixed',
                     inset: 0,
                     zIndex: 2000,
-                    background: '#0b141a', // WhatsApp Dark background
+                    background: '#0b141a',
                     display: 'flex',
                     flexDirection: 'column',
                     animation: 'fadeIn 0.2s ease'
                 }}>
                     {/* Top Bar */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', color: '#fff' }}>
-                        <button onClick={() => { setStagedFiles([]); setStagedFileUrls([]); }} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}>
-                            <X size={28} />
+                    <div style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '12px 16px',
+                        paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))',
+                        color: '#fff', background: '#1f2c34'
+                    }}>
+                        <button onClick={() => { setStagedFiles([]); setStagedFileUrls([]); setStagedPreviewIndex(0); }} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: 4 }}>
+                            <X size={26} />
                         </button>
-                        <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
-                            <div style={{ border: '1px solid #fff', borderRadius: 4, padding: '0 4px', fontSize: 10, fontWeight: 800 }}>HD</div>
-                            <ImageIcon size={24} />
-                            <Paperclip size={24} />
+                        <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                            {stagedFiles[stagedPreviewIndex]?.type.startsWith('video/') && (
+                                <button
+                                    onClick={() => setCropFile(stagedFiles[stagedPreviewIndex])}
+                                    style={{
+                                        background: 'rgba(0,168,132,0.2)', border: 'none', color: '#fff', cursor: 'pointer',
+                                        display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px',
+                                        borderRadius: 20
+                                    }}
+                                >
+                                    <Scissors size={18} color="#00a884" />
+                                    <span style={{ fontSize: 13, color: '#00a884', fontWeight: 600 }}>Trim</span>
+                                </button>
+                            )}
+                            <div style={{ border: '1px solid rgba(255,255,255,0.4)', borderRadius: 4, padding: '1px 5px', fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.6)' }}>HD</div>
+                            <button onClick={() => fileRef.current?.click()} style={{ background: 'none', border: 'none', color: '#8696a0', cursor: 'pointer', padding: 4 }}>
+                                <Paperclip size={22} />
+                            </button>
                         </div>
                     </div>
 
                     {/* Main Preview Container */}
-                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', padding: 20 }}>
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', padding: 16 }}>
                         {stagedFiles[stagedPreviewIndex]?.type.startsWith('video/') ? (
                             <video
                                 src={stagedFileUrls[stagedPreviewIndex]}
@@ -1139,6 +1167,14 @@ export default function ChatInterface({
                                 style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}
                                 onLoadedData={(e) => { (e.target as HTMLVideoElement).currentTime = 0.1; }}
                             />
+                        ) : stagedFiles[stagedPreviewIndex]?.type.startsWith('audio/') ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: 40 }}>
+                                <div style={{ width: 100, height: 100, borderRadius: '50%', background: '#00a884', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                    <Mic size={48} color="#fff" />
+                                </div>
+                                <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14 }}>Voice Message</span>
+                                <audio controls src={stagedFileUrls[stagedPreviewIndex]} style={{ marginTop: 16 }} />
+                            </div>
                         ) : (
                             <img
                                 src={stagedFileUrls[stagedPreviewIndex]}
@@ -1146,54 +1182,76 @@ export default function ChatInterface({
                                 style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}
                             />
                         )}
+
+                        {/* File info overlay */}
+                        {stagedFiles[stagedPreviewIndex]?.type.startsWith('video/') && (
+                            <div style={{
+                                position: 'absolute', bottom: 24, left: '50%', transform: 'translateX(-50%)',
+                                background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)',
+                                borderRadius: 16, padding: '6px 14px',
+                                fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: 500
+                            }}>
+                                {(stagedFiles[stagedPreviewIndex].size / (1024 * 1024)).toFixed(1)} MB
+                            </div>
+                        )}
                     </div>
 
                     {/* Bottom Staging Area */}
-                    <div style={{ background: '#111b21', padding: '16px 12px env(safe-area-inset-bottom, 12px)' }}>
-                        {/* Mini Thumbnails Row */}
-                        <div style={{ display: 'flex', gap: 8, paddingBottom: 16, overflowX: 'auto', paddingLeft: 4 }}>
-                            {stagedFileUrls.map((url, i) => (
-                                <div key={i} onClick={() => setStagedPreviewIndex(i)} style={{
-                                    width: 54, height: 54, borderRadius: 8, overflow: 'hidden', border: i === stagedPreviewIndex ? '2px solid #00a884' : '2px solid transparent',
-                                    cursor: 'pointer', flexShrink: 0, position: 'relative', transition: 'all 0.2s ease'
-                                }}>
-                                    {stagedFiles[i]?.type.startsWith('video/') ? (
-                                        <video src={url} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: i === stagedPreviewIndex ? 1 : 0.6 }} />
-                                    ) : (
-                                        <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: i === stagedPreviewIndex ? 1 : 0.6 }} />
-                                    )}
-                                    <button onClick={(e) => { e.stopPropagation(); clearStagedMedia(i); if (stagedPreviewIndex >= stagedFiles.length - 1) setStagedPreviewIndex(Math.max(0, stagedFiles.length - 2)); }}
-                                        style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: '50%', color: '#fff', width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                        <X size={12} />
-                                    </button>
-                                </div>
-                            ))}
-                            <button onClick={() => fileRef.current?.click()} style={{ width: 54, height: 54, borderRadius: 8, border: '2px dashed #8696a0', background: 'none', color: '#8696a0', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
-                                <div style={{ fontSize: 28, fontWeight: 300 }}>+</div>
-                            </button>
-                        </div>
+                    <div style={{ background: '#111b21', padding: '12px 12px', paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))' }}>
+                        {/* Mini Thumbnails Row (only show if multiple files) */}
+                        {stagedFiles.length > 1 && (
+                            <div style={{ display: 'flex', gap: 8, paddingBottom: 12, overflowX: 'auto', paddingLeft: 4 }}>
+                                {stagedFileUrls.map((url, i) => (
+                                    <div key={i} onClick={() => setStagedPreviewIndex(i)} style={{
+                                        width: 54, height: 54, borderRadius: 8, overflow: 'hidden',
+                                        border: i === stagedPreviewIndex ? '2px solid #00a884' : '2px solid transparent',
+                                        cursor: 'pointer', flexShrink: 0, position: 'relative', transition: 'all 0.15s ease'
+                                    }}>
+                                        {stagedFiles[i]?.type.startsWith('video/') ? (
+                                            <video src={url} muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: i === stagedPreviewIndex ? 1 : 0.5 }} />
+                                        ) : stagedFiles[i]?.type.startsWith('audio/') ? (
+                                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#2a3942', opacity: i === stagedPreviewIndex ? 1 : 0.5 }}>
+                                                <Mic size={18} color="#8696a0" />
+                                            </div>
+                                        ) : (
+                                            <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: i === stagedPreviewIndex ? 1 : 0.5 }} />
+                                        )}
+                                        <button onClick={(e) => { e.stopPropagation(); clearStagedMedia(i); if (stagedPreviewIndex >= stagedFiles.length - 1) setStagedPreviewIndex(Math.max(0, stagedFiles.length - 2)); }}
+                                            style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(0,0,0,0.7)', border: 'none', borderRadius: '50%', color: '#fff', width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                                            <X size={10} />
+                                        </button>
+                                    </div>
+                                ))}
+                                <button onClick={() => fileRef.current?.click()} style={{ width: 54, height: 54, borderRadius: 8, border: '2px dashed rgba(134,150,160,0.4)', background: 'none', color: '#8696a0', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                                    <div style={{ fontSize: 26, fontWeight: 300 }}>+</div>
+                                </button>
+                            </div>
+                        )}
 
                         {/* Caption Input and Send */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                             <div style={{
-                                flex: 1, background: '#2a3942', borderRadius: 24, padding: '4px 16px', display: 'flex', alignItems: 'center', minHeight: 48, boxShadow: '0 1px 2px rgba(0,0,0,0.3)'
+                                flex: 1, background: '#2a3942', borderRadius: 24, padding: '4px 16px',
+                                display: 'flex', alignItems: 'center', minHeight: 48,
+                                boxShadow: '0 1px 1px rgba(0,0,0,0.2)'
                             }}>
                                 <input
                                     type="text"
                                     value={newMessage}
                                     onChange={e => setNewMessage(e.target.value)}
                                     placeholder="Add a caption..."
-                                    style={{ flex: 1, background: 'transparent', border: 'none', color: '#e9edef', outline: 'none', fontSize: 16 }}
+                                    style={{ flex: 1, background: 'transparent', border: 'none', color: '#e9edef', outline: 'none', fontSize: 16, padding: '8px 0' }}
                                     onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
                                 />
-                                <div style={{ color: '#8696a0', fontSize: 12, marginLeft: 8, fontWeight: 600 }}>1</div>
                             </div>
                             <button onClick={() => handleSend()} disabled={uploading}
                                 style={{
-                                    width: 52, height: 52, borderRadius: '50%', background: '#00a884', border: 'none', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
-                                    opacity: uploading ? 0.3 : 1, boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                                    width: 52, height: 52, borderRadius: '50%', background: '#00a884',
+                                    border: 'none', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    cursor: 'pointer', opacity: uploading ? 0.3 : 1,
+                                    boxShadow: '0 2px 4px rgba(0,0,0,0.3)', flexShrink: 0
                                 }}>
-                                <Send size={26} />
+                                <Send size={24} />
                             </button>
                         </div>
                     </div>
