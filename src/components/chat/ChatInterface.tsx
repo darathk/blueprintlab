@@ -371,21 +371,24 @@ export default function ChatInterface({
 
                     setCompressProgress(80);
                     const ext = mime.includes('png') ? '.png' : mime.includes('jpeg') || mime.includes('jpg') ? '.jpg' : mime.includes('quicktime') ? '.mov' : mime.includes('webm') ? '.webm' : mime.includes('audio') ? '.m4a' : '.mp4';
-                    const { data, error } = await supabase.storage.from('lift-videos').upload(`${athleteId}/${Date.now()}-${i}${ext}`, blob, { cacheControl: '604800', upsert: false, contentType: mime });
+                    const uploadPath = `${athleteId}/${Date.now()}-${i}${ext}`;
+                    console.log('[Upload] Starting upload:', { uploadPath, mime, size: blob.size, type: blob instanceof File ? blob.type : 'Blob' });
+                    const { data, error } = await supabase.storage.from('lift-videos').upload(uploadPath, blob, { cacheControl: '604800', upsert: false, contentType: mime });
 
                     if (error) {
-                        console.error('Upload failed:', error);
+                        console.error('[Upload] Failed:', JSON.stringify(error));
                         // Remove the optimistic message for this failed upload
                         setMessages(prev => prev.filter(m => m.id !== tempId));
-                        alert(`Upload failed: ${error.message || 'Unknown error'}`);
+                        alert(`Upload failed: ${error.message || JSON.stringify(error)}`);
                         continue;
                     }
+                    console.log('[Upload] Success:', data.path);
 
                     setCompressProgress(100);
                     const { data: u } = supabase.storage.from('lift-videos').getPublicUrl(data.path);
 
                     const isAudio = file.type.startsWith('audio/');
-                    const content = i === 0 && text ? text : isAudio ? 'Voice Message' : '';
+                    const content = i === 0 && text ? text : isAudio ? 'Voice Message' : isVid ? 'Video' : 'Photo';
                     const replyToId = i === 0 ? (replyingTo?.id || null) : null;
 
                     const res = await fetch('/api/messages', {
@@ -396,12 +399,20 @@ export default function ChatInterface({
                     if (res.ok) {
                         const real = await res.json();
                         setMessages(prev => prev.map(m => m.id === tempId ? real : m));
+                    } else {
+                        const errBody = await res.text();
+                        console.error('Message API failed:', res.status, errBody);
+                        setMessages(prev => prev.filter(m => m.id !== tempId));
+                        alert(`Failed to send message: ${res.status}`);
                     }
 
                     URL.revokeObjectURL(urlsToSend[i]);
                 }
             }
-        } catch (e) { console.error('Send failed:', e); }
+        } catch (e: any) {
+            console.error('[Send] Failed:', e);
+            alert(`Send failed: ${e?.message || 'Unknown error'}`);
+        }
         finally {
             setSending(false);
             setUploading(false);
@@ -466,14 +477,7 @@ export default function ChatInterface({
         }
         if (validFiles.length === 0) return;
 
-        // If there's a video, crop the first one (for simplicity, only crop 1 at a time if batch uploading multiple)
-        const firstVideo = validFiles.find(f => f.type.startsWith('video/'));
-        if (firstVideo && validFiles.length === 1) {
-            setCropFile(firstVideo);
-            if (fileRef.current) fileRef.current.value = '';
-            return;
-        }
-
+        // Go straight to staging (user can optionally trim videos from the staging overlay)
         setStagedFiles(prev => [...prev, ...validFiles]);
         setStagedFileUrls(prev => [...prev, ...validFiles.map(f => URL.createObjectURL(f))]);
 
