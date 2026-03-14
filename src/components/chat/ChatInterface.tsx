@@ -47,6 +47,7 @@ export default function ChatInterface({
     const [replyingTo, setReplyingTo] = useState<Message | null>(null);
     const [stagedFiles, setStagedFiles] = useState<File[]>([]);
     const [stagedFileUrls, setStagedFileUrls] = useState<string[]>([]);
+    const [stagedPreviewIndex, setStagedPreviewIndex] = useState(0);
     const [activeMenu, setActiveMenu] = useState<string | null>(null);
     const [loaded, setLoaded] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -652,7 +653,23 @@ export default function ChatInterface({
             )}
 
             {/* Messages */}
-            <div ref={scrollContainerRef} onScroll={handleScroll} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '12px 16px', minHeight: 0, paddingTop: 'calc(var(--header-height) + 16px + env(safe-area-inset-top, 0px))', paddingBottom: 0, willChange: 'scroll-position', transform: 'translateZ(0)', WebkitOverflowScrolling: 'touch' as any, overscrollBehavior: 'contain' }}>
+            <div ref={scrollContainerRef} onScroll={handleScroll} style={{
+                flex: 1,
+                overflowY: 'auto',
+                overflowX: 'hidden',
+                padding: '12px 16px',
+                minHeight: 0,
+                paddingTop: 'calc(var(--header-height) + 16px + env(safe-area-inset-top, 0px))',
+                paddingBottom: 0,
+                willChange: 'scroll-position',
+                transform: 'translateZ(0)',
+                WebkitOverflowScrolling: 'touch' as any,
+                overscrollBehavior: 'contain',
+                backgroundImage: 'radial-gradient(rgba(0,0,0,0.1) 1px, transparent 0)',
+                backgroundSize: '30px 30px',
+                backgroundPosition: '-19px -19px',
+                backgroundColor: '#0b141a' // WhatsApp Dark Mode background
+            }}>
                 {!loaded && <div style={{ textAlign: 'center', padding: 40, color: 'var(--secondary-foreground)' }}>Loading…</div>}
                 {loaded && messages.length === 0 && <div style={{ textAlign: 'center', padding: 60, color: 'var(--secondary-foreground)', fontSize: 14 }}>No messages yet. Start the conversation!</div>}
                 {loaded && searchText && filteredMessages.length === 0 && <div style={{ textAlign: 'center', padding: 60, color: 'var(--secondary-foreground)', fontSize: 14 }}>No messages found matching "{searchText}"</div>}
@@ -691,16 +708,29 @@ export default function ChatInterface({
                                                 if (isMultiSelecting) { e.stopPropagation(); toggleSelection(msg.id); }
                                             }}
                                             style={{
-                                                padding: msg.mediaUrl ? '4px 4px 8px' : '8px 14px',
-                                                borderRadius: mine ? '18px 18px 4px 18px' : '18px 18px 18px 4px',
-                                                background: isSelected ? 'rgba(125,135,210,0.4)' : mine ? 'linear-gradient(135deg, rgba(125,135,210,0.9), rgba(168,85,247,0.7))' : 'rgba(30, 41, 59, 0.85)',
-                                                // Removed backdropFilter from per-bubble: caused GPU repaint on every scroll frame
-                                                border: isSelected ? '1px solid var(--primary)' : mine ? '1px solid rgba(255,255,255,0.2)' : '1px solid rgba(255,255,255,0.08)',
-                                                boxShadow: mine ? '0 4px 12px rgba(125,135,210,0.2)' : '0 2px 8px rgba(0,0,0,0.2)',
+                                                padding: msg.mediaUrl ? '4px 4px 8px' : '8px 12px',
+                                                borderRadius: mine ? '10px 0px 10px 10px' : '0px 10px 10px 10px',
+                                                background: isSelected ? 'rgba(125,135,210,0.4)' : mine ? '#005c4b' : '#202c33',
+                                                border: isSelected ? '1px solid var(--primary)' : 'none',
+                                                boxShadow: '0 1px 2px rgba(0,0,0,0.3)',
                                                 wordBreak: 'break-word',
                                                 overflowWrap: 'break-word',
                                                 transition: 'background 0.15s ease',
+                                                position: 'relative'
                                             }}>
+                                            {/* WhatsApp Tail */}
+                                            <div style={{
+                                                position: 'absolute',
+                                                top: 0,
+                                                [mine ? 'right' : 'left']: -8,
+                                                width: 0,
+                                                height: 0,
+                                                borderStyle: 'solid',
+                                                borderWidth: mine ? '0 8px 10px 0' : '0 0 10px 8px',
+                                                borderColor: `transparent ${mine ? '#005c4b' : '#202c33'} transparent transparent`,
+                                                transform: mine ? 'none' : 'scaleX(-1)',
+                                                display: timeSep ? 'block' : 'none'
+                                            }} />
                                             {/* Reply */}
                                             {msg.replyTo && (
                                                 <div style={{ margin: msg.mediaUrl ? '4px 8px 6px' : '0 0 6px', padding: '6px 8px', borderRadius: 10, background: 'rgba(0,0,0,0.15)', borderLeft: mine ? '2px solid rgba(255,255,255,0.7)' : '2px solid var(--primary)', fontSize: 11 }}>
@@ -736,26 +766,54 @@ export default function ChatInterface({
                                                 </div>
                                             )}
 
-                                            {/* Audio */}
+                                            {/* Audio (WhatsApp Style) */}
                                             {msg.mediaUrl && isAudio && (
-                                                <div style={{ padding: '4px 0' }}>
-                                                    <audio
-                                                        controls
-                                                        preload="metadata"
-                                                        playsInline
-                                                        style={{ width: '100%', minWidth: 200, height: 40, borderRadius: 20 }}
-                                                    >
-                                                        <source src={msg.mediaUrl} type={msg.mediaType || 'audio/mpeg'} />
-                                                        Your browser does not support the audio element.
-                                                    </audio>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '4px 8px', minWidth: 240 }}>
+                                                    {/* Profile Pic on left */}
+                                                    <div style={{ width: 45, height: 45, borderRadius: '50%', background: mine ? 'rgba(255,255,255,0.1)' : '#74bacd', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
+                                                        <span style={{ fontSize: 18, color: '#fff', fontWeight: 600 }}>{msg.sender.name[0]}</span>
+                                                    </div>
+
+                                                    {/* Waveform and Play */}
+                                                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                            {/* We'll use a custom audio player UI here for WhatsApp look */}
+                                                            <audio
+                                                                controls
+                                                                preload="metadata"
+                                                                style={{ height: 35, width: '100%', filter: mine ? 'invert(100%) opacity(0.8)' : 'invert(20%) opacity(0.8)' }}
+                                                            >
+                                                                <source src={msg.mediaUrl} type={msg.mediaType || 'audio/mpeg'} />
+                                                            </audio>
+                                                        </div>
+                                                        {/* Pseudo Waveform (static bars for aesthetic) */}
+                                                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 16, paddingLeft: 8 }}>
+                                                            {[3, 7, 5, 9, 4, 11, 6, 8, 5, 10, 4, 7, 3, 6, 9, 5].map((h, idx) => (
+                                                                <div key={idx} style={{ width: 2, height: `${(h / 12) * 100}%`, background: mine ? 'rgba(255,255,255,0.4)' : '#8696a0', borderRadius: 1 }} />
+                                                            ))}
+                                                        </div>
+                                                    </div>
                                                 </div>
                                             )}
 
                                             {/* Text */}
                                             <div style={{ fontSize: 14, lineHeight: 1.4, color: 'rgba(255,255,255,0.9)', padding: msg.mediaUrl ? '0 10px' : 0, whiteSpace: 'pre-wrap' }}>{highlightMatch(msg.content)}</div>
 
-                                            {/* Time */}
-                                            <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.18)', marginTop: 2, textAlign: mine ? 'right' : 'left', padding: msg.mediaUrl ? '0 10px' : 0 }}>{fmtTime(msg.createdAt)}</div>
+                                            {/* Time + Status */}
+                                            <div style={{
+                                                fontSize: 10,
+                                                color: 'rgba(255,255,255,0.5)',
+                                                marginTop: 4,
+                                                textAlign: 'right',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'flex-end',
+                                                gap: 4,
+                                                padding: msg.mediaUrl ? '0 8px' : 0
+                                            }}>
+                                                {fmtTime(msg.createdAt)}
+                                                {mine && <span style={{ color: msg.read ? '#53bdeb' : 'inherit', fontSize: 12 }}>✓✓</span>}
+                                            </div>
                                         </div>
 
                                         {/* Reactions display */}
@@ -970,44 +1028,177 @@ export default function ChatInterface({
                         </button>
                     </div>
                 ) : (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         {/* Plus button outside */}
                         <button onClick={() => fileRef.current?.click()} disabled={uploading}
-                            style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(255,255,255,0.1)', border: 'none', color: 'rgba(255,255,255,0.9)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            <div style={{ fontSize: 24, fontWeight: 300, lineHeight: 1, marginTop: -2 }}>+</div>
+                            style={{
+                                width: 36,
+                                height: 36,
+                                borderRadius: '50%',
+                                background: 'transparent',
+                                border: 'none',
+                                color: '#8696a0',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                flexShrink: 0
+                            }}>
+                            <Paperclip size={24} />
                         </button>
 
                         {/* Input Pill */}
                         <div style={{
                             flex: 1, display: 'flex', alignItems: 'center',
-                            background: 'rgba(255, 255, 255, 0.95)',
-                            borderRadius: 20,
-                            padding: '4px 12px',
-                            border: '1px solid rgba(255,255,255,0.2)',
-                            boxShadow: '0 2px 6px rgba(0,0,0,0.1)'
+                            background: '#2a3942', // WhatsApp input background
+                            borderRadius: 24,
+                            padding: '4px 16px',
+                            minHeight: 48,
+                            boxShadow: '0 1px 1px rgba(0,0,0,0.2)'
                         }}>
                             <input type="text" value={newMessage} onChange={e => setNewMessage(e.target.value)}
                                 onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
-                                placeholder={(stagedFiles.length > 0 && !newMessage) ? "Add a caption..." : "Message"}
+                                placeholder="Type a message"
                                 disabled={uploading}
-                                style={{ flex: 1, padding: '6px 4px', background: 'transparent', border: 'none', color: '#000', fontSize: 15, outline: 'none', minWidth: 0, opacity: uploading ? 0.5 : 1 }} />
-
-                            {/* Mic/Send inside pill */}
-                            {!newMessage.trim() && stagedFiles.length === 0 ? (
-                                <button onClick={startRecording} disabled={uploading}
-                                    style={{ width: 28, height: 28, background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, color: '#94a3b8' }}>
-                                    <Mic size={18} />
-                                </button>
-                            ) : (
-                                <button onClick={() => handleSend()} disabled={uploading}
-                                    style={{ width: 28, height: 28, borderRadius: '50%', background: 'var(--primary)', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, opacity: uploading ? 0.3 : 1, color: '#fff' }}>
-                                    <Send size={14} style={{ marginLeft: 2 }} />
-                                </button>
-                            )}
+                                style={{ flex: 1, padding: '8px 0', background: 'transparent', border: 'none', color: '#e9edef', fontSize: 16, outline: 'none', minWidth: 0, opacity: uploading ? 0.5 : 1 }} />
                         </div>
+
+                        {/* Mic/Send circular button */}
+                        {!newMessage.trim() && stagedFiles.length === 0 ? (
+                            <button onClick={startRecording} disabled={uploading}
+                                style={{
+                                    width: 48,
+                                    height: 48,
+                                    borderRadius: '50%',
+                                    background: '#00a884', // WhatsApp Green
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0,
+                                    color: '#fff',
+                                    boxShadow: '0 1px 2px rgba(0,0,0,0.3)'
+                                }}>
+                                <Mic size={24} />
+                            </button>
+                        ) : (
+                            <button onClick={() => handleSend()} disabled={uploading}
+                                style={{
+                                    width: 48,
+                                    height: 48,
+                                    borderRadius: '50%',
+                                    background: '#00a884',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0,
+                                    opacity: uploading ? 0.3 : 1,
+                                    color: '#fff',
+                                    boxShadow: '0 1px 2px rgba(0,0,0,0.3)'
+                                }}>
+                                <Send size={24} />
+                            </button>
+                        )}
                     </div>
                 )}
             </div>
+            {/* Full Screen Media Staging Overlay */}
+            {stagedFiles.length > 0 && (
+                <div style={{
+                    position: 'fixed',
+                    inset: 0,
+                    zIndex: 2000,
+                    background: '#0b141a', // WhatsApp Dark background
+                    display: 'flex',
+                    flexDirection: 'column',
+                    animation: 'fadeIn 0.2s ease'
+                }}>
+                    {/* Top Bar */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '16px 20px', color: '#fff' }}>
+                        <button onClick={() => { setStagedFiles([]); setStagedFileUrls([]); }} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer' }}>
+                            <X size={28} />
+                        </button>
+                        <div style={{ display: 'flex', gap: 20, alignItems: 'center' }}>
+                            <div style={{ border: '1px solid #fff', borderRadius: 4, padding: '0 4px', fontSize: 10, fontWeight: 800 }}>HD</div>
+                            <ImageIcon size={24} />
+                            <Paperclip size={24} />
+                        </div>
+                    </div>
+
+                    {/* Main Preview Container */}
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', padding: 20 }}>
+                        {stagedFiles[stagedPreviewIndex]?.type.startsWith('video/') ? (
+                            <video
+                                src={stagedFileUrls[stagedPreviewIndex]}
+                                controls
+                                playsInline
+                                webkit-playsinline="true"
+                                style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}
+                                onLoadedData={(e) => { (e.target as HTMLVideoElement).currentTime = 0.1; }}
+                            />
+                        ) : (
+                            <img
+                                src={stagedFileUrls[stagedPreviewIndex]}
+                                alt=""
+                                style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}
+                            />
+                        )}
+                    </div>
+
+                    {/* Bottom Staging Area */}
+                    <div style={{ background: '#111b21', padding: '16px 12px env(safe-area-inset-bottom, 12px)' }}>
+                        {/* Mini Thumbnails Row */}
+                        <div style={{ display: 'flex', gap: 8, paddingBottom: 16, overflowX: 'auto', paddingLeft: 4 }}>
+                            {stagedFileUrls.map((url, i) => (
+                                <div key={i} onClick={() => setStagedPreviewIndex(i)} style={{
+                                    width: 54, height: 54, borderRadius: 8, overflow: 'hidden', border: i === stagedPreviewIndex ? '2px solid #00a884' : '2px solid transparent',
+                                    cursor: 'pointer', flexShrink: 0, position: 'relative', transition: 'all 0.2s ease'
+                                }}>
+                                    {stagedFiles[i]?.type.startsWith('video/') ? (
+                                        <video src={url} style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: i === stagedPreviewIndex ? 1 : 0.6 }} />
+                                    ) : (
+                                        <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: i === stagedPreviewIndex ? 1 : 0.6 }} />
+                                    )}
+                                    <button onClick={(e) => { e.stopPropagation(); clearStagedMedia(i); if (stagedPreviewIndex >= stagedFiles.length - 1) setStagedPreviewIndex(Math.max(0, stagedFiles.length - 2)); }}
+                                        style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(0,0,0,0.6)', border: 'none', borderRadius: '50%', color: '#fff', width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                        <X size={12} />
+                                    </button>
+                                </div>
+                            ))}
+                            <button onClick={() => fileRef.current?.click()} style={{ width: 54, height: 54, borderRadius: 8, border: '2px dashed #8696a0', background: 'none', color: '#8696a0', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                                <div style={{ fontSize: 28, fontWeight: 300 }}>+</div>
+                            </button>
+                        </div>
+
+                        {/* Caption Input and Send */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <div style={{
+                                flex: 1, background: '#2a3942', borderRadius: 24, padding: '4px 16px', display: 'flex', alignItems: 'center', minHeight: 48, boxShadow: '0 1px 2px rgba(0,0,0,0.3)'
+                            }}>
+                                <input
+                                    type="text"
+                                    value={newMessage}
+                                    onChange={e => setNewMessage(e.target.value)}
+                                    placeholder="Add a caption..."
+                                    style={{ flex: 1, background: 'transparent', border: 'none', color: '#e9edef', outline: 'none', fontSize: 16 }}
+                                    onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
+                                />
+                                <div style={{ color: '#8696a0', fontSize: 12, marginLeft: 8, fontWeight: 600 }}>1</div>
+                            </div>
+                            <button onClick={() => handleSend()} disabled={uploading}
+                                style={{
+                                    width: 52, height: 52, borderRadius: '50%', background: '#00a884', border: 'none', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer',
+                                    opacity: uploading ? 0.3 : 1, boxShadow: '0 2px 4px rgba(0,0,0,0.3)'
+                                }}>
+                                <Send size={26} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
