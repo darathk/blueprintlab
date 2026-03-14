@@ -874,58 +874,40 @@ export default function ChatInterface({
                                             </div>
                                         )}
 
-                                        {/* Inline action menu */}
-                                        {/* Redesigned Centered action menu modal */}
+                                        {/* Dropdown action menu — positioned next to message */}
                                         {activeMenu === msg.id && !isMultiSelecting && (
-                                            <div
-                                                onClick={(e) => { e.stopPropagation(); setActiveMenu(null); }}
-                                                style={{
-                                                    position: 'fixed',
-                                                    inset: 0,
-                                                    zIndex: 1000,
-                                                    display: 'flex',
-                                                    alignItems: 'center',
-                                                    justifyContent: 'center',
-                                                    background: 'rgba(0, 0, 0, 0.7)',
-                                                    backdropFilter: 'blur(4px)',
-                                                    padding: 20
-                                                }}
-                                            >
+                                            <>
+                                                {/* Invisible backdrop to close menu */}
+                                                <div onClick={(e) => { e.stopPropagation(); setActiveMenu(null); }} style={{ position: 'fixed', inset: 0, zIndex: 999 }} />
                                                 <div
                                                     onClick={e => e.stopPropagation()}
                                                     style={{
-                                                        background: 'var(--card-bg)',
-                                                        border: '1px solid var(--card-border)',
-                                                        borderRadius: 16,
-                                                        boxShadow: '0 10px 30px rgba(0,0,0,0.6)',
-                                                        padding: '12px 0',
-                                                        width: '100%',
-                                                        maxWidth: 280,
-                                                        animation: 'scaleIn 0.2s ease-out'
+                                                        position: 'absolute',
+                                                        top: 0,
+                                                        [mine ? 'right' : 'left']: 0,
+                                                        zIndex: 1000,
+                                                        background: '#1f2c34',
+                                                        border: '1px solid rgba(255,255,255,0.1)',
+                                                        borderRadius: 12,
+                                                        boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+                                                        padding: '8px 0',
+                                                        width: 200,
+                                                        animation: 'scaleIn 0.15s ease-out'
                                                     }}
                                                 >
                                                     {/* Emoji reactions row */}
                                                     <div style={{
                                                         display: 'flex',
-                                                        justifyContent: 'space-between',
-                                                        padding: '0 16px 12px',
-                                                        borderBottom: '1px solid var(--card-border)',
-                                                        marginBottom: 8
+                                                        justifyContent: 'space-around',
+                                                        padding: '4px 8px 8px',
+                                                        borderBottom: '1px solid rgba(255,255,255,0.08)',
+                                                        marginBottom: 4
                                                     }}>
                                                         {['❤️', '🔥', '👍', '💪', '🙌', '💯'].map(emoji => (
                                                             <button
                                                                 key={emoji}
                                                                 onClick={() => { handleToggleReaction(msg.id, emoji); setActiveMenu(null); }}
-                                                                style={{
-                                                                    fontSize: 22,
-                                                                    background: 'none',
-                                                                    border: 'none',
-                                                                    cursor: 'pointer',
-                                                                    padding: 4,
-                                                                    transition: 'transform 0.1s ease'
-                                                                }}
-                                                                onPointerDown={e => e.currentTarget.style.transform = 'scale(1.2)'}
-                                                                onPointerUp={e => e.currentTarget.style.transform = 'scale(1)'}
+                                                                style={{ fontSize: 18, background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}
                                                             >
                                                                 {emoji}
                                                             </button>
@@ -933,18 +915,18 @@ export default function ChatInterface({
                                                     </div>
 
                                                     <button onClick={() => { setReplyingTo(msg); setActiveMenu(null); }}
-                                                        style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', textAlign: 'left', padding: '12px 20px', background: 'none', border: 'none', fontSize: 14, color: '#ffffff', cursor: 'pointer', fontWeight: 500 }}><Reply size={18} color="#fff" /> Reply</button>
+                                                        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: '#e9edef', cursor: 'pointer' }}><Reply size={16} color="#8696a0" /> Reply</button>
                                                     <button onClick={() => { navigator.clipboard.writeText(msg.content); setActiveMenu(null); }}
-                                                        style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', textAlign: 'left', padding: '12px 20px', background: 'none', border: 'none', fontSize: 14, color: '#ffffff', cursor: 'pointer', fontWeight: 500 }}><Copy size={18} color="#fff" /> Copy</button>
+                                                        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: '#e9edef', cursor: 'pointer' }}><Copy size={16} color="#8696a0" /> Copy</button>
                                                     <button onClick={() => { toggleSelection(msg.id); setActiveMenu(null); }}
-                                                        style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', textAlign: 'left', padding: '12px 20px', background: 'none', border: 'none', fontSize: 14, color: '#ffffff', cursor: 'pointer', fontWeight: 500 }}><MoreVertical size={18} color="#fff" /> Select Multiple</button>
+                                                        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: '#e9edef', cursor: 'pointer' }}><MoreVertical size={16} color="#8696a0" /> Select</button>
                                                     {msg.mediaUrl && <button onClick={() => { saveMedia(msg.mediaUrl!, msg.mediaType?.startsWith('image')); setActiveMenu(null); }}
-                                                        style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', textAlign: 'left', padding: '12px 20px', background: 'none', border: 'none', fontSize: 14, color: '#ffffff', cursor: 'pointer', fontWeight: 500 }}><Download size={18} color="#fff" /> Save</button>}
-                                                    <div style={{ height: 1, background: 'var(--card-border)', margin: '8px 0' }} />
+                                                        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: '#e9edef', cursor: 'pointer' }}><Download size={16} color="#8696a0" /> Save</button>}
+                                                    <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '4px 0' }} />
                                                     <button onClick={() => handleDeleteMessage(msg.id)}
-                                                        style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', textAlign: 'left', padding: '12px 20px', background: 'none', border: 'none', fontSize: 14, color: '#ef4444', cursor: 'pointer', fontWeight: 600 }}><X size={18} color="#ef4444" /> Delete</button>
+                                                        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: '#ef4444', cursor: 'pointer', fontWeight: 600 }}><X size={16} color="#ef4444" /> Delete</button>
                                                 </div>
-                                            </div>
+                                            </>
                                         )}
                                     </div>
 
