@@ -11,6 +11,7 @@ interface Props {
     weekNum: number;
     dayNum: number;
     blockName: string;
+    unit: 'kg' | 'lbs';
     sets: Array<{
         setNumber: number;
         actual: { weight: string; reps: string; rpe: string };
@@ -18,7 +19,7 @@ interface Props {
 }
 
 export default function ExerciseFeedback({
-    athleteId, coachId: coachIdProp, exerciseName, weekNum, dayNum, blockName, sets
+    athleteId, coachId: coachIdProp, exerciseName, weekNum, dayNum, blockName, unit, sets
 }: Props) {
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState('');
@@ -45,7 +46,12 @@ export default function ExerciseFeedback({
     const buildAutoMessage = () => {
         const setLines = sets
             .filter(s => s.actual.weight || s.actual.reps || s.actual.rpe)
-            .map(s => `  Set ${s.setNumber}: ${s.actual.weight || '—'} lbs × ${s.actual.reps || '—'} reps @ RPE ${s.actual.rpe || '—'}`)
+            .map(s => {
+                // Since weights in sets are stored in LBS internally in parent, 
+                // but we want to show the current display unit in the message
+                const displayWeight = unit === 'lbs' ? s.actual.weight : (parseFloat(s.actual.weight) * 0.45359237).toFixed(1).replace(/\.0$/, '');
+                return `  Set ${s.setNumber}: ${displayWeight || '—'} ${unit} × ${s.actual.reps || '—'} reps @ RPE ${s.actual.rpe || '—'}`;
+            })
             .join('\n');
 
         return [

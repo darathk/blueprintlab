@@ -6,7 +6,7 @@ import { EXERCISE_DB } from '@/lib/exercise-db';
 
 export default function StressMatrix({ weeks }) {
     const data = useMemo(() => {
-        const categories = ['Knee', 'Hip', 'Horizontal Push', 'Vertical Push', 'Vertical Pull', 'Horizontal Pull'];
+        const categories = ['Knee', 'Hip', 'Horizontal Push', 'Vertical Push'];
         const stats = {
             'Sum': { central: 0, total: 0 },
         };
@@ -94,7 +94,7 @@ export default function StressMatrix({ weeks }) {
         </div>
     );
 
-    const categories = ['Knee', 'Hip', 'Horizontal Push', 'Vertical Push', 'Vertical Pull', 'Horizontal Pull'];
+    const categories = ['Knee', 'Hip', 'Horizontal Push', 'Vertical Push'];
 
     return (
         <div className="card" style={{ marginTop: '2rem', overflowX: 'auto', background: 'var(--card-bg)' }}>

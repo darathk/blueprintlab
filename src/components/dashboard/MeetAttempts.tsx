@@ -162,7 +162,7 @@ export default function MeetAttempts({ athlete, isReadOnly = false }) {
                         <p style={{ color: 'var(--secondary-foreground)', fontSize: '0.9rem' }}>Work backwards from target 3rd attempts</p>
                     </div>
                     <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                        <select className="input" value={data.unit} onChange={(e) => setData({ ...data, unit: e.target.value })} disabled={!isEditing} style={{ paddingRight: '32px', minWidth: '130px' }}>
+                        <select className="input" value={data.unit} onChange={(e) => setData({ ...data, unit: e.target.value })} disabled={!isEditing} style={{ paddingRight: '40px', minWidth: '140px' }}>
                             <option value="kg">Inputs in KG</option>
                             <option value="lbs">Inputs in LBS</option>
                         </select>

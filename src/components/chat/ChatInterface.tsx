@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
-import { Mic, Video as VideoIcon, Image as ImageIcon, MoreVertical, Reply, Copy, Download, Paperclip, X, Send } from 'lucide-react';
+import { Mic, Video as VideoIcon, Image as ImageIcon, MoreVertical, Reply, Copy, Download, Paperclip, X, Send, Search } from 'lucide-react';
 import VideoCropper from './VideoCropper';
 
 interface Message {
@@ -19,6 +19,7 @@ interface Message {
     replyTo?: { id: string; content: string; mediaUrl?: string | null; mediaType?: string | null; sender: { name: string } } | null;
     sender: { id: string; name: string; email: string };
     receiver: { id: string; name: string; email: string };
+    reactions?: Record<string, string[]> | null; // { emoji: [userIds] }
 }
 
 interface Props {
@@ -48,6 +49,8 @@ export default function ChatInterface({
     const [stagedFileUrls, setStagedFileUrls] = useState<string[]>([]);
     const [activeMenu, setActiveMenu] = useState<string | null>(null);
     const [loaded, setLoaded] = useState(false);
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const [searchText, setSearchText] = useState('');
 
     // Video Cropper state
     const [cropFile, setCropFile] = useState<File | null>(null);
@@ -390,6 +393,47 @@ export default function ChatInterface({
         }
     };
 
+    // Toggle reaction
+    const handleToggleReaction = async (messageId: string, emoji: string) => {
+        // Optimistic UI update
+        const currentUser = currentUserId;
+        setMessages(prev => prev.map(m => {
+            if (m.id !== messageId) return m;
+
+            const currentReactions = { ...(m.reactions || {}) } as Record<string, string[]>;
+            const userIds = currentReactions[emoji] || [];
+
+            let updatedUserIds: string[];
+            if (userIds.includes(currentUser)) {
+                updatedUserIds = userIds.filter(id => id !== currentUser);
+            } else {
+                updatedUserIds = [...userIds, currentUser];
+            }
+
+            if (updatedUserIds.length > 0) {
+                currentReactions[emoji] = updatedUserIds;
+            } else {
+                delete currentReactions[emoji];
+            }
+
+            return { ...m, reactions: currentReactions };
+        }));
+
+        try {
+            const res = await fetch('/api/messages/reactions', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ messageId, userId: currentUserId, emoji })
+            });
+
+            if (!res.ok) {
+                console.error('Failed to toggle reaction');
+            }
+        } catch (e) {
+            console.error('Reaction toggle error:', e);
+        }
+    };
+
     // Staging media
     const handleMedia = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
@@ -462,6 +506,31 @@ export default function ChatInterface({
     const showDateSep = (i: number) => i === 0 || new Date(messages[i].createdAt).toDateString() !== new Date(messages[i - 1].createdAt).toDateString();
     const showTime = (i: number) => i === 0 || messages[i].senderId !== messages[i - 1].senderId ||
         new Date(messages[i].createdAt).getTime() - new Date(messages[i - 1].createdAt).getTime() > 300000;
+
+    // Filter messages for search
+    const filteredMessages = useMemo(() => {
+        if (!searchText.trim()) return messages;
+        const low = searchText.toLowerCase();
+        return messages.filter(m =>
+            m.content.toLowerCase().includes(low) ||
+            m.sender.name.toLowerCase().includes(low)
+        );
+    }, [messages, searchText]);
+
+    // Highlighting helper
+    const highlightMatch = (text: string) => {
+        if (!searchText.trim()) return text;
+        const parts = text.split(new RegExp(`(${searchText})`, 'gi'));
+        return (
+            <>
+                {parts.map((part, i) =>
+                    part.toLowerCase() === searchText.toLowerCase()
+                        ? <mark key={i} style={{ background: 'rgba(6, 182, 212, 0.4)', color: '#fff', borderRadius: 2, padding: '0 2px' }}>{part}</mark>
+                        : part
+                )}
+            </>
+        );
+    };
 
     const handleCopyMultiple = () => {
         const selectedMsgs = messages.filter(m => selectedMessageIds.has(m.id)).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
@@ -540,9 +609,31 @@ export default function ChatInterface({
                         ) : (
                             <Link href={`/athlete/${athleteId}/dashboard`} style={{ color: 'var(--primary)', background: 'none', border: 'none', textDecoration: 'none', fontSize: 14, fontWeight: 500 }}>← Back</Link>
                         )}
-                        <div style={{ flex: 1, textAlign: 'center', fontWeight: 600, color: 'var(--foreground)', fontSize: 15 }}>{otherUserName}</div>
-
-                        {headerActions}
+                        {isSearchOpen ? (
+                            <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.05)', borderRadius: 8, padding: '4px 10px', margin: '0 8px' }}>
+                                <Search size={14} style={{ color: 'rgba(255,255,255,0.3)', marginRight: 8 }} />
+                                <input
+                                    autoFocus
+                                    type="text"
+                                    placeholder="Search messages..."
+                                    value={searchText}
+                                    onChange={(e) => setSearchText(e.target.value)}
+                                    style={{ background: 'none', border: 'none', color: '#fff', fontSize: 13, outline: 'none', flex: 1 }}
+                                />
+                                <button onClick={() => { setIsSearchOpen(false); setSearchText(''); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: 2, display: 'flex' }}><X size={14} /></button>
+                            </div>
+                        ) : (
+                            <>
+                                <div style={{ flex: 1, textAlign: 'center', fontWeight: 600, color: 'var(--foreground)', fontSize: 15 }}>{otherUserName}</div>
+                                <button
+                                    onClick={() => setIsSearchOpen(true)}
+                                    style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', padding: 8, display: 'flex', alignItems: 'center' }}
+                                >
+                                    <Search size={18} />
+                                </button>
+                                {headerActions}
+                            </>
+                        )}
 
                         <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'linear-gradient(135deg, #7d87d2, #a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 13, flexShrink: 0 }}>
                             {otherUserName.charAt(0).toUpperCase()}
@@ -551,12 +642,22 @@ export default function ChatInterface({
                 )}
             </div>
 
+            {/* Video Cropper Overlay */}
+            {cropFile && (
+                <VideoCropper
+                    file={cropFile}
+                    onCancel={() => setCropFile(null)}
+                    onComplete={handleCropComplete}
+                />
+            )}
+
             {/* Messages */}
             <div ref={scrollContainerRef} onScroll={handleScroll} style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden', padding: '12px 16px', minHeight: 0, paddingTop: 'calc(var(--header-height) + 16px + env(safe-area-inset-top, 0px))', paddingBottom: 0, willChange: 'scroll-position', transform: 'translateZ(0)', WebkitOverflowScrolling: 'touch' as any, overscrollBehavior: 'contain' }}>
                 {!loaded && <div style={{ textAlign: 'center', padding: 40, color: 'var(--secondary-foreground)' }}>Loading…</div>}
                 {loaded && messages.length === 0 && <div style={{ textAlign: 'center', padding: 60, color: 'var(--secondary-foreground)', fontSize: 14 }}>No messages yet. Start the conversation!</div>}
+                {loaded && searchText && filteredMessages.length === 0 && <div style={{ textAlign: 'center', padding: 60, color: 'var(--secondary-foreground)', fontSize: 14 }}>No messages found matching "{searchText}"</div>}
 
-                {messages.map((msg, i) => {
+                {filteredMessages.map((msg, i) => {
                     const mine = msg.senderId === currentUserId;
                     const isVid = msg.mediaType?.startsWith('video');
                     const isImg = msg.mediaType?.startsWith('image');
@@ -643,28 +744,111 @@ export default function ChatInterface({
                                             )}
 
                                             {/* Text */}
-                                            <div style={{ fontSize: 14, lineHeight: 1.4, color: 'rgba(255,255,255,0.9)', padding: msg.mediaUrl ? '0 10px' : 0, whiteSpace: 'pre-wrap' }}>{msg.content}</div>
+                                            <div style={{ fontSize: 14, lineHeight: 1.4, color: 'rgba(255,255,255,0.9)', padding: msg.mediaUrl ? '0 10px' : 0, whiteSpace: 'pre-wrap' }}>{highlightMatch(msg.content)}</div>
 
                                             {/* Time */}
                                             <div style={{ fontSize: 9, color: 'rgba(255,255,255,0.18)', marginTop: 2, textAlign: mine ? 'right' : 'left', padding: msg.mediaUrl ? '0 10px' : 0 }}>{fmtTime(msg.createdAt)}</div>
                                         </div>
 
+                                        {/* Reactions display */}
+                                        {msg.reactions && Object.keys(msg.reactions).length > 0 && (
+                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 4, justifyContent: mine ? 'flex-end' : 'flex-start' }}>
+                                                {Object.entries(msg.reactions as Record<string, string[]>).map(([emoji, userIds]) => {
+                                                    const hasReacted = userIds.includes(currentUserId);
+                                                    return (
+                                                        <button
+                                                            key={emoji}
+                                                            onClick={(e) => { e.stopPropagation(); handleToggleReaction(msg.id, emoji); }}
+                                                            style={{
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: 4,
+                                                                padding: '2px 6px',
+                                                                borderRadius: 10,
+                                                                background: hasReacted ? 'rgba(6, 182, 212, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                                                                border: hasReacted ? '1px solid rgba(6, 182, 212, 0.5)' : '1px solid rgba(255, 255, 255, 0.1)',
+                                                                cursor: 'pointer',
+                                                                transition: 'all 0.2s ease',
+                                                            }}
+                                                        >
+                                                            <span style={{ fontSize: 12 }}>{emoji}</span>
+                                                            <span style={{ fontSize: 10, color: hasReacted ? 'var(--primary)' : 'rgba(255,255,255,0.6)', fontWeight: 600 }}>{userIds.length}</span>
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+
                                         {/* Inline action menu */}
+                                        {/* Redesigned Centered action menu modal */}
                                         {activeMenu === msg.id && !isMultiSelecting && (
-                                            <div onClick={e => e.stopPropagation()} style={{
-                                                position: 'absolute', zIndex: 50, top: 0, ...(mine ? { right: '100%', marginRight: 4 } : { left: '100%', marginLeft: 4 }),
-                                                background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 10, boxShadow: '0 6px 20px rgba(0,0,0,0.5)', padding: '3px 0', minWidth: 120, whiteSpace: 'nowrap'
-                                            }}>
-                                                <button onClick={() => { setReplyingTo(msg); setActiveMenu(null); }}
-                                                    style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', textAlign: 'left', padding: '7px 12px', background: 'none', border: 'none', fontSize: 13, color: '#ffffff', cursor: 'pointer', fontWeight: 500 }}><Reply size={16} color="#fff" /> Reply</button>
-                                                <button onClick={() => { navigator.clipboard.writeText(msg.content); setActiveMenu(null); }}
-                                                    style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', textAlign: 'left', padding: '7px 12px', background: 'none', border: 'none', fontSize: 13, color: '#ffffff', cursor: 'pointer', fontWeight: 500 }}><Copy size={16} color="#fff" /> Copy</button>
-                                                <button onClick={() => { toggleSelection(msg.id); setActiveMenu(null); }}
-                                                    style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', textAlign: 'left', padding: '7px 12px', background: 'none', border: 'none', fontSize: 13, color: '#ffffff', cursor: 'pointer', fontWeight: 500 }}><MoreVertical size={16} color="#fff" /> Select Multiple</button>
-                                                {msg.mediaUrl && <button onClick={() => { saveMedia(msg.mediaUrl!, msg.mediaType?.startsWith('image')); setActiveMenu(null); }}
-                                                    style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', textAlign: 'left', padding: '7px 12px', background: 'none', border: 'none', fontSize: 13, color: '#ffffff', cursor: 'pointer', fontWeight: 500 }}><Download size={16} color="#fff" /> Save</button>}
-                                                <button onClick={() => handleDeleteMessage(msg.id)}
-                                                    style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%', textAlign: 'left', padding: '7px 12px', background: 'none', border: 'none', fontSize: 13, color: '#ef4444', cursor: 'pointer', fontWeight: 600 }}><X size={16} color="#ef4444" /> Delete</button>
+                                            <div
+                                                onClick={(e) => { e.stopPropagation(); setActiveMenu(null); }}
+                                                style={{
+                                                    position: 'fixed',
+                                                    inset: 0,
+                                                    zIndex: 1000,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    background: 'rgba(0, 0, 0, 0.7)',
+                                                    backdropFilter: 'blur(4px)',
+                                                    padding: 20
+                                                }}
+                                            >
+                                                <div
+                                                    onClick={e => e.stopPropagation()}
+                                                    style={{
+                                                        background: 'var(--card-bg)',
+                                                        border: '1px solid var(--card-border)',
+                                                        borderRadius: 16,
+                                                        boxShadow: '0 10px 30px rgba(0,0,0,0.6)',
+                                                        padding: '12px 0',
+                                                        width: '100%',
+                                                        maxWidth: 280,
+                                                        animation: 'scaleIn 0.2s ease-out'
+                                                    }}
+                                                >
+                                                    {/* Emoji reactions row */}
+                                                    <div style={{
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        padding: '0 16px 12px',
+                                                        borderBottom: '1px solid var(--card-border)',
+                                                        marginBottom: 8
+                                                    }}>
+                                                        {['❤️', '🔥', '👍', '💪', '🙌', '💯'].map(emoji => (
+                                                            <button
+                                                                key={emoji}
+                                                                onClick={() => { handleToggleReaction(msg.id, emoji); setActiveMenu(null); }}
+                                                                style={{
+                                                                    fontSize: 22,
+                                                                    background: 'none',
+                                                                    border: 'none',
+                                                                    cursor: 'pointer',
+                                                                    padding: 4,
+                                                                    transition: 'transform 0.1s ease'
+                                                                }}
+                                                                onPointerDown={e => e.currentTarget.style.transform = 'scale(1.2)'}
+                                                                onPointerUp={e => e.currentTarget.style.transform = 'scale(1)'}
+                                                            >
+                                                                {emoji}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+
+                                                    <button onClick={() => { setReplyingTo(msg); setActiveMenu(null); }}
+                                                        style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', textAlign: 'left', padding: '12px 20px', background: 'none', border: 'none', fontSize: 14, color: '#ffffff', cursor: 'pointer', fontWeight: 500 }}><Reply size={18} color="#fff" /> Reply</button>
+                                                    <button onClick={() => { navigator.clipboard.writeText(msg.content); setActiveMenu(null); }}
+                                                        style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', textAlign: 'left', padding: '12px 20px', background: 'none', border: 'none', fontSize: 14, color: '#ffffff', cursor: 'pointer', fontWeight: 500 }}><Copy size={18} color="#fff" /> Copy</button>
+                                                    <button onClick={() => { toggleSelection(msg.id); setActiveMenu(null); }}
+                                                        style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', textAlign: 'left', padding: '12px 20px', background: 'none', border: 'none', fontSize: 14, color: '#ffffff', cursor: 'pointer', fontWeight: 500 }}><MoreVertical size={18} color="#fff" /> Select Multiple</button>
+                                                    {msg.mediaUrl && <button onClick={() => { saveMedia(msg.mediaUrl!, msg.mediaType?.startsWith('image')); setActiveMenu(null); }}
+                                                        style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', textAlign: 'left', padding: '12px 20px', background: 'none', border: 'none', fontSize: 14, color: '#ffffff', cursor: 'pointer', fontWeight: 500 }}><Download size={18} color="#fff" /> Save</button>}
+                                                    <div style={{ height: 1, background: 'var(--card-border)', margin: '8px 0' }} />
+                                                    <button onClick={() => handleDeleteMessage(msg.id)}
+                                                        style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%', textAlign: 'left', padding: '12px 20px', background: 'none', border: 'none', fontSize: 14, color: '#ef4444', cursor: 'pointer', fontWeight: 600 }}><X size={18} color="#ef4444" /> Delete</button>
+                                                </div>
                                             </div>
                                         )}
                                     </div>

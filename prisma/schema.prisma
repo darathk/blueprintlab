@@ -28,6 +28,7 @@ model Athlete {
   readiness        Readiness[]
   sentMessages     Message[]   @relation("SentMessages")
   receivedMessages Message[]   @relation("ReceivedMessages")
+  pushSubscriptions PushSubscription[]
 
   @@index([coachId])
 }
@@ -100,8 +101,21 @@ model Message {
   replyToId  String?
   replyTo    Message?  @relation("MessageReplies", fields: [replyToId], references: [id])
   replies    Message[] @relation("MessageReplies")
+  reactions  Json?     // Storing emoji reactions as map: { emoji: [userIds] }
 
   @@index([senderId, createdAt])
   @@index([receiverId, createdAt])
   @@index([receiverId, read])
+}
+
+model PushSubscription {
+  id        String   @id @default(uuid())
+  athleteId String
+  athlete   Athlete  @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  @@index([athleteId])
 }

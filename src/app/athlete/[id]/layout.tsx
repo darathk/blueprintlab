@@ -6,6 +6,7 @@ import Link from 'next/link';
 import AthleteNav from '@/components/athlete/AthleteNav';
 import MobileBottomNav, { NavItem } from '@/components/navigation/MobileBottomNav';
 import { LayoutDashboard, MessageSquare, Dumbbell, Calculator, Trophy } from 'lucide-react';
+import NotificationPermissionButton from '@/components/notifications/NotificationPermissionButton';
 
 export default async function AthletePortalLayout({
     children,
@@ -93,6 +94,7 @@ export default async function AthletePortalLayout({
                     gap: '4px',
                     flex: 1
                 }}>
+                    <NotificationPermissionButton />
                     <UserButton afterSignOutUrl="/sign-in" />
                     <span style={{
                         fontSize: '0.6rem',

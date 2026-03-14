@@ -14,3 +14,7 @@
 ✓ Starting...
 ✓ Ready in 575ms
  GET / 404 in 612ms (compile: 467ms, proxy.ts: 68ms, render: 77ms)
+✓ Compiled in 452ms
+✓ Compiled in 21ms
+  Reload env: .env
+✓ Compiled in 145ms

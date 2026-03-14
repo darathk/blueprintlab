@@ -1,6 +1,15 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { supabase } from '@/lib/supabase';
+import webpush from 'web-push';
+
+if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+    webpush.setVapidDetails(
+        'mailto:darathkhon@gmail.com',
+        process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
+        process.env.VAPID_PRIVATE_KEY
+    );
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -24,7 +33,7 @@ export async function GET(request: Request) {
             },
             select: {
                 id: true, senderId: true, receiverId: true, content: true,
-                mediaUrl: true, mediaType: true, createdAt: true, read: true, replyToId: true,
+                mediaUrl: true, mediaType: true, createdAt: true, read: true, replyToId: true, reactions: true,
                 sender: { select: { id: true, name: true, email: true } },
                 receiver: { select: { id: true, name: true, email: true } },
                 replyTo: { select: { id: true, content: true, mediaUrl: true, mediaType: true, sender: { select: { name: true } } } }
@@ -54,14 +63,59 @@ export async function POST(request: Request) {
             data: { senderId, receiverId, content, mediaUrl: mediaUrl || null, mediaType: mediaType || null, replyToId: replyToId || null },
             select: {
                 id: true, senderId: true, receiverId: true, content: true,
-                mediaUrl: true, mediaType: true, createdAt: true, read: true, replyToId: true,
-                sender: { select: { id: true, name: true, email: true } },
-                receiver: { select: { id: true, name: true, email: true } },
+                mediaUrl: true, mediaType: true, createdAt: true, read: true, replyToId: true, reactions: true,
+                sender: { select: { id: true, name: true, email: true, role: true } },
+                receiver: { select: { id: true, name: true, email: true, role: true } },
                 replyTo: { select: { id: true, content: true, mediaUrl: true, mediaType: true, sender: { select: { name: true } } } }
             }
         });
 
-        return NextResponse.json(message);
+        // Send results immediately, then trigger push notifications in background
+        const res = NextResponse.json(message);
+
+        // Async Push Notifications
+        (async () => {
+            try {
+                const subscriptions = await prisma.pushSubscription.findMany({
+                    where: { athleteId: receiverId }
+                });
+
+                const isReceiverCoach = message.receiver.role === 'coach';
+                const redirectUrl = isReceiverCoach
+                    ? `/dashboard/messages?athleteId=${senderId}`
+                    : `/athlete/${receiverId}/chat`;
+
+                const payload = JSON.stringify({
+                    title: `New Message from ${message.sender.name}`,
+                    body: content.length > 50 ? content.substring(0, 47) + '...' : content,
+                    url: redirectUrl
+                });
+
+                for (const sub of subscriptions) {
+                    try {
+                        await webpush.sendNotification(
+                            {
+                                endpoint: sub.endpoint,
+                                keys: {
+                                    p256dh: sub.p256dh,
+                                    auth: sub.auth
+                                }
+                            },
+                            payload
+                        );
+                    } catch (pushError: any) {
+                        if (pushError.statusCode === 410 || pushError.statusCode === 404) {
+                            // Subscription expired or gone, remove it
+                            await prisma.pushSubscription.delete({ where: { id: sub.id } });
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Background Push Error:', error);
+            }
+        })();
+
+        return res;
     } catch (error) {
         console.error('POST /api/messages error:', error);
         return NextResponse.json({ error: 'Failed to send message' }, { status: 500 });

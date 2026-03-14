@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider } from '@clerk/nextjs'
 import "./globals.css";
+import PushNotificationManager from "@/components/notifications/PushNotificationManager";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -30,6 +31,16 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: 'black-translucent',
     title: 'BlueprintLab',
+    startupImage: [
+      {
+        url: '/splash.png',
+        media: '(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3)' // iPhone 15 Pro Max
+      },
+      {
+        url: '/splash.png',
+        media: '(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3)' // iPhone 15 Pro
+      }
+    ]
   },
   icons: {
     apple: '/apple-touch-icon.png',
@@ -45,6 +56,7 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body className={`${geistSans.variable} ${geistMono.variable}`}>
+          <PushNotificationManager />
           {children}
           <footer style={{ marginTop: '4rem', padding: '1rem', textAlign: 'center', color: '#666', fontSize: '0.8rem', borderTop: '1px solid #333' }}>
             Athlete Analytics Tool v2.0 (Meta-Engine Active)

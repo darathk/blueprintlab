@@ -1,28 +1,37 @@
 {
     "name": "BlueprintLab",
     "short_name": "Blueprint",
-    "description": "Advanced Athlete Management System",
+    "description": "Advanced Athlete Management System - Professional Coaching & Analytics",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#020617",
     "theme_color": "#06b6d4",
     "orientation": "portrait",
+    "scope": "/",
     "icons": [
         {
             "src": "/icon-192x192.png",
             "sizes": "192x192",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any"
+        },
+        {
+            "src": "/icon-192x192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "maskable"
         },
         {
             "src": "/icon-512x512.png",
             "sizes": "512x512",
-            "type": "image/png"
+            "type": "image/png",
+            "purpose": "any"
         },
         {
-            "src": "/apple-touch-icon.png",
-            "sizes": "180x180",
+            "src": "/icon-512x512.png",
+            "sizes": "512x512",
             "type": "image/png",
-            "purpose": "any maskable"
+            "purpose": "maskable"
         }
     ]
 }

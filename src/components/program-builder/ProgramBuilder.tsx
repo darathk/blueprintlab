@@ -7,6 +7,7 @@ import dynamic from 'next/dynamic';
 import ExercisePicker from '@/components/program-builder/ExercisePicker';
 import ImportProgram from '@/components/programs/ImportProgram';
 import ProgramCalendarGrid from './ProgramCalendarGrid';
+import { calculateStress } from '@/lib/stress-index';
 
 const StressMatrix = dynamic(() => import('@/components/program-builder/StressMatrix'), {
     loading: () => <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="pulse">Loading stress charts...</div>
@@ -102,64 +103,71 @@ const BuilderExerciseCard = ({ exercise, onUpdate, onRemove }) => {
                         </label>
                     </div>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '40px 1fr 1fr 1fr 1fr 40px', gap: '0.5rem', marginBottom: '0.5rem', fontSize: '0.8rem', color: 'var(--secondary-foreground)', textAlign: 'center' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '30px 1fr 70px 70px 1fr 70px 30px', gap: '0.5rem', marginBottom: '0.5rem', fontSize: '0.75rem', color: 'var(--secondary-foreground)', textAlign: 'center' }}>
                         <div>Set</div>
                         <div>Weight</div>
                         <div>Reps</div>
                         <div>RPE</div>
                         <div>% / Notes</div>
+                        <div title="Central / Total Stress">Stress</div>
                         <div></div>
                     </div>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                        {exercise.sets.map((set, i) => (
-                            <div key={set.id} style={{ display: 'grid', gridTemplateColumns: '40px 1fr 1fr 1fr 1fr 40px', gap: '0.5rem', alignItems: 'center' }}>
-                                <div style={{ textAlign: 'center', color: 'var(--secondary-foreground)' }}>{i + 1}</div>
-                                <input
-                                    className="input"
-                                    placeholder="lbs"
-                                    value={set.weight || ''}
-                                    onChange={e => updateSet(i, 'weight', e.target.value)}
-                                    style={{ padding: '4px', textAlign: 'center' }}
-                                />
-                                <input
-                                    className="input"
-                                    value={set.reps}
-                                    onChange={e => updateSet(i, 'reps', e.target.value)}
-                                    style={{ padding: '4px', textAlign: 'center' }}
-                                />
-                                <input
-                                    className="input"
-                                    value={set.rpe}
-                                    onChange={e => updateSet(i, 'rpe', e.target.value)}
-                                    style={{ padding: '4px', textAlign: 'center' }}
-                                />
-                                <input
-                                    className="input"
-                                    placeholder="Notes"
-                                    value={set.notes || ''}
-                                    onChange={e => updateSet(i, 'notes', e.target.value)}
-                                    style={{ padding: '4px' }}
-                                />
-                                <div style={{ display: 'flex', gap: '2px' }}>
-                                    {i > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                        {exercise.sets.map((set, i) => {
+                            const { total, central } = calculateStress(set.reps, set.rpe);
+                            return (
+                                <div key={set.id} style={{ display: 'grid', gridTemplateColumns: '30px 1fr 70px 70px 1fr 70px 30px', gap: '0.5rem', alignItems: 'center' }}>
+                                    <div style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--secondary-foreground)' }}>{i + 1}</div>
+                                    <input
+                                        className="input"
+                                        placeholder="lbs/kg"
+                                        value={set.weight || ''}
+                                        onChange={e => updateSet(i, 'weight', e.target.value)}
+                                        style={{ padding: '4px', textAlign: 'center', fontSize: '0.85rem' }}
+                                    />
+                                    <input
+                                        className="input"
+                                        value={set.reps}
+                                        onChange={e => updateSet(i, 'reps', e.target.value)}
+                                        style={{ padding: '4px', textAlign: 'center', fontSize: '0.85rem' }}
+                                    />
+                                    <input
+                                        className="input"
+                                        value={set.rpe}
+                                        onChange={e => updateSet(i, 'rpe', e.target.value)}
+                                        style={{ padding: '4px', textAlign: 'center', fontSize: '0.85rem' }}
+                                    />
+                                    <input
+                                        className="input"
+                                        placeholder="Notes"
+                                        value={set.notes || ''}
+                                        onChange={e => updateSet(i, 'notes', e.target.value)}
+                                        style={{ padding: '4px', fontSize: '0.85rem' }}
+                                    />
+                                    <div style={{ textAlign: 'center', fontSize: '10px', color: 'var(--accent)', fontWeight: 600 }}>
+                                        {central.toFixed(1)} / {total.toFixed(1)}
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '2px', justifyContent: 'center' }}>
+                                        {i > 0 && (
+                                            <button
+                                                title="Copy Previous"
+                                                onClick={() => copyPreviousSet(i)}
+                                                style={{ background: 'transparent', border: 'none', color: 'var(--accent)', cursor: 'pointer', padding: 0 }}
+                                            >
+                                                📄
+                                            </button>
+                                        )}
                                         <button
-                                            title="Copy Previous"
-                                            onClick={() => copyPreviousSet(i)}
-                                            style={{ background: 'transparent', border: 'none', color: 'var(--accent)', cursor: 'pointer' }}
+                                            onClick={() => removeSet(i)}
+                                            style={{ background: 'transparent', border: 'none', color: 'var(--error)', cursor: 'pointer', padding: 0 }}
                                         >
-                                            📄
+                                            ×
                                         </button>
-                                    )}
-                                    <button
-                                        onClick={() => removeSet(i)}
-                                        style={{ background: 'transparent', border: 'none', color: 'var(--error)', cursor: 'pointer' }}
-                                    >
-                                        ×
-                                    </button>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
 
                     <button
@@ -1048,10 +1056,9 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                 </button>
                             </div>
 
-                            {/* Assuming StressMatrix is defined elsewhere */}
-                            {/* <div style={{ marginBottom: '4rem' }}>
+                            <div style={{ marginBottom: '4rem' }}>
                                 <StressMatrix weeks={weeks} />
-                            </div> */}
+                            </div>
                         </div>
                     )}
                 </div>

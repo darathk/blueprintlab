@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { MessageSquare, Calendar as CalendarIcon } from 'lucide-react';
+import { MessageSquare, Calendar as CalendarIcon, Search, X } from 'lucide-react';
 import ChatInterface from './ChatInterface';
 import AthleteProgramPane from './AthleteProgramPane';
 
@@ -24,6 +24,13 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
     const selectedConvo = convos.find(c => c.athleteId === selectedId);
     const [isMobile, setIsMobile] = useState(false);
     const [showProgram, setShowProgram] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    // Filtered conversations based on search term
+    const filteredConvos = convos.filter(c =>
+        c.athleteName.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
     const totalUnread = convos.reduce((s, c) => s + c.unreadCount, 0);
 
     useEffect(() => {
@@ -54,9 +61,41 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                     <span style={{ fontWeight: 600, fontSize: 14, color: 'var(--foreground)' }}>Messages</span>
                     {totalUnread > 0 && <span style={{ background: 'var(--primary)', boxShadow: '0 0 10px rgba(125,135,210,0.5)', color: '#fff', fontSize: 10, fontWeight: 800, borderRadius: 10, padding: '1px 7px', minWidth: 18, textAlign: 'center' as const }}>{totalUnread}</span>}
                 </div>
+
+                {/* Search Bar */}
+                <div style={{ padding: '8px 16px', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                    <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                        <Search size={14} style={{ position: 'absolute', left: 10, color: 'rgba(255,255,255,0.3)' }} />
+                        <input
+                            type="text"
+                            placeholder="Search athletes..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            style={{
+                                width: '100%',
+                                background: 'rgba(255,255,255,0.05)',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                borderRadius: 8,
+                                padding: '6px 12px 6px 32px',
+                                fontSize: 13,
+                                color: '#fff',
+                                outline: 'none'
+                            }}
+                        />
+                        {searchTerm && (
+                            <button
+                                onClick={() => setSearchTerm('')}
+                                style={{ position: 'absolute', right: 8, background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: 4, display: 'flex' }}
+                            >
+                                <X size={14} />
+                            </button>
+                        )}
+                    </div>
+                </div>
+
                 <div style={{ flex: 1, overflowY: 'auto' }}>
-                    {convos.length === 0 && <div style={{ textAlign: 'center', padding: 32, fontSize: 12, color: 'var(--secondary-foreground)' }}>No conversations</div>}
-                    {convos.map(c => (
+                    {filteredConvos.length === 0 && <div style={{ textAlign: 'center', padding: 32, fontSize: 12, color: 'var(--secondary-foreground)' }}>{searchTerm ? 'No athletes match your search' : 'No conversations'}</div>}
+                    {filteredConvos.map(c => (
                         <button key={c.athleteId} onClick={() => { setSelectedId(c.athleteId); setShowProgram(false); }}
                             style={{
                                 display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 14px', border: 'none', cursor: 'pointer', textAlign: 'left' as const,
