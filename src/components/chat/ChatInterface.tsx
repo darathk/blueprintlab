@@ -56,6 +56,9 @@ export default function ChatInterface({
     // Video Cropper state
     const [cropFile, setCropFile] = useState<File | null>(null);
 
+    // Upload progress per message (tempId → 0-100)
+    const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+
     // Multi-select state
     const [selectedMessageIds, setSelectedMessageIds] = useState<Set<string>>(new Set());
     const isMultiSelecting = selectedMessageIds.size > 0;
@@ -346,6 +349,7 @@ export default function ChatInterface({
                     let mime = file.type;
 
                     setStatusText(filesToSend.length > 1 ? `Uploading ${i + 1} of ${filesToSend.length}…` : 'Uploading…');
+                    setUploadProgress(prev => ({ ...prev, [tempId]: 0 }));
                     setCompressProgress(10);
 
                     const isImage = file.type.startsWith('image/');
@@ -372,20 +376,60 @@ export default function ChatInterface({
                     setCompressProgress(80);
                     const ext = mime.includes('png') ? '.png' : mime.includes('jpeg') || mime.includes('jpg') ? '.jpg' : mime.includes('quicktime') ? '.mov' : mime.includes('webm') ? '.webm' : mime.includes('audio') ? '.m4a' : '.mp4';
                     const uploadPath = `${athleteId}/${Date.now()}-${i}${ext}`;
-                    console.log('[Upload] Starting upload:', { uploadPath, mime, size: blob.size, type: blob instanceof File ? blob.type : 'Blob' });
-                    const { data, error } = await supabase.storage.from('lift-videos').upload(uploadPath, blob, { cacheControl: '604800', upsert: false, contentType: mime });
 
-                    if (error) {
-                        console.error('[Upload] Failed:', JSON.stringify(error));
-                        // Remove the optimistic message for this failed upload
+                    // Upload with XHR for progress tracking
+                    let publicUrl = '';
+                    try {
+                        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+                        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+                        if (!supabaseUrl || !supabaseKey) {
+                            throw new Error('Supabase not configured');
+                        }
+
+                        publicUrl = await new Promise<string>((resolve, reject) => {
+                            const xhr = new XMLHttpRequest();
+                            const url = `${supabaseUrl}/storage/v1/object/lift-videos/${uploadPath}`;
+
+                            xhr.upload.onprogress = (e) => {
+                                if (e.lengthComputable) {
+                                    const pct = Math.round((e.loaded / e.total) * 100);
+                                    setUploadProgress(prev => ({ ...prev, [tempId]: pct }));
+                                    setCompressProgress(80 + Math.round(pct * 0.2));
+                                }
+                            };
+
+                            xhr.onload = () => {
+                                if (xhr.status >= 200 && xhr.status < 300) {
+                                    const { data: u } = supabase.storage.from('lift-videos').getPublicUrl(uploadPath);
+                                    resolve(u.publicUrl);
+                                } else {
+                                    reject(new Error(`Upload failed: ${xhr.status} ${xhr.responseText}`));
+                                }
+                            };
+
+                            xhr.onerror = () => reject(new Error('Network error during upload'));
+                            xhr.ontimeout = () => reject(new Error('Upload timed out'));
+                            xhr.timeout = 300000; // 5 min timeout
+
+                            xhr.open('POST', url, true);
+                            xhr.setRequestHeader('Authorization', `Bearer ${supabaseKey}`);
+                            xhr.setRequestHeader('apikey', supabaseKey);
+                            xhr.setRequestHeader('Content-Type', mime);
+                            xhr.setRequestHeader('Cache-Control', '604800');
+                            xhr.setRequestHeader('x-upsert', 'true');
+                            xhr.send(blob);
+                        });
+                    } catch (uploadErr: any) {
+                        console.error('[Upload] Failed:', uploadErr);
                         setMessages(prev => prev.filter(m => m.id !== tempId));
-                        alert(`Upload failed: ${error.message || JSON.stringify(error)}`);
+                        setUploadProgress(prev => { const n = { ...prev }; delete n[tempId]; return n; });
+                        alert(`Upload failed: ${uploadErr.message}`);
                         continue;
                     }
-                    console.log('[Upload] Success:', data.path);
 
                     setCompressProgress(100);
-                    const { data: u } = supabase.storage.from('lift-videos').getPublicUrl(data.path);
+                    setUploadProgress(prev => ({ ...prev, [tempId]: 100 }));
 
                     const isAudio = file.type.startsWith('audio/');
                     const content = i === 0 && text ? text : isAudio ? 'Voice Message' : isVid ? 'Video' : 'Photo';
@@ -393,7 +437,7 @@ export default function ChatInterface({
 
                     const res = await fetch('/api/messages', {
                         method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ senderId: currentUserId, receiverId: otherUserId, content, mediaUrl: u.publicUrl, mediaType: mime, replyToId })
+                        body: JSON.stringify({ senderId: currentUserId, receiverId: otherUserId, content, mediaUrl: publicUrl, mediaType: mime, replyToId })
                     });
 
                     if (res.ok) {
@@ -401,11 +445,12 @@ export default function ChatInterface({
                         setMessages(prev => prev.map(m => m.id === tempId ? real : m));
                     } else {
                         const errBody = await res.text();
-                        console.error('Message API failed:', res.status, errBody);
+                        console.error('[API] Message create failed:', res.status, errBody);
                         setMessages(prev => prev.filter(m => m.id !== tempId));
-                        alert(`Failed to send message: ${res.status}`);
+                        alert(`Failed to send message: ${res.status} - ${errBody}`);
                     }
 
+                    setUploadProgress(prev => { const n = { ...prev }; delete n[tempId]; return n; });
                     URL.revokeObjectURL(urlsToSend[i]);
                 }
             }
@@ -772,7 +817,7 @@ export default function ChatInterface({
 
                                             {/* Video */}
                                             {msg.mediaUrl && isVid && (
-                                                <div style={{ minHeight: 120, background: '#000', borderRadius: 14, overflow: 'hidden' }}>
+                                                <div style={{ minHeight: 120, background: '#000', borderRadius: 14, overflow: 'hidden', position: 'relative' }}>
                                                     <video
                                                         controls
                                                         playsInline
@@ -784,14 +829,31 @@ export default function ChatInterface({
                                                     >
                                                         <source src={`${msg.mediaUrl}#t=0.001`} />
                                                     </video>
+                                                    {/* Upload progress bar */}
+                                                    {uploadProgress[msg.id] !== undefined && uploadProgress[msg.id] < 100 && (
+                                                        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, background: 'rgba(0,0,0,0.3)' }}>
+                                                            <div style={{
+                                                                height: '100%',
+                                                                background: '#00a884',
+                                                                borderRadius: '0 2px 2px 0',
+                                                                transition: 'width 150ms ease',
+                                                                width: `${uploadProgress[msg.id]}%`
+                                                            }} />
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
 
                                             {/* Image */}
                                             {msg.mediaUrl && isImg && (
-                                                <div>
+                                                <div style={{ position: 'relative' }}>
                                                     <img src={msg.mediaUrl} alt="" loading="lazy" onClick={() => window.open(msg.mediaUrl!, '_blank')} onLoad={() => scrollToBottom(false)}
                                                         style={{ width: '100%', maxWidth: '100%', maxHeight: 200, borderRadius: 14, display: 'block', cursor: 'pointer', objectFit: 'cover' }} />
+                                                    {uploadProgress[msg.id] !== undefined && uploadProgress[msg.id] < 100 && (
+                                                        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, background: 'rgba(0,0,0,0.3)', borderRadius: '0 0 14px 14px', overflow: 'hidden' }}>
+                                                            <div style={{ height: '100%', background: '#00a884', transition: 'width 150ms ease', width: `${uploadProgress[msg.id]}%` }} />
+                                                        </div>
+                                                    )}
                                                 </div>
                                             )}
 

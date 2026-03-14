@@ -214,9 +214,21 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
         }
 
         try {
-            const video = videoRef.current;
-            const originalWidth = video.videoWidth;
-            const originalHeight = video.videoHeight;
+            // Create a fresh video element for recording (keeps preview video intact)
+            const recVideo = document.createElement('video');
+            recVideo.src = videoUrl;
+            recVideo.playsInline = true;
+            recVideo.crossOrigin = 'anonymous';
+            // Do NOT mute — we need audio in the recording
+            recVideo.volume = 0.01; // Near-silent so user doesn't hear double audio
+
+            await new Promise<void>((resolve) => {
+                recVideo.onloadeddata = () => resolve();
+                recVideo.load();
+            });
+
+            const originalWidth = recVideo.videoWidth;
+            const originalHeight = recVideo.videoHeight;
 
             const canvas = document.createElement('canvas');
             canvas.width = originalWidth;
@@ -228,35 +240,41 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
                 throw new Error('captureStream not supported');
             }
 
-            const stream = (canvas as any).captureStream(30) as MediaStream;
+            const canvasStream = (canvas as any).captureStream(30) as MediaStream;
 
-            // Try to add audio track
+            // Capture audio from the recording video via AudioContext
+            const combinedStream = new MediaStream();
+            // Add video tracks from canvas
+            canvasStream.getVideoTracks().forEach((t: MediaStreamTrack) => combinedStream.addTrack(t));
+
+            // Add audio tracks from the video element
+            let audioCtx: AudioContext | null = null;
             try {
-                const audioCtx = new AudioContext();
-                const source = audioCtx.createMediaElementSource(video);
+                audioCtx = new AudioContext();
+                const source = audioCtx.createMediaElementSource(recVideo);
                 const dest = audioCtx.createMediaStreamDestination();
                 source.connect(dest);
                 source.connect(audioCtx.destination);
-                dest.stream.getAudioTracks().forEach((track: MediaStreamTrack) => stream.addTrack(track));
+                dest.stream.getAudioTracks().forEach((t: MediaStreamTrack) => combinedStream.addTrack(t));
             } catch {
-                // No audio - that's fine
+                // No audio capture available — video-only
             }
 
             const mimeType = MediaRecorder.isTypeSupported('video/mp4;codecs=avc1')
                 ? 'video/mp4;codecs=avc1'
                 : MediaRecorder.isTypeSupported('video/mp4')
                     ? 'video/mp4'
-                    : MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
-                        ? 'video/webm;codecs=vp9'
-                        : MediaRecorder.isTypeSupported('video/webm;codecs=vp8')
-                            ? 'video/webm;codecs=vp8'
+                    : MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')
+                        ? 'video/webm;codecs=vp9,opus'
+                        : MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')
+                            ? 'video/webm;codecs=vp8,opus'
                             : MediaRecorder.isTypeSupported('video/webm')
                                 ? 'video/webm'
                                 : '';
 
             if (!mimeType) throw new Error('No supported recording format');
 
-            const recorder = new MediaRecorder(stream, { mimeType });
+            const recorder = new MediaRecorder(combinedStream, { mimeType });
             const chunks: Blob[] = [];
 
             recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
@@ -280,25 +298,29 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
                 recorder.onerror = reject;
             });
 
-            video.pause();
-            video.muted = true;
-            video.currentTime = startTime;
-            await new Promise<void>((r) => { video.onseeked = () => r(); });
+            // Pause preview video during processing
+            if (videoRef.current) {
+                videoRef.current.pause();
+                setIsPlaying(false);
+            }
+
+            recVideo.currentTime = startTime;
+            await new Promise<void>((r) => { recVideo.onseeked = () => r(); });
 
             recorder.start(100);
-            await video.play();
+            await recVideo.play();
 
             const totalTime = endTime - startTime;
             await new Promise<void>((resolve) => {
                 const interval = setInterval(() => {
-                    const elapsed = video.currentTime - startTime;
+                    const elapsed = recVideo.currentTime - startTime;
                     setProgress(Math.min((elapsed / totalTime) * 100, 99));
 
-                    ctx.drawImage(video, 0, 0, originalWidth, originalHeight);
+                    ctx.drawImage(recVideo, 0, 0, originalWidth, originalHeight);
 
-                    if (video.currentTime >= endTime || video.ended || video.paused) {
+                    if (recVideo.currentTime >= endTime || recVideo.ended || recVideo.paused) {
                         clearInterval(interval);
-                        video.pause();
+                        recVideo.pause();
                         recorder.stop();
                         resolve();
                     }
@@ -306,7 +328,7 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
 
                 setTimeout(() => {
                     clearInterval(interval);
-                    if (video) video.pause();
+                    recVideo.pause();
                     if (recorder.state !== 'inactive') recorder.stop();
                     resolve();
                 }, (totalTime + 5) * 1000);
@@ -314,6 +336,11 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
 
             const outFile = await finished;
             setProgress(100);
+
+            // Cleanup
+            recVideo.remove();
+            if (audioCtx) audioCtx.close().catch(() => {});
+
             onComplete(outFile);
         } catch (err) {
             console.warn('Video processing failed, using original file:', err);
