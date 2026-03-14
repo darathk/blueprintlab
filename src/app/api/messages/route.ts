@@ -80,10 +80,22 @@ export async function POST(request: Request) {
                     where: { athleteId: receiverId }
                 });
 
-                const isReceiverCoach = message.receiver.role === 'coach';
+                // Robust check for the receiver's role and email
+                const receiver = await prisma.athlete.findUnique({
+                    where: { id: receiverId },
+                    select: { role: true, email: true }
+                });
+
+                const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.ADMIN_EMAIL;
+                const isReceiverCoach = receiver?.role === 'coach' ||
+                    (adminEmail && receiver?.email.toLowerCase() === adminEmail.toLowerCase());
+
                 const redirectUrl = isReceiverCoach
                     ? `/dashboard/messages?athleteId=${senderId}`
                     : `/athlete/${receiverId}/chat`;
+
+                // Debug logging (can be removed later)
+                console.log(`[Push Notification] Receiver: ${receiver?.email}, Role: ${receiver?.role}, AdminEmail: ${adminEmail}, isCoach: ${isReceiverCoach}, redirectUrl: ${redirectUrl}`);
 
                 const payload = JSON.stringify({
                     title: `New Message from ${message.sender.name}`,
