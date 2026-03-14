@@ -93,13 +93,17 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
             const stream = (canvas as any).captureStream(30) as MediaStream;
 
             // Detect best recording format
-            const mimeType = MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
-                ? 'video/webm;codecs=vp9'
-                : MediaRecorder.isTypeSupported('video/webm;codecs=vp8')
-                    ? 'video/webm;codecs=vp8'
-                    : MediaRecorder.isTypeSupported('video/webm')
-                        ? 'video/webm'
-                        : '';
+            const mimeType = MediaRecorder.isTypeSupported('video/mp4;codecs=avc1')
+                ? 'video/mp4;codecs=avc1'
+                : MediaRecorder.isTypeSupported('video/mp4')
+                    ? 'video/mp4'
+                    : MediaRecorder.isTypeSupported('video/webm;codecs=vp9')
+                        ? 'video/webm;codecs=vp9'
+                        : MediaRecorder.isTypeSupported('video/webm;codecs=vp8')
+                            ? 'video/webm;codecs=vp8'
+                            : MediaRecorder.isTypeSupported('video/webm')
+                                ? 'video/webm'
+                                : '';
 
             if (!mimeType) throw new Error('No supported recording format');
 
@@ -118,7 +122,7 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
                             reject(new Error('Empty recording'));
                             return;
                         }
-                        const ext = 'webm';
+                        const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
                         const outFile = new File([blob], `cropped_${file.name.split('.')[0]}.${ext}`, { type: finalMime });
                         resolve(outFile);
                     } catch (e) {

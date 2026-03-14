@@ -713,8 +713,16 @@ export default function ChatInterface({
 
                                             {/* Video */}
                                             {msg.mediaUrl && isVid && (
-                                                <div>
-                                                    <video controls playsInline muted preload="metadata" onLoadedData={() => scrollToBottom(false)} style={{ width: '100%', maxWidth: '100%', maxHeight: 200, borderRadius: 14, background: '#000', display: 'block', objectFit: 'cover' }}>
+                                                <div style={{ minHeight: 120, background: '#000', borderRadius: 14, overflow: 'hidden' }}>
+                                                    <video
+                                                        controls
+                                                        playsInline
+                                                        webkit-playsinline="true"
+                                                        muted
+                                                        preload="metadata"
+                                                        onLoadedData={() => scrollToBottom(false)}
+                                                        style={{ width: '100%', maxWidth: '100%', maxHeight: 300, display: 'block', objectFit: 'contain' }}
+                                                    >
                                                         <source src={`${msg.mediaUrl}#t=0.001`} />
                                                     </video>
                                                 </div>
@@ -909,9 +917,17 @@ export default function ChatInterface({
                                         <Mic size={24} />
                                     </div>
                                 ) : (
-                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.7)' }}>
-                                        <VideoIcon size={24} />
-                                    </div>
+                                    <video
+                                        src={stagedFileUrls[i]}
+                                        muted
+                                        playsInline
+                                        webkit-playsinline="true"
+                                        style={{ width: '100%', height: '100%', objectFit: 'cover', background: '#000' }}
+                                        onLoadedData={(e) => {
+                                            const video = e.target as HTMLVideoElement;
+                                            video.currentTime = 0.1;
+                                        }}
+                                    />
                                 )}
                                 <button onClick={() => clearStagedMedia(i)} disabled={uploading} style={{
                                     position: 'absolute', top: 4, right: 4, width: 22, height: 22, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
