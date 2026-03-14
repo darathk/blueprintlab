@@ -348,7 +348,8 @@ export default function ChatInterface({
                     setStatusText(filesToSend.length > 1 ? `Uploading ${i + 1} of ${filesToSend.length}…` : 'Uploading…');
                     setCompressProgress(10);
 
-                    if (!isVid) {
+                    const isImage = file.type.startsWith('image/');
+                    if (isImage) {
                         try {
                             const imageCompression = (await import('browser-image-compression')).default;
                             const c = await (imageCompression as any)(file, { maxSizeMB: 0.5, maxWidthOrHeight: 1280, useWebWorker: false });
@@ -356,12 +357,27 @@ export default function ChatInterface({
                         } catch { /* skip compression */ }
                     }
 
+                    // Ensure we have a valid MIME type
+                    if (!mime) {
+                        const fileName = file.name.toLowerCase();
+                        if (fileName.endsWith('.mp4')) mime = 'video/mp4';
+                        else if (fileName.endsWith('.mov')) mime = 'video/quicktime';
+                        else if (fileName.endsWith('.webm')) mime = 'video/webm';
+                        else if (fileName.endsWith('.m4a')) mime = 'audio/mp4';
+                        else if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) mime = 'image/jpeg';
+                        else if (fileName.endsWith('.png')) mime = 'image/png';
+                        else mime = 'application/octet-stream';
+                    }
+
                     setCompressProgress(80);
-                    const ext = mime.includes('png') ? '.png' : mime.includes('jpeg') || mime.includes('jpg') ? '.jpg' : mime.includes('quicktime') ? '.mov' : mime.includes('webm') ? '.webm' : '.mp4';
+                    const ext = mime.includes('png') ? '.png' : mime.includes('jpeg') || mime.includes('jpg') ? '.jpg' : mime.includes('quicktime') ? '.mov' : mime.includes('webm') ? '.webm' : mime.includes('audio') ? '.m4a' : '.mp4';
                     const { data, error } = await supabase.storage.from('lift-videos').upload(`${athleteId}/${Date.now()}-${i}${ext}`, blob, { cacheControl: '604800', upsert: false, contentType: mime });
 
                     if (error) {
                         console.error('Upload failed:', error);
+                        // Remove the optimistic message for this failed upload
+                        setMessages(prev => prev.filter(m => m.id !== tempId));
+                        alert(`Upload failed: ${error.message || 'Unknown error'}`);
                         continue;
                     }
 

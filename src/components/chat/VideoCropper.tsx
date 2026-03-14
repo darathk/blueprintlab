@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Check, Play, Pause, Scissors } from 'lucide-react';
+import { X, Check, Play, Scissors } from 'lucide-react';
 
 interface Props {
     file: File;
@@ -17,12 +17,16 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
     const [processing, setProcessing] = useState(false);
     const [progress, setProgress] = useState(0);
     const [thumbnails, setThumbnails] = useState<string[]>([]);
-    const [dragging, setDragging] = useState<'start' | 'end' | 'playhead' | null>(null);
     const [fileSize, setFileSize] = useState('');
+
+    // Drag state stored in refs for window-level listeners
+    const draggingRef = useRef<'start' | 'end' | null>(null);
+    const startTimeRef = useRef(0);
+    const endTimeRef = useRef(0);
+    const durationRef = useRef(0);
 
     const videoRef = useRef<HTMLVideoElement>(null);
     const filmstripRef = useRef<HTMLDivElement>(null);
-    const thumbVideoRef = useRef<HTMLVideoElement | null>(null);
 
     useEffect(() => {
         const url = URL.createObjectURL(file);
@@ -41,7 +45,7 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
         thumbVideo.src = videoUrl;
         thumbVideo.muted = true;
         thumbVideo.playsInline = true;
-        thumbVideoRef.current = thumbVideo;
+        thumbVideo.crossOrigin = 'anonymous';
 
         await new Promise<void>((resolve) => {
             thumbVideo.onloadeddata = () => resolve();
@@ -78,6 +82,8 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
             const d = videoRef.current.duration;
             setDuration(d);
             setEndTime(d);
+            durationRef.current = d;
+            endTimeRef.current = d;
         }
     };
 
@@ -89,8 +95,8 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
         if (videoRef.current) {
             const ct = videoRef.current.currentTime;
             setCurrentTime(ct);
-            if (ct >= endTime) {
-                videoRef.current.currentTime = startTime;
+            if (ct >= endTimeRef.current) {
+                videoRef.current.currentTime = startTimeRef.current;
                 videoRef.current.pause();
                 setIsPlaying(false);
             }
@@ -103,8 +109,8 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
             videoRef.current.pause();
             setIsPlaying(false);
         } else {
-            if (videoRef.current.currentTime < startTime || videoRef.current.currentTime >= endTime) {
-                videoRef.current.currentTime = startTime;
+            if (videoRef.current.currentTime < startTimeRef.current || videoRef.current.currentTime >= endTimeRef.current) {
+                videoRef.current.currentTime = startTimeRef.current;
             }
             videoRef.current.play();
             setIsPlaying(true);
@@ -119,38 +125,54 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
 
     const trimDuration = endTime - startTime;
 
-    // Drag handling for trim handles
+    // Convert clientX to time using the filmstrip rect
     const getTimeFromX = useCallback((clientX: number) => {
         if (!filmstripRef.current) return 0;
         const rect = filmstripRef.current.getBoundingClientRect();
         const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
-        return pct * duration;
-    }, [duration]);
+        return pct * durationRef.current;
+    }, []);
+
+    // Window-level pointer move/up for smooth dragging beyond the filmstrip
+    useEffect(() => {
+        const handleMove = (e: PointerEvent) => {
+            if (!draggingRef.current) return;
+            e.preventDefault();
+            const time = getTimeFromX(e.clientX);
+            if (draggingRef.current === 'start') {
+                const newStart = Math.max(0, Math.min(time, endTimeRef.current - 0.5));
+                startTimeRef.current = newStart;
+                setStartTime(newStart);
+            } else if (draggingRef.current === 'end') {
+                const newEnd = Math.max(startTimeRef.current + 0.5, Math.min(time, durationRef.current));
+                endTimeRef.current = newEnd;
+                setEndTime(newEnd);
+            }
+        };
+
+        const handleUp = () => {
+            draggingRef.current = null;
+        };
+
+        window.addEventListener('pointermove', handleMove);
+        window.addEventListener('pointerup', handleUp);
+        window.addEventListener('pointercancel', handleUp);
+        return () => {
+            window.removeEventListener('pointermove', handleMove);
+            window.removeEventListener('pointerup', handleUp);
+            window.removeEventListener('pointercancel', handleUp);
+        };
+    }, [getTimeFromX]);
 
     const handlePointerDown = (type: 'start' | 'end') => (e: React.PointerEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        setDragging(type);
-        (e.target as HTMLElement).setPointerCapture(e.pointerId);
+        draggingRef.current = type;
     };
-
-    const handlePointerMove = useCallback((e: React.PointerEvent) => {
-        if (!dragging) return;
-        const time = getTimeFromX(e.clientX);
-        if (dragging === 'start') {
-            setStartTime(Math.max(0, Math.min(time, endTime - 0.5)));
-        } else if (dragging === 'end') {
-            setEndTime(Math.max(startTime + 0.5, Math.min(time, duration)));
-        }
-    }, [dragging, startTime, endTime, duration, getTimeFromX]);
-
-    const handlePointerUp = useCallback(() => {
-        setDragging(null);
-    }, []);
 
     // Tap on filmstrip to seek
     const handleFilmstripTap = (e: React.MouseEvent) => {
-        if (dragging) return;
+        if (draggingRef.current) return;
         const time = getTimeFromX(e.clientX);
         if (time >= startTime && time <= endTime && videoRef.current) {
             videoRef.current.currentTime = time;
@@ -195,7 +217,7 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
                 const dest = audioCtx.createMediaStreamDestination();
                 source.connect(dest);
                 source.connect(audioCtx.destination);
-                dest.stream.getAudioTracks().forEach(track => stream.addTrack(track));
+                dest.stream.getAudioTracks().forEach((track: MediaStreamTrack) => stream.addTrack(track));
             } catch {
                 // No audio - that's fine
             }
@@ -332,24 +354,21 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
             </div>
 
             {/* Filmstrip Timeline */}
-            <div style={{ padding: '12px 16px 8px', background: '#1f2c34' }}>
+            <div style={{ padding: '12px 24px 8px', background: '#1f2c34' }}>
                 <div
                     ref={filmstripRef}
                     onClick={handleFilmstripTap}
-                    onPointerMove={handlePointerMove}
-                    onPointerUp={handlePointerUp}
-                    onPointerCancel={handlePointerUp}
                     style={{
                         position: 'relative',
                         height: 56,
                         borderRadius: 8,
-                        overflow: 'hidden',
+                        overflow: 'visible',
                         cursor: 'pointer',
                         touchAction: 'none'
                     }}
                 >
                     {/* Thumbnail images */}
-                    <div style={{ display: 'flex', height: '100%', width: '100%' }}>
+                    <div style={{ display: 'flex', height: '100%', width: '100%', borderRadius: 8, overflow: 'hidden' }}>
                         {thumbnails.length > 0 ? thumbnails.map((thumb, i) => (
                             <img
                                 key={i}
@@ -381,16 +400,18 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
                         position: 'absolute', top: 0, left: 0,
                         width: `${startPct}%`, height: '100%',
                         background: 'rgba(0,0,0,0.7)',
+                        borderRadius: '8px 0 0 8px',
                         pointerEvents: 'none'
                     }} />
                     <div style={{
                         position: 'absolute', top: 0, right: 0,
                         width: `${100 - endPct}%`, height: '100%',
                         background: 'rgba(0,0,0,0.7)',
+                        borderRadius: '0 8px 8px 0',
                         pointerEvents: 'none'
                     }} />
 
-                    {/* Selected range border */}
+                    {/* Selected range top/bottom border */}
                     <div style={{
                         position: 'absolute',
                         top: 0,
@@ -403,18 +424,18 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
                         pointerEvents: 'none'
                     }} />
 
-                    {/* Left handle */}
+                    {/* Left handle — drag from left */}
                     <div
                         onPointerDown={handlePointerDown('start')}
                         style={{
                             position: 'absolute',
-                            top: 0,
+                            top: -4,
+                            bottom: -4,
                             left: `${startPct}%`,
                             transform: 'translateX(-100%)',
-                            width: 20,
-                            height: '100%',
+                            width: 22,
                             background: '#00a884',
-                            borderRadius: '6px 0 0 6px',
+                            borderRadius: '8px 0 0 8px',
                             cursor: 'ew-resize',
                             display: 'flex',
                             alignItems: 'center',
@@ -423,20 +444,22 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
                             zIndex: 10
                         }}
                     >
-                        <div style={{ width: 3, height: 20, background: 'rgba(255,255,255,0.8)', borderRadius: 2 }} />
+                        <div style={{
+                            width: 3, height: 24, background: 'rgba(255,255,255,0.9)', borderRadius: 2
+                        }} />
                     </div>
 
-                    {/* Right handle */}
+                    {/* Right handle — drag from right */}
                     <div
                         onPointerDown={handlePointerDown('end')}
                         style={{
                             position: 'absolute',
-                            top: 0,
+                            top: -4,
+                            bottom: -4,
                             left: `${endPct}%`,
-                            width: 20,
-                            height: '100%',
+                            width: 22,
                             background: '#00a884',
-                            borderRadius: '0 6px 6px 0',
+                            borderRadius: '0 8px 8px 0',
                             cursor: 'ew-resize',
                             display: 'flex',
                             alignItems: 'center',
@@ -445,17 +468,19 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
                             zIndex: 10
                         }}
                     >
-                        <div style={{ width: 3, height: 20, background: 'rgba(255,255,255,0.8)', borderRadius: 2 }} />
+                        <div style={{
+                            width: 3, height: 24, background: 'rgba(255,255,255,0.9)', borderRadius: 2
+                        }} />
                     </div>
 
                     {/* Playhead indicator */}
                     {currentPct >= startPct && currentPct <= endPct && (
                         <div style={{
                             position: 'absolute',
-                            top: 0,
+                            top: -2,
+                            bottom: -2,
                             left: `${currentPct}%`,
                             width: 2,
-                            height: '100%',
                             background: '#fff',
                             pointerEvents: 'none',
                             zIndex: 5,

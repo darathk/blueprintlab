@@ -55,12 +55,12 @@ export async function POST(request: Request) {
         const body = await request.json();
         const { senderId, receiverId, content, mediaUrl, mediaType, replyToId } = body;
 
-        if (!senderId || !receiverId || !content) {
-            return NextResponse.json({ error: 'senderId, receiverId, and content are required' }, { status: 400 });
+        if (!senderId || !receiverId || (content === undefined && !mediaUrl)) {
+            return NextResponse.json({ error: 'senderId, receiverId, and content or mediaUrl are required' }, { status: 400 });
         }
 
         const message = await prisma.message.create({
-            data: { senderId, receiverId, content, mediaUrl: mediaUrl || null, mediaType: mediaType || null, replyToId: replyToId || null },
+            data: { senderId, receiverId, content: content || '', mediaUrl: mediaUrl || null, mediaType: mediaType || null, replyToId: replyToId || null },
             select: {
                 id: true, senderId: true, receiverId: true, content: true,
                 mediaUrl: true, mediaType: true, createdAt: true, read: true, replyToId: true, reactions: true,
