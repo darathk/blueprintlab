@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
-import { Mic, Video as VideoIcon, Image as ImageIcon, MoreVertical, Reply, Copy, Download, Paperclip, X, Send, Search, Scissors } from 'lucide-react';
+import { Mic, MoreVertical, Reply, Copy, Download, Paperclip, X, Send, Search, Scissors } from 'lucide-react';
 import VideoCropper from './VideoCropper';
 
 interface Message {
@@ -193,8 +193,6 @@ export default function ChatInterface({
         return () => clearInterval(poll);
     }, [athleteId, currentUserId, otherUserId]);
 
-
-
     // Voice Recording State
     const [isRecording, setIsRecording] = useState(false);
     const [recordingTime, setRecordingTime] = useState(0);
@@ -308,7 +306,6 @@ export default function ChatInterface({
                 const tempId = `temp-${Date.now()}-${index}`;
                 const isVid = file.type.startsWith('video/');
                 const isAudio = file.type.startsWith('audio/');
-                // Ensure no emojis in content
                 const content = index === 0 && text ? text : isAudio ? 'Voice Message' : (isVid ? 'Video' : 'Photo');
                 optimisticMessages.push({
                     id: tempId, senderId: currentUserId, receiverId: otherUserId, content,
@@ -337,6 +334,10 @@ export default function ChatInterface({
                 if (res.ok) {
                     const real = await res.json();
                     setMessages(prev => prev.map(m => m.id === tempId ? real : m));
+                } else {
+                    console.error('[API] Text message failed:', res.status);
+                    setMessages(prev => prev.filter(m => m.id !== tempId));
+                    alert('Failed to send message. Please try again.');
                 }
             } else {
                 // Send files sequentially
@@ -1031,40 +1032,6 @@ export default function ChatInterface({
                         <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
                             <div style={{ height: '100%', borderRadius: 2, background: 'linear-gradient(90deg, #7d87d2, #a855f7)', transition: 'width 200ms', width: isCompressing ? `${compressProgress}%` : '100%' }} />
                         </div>
-                    </div>
-                )
-            }
-
-            {/* Staged Media Preview */}
-            {
-                stagedFiles.length > 0 && (
-                    <div style={{ padding: '8px 16px', background: 'var(--card-bg)', borderTop: '1px solid var(--card-border)', flexShrink: 0, display: 'flex', gap: 8, overflowX: 'auto' }}>
-                        {stagedFiles.map((f, i) => (
-                            <div key={i} style={{ width: 80, height: 80, borderRadius: 8, overflow: 'hidden', position: 'relative', border: '1px solid var(--card-border)', background: '#000', flexShrink: 0 }}>
-                                {f.type.startsWith('image/') ? (
-                                    <img src={stagedFileUrls[i]} alt="Preview" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                                ) : f.type.startsWith('audio/') ? (
-                                    <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.7)' }}>
-                                        <Mic size={24} />
-                                    </div>
-                                ) : (
-                                    <video
-                                        src={stagedFileUrls[i]}
-                                        muted
-                                        playsInline
-                                        webkit-playsinline="true"
-                                        style={{ width: '100%', height: '100%', objectFit: 'cover', background: '#000' }}
-                                        onLoadedData={(e) => {
-                                            const video = e.target as HTMLVideoElement;
-                                            video.currentTime = 0.1;
-                                        }}
-                                    />
-                                )}
-                                <button onClick={() => clearStagedMedia(i)} disabled={uploading} style={{
-                                    position: 'absolute', top: 4, right: 4, width: 22, height: 22, borderRadius: '50%', background: 'rgba(0,0,0,0.6)', border: 'none', color: '#fff', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center'
-                                }}><X size={12} /></button>
-                            </div>
-                        ))}
                     </div>
                 )
             }
