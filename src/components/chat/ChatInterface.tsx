@@ -388,6 +388,15 @@ export default function ChatInterface({
                     const ext = mime.includes('png') ? '.png' : mime.includes('jpeg') || mime.includes('jpg') ? '.jpg' : mime.includes('quicktime') ? '.mov' : mime.includes('webm') ? '.webm' : mime.includes('audio') ? '.m4a' : '.mp4';
                     const uploadPath = `${athleteId}/${Date.now()}-${i}${ext}`;
 
+                    // Check file size before upload (Supabase default limit is 50MB)
+                    const fileSizeMB = blob.size / (1024 * 1024);
+                    if (fileSizeMB > 50) {
+                        setMessages(prev => prev.filter(m => m.id !== tempId));
+                        setUploadProgress(prev => { const n = { ...prev }; delete n[tempId]; return n; });
+                        alert(`File is too large (${fileSizeMB.toFixed(1)} MB). Maximum size is 50 MB. Try trimming the video shorter.`);
+                        continue;
+                    }
+
                     // Upload with XHR for progress tracking
                     let publicUrl = '';
                     try {
