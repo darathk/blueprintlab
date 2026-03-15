@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { calculateStress } from '@/lib/stress-index';
 import { EXERCISE_DB } from '@/lib/exercise-db';
 
@@ -68,79 +68,124 @@ const CAT_SHORT: Record<string, string> = {
     'Vertical Push': 'Push-V',
 };
 
-function WeekStressTable({ label, stats, totalStress, totalCentral }: {
+function WeekStressTable({ label, stats, totalStress, totalCentral, isCollapsed, onToggle }: {
     label: string;
     stats: Record<string, { central: number; total: number }>;
     totalStress: number;
     totalCentral: number;
+    isCollapsed: boolean;
+    onToggle: () => void;
 }) {
     const csBalance = totalStress > 0 ? (totalCentral / totalStress) : 0;
 
     return (
-        <div style={{ marginBottom: '0.75rem' }}>
-            <div style={{
-                fontSize: '0.7rem',
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '0.05em',
-                color: 'var(--primary)',
-                marginBottom: '0.35rem',
-            }}>
-                {label}
+        <div style={{ marginBottom: '0.25rem' }}>
+            {/* Week header — clickable toggle */}
+            <div
+                onClick={onToggle}
+                style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.4rem',
+                    padding: '0.4rem 0.5rem',
+                    cursor: 'pointer',
+                    borderRadius: '4px',
+                    transition: 'background 0.15s',
+                    userSelect: 'none',
+                }}
+                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.04)')}
+                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+            >
+                <span style={{
+                    fontSize: '0.55rem',
+                    color: 'var(--secondary-foreground)',
+                    transition: 'transform 0.2s',
+                    transform: isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)',
+                    lineHeight: 1,
+                }}>
+                    ▼
+                </span>
+                <span style={{
+                    fontSize: '0.65rem',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
+                    color: 'var(--primary)',
+                }}>
+                    {label}
+                </span>
+                {/* Summary when collapsed */}
+                {isCollapsed && totalStress > 0 && (
+                    <span style={{
+                        fontSize: '0.6rem',
+                        color: 'var(--secondary-foreground)',
+                        marginLeft: 'auto',
+                    }}>
+                        {totalStress.toFixed(1)}
+                    </span>
+                )}
             </div>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.7rem' }}>
-                <thead>
-                    <tr>
-                        <th style={{ textAlign: 'left', padding: '3px 4px', color: 'var(--secondary-foreground)', fontWeight: 600, borderBottom: '1px solid var(--card-border)' }}></th>
-                        {CATEGORIES.map(c => (
-                            <th key={c} style={{ textAlign: 'center', padding: '3px 2px', color: 'var(--secondary-foreground)', fontWeight: 600, borderBottom: '1px solid var(--card-border)' }}>
-                                {CAT_SHORT[c]}
-                            </th>
-                        ))}
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td style={{ padding: '3px 4px', fontWeight: 600, borderBottom: '1px solid var(--card-border)', whiteSpace: 'nowrap' }}>
-                            Total <span style={{ color: 'var(--secondary-foreground)', fontWeight: 400 }}>{totalStress.toFixed(1)}</span>
-                        </td>
-                        {CATEGORIES.map(c => (
-                            <td key={c} style={{ textAlign: 'center', padding: '3px 2px', borderBottom: '1px solid var(--card-border)', fontWeight: 600 }}>
-                                {stats[c].total > 0 ? stats[c].total.toFixed(1) : <span style={{ opacity: 0.25 }}>—</span>}
-                            </td>
-                        ))}
-                    </tr>
-                    <tr>
-                        <td style={{ padding: '3px 4px', fontWeight: 600, borderBottom: '1px solid var(--card-border)', whiteSpace: 'nowrap' }}>
-                            Central <span style={{ color: 'var(--secondary-foreground)', fontWeight: 400 }}>{totalCentral.toFixed(1)}</span>
-                        </td>
-                        {CATEGORIES.map(c => (
-                            <td key={c} style={{ textAlign: 'center', padding: '3px 2px', borderBottom: '1px solid var(--card-border)' }}>
-                                {stats[c].central > 0 ? stats[c].central.toFixed(1) : <span style={{ opacity: 0.25 }}>—</span>}
-                            </td>
-                        ))}
-                    </tr>
-                    <tr>
-                        <td style={{ padding: '3px 4px', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                            CS Bal <span style={{ color: 'var(--accent)', fontWeight: 600 }}>{csBalance.toFixed(2)}</span>
-                        </td>
-                        {CATEGORIES.map(c => {
-                            const val = stats[c].total > 0 ? (stats[c].central / stats[c].total) : 0;
-                            return (
-                                <td key={c} style={{ textAlign: 'center', padding: '3px 2px', opacity: val > 0 ? 1 : 0.25 }}>
-                                    {val > 0 ? val.toFixed(2) : '—'}
+
+            {/* Table content */}
+            {!isCollapsed && (
+                <div style={{ padding: '0 0.5rem 0.35rem' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.65rem' }}>
+                        <thead>
+                            <tr>
+                                <th style={{ textAlign: 'left', padding: '2px 3px', color: 'var(--secondary-foreground)', fontWeight: 500, borderBottom: '1px solid rgba(255,255,255,0.06)', fontSize: '0.6rem' }}></th>
+                                {CATEGORIES.map(c => (
+                                    <th key={c} style={{ textAlign: 'center', padding: '2px 1px', color: 'var(--secondary-foreground)', fontWeight: 500, borderBottom: '1px solid rgba(255,255,255,0.06)', fontSize: '0.6rem' }}>
+                                        {CAT_SHORT[c]}
+                                    </th>
+                                ))}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td style={{ padding: '3px 3px', fontWeight: 600, borderBottom: '1px solid rgba(255,255,255,0.04)', whiteSpace: 'nowrap' }}>
+                                    Total <span style={{ color: 'var(--secondary-foreground)', fontWeight: 400, fontSize: '0.6rem' }}>{totalStress.toFixed(1)}</span>
                                 </td>
-                            );
-                        })}
-                    </tr>
-                </tbody>
-            </table>
+                                {CATEGORIES.map(c => (
+                                    <td key={c} style={{ textAlign: 'center', padding: '3px 1px', borderBottom: '1px solid rgba(255,255,255,0.04)', fontWeight: 600, color: stats[c].total > 0 ? 'var(--foreground)' : undefined }}>
+                                        {stats[c].total > 0 ? stats[c].total.toFixed(1) : <span style={{ opacity: 0.2 }}>-</span>}
+                                    </td>
+                                ))}
+                            </tr>
+                            <tr>
+                                <td style={{ padding: '3px 3px', fontWeight: 600, borderBottom: '1px solid rgba(255,255,255,0.04)', whiteSpace: 'nowrap' }}>
+                                    Central <span style={{ color: 'var(--secondary-foreground)', fontWeight: 400, fontSize: '0.6rem' }}>{totalCentral.toFixed(1)}</span>
+                                </td>
+                                {CATEGORIES.map(c => (
+                                    <td key={c} style={{ textAlign: 'center', padding: '3px 1px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                                        {stats[c].central > 0 ? stats[c].central.toFixed(1) : <span style={{ opacity: 0.2 }}>-</span>}
+                                    </td>
+                                ))}
+                            </tr>
+                            <tr>
+                                <td style={{ padding: '3px 3px', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                    CS Bal <span style={{ color: 'var(--accent)', fontWeight: 600, fontSize: '0.6rem' }}>{csBalance.toFixed(2)}</span>
+                                </td>
+                                {CATEGORIES.map(c => {
+                                    const val = stats[c].total > 0 ? (stats[c].central / stats[c].total) : 0;
+                                    return (
+                                        <td key={c} style={{ textAlign: 'center', padding: '3px 1px', opacity: val > 0 ? 1 : 0.2 }}>
+                                            {val > 0 ? val.toFixed(2) : '-'}
+                                        </td>
+                                    );
+                                })}
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            )}
         </div>
     );
 }
 
 /** Sidebar stress panel — shows stress index for each week */
 export default function StressMatrix({ weeks }: { weeks: any[] }) {
+    const [collapsedWeeks, setCollapsedWeeks] = useState<Record<number, boolean>>({});
+
     const weekData = useMemo(() => {
         return weeks.map(week => {
             const { stats, totalStress, totalCentral } = computeStress([week]);
@@ -148,16 +193,20 @@ export default function StressMatrix({ weeks }: { weeks: any[] }) {
         });
     }, [weeks]);
 
+    const toggleWeek = (weekNumber: number) => {
+        setCollapsedWeeks(prev => ({ ...prev, [weekNumber]: !prev[weekNumber] }));
+    };
+
     if (weeks.length === 0) {
         return (
-            <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--secondary-foreground)', fontSize: '0.75rem' }}>
+            <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--secondary-foreground)', fontSize: '0.7rem' }}>
                 Add exercises to see stress index
             </div>
         );
     }
 
     return (
-        <div style={{ overflowY: 'auto', padding: '0.5rem' }}>
+        <div style={{ padding: '0.25rem 0' }}>
             {weekData.map(wd => (
                 <WeekStressTable
                     key={wd.weekNumber}
@@ -165,6 +214,8 @@ export default function StressMatrix({ weeks }: { weeks: any[] }) {
                     stats={wd.stats}
                     totalStress={wd.totalStress}
                     totalCentral={wd.totalCentral}
+                    isCollapsed={!!collapsedWeeks[wd.weekNumber]}
+                    onToggle={() => toggleWeek(wd.weekNumber)}
                 />
             ))}
         </div>

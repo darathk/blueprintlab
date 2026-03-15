@@ -867,19 +867,23 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                     <ExercisePicker initialExercises={initialExercises} onAdd={addExerciseToActiveSession} onDragStart={() => { }} />
                 </div>
                 <div style={{
-                    borderTop: '1px solid var(--card-border)',
-                    maxHeight: '40%',
+                    maxHeight: '45%',
                     overflow: 'auto',
+                    margin: '0.5rem',
+                    background: 'var(--card-bg)',
+                    border: '1px solid var(--card-border)',
+                    borderRadius: 'var(--radius)',
                 }}>
                     <div style={{
-                        padding: '0.5rem',
-                        fontSize: '0.75rem',
+                        padding: '0.5rem 0.65rem',
+                        fontSize: '0.7rem',
                         fontWeight: 700,
                         textTransform: 'uppercase',
                         letterSpacing: '0.08em',
                         color: 'var(--accent)',
                         borderBottom: '1px solid var(--card-border)',
                         background: 'rgba(255,255,255,0.03)',
+                        borderRadius: 'var(--radius) var(--radius) 0 0',
                     }}>
                         Stress Index
                     </div>
