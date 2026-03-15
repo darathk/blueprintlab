@@ -142,10 +142,14 @@ export default function ChatInterface({
         }
     }, [messages, loaded, scrollToBottom]);
 
-    // Force scroll to bottom on initial load
+    // Force scroll to bottom on initial load (multiple attempts for media loading)
     useEffect(() => {
         if (loaded) {
             scrollToBottom(true);
+            // Retry after media may have loaded
+            const t1 = setTimeout(() => scrollToBottom(true), 500);
+            const t2 = setTimeout(() => scrollToBottom(true), 1200);
+            return () => { clearTimeout(t1); clearTimeout(t2); };
         }
     }, [loaded, scrollToBottom]);
 

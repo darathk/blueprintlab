@@ -22,11 +22,11 @@ export async function GET(request: Request) {
             return new NextResponse('Unauthorized', { status: 401 });
         }
 
-        // Calculate 100 days ago
+        // Calculate 101 days ago
         const cutoffDate = new Date();
-        cutoffDate.setDate(cutoffDate.getDate() - 100);
+        cutoffDate.setDate(cutoffDate.getDate() - 101);
 
-        // 1. Find all messages older than 100 days
+        // 1. Find all messages older than 101 days
         const oldMessages = await prisma.message.findMany({
             where: { createdAt: { lt: cutoffDate } },
             select: { id: true, mediaUrl: true }
