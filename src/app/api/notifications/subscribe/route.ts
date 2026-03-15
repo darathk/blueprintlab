@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
         }
 
         // Upsert the subscription
-        await prisma.pushSubscription.upsert({
+        const updated = await prisma.pushSubscription.upsert({
             where: { endpoint: subscription.endpoint },
             update: {
                 athleteId: athlete.id,
@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
             }
         });
 
-        console.log(`[Push Subscribe] Saved subscription for ${athlete.name} (${athlete.role}) — ${athlete.id}`);
+        console.log(`[Push Subscribe] ${updated.createdAt.getTime() === updated.id ? 'Updated' : 'Saved'} subscription for ${athlete.name} (${athlete.role}) — ${athlete.id}`);
 
         return NextResponse.json({ success: true });
     } catch (error: any) {

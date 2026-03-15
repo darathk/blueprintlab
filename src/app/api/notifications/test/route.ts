@@ -50,20 +50,26 @@ export async function GET() {
         const results = [];
         for (const sub of subscriptions) {
             try {
-                await webpush.sendNotification(
+                const res = await webpush.sendNotification(
                     { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-                    payload
+                    payload,
+                    { TTL: 60 }
                 );
-                results.push({ endpoint: sub.endpoint.slice(-30), status: 'sent' });
+                results.push({
+                    endpoint: sub.endpoint.slice(-30),
+                    status: 'sent',
+                    statusCode: res.statusCode
+                });
             } catch (err: any) {
                 results.push({
                     endpoint: sub.endpoint.slice(-30),
                     status: 'failed',
                     statusCode: err.statusCode,
-                    body: err.body
+                    body: err.body,
+                    message: err.message
                 });
                 if (err.statusCode === 410 || err.statusCode === 404) {
-                    await prisma.pushSubscription.delete({ where: { id: sub.id } }).catch(() => {});
+                    await prisma.pushSubscription.delete({ where: { id: sub.id } }).catch(() => { });
                 }
             }
         }
@@ -73,6 +79,8 @@ export async function GET() {
             userId: athlete.id,
             userName: athlete.name,
             subscriptionCount: subscriptions.length,
+            vapidPublicSet: !!vapidPublic,
+            vapidPrivateSet: !!vapidPrivate,
             results
         });
     } catch (error: any) {

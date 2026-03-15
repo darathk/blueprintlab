@@ -29,22 +29,43 @@ export default function PushNotificationManager() {
             // Wait for any SW to be ready
             const registration = await navigator.serviceWorker.ready;
 
-            // Always get or create subscription
+            // Get existing subscription
             let subscription = await registration.pushManager.getSubscription();
 
-            // If subscription exists, test if it's still valid by checking the endpoint
-            // If no subscription, create one
+            // If subscription exists, test if it's still valid
+            if (subscription) {
+                const currentKey = subscription.options.applicationServerKey;
+                const expectedKey = urlBase64ToUint8Array(publicVapidKey);
+
+                // Compare keys to detect rotation
+                let mismatch = false;
+                if (currentKey) {
+                    const currentArray = new Uint8Array(currentKey);
+                    const expectedArray = new Uint8Array(expectedKey as ArrayBuffer);
+                    if (currentArray.length !== expectedArray.length || !currentArray.every((v, i) => v === expectedArray[i])) {
+                        mismatch = true;
+                    }
+                }
+
+                if (mismatch) {
+                    console.log('[Push] VAPID key mismatch detected, re-subscribing...');
+                    await subscription.unsubscribe();
+                    subscription = null;
+                }
+            }
+
             if (!subscription) {
-                console.log('[Push] No existing subscription, creating new one...');
+                console.log('[Push] Creating new subscription...');
                 subscription = await registration.pushManager.subscribe({
                     userVisibleOnly: true,
                     applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
                 });
             }
 
-            // Always sync with server (re-upsert) to handle cases where
-            // the server lost the subscription or the user logged into a different account
+            // Always sync with server
             const subJSON = subscription.toJSON();
+            console.log('[Push] Syncing subscription with server:', subJSON.endpoint.slice(-20));
+
             const res = await fetch('/api/notifications/subscribe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -101,7 +122,7 @@ export default function PushNotificationManager() {
         // Register or update the service worker
         navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then(async (reg) => {
             // Force check for updates
-            reg.update().catch(() => {});
+            reg.update().catch(() => { });
 
             // Wait for the SW to be active if it's installing
             const sw = reg.installing || reg.waiting || reg.active;
@@ -142,7 +163,7 @@ export default function PushNotificationManager() {
         // Clear native app badge on focus
         const clearBadge = () => {
             if ('clearAppBadge' in navigator) {
-                (navigator as any).clearAppBadge().catch(() => {});
+                (navigator as any).clearAppBadge().catch(() => { });
             }
         };
         clearBadge();

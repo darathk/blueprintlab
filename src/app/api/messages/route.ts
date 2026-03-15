@@ -16,23 +16,45 @@ export async function GET(request: Request) {
         }
 
         // Single query with OR — much faster than two queries + JS merge
-        const all = await prisma.message.findMany({
-            where: {
-                OR: [
-                    { senderId: athleteId },
-                    { receiverId: athleteId }
-                ]
-            },
-            select: {
-                id: true, senderId: true, receiverId: true, content: true,
-                mediaUrl: true, mediaType: true, createdAt: true, read: true, replyToId: true, reactions: true,
-                sender: { select: { id: true, name: true, email: true } },
-                receiver: { select: { id: true, name: true, email: true } },
-                replyTo: { select: { id: true, content: true, mediaUrl: true, mediaType: true, sender: { select: { name: true } } } }
-            },
-            orderBy: { createdAt: 'desc' },
-            take: 100
-        });
+        let all;
+        try {
+            all = await (prisma as any).message.findMany({
+                where: {
+                    OR: [
+                        { senderId: athleteId },
+                        { receiverId: athleteId }
+                    ]
+                },
+                select: {
+                    id: true, senderId: true, receiverId: true, content: true,
+                    mediaUrl: true, mediaType: true, createdAt: true, read: true, replyToId: true, reactions: true,
+                    sender: { select: { id: true, name: true, email: true } },
+                    receiver: { select: { id: true, name: true, email: true } },
+                    replyTo: { select: { id: true, content: true, mediaUrl: true, mediaType: true, sender: { select: { name: true } } } }
+                },
+                orderBy: { createdAt: 'desc' },
+                take: 100
+            });
+        } catch (e) {
+            console.warn('[GET /api/messages] Failed to fetch with reactions, falling back:', e);
+            all = await (prisma as any).message.findMany({
+                where: {
+                    OR: [
+                        { senderId: athleteId },
+                        { receiverId: athleteId }
+                    ]
+                },
+                select: {
+                    id: true, senderId: true, receiverId: true, content: true,
+                    mediaUrl: true, mediaType: true, createdAt: true, read: true, replyToId: true,
+                    sender: { select: { id: true, name: true, email: true } },
+                    receiver: { select: { id: true, name: true, email: true } },
+                    replyTo: { select: { id: true, content: true, mediaUrl: true, mediaType: true, sender: { select: { name: true } } } }
+                },
+                orderBy: { createdAt: 'desc' },
+                take: 100
+            });
+        }
 
         return NextResponse.json(all.reverse());
     } catch (error) {
@@ -51,16 +73,31 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'senderId, receiverId, and content or mediaUrl are required' }, { status: 400 });
         }
 
-        const message = await prisma.message.create({
-            data: { senderId, receiverId, content: content || '', mediaUrl: mediaUrl || null, mediaType: mediaType || null, replyToId: replyToId || null },
-            select: {
-                id: true, senderId: true, receiverId: true, content: true,
-                mediaUrl: true, mediaType: true, createdAt: true, read: true, replyToId: true, reactions: true,
-                sender: { select: { id: true, name: true, email: true, role: true } },
-                receiver: { select: { id: true, name: true, email: true, role: true } },
-                replyTo: { select: { id: true, content: true, mediaUrl: true, mediaType: true, sender: { select: { name: true } } } }
-            }
-        });
+        let message;
+        try {
+            message = await prisma.message.create({
+                data: { senderId, receiverId, content: content || '', mediaUrl: mediaUrl || null, mediaType: mediaType || null, replyToId: replyToId || null },
+                select: {
+                    id: true, senderId: true, receiverId: true, content: true,
+                    mediaUrl: true, mediaType: true, createdAt: true, read: true, replyToId: true, reactions: true,
+                    sender: { select: { id: true, name: true, email: true, role: true } },
+                    receiver: { select: { id: true, name: true, email: true, role: true } },
+                    replyTo: { select: { id: true, content: true, mediaUrl: true, mediaType: true, sender: { select: { name: true } } } }
+                }
+            });
+        } catch (e) {
+            console.warn('[API/Messages] Failed to create message with reactions, falling back:', e);
+            message = await prisma.message.create({
+                data: { senderId, receiverId, content: content || '', mediaUrl: mediaUrl || null, mediaType: mediaType || null, replyToId: replyToId || null },
+                select: {
+                    id: true, senderId: true, receiverId: true, content: true,
+                    mediaUrl: true, mediaType: true, createdAt: true, read: true, replyToId: true,
+                    sender: { select: { id: true, name: true, email: true, role: true } },
+                    receiver: { select: { id: true, name: true, email: true, role: true } },
+                    replyTo: { select: { id: true, content: true, mediaUrl: true, mediaType: true, sender: { select: { name: true } } } }
+                }
+            });
+        }
 
         // Send push notifications BEFORE returning response
         // (Vercel serverless kills the function after response is sent)
@@ -71,12 +108,12 @@ export async function POST(request: Request) {
             if (vapidPublic && vapidPrivate) {
                 webpush.setVapidDetails('mailto:darathkhon@gmail.com', vapidPublic, vapidPrivate);
 
-                const subscriptions = await prisma.pushSubscription.findMany({
+                const subscriptions = await (prisma as any).pushSubscription.findMany({
                     where: { athleteId: receiverId }
                 });
 
                 if (subscriptions.length > 0) {
-                    const receiver = await prisma.athlete.findUnique({
+                    const receiver = await (prisma as any).athlete.findUnique({
                         where: { id: receiverId },
                         select: { role: true, email: true }
                     });
@@ -94,17 +131,17 @@ export async function POST(request: Request) {
                         : mediaUrl ? (mediaType?.startsWith('video') ? 'Video' : mediaType?.startsWith('audio') ? 'Voice Message' : 'Photo') : 'New message';
 
                     const payload = JSON.stringify({
-                        title: `${message.sender.name}`,
+                        title: `${(message as any).sender?.name || 'New message'}`,
                         body: notifBody,
                         url: redirectUrl
                     });
 
-                    console.log(`[Push] Sending to ${subscriptions.length} sub(s) for ${receiverId}`);
+                    console.log(`[Push] Sending to ${subscriptions.length} sub(s) for ${receiverId} (${receiver?.email})`);
 
                     const results = await Promise.allSettled(
-                        subscriptions.map(async (sub) => {
+                        subscriptions.map(async (sub: any) => {
                             try {
-                                await webpush.sendNotification(
+                                const res = await webpush.sendNotification(
                                     {
                                         endpoint: sub.endpoint,
                                         keys: { p256dh: sub.p256dh, auth: sub.auth }
@@ -112,26 +149,28 @@ export async function POST(request: Request) {
                                     payload,
                                     { TTL: 60 * 60 } // 1 hour TTL
                                 );
-                                console.log(`[Push] Sent to ...${sub.endpoint.slice(-20)}`);
+                                console.log(`[Push] SUCCESS: ...${sub.endpoint.slice(-20)} (Status: ${res.statusCode})`);
                             } catch (pushError: any) {
-                                console.error(`[Push] Failed ...${sub.endpoint.slice(-20)}:`, pushError.statusCode, pushError.body);
+                                console.error(`[Push] FAILED matching key ...${sub.endpoint.slice(-20)}:`, pushError.statusCode, pushError.body || pushError.message);
                                 // Clean up expired/invalid subscriptions
                                 if (pushError.statusCode === 410 || pushError.statusCode === 404 || pushError.statusCode === 403) {
-                                    await prisma.pushSubscription.delete({ where: { id: sub.id } }).catch(() => {});
+                                    await (prisma as any).pushSubscription.delete({ where: { id: sub.id } }).catch(() => { });
                                     console.log(`[Push] Deleted stale subscription ${sub.id}`);
                                 }
                             }
                         })
                     );
-                    console.log(`[Push] Results: ${results.filter(r => r.status === 'fulfilled').length}/${results.length} sent`);
+
+                    const fulfilled = results.filter(r => r.status === 'fulfilled').length;
+                    console.log(`[Push] Summary: ${fulfilled}/${results.length} attempts completed processing`);
                 } else {
-                    console.log(`[Push] No subscriptions for receiver ${receiverId}`);
+                    console.log(`[Push] No subscriptions found for receiver ${receiverId} (${message.receiver?.email})`);
                 }
             } else {
-                console.warn('[Push] VAPID keys not configured');
+                console.warn(`[Push] VAPID keys not configured (Public: ${!!vapidPublic}, Private: ${!!vapidPrivate})`);
             }
         } catch (pushErr) {
-            console.error('[Push] Error:', pushErr);
+            console.error('[Push] Critical internal error in push logic:', pushErr);
         }
 
         return NextResponse.json(message);
