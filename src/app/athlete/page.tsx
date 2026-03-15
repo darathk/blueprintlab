@@ -15,7 +15,8 @@ export default async function AthleteLoginPage() {
 
     const email = user.primaryEmailAddress?.emailAddress || '';
     const athlete = await prisma.athlete.findUnique({
-        where: { email }
+        where: { email },
+        select: { id: true, role: true }
     });
 
     if (athlete) {

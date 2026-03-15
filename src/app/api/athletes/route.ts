@@ -7,7 +7,13 @@ export const dynamic = 'force-dynamic';
 
 export async function GET() {
     try {
-        const athletes = await prisma.athlete.findMany();
+        const athletes = await prisma.athlete.findMany({
+            select: {
+                id: true, name: true, email: true, role: true, coachId: true,
+                nextMeetName: true, nextMeetDate: true, weightClass: true, gender: true,
+                periodization: true, meetAttempts: true, pastMeets: true
+            }
+        });
         return NextResponse.json(athletes);
     } catch (error) {
         console.error('Error fetching athletes:', error);
@@ -24,7 +30,8 @@ export async function POST(request: Request) {
 
         const coachEmail = user.primaryEmailAddress?.emailAddress || '';
         const coach = await prisma.athlete.findUnique({
-            where: { email: coachEmail }
+            where: { email: coachEmail },
+            select: { id: true, role: true }
         });
 
         if (!coach || coach.role !== 'coach') {
@@ -39,7 +46,8 @@ export async function POST(request: Request) {
         // If an email is provided, check if that user already exists
         if (email) {
             const existingUser = await prisma.athlete.findUnique({
-                where: { email }
+                where: { email },
+                select: { id: true, role: true, name: true, nextMeetName: true, nextMeetDate: true, periodization: true, meetAttempts: true, pastMeets: true }
             });
 
             if (existingUser) {

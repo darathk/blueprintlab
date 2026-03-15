@@ -7,9 +7,12 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
     const initialAthleteId = params?.athleteId;
     // Look up coach's Athlete record for the inbox
     const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.ADMIN_EMAIL || '';
-    let coach = await prisma.athlete.findUnique({ where: { email: adminEmail } });
+    let coach = await prisma.athlete.findUnique({
+        where: { email: adminEmail },
+        select: { id: true, name: true, email: true, role: true }
+    });
     if (!coach) {
-        coach = await prisma.athlete.create({ data: { name: 'Coach', email: adminEmail } });
+        coach = await prisma.athlete.create({ data: { name: 'Coach', email: adminEmail }, select: { id: true, name: true, email: true, role: true } });
     }
 
     const initialConvos = (await getCoachInbox(coach.id)) as any[];

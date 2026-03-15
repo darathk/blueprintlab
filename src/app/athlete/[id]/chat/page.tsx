@@ -6,12 +6,18 @@ export default async function AthleteChatPage({ params }: { params: Promise<{ id
     const { id: athleteId } = await params;
 
     // Look up athlete
-    const athlete = await prisma.athlete.findUnique({ where: { id: athleteId } });
+    const athlete = await prisma.athlete.findUnique({
+        where: { id: athleteId },
+        select: { id: true, name: true, email: true, coachId: true }
+    });
     if (!athlete) return <div>Athlete not found</div>;
 
     // Find coach's record
     const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.ADMIN_EMAIL || '';
-    const coach = await prisma.athlete.findUnique({ where: { email: adminEmail } });
+    const coach = await prisma.athlete.findUnique({
+        where: { email: adminEmail },
+        select: { id: true, name: true, email: true }
+    });
 
     if (!coach) {
         return (

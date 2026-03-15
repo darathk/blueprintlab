@@ -10,7 +10,7 @@ export default async function Home() {
   // If the user is logged in, redirect them immediately to their proper portal
   if (user) {
     const email = user.primaryEmailAddress?.emailAddress || '';
-    const athlete = await prisma.athlete.findUnique({ where: { email } });
+    const athlete = await prisma.athlete.findUnique({ where: { email }, select: { id: true, role: true } });
 
     // If they are a coach, redirect to coach dashboard
     if (athlete?.role === 'coach') {

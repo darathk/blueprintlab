@@ -16,7 +16,8 @@ export async function POST(request: Request) {
 
         // First, check if athlete exists
         const athlete = await prisma.athlete.findUnique({
-            where: { id: athleteId }
+            where: { id: athleteId },
+            select: { id: true }
         });
 
         if (!athlete) {
