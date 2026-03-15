@@ -135,10 +135,29 @@ export async function POST(request: Request) {
     }
 }
 
-// PATCH /api/messages — mark messages as read
+// PATCH /api/messages — mark messages as read OR edit a message
 export async function PATCH(request: Request) {
     try {
         const body = await request.json();
+
+        // Edit message content
+        if (body.messageId && body.content !== undefined) {
+            const { messageId, content } = body;
+            const updated = await prisma.message.update({
+                where: { id: messageId },
+                data: { content },
+                select: {
+                    id: true, senderId: true, receiverId: true, content: true,
+                    mediaUrl: true, mediaType: true, createdAt: true, read: true, replyToId: true, reactions: true,
+                    sender: { select: { id: true, name: true, email: true } },
+                    receiver: { select: { id: true, name: true, email: true } },
+                    replyTo: { select: { id: true, content: true, mediaUrl: true, mediaType: true, sender: { select: { name: true } } } }
+                }
+            });
+            return NextResponse.json(updated);
+        }
+
+        // Mark as read
         const { athleteId, readerId } = body;
 
         if (!athleteId || !readerId) {
@@ -153,7 +172,7 @@ export async function PATCH(request: Request) {
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error('PATCH /api/messages error:', error);
-        return NextResponse.json({ error: 'Failed to mark as read' }, { status: 500 });
+        return NextResponse.json({ error: 'Failed to update message' }, { status: 500 });
     }
 }
 // DELETE /api/messages — delete a message

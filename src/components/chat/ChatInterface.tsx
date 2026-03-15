@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
-import { Mic, MoreVertical, Reply, Copy, Download, Paperclip, X, Send, Search, Scissors } from 'lucide-react';
+import { Mic, MoreVertical, Reply, Copy, Download, Paperclip, X, Send, Search, Scissors, Pencil } from 'lucide-react';
 import VideoCropper from './VideoCropper';
 
 interface Message {
@@ -58,6 +58,10 @@ export default function ChatInterface({
 
     // Upload progress per message (tempId → 0-100)
     const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+
+    // Editing state
+    const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
+    const [editText, setEditText] = useState('');
 
     // Multi-select state
     const [selectedMessageIds, setSelectedMessageIds] = useState<Set<string>>(new Set());
@@ -641,6 +645,30 @@ export default function ChatInterface({
         }
     };
 
+    const handleEditMessage = async (msgId: string, newContent: string) => {
+        const trimmed = newContent.trim();
+        if (!trimmed) return;
+
+        // Optimistic update
+        setMessages(prev => prev.map(m => m.id === msgId ? { ...m, content: trimmed } : m));
+        setEditingMessageId(null);
+        setEditText('');
+
+        try {
+            const res = await fetch('/api/messages', {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ messageId: msgId, content: trimmed })
+            });
+            if (!res.ok) {
+                console.error('Edit failed:', res.status);
+                alert('Failed to edit message.');
+            }
+        } catch (e) {
+            console.error('Edit error:', e);
+        }
+    };
+
     return (
         <div style={{
             display: 'flex',
@@ -916,7 +944,32 @@ export default function ChatInterface({
                                             )}
 
                                             {/* Text */}
-                                            <div style={{ fontSize: 14, lineHeight: 1.4, color: 'rgba(255,255,255,0.9)', padding: msg.mediaUrl ? '0 10px' : 0, whiteSpace: 'pre-wrap' }}>{highlightMatch(msg.content)}</div>
+                                            {/* Text content or inline edit */}
+                                            {editingMessageId === msg.id ? (
+                                                <div style={{ padding: msg.mediaUrl ? '0 10px' : 0, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                    <input
+                                                        autoFocus
+                                                        type="text"
+                                                        value={editText}
+                                                        onChange={e => setEditText(e.target.value)}
+                                                        onKeyDown={e => {
+                                                            if (e.key === 'Enter') handleEditMessage(msg.id, editText);
+                                                            if (e.key === 'Escape') { setEditingMessageId(null); setEditText(''); }
+                                                        }}
+                                                        style={{ flex: 1, background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(0,168,132,0.5)', borderRadius: 8, color: '#fff', fontSize: 14, padding: '6px 10px', outline: 'none', minWidth: 0 }}
+                                                    />
+                                                    <button onClick={() => handleEditMessage(msg.id, editText)}
+                                                        style={{ background: '#00a884', border: 'none', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                                                        <Send size={14} color="#fff" />
+                                                    </button>
+                                                    <button onClick={() => { setEditingMessageId(null); setEditText(''); }}
+                                                        style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                                                        <X size={14} color="#8696a0" />
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <div style={{ fontSize: 14, lineHeight: 1.4, color: 'rgba(255,255,255,0.9)', padding: msg.mediaUrl ? '0 10px' : 0, whiteSpace: 'pre-wrap' }}>{highlightMatch(msg.content)}</div>
+                                            )}
 
                                             {/* Time + Status */}
                                             <div style={{
@@ -964,16 +1017,15 @@ export default function ChatInterface({
                                             </div>
                                         )}
 
-                                        {/* Dropdown action menu — positioned next to message */}
+                                        {/* Dropdown action menu — opens upward to avoid bottom cutoff */}
                                         {activeMenu === msg.id && !isMultiSelecting && (
                                             <>
-                                                {/* Invisible backdrop to close menu */}
                                                 <div onClick={(e) => { e.stopPropagation(); setActiveMenu(null); }} style={{ position: 'fixed', inset: 0, zIndex: 999 }} />
                                                 <div
                                                     onClick={e => e.stopPropagation()}
                                                     style={{
                                                         position: 'absolute',
-                                                        top: 0,
+                                                        bottom: 0,
                                                         [mine ? 'right' : 'left']: 0,
                                                         zIndex: 1000,
                                                         background: '#1f2c34',
@@ -1006,6 +1058,10 @@ export default function ChatInterface({
 
                                                     <button onClick={() => { setReplyingTo(msg); setActiveMenu(null); }}
                                                         style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: '#e9edef', cursor: 'pointer' }}><Reply size={16} color="#8696a0" /> Reply</button>
+                                                    {mine && msg.content && !msg.mediaUrl && (
+                                                        <button onClick={() => { setEditingMessageId(msg.id); setEditText(msg.content); setActiveMenu(null); }}
+                                                            style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: '#e9edef', cursor: 'pointer' }}><Pencil size={16} color="#8696a0" /> Edit</button>
+                                                    )}
                                                     <button onClick={() => { navigator.clipboard.writeText(msg.content); setActiveMenu(null); }}
                                                         style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: '#e9edef', cursor: 'pointer' }}><Copy size={16} color="#8696a0" /> Copy</button>
                                                     <button onClick={() => { toggleSelection(msg.id); setActiveMenu(null); }}
