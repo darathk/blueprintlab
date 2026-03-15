@@ -1217,11 +1217,13 @@ export default function ChatInterface({
                             minHeight: 48,
                             boxShadow: '0 1px 1px rgba(0,0,0,0.2)'
                         }}>
-                            <input type="text" value={newMessage} onChange={e => setNewMessage(e.target.value)}
-                                onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
+                            <textarea value={newMessage} onChange={e => setNewMessage(e.target.value)}
+                                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
                                 placeholder="Type a message"
+                                rows={1}
                                 disabled={uploading}
-                                style={{ flex: 1, padding: '8px 0', background: 'transparent', border: 'none', color: '#e9edef', fontSize: 16, outline: 'none', minWidth: 0, opacity: uploading ? 0.5 : 1 }} />
+                                enterKeyHint="send"
+                                style={{ flex: 1, padding: '8px 0', background: 'transparent', border: 'none', color: '#e9edef', fontSize: 16, outline: 'none', minWidth: 0, opacity: uploading ? 0.5 : 1, resize: 'none', lineHeight: '1.4', maxHeight: 120, overflowY: 'auto', fontFamily: 'inherit' }} />
                         </div>
 
                         {/* Mic/Send circular button */}
@@ -1393,13 +1395,14 @@ export default function ChatInterface({
                                 display: 'flex', alignItems: 'center', minHeight: 48,
                                 boxShadow: '0 1px 1px rgba(0,0,0,0.2)'
                             }}>
-                                <input
-                                    type="text"
+                                <textarea
                                     value={newMessage}
                                     onChange={e => setNewMessage(e.target.value)}
                                     placeholder="Add a caption..."
-                                    style={{ flex: 1, background: 'transparent', border: 'none', color: '#e9edef', outline: 'none', fontSize: 16, padding: '8px 0' }}
-                                    onKeyDown={e => e.key === 'Enter' && !e.shiftKey && handleSend()}
+                                    rows={1}
+                                    enterKeyHint="send"
+                                    style={{ flex: 1, background: 'transparent', border: 'none', color: '#e9edef', outline: 'none', fontSize: 16, padding: '8px 0', resize: 'none', lineHeight: '1.4', fontFamily: 'inherit' }}
+                                    onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
                                 />
                             </div>
                             <button onClick={() => handleSend()} disabled={uploading}
