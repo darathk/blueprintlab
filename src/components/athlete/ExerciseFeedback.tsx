@@ -87,25 +87,39 @@ export default function ExerciseFeedback({
         video.muted = true;
         video.playsInline = true;
         video.preload = 'auto';
-        video.src = URL.createObjectURL(file);
+        video.crossOrigin = 'anonymous';
+        const objUrl = URL.createObjectURL(file);
+        video.src = objUrl;
 
-        video.onloadeddata = () => { video.currentTime = 0.5; };
-        video.onseeked = () => {
+        let captured = false;
+        const capturePoster = () => {
+            if (captured) return;
             try {
                 const canvas = document.createElement('canvas');
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
+                canvas.width = video.videoWidth || 160;
+                canvas.height = video.videoHeight || 90;
                 const ctx = canvas.getContext('2d');
-                if (ctx) {
+                if (ctx && video.videoWidth > 0) {
                     ctx.drawImage(video, 0, 0);
                     const poster = canvas.toDataURL('image/jpeg', 0.7);
                     setStagedPosters(prev => ({ ...prev, [index]: poster }));
+                    captured = true;
                 }
             } catch (e) {
                 console.error('Poster generation failed:', e);
             }
-            URL.revokeObjectURL(video.src);
+            URL.revokeObjectURL(objUrl);
             video.remove();
+        };
+
+        video.onloadeddata = () => {
+            // Try to seek to 0.5s for a better frame
+            video.currentTime = Math.min(0.5, video.duration || 0.5);
+        };
+        video.onseeked = capturePoster;
+        // Fallback: if seek never fires, capture on loadeddata after a short delay
+        video.onloadedmetadata = () => {
+            setTimeout(() => { if (!captured) capturePoster(); }, 1000);
         };
     }, []);
 
@@ -518,8 +532,8 @@ export default function ExerciseFeedback({
 
                     {/* Bottom area */}
                     <div style={{ background: '#111b21', padding: '12px 12px', paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))' }}>
-                        {/* Multi-file thumbnails */}
-                        {stagedFiles.length > 1 && (
+                        {/* File thumbnails */}
+                        {stagedFiles.length >= 1 && (
                             <div style={{ display: 'flex', gap: 8, paddingBottom: 12, overflowX: 'auto', paddingLeft: 4 }}>
                                 {stagedFileUrls.map((url, i) => (
                                     <div key={i} onClick={() => setStagedPreviewIndex(i)} style={{
@@ -531,7 +545,14 @@ export default function ExerciseFeedback({
                                             stagedPosters[i] ? (
                                                 <img src={stagedPosters[i]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: i === stagedPreviewIndex ? 1 : 0.5 }} />
                                             ) : (
-                                                <video src={url} muted playsInline preload="auto" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: i === stagedPreviewIndex ? 1 : 0.5 }} />
+                                                <video
+                                                    src={url}
+                                                    muted
+                                                    playsInline
+                                                    preload="metadata"
+                                                    onLoadedData={e => { (e.target as HTMLVideoElement).currentTime = 0.1; }}
+                                                    style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: i === stagedPreviewIndex ? 1 : 0.5 }}
+                                                />
                                             )
                                         ) : (
                                             <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: i === stagedPreviewIndex ? 1 : 0.5 }} />
