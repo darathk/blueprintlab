@@ -620,14 +620,14 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                                                                                         onChange={e => updateNotes(sKey, exIdx, e.target.value, program.id)}
                                                                                         onBlur={() => triggerAutoSave(sKey, program.id)}
                                                                                         onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
-                                                                                        placeholder="Coach's notes:"
+                                                                                        placeholder="Feedback:"
                                                                                         style={{
                                                                                             flex: 1, minHeight: 60, padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: 4, background: 'var(--background)', fontSize: '0.9rem', color: 'var(--foreground)', resize: 'vertical', outlineColor: 'var(--primary)'
                                                                                         }}
                                                                                     />
                                                                                 </div>
 
-                                                                                {/* Send Coach Feedback */}
+                                                                                {/* Send Feedback */}
                                                                                 <ExerciseFeedback
                                                                                     athleteId={athleteId}
                                                                                     coachId={coachId || ''}
