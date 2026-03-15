@@ -99,7 +99,7 @@ model Message {
   createdAt  DateTime  @default(now())
   read       Boolean   @default(false)
   replyToId  String?
-  replyTo    Message?  @relation("MessageReplies", fields: [replyToId], references: [id])
+  replyTo    Message?  @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
   replies    Message[] @relation("MessageReplies")
   reactions  Json?     // Storing emoji reactions as map: { emoji: [userIds] }
 
