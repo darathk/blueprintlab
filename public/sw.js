@@ -14,23 +14,19 @@ self.addEventListener('push', function (event) {
         }
     }
 
-    const options = {
+    // Build options carefully — iOS does not support vibrate, actions,
+    // requireInteraction, or silent. Including unsupported options can
+    // cause showNotification() to fail silently on iOS Safari PWA.
+    var options = {
         body: data.body || 'New message',
         icon: '/icon-192x192.png',
         badge: '/icon-192x192.png',
-        vibrate: [200, 100, 200],
-        tag: 'blueprint-msg-' + Date.now(), // Unique tag so each notification shows separately
+        tag: 'blueprint-msg-' + Date.now(),
         renotify: true,
-        requireInteraction: true, // Keep notification visible until user interacts
-        silent: false,
         data: {
             url: data.url || '/',
             timestamp: Date.now()
-        },
-        actions: [
-            { action: 'open', title: 'Open' },
-            { action: 'dismiss', title: 'Dismiss' }
-        ]
+        }
     };
 
     // Set app badge
