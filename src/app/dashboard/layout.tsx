@@ -12,12 +12,15 @@ import NotificationPermissionButton from '@/components/notifications/Notificatio
 // Cache the auth check so it only runs once per request lifecycle
 const getAuthState = cache(async () => {
     const user = await currentUser();
-    if (!user) return { isCoach: false, user: null, athleteId: null };
+    if (!user) return { isCoach: false, user: null, athleteId: null, unreadCount: 0 };
 
     const email = user.primaryEmailAddress?.emailAddress || '';
 
-    // Check if they exist in the DB
-    const athlete = await prisma.athlete.findUnique({ where: { email } });
+    // Check if they exist in the DB — only select what we need
+    const athlete = await prisma.athlete.findUnique({
+        where: { email },
+        select: { id: true, role: true, email: true }
+    });
 
     // In multi-coach system, coaches are just Athlete records with role === 'coach'
     const isCoach = athlete?.role === 'coach';

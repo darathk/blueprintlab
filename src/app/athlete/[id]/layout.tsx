@@ -21,9 +21,14 @@ export default async function AthletePortalLayout({
     const email = user.primaryEmailAddress?.emailAddress || '';
     const { id } = await params;
 
-    const requestedAthlete = await prisma.athlete.findUnique({
-        where: { id }
-    });
+    // Fetch athlete and unread count in parallel
+    const [requestedAthlete, unreadCount] = await Promise.all([
+        prisma.athlete.findUnique({
+            where: { id },
+            select: { id: true, name: true, email: true, role: true, meetAttempts: true }
+        }),
+        prisma.message.count({ where: { receiverId: id, read: false } })
+    ]);
 
     if (!requestedAthlete) {
         redirect('/athlete'); // Not found
@@ -33,7 +38,8 @@ export default async function AthletePortalLayout({
     if (requestedAthlete.email !== email) {
         // If not this athlete, check if they are the coach (i.e. not an athlete at all)
         const loggedInUser = await prisma.athlete.findUnique({
-            where: { email }
+            where: { email },
+            select: { id: true, role: true }
         });
 
         // If they are a coach, redirect to the coach dashboard
@@ -47,16 +53,12 @@ export default async function AthletePortalLayout({
             redirect(`/athlete/${loggedInUser.id}/dashboard`);
         }
     } else {
-        // Even if they ARE the requested athlete, if their role is coach, 
+        // Even if they ARE the requested athlete, if their role is coach,
         // they should still go to the dashboard (prevents "Combined Chat" view)
         if (requestedAthlete.role === 'coach') {
             redirect('/dashboard');
         }
     }
-
-    const unreadCount = await prisma.message.count({
-        where: { receiverId: requestedAthlete.id, read: false }
-    });
 
     const athleteNavItems: NavItem[] = [
         { label: 'Dashboard', href: `/athlete/${id}/dashboard`, icon: <LayoutDashboard size={20} /> },

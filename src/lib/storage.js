@@ -66,7 +66,16 @@ export async function saveAthlete(athlete) {
 export const getPrograms = cache(async (coachId) => {
     if (!coachId) return [];
     return prisma.program.findMany({
-        where: { athlete: { coachId } }
+        where: { athlete: { coachId } },
+        select: {
+            id: true,
+            athleteId: true,
+            name: true,
+            startDate: true,
+            endDate: true,
+            weeks: true,
+            status: true
+        }
     });
 });
 
@@ -163,14 +172,30 @@ export const getAthleteById = cache(async (id) => {
 
 export const getProgramsByAthlete = cache(async (athleteId) => {
     return prisma.program.findMany({
-        where: { athleteId }
+        where: { athleteId },
+        select: {
+            id: true,
+            athleteId: true,
+            name: true,
+            startDate: true,
+            endDate: true,
+            weeks: true,
+            status: true
+        }
     });
 });
 
 export const getLogsByAthlete = cache(async (athleteId) => {
     const logs = await prisma.log.findMany({
         where: { program: { athleteId } },
-        include: { program: { select: { athleteId: true } } }
+        select: {
+            id: true,
+            programId: true,
+            sessionId: true,
+            date: true,
+            exercises: true,
+            program: { select: { athleteId: true } }
+        }
     });
     return logs.map(l => {
         const { program, ...rest } = l;

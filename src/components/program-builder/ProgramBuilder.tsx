@@ -847,7 +847,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
     };
 
     return (
-        <div className="program-builder-layout" style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '2rem', height: 'calc(100vh - 100px)' }}>
+        <div className="program-builder-layout" style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '2rem', height: 'calc(100vh - 100px)', paddingTop: '1.5rem' }}>
 
             {/* LEFTSIDE BAR: Exercise Picker (ALWAYS VISIBLE - "Same as previously") */}
             <div className="program-builder-sidebar" style={{ display: 'flex', flexDirection: 'column', gap: '2rem', height: '100%', overflow: 'hidden' }}>
@@ -863,25 +863,26 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexShrink: 0 }}>
                     <div>
                         <h1 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0 }}>{initialData ? 'Edit Program' : 'New Program'}</h1>
-                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', fontSize: '0.9rem', color: 'var(--secondary-foreground)', marginTop: '0.5rem' }}>
-                            <span style={{ whiteSpace: 'nowrap' }}>Start Date:</span>
-                            <input
-                                type="date"
-                                value={startDate}
-                                onChange={e => setStartDate(e.target.value)}
-                                style={{ background: 'transparent', border: '1px solid var(--card-border)', borderRadius: '4px', color: 'var(--foreground)', padding: '2px 6px' }}
-                            />
-                            <span style={{ margin: '0 0.5rem' }}>•</span>
+                        <div style={{ marginTop: '0.5rem' }}>
                             <input
                                 value={programName}
                                 onChange={e => setProgramName(e.target.value)}
                                 placeholder="Program Name"
-                                style={{ background: 'transparent', border: 'none', borderBottom: '1px solid var(--card-border)', color: 'var(--foreground)', fontWeight: 600, minWidth: '200px' }}
+                                style={{
+                                    background: 'rgba(15, 23, 42, 0.4)',
+                                    border: '1px solid var(--card-border)',
+                                    borderRadius: 'var(--radius)',
+                                    color: 'var(--foreground)',
+                                    fontWeight: 600,
+                                    fontSize: '1.1rem',
+                                    padding: '0.6rem 1rem',
+                                    width: '100%',
+                                    minWidth: '360px',
+                                    transition: 'border-color 0.2s',
+                                }}
+                                onFocus={e => e.target.style.borderColor = 'var(--primary)'}
+                                onBlur={e => e.target.style.borderColor = 'var(--card-border)'}
                             />
-                        </div>
-                        <div style={{ marginTop: '0.5rem' }}>
-                            {/* Assuming ImportProgram and handleImport are defined elsewhere */}
-                            {/* <ImportProgram onImport={handleImport} /> */}
                         </div>
                     </div>
 

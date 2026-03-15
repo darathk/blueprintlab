@@ -1,17 +1,17 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist } from "next/font/google";
 import { ClerkProvider } from '@clerk/nextjs'
 import "./globals.css";
-import PushNotificationManager from "@/components/notifications/PushNotificationManager";
+import dynamic from "next/dynamic";
+
+const PushNotificationManager = dynamic(
+  () => import("@/components/notifications/PushNotificationManager")
+);
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  display: "swap",
 });
 
 
@@ -55,7 +55,7 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
-        <body className={`${geistSans.variable} ${geistMono.variable}`}>
+        <body className={geistSans.variable}>
           <PushNotificationManager />
           {children}
           <footer style={{ marginTop: '4rem', padding: '1rem', textAlign: 'center', color: '#666', fontSize: '0.8rem', borderTop: '1px solid #333' }}>
