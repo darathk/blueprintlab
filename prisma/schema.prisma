@@ -34,14 +34,15 @@ model Athlete {
 }
 
 model Program {
-  id        String  @id @default(uuid())
+  id        String   @id @default(uuid())
   athleteId String
-  athlete   Athlete @relation(fields: [athleteId], references: [id])
+  athlete   Athlete  @relation(fields: [athleteId], references: [id])
   name      String
   startDate String
   endDate   String?
   weeks     Json // Storing complex nested structure easily
-  status    String  @default("active")
+  status    String   @default("active")
+  createdAt DateTime @default(now())
   logs      Log[]
 
   @@index([athleteId, status])

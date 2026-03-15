@@ -173,6 +173,7 @@ export const getAthleteById = cache(async (id) => {
 export const getProgramsByAthlete = cache(async (athleteId) => {
     return prisma.program.findMany({
         where: { athleteId },
+        orderBy: { createdAt: 'desc' },
         select: {
             id: true,
             athleteId: true,
@@ -180,7 +181,8 @@ export const getProgramsByAthlete = cache(async (athleteId) => {
             startDate: true,
             endDate: true,
             weeks: true,
-            status: true
+            status: true,
+            createdAt: true
         }
     });
 });
