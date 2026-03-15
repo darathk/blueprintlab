@@ -29,11 +29,9 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
         // Last day of the month
         const lastDayOfMonth = new Date(year, month + 1, 0);
 
-        // Grid start (Monday based)
+        // Grid start (Sunday based)
         const startDayOfWeek = firstDayOfMonth.getDay(); // 0Sun - 6Sat
-        // Adjust for Monday start: Mon=1...Sun=0 -> Mon=0...Sun=6
-        // If Sun(0), offset is 6. If Mon(1), offset is 0.
-        const offset = startDayOfWeek === 0 ? 6 : startDayOfWeek - 1;
+        const offset = startDayOfWeek; // Sunday = 0 offset
 
         const gridStart = new Date(firstDayOfMonth);
         gridStart.setDate(gridStart.getDate() - offset);
@@ -83,7 +81,7 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
         return days;
     }, [weeks, startDate, currentMonth]);
 
-    const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const monthName = currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' });
 
     // DnD State

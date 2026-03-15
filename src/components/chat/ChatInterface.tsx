@@ -90,10 +90,12 @@ export default function ChatInterface({
         } else {
             setLoaded(true);
         }
-        // Mark as read
+        // Mark as read and immediately refresh nav badge
         fetch('/api/messages', {
             method: 'PATCH', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ athleteId: otherUserId, readerId: currentUserId })
+        }).then(() => {
+            window.dispatchEvent(new Event('unread-refresh'));
         });
     }, [athleteId, currentUserId, otherUserId]);
 
@@ -169,7 +171,7 @@ export default function ChatInterface({
                     fetch('/api/messages', {
                         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ athleteId: otherUserId, readerId: currentUserId })
-                    });
+                    }).then(() => window.dispatchEvent(new Event('unread-refresh')));
                 }
             ).subscribe();
         return () => { supabase.removeChannel(ch); };
@@ -190,7 +192,7 @@ export default function ChatInterface({
                                     fetch('/api/messages', {
                                         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
                                         body: JSON.stringify({ athleteId: otherUserId, readerId: currentUserId })
-                                    });
+                                    }).then(() => window.dispatchEvent(new Event('unread-refresh')));
                                 }
                                 return data;
                             }

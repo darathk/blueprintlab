@@ -17,14 +17,14 @@ export default function TopNavigation({ unreadCount = 0, userId }: { unreadCount
     };
 
     return (
-        <nav className="dashboard-nav flex w-full items-center justify-between md:justify-end" style={{ gap: '2rem' }}>
-            <div style={{ display: 'flex', gap: 'inherit', alignItems: 'center' }}>
+        <nav className="dashboard-nav flex w-full items-center justify-between md:justify-end" style={{ gap: '1.5rem' }}>
+            <div style={{ display: 'flex', gap: '1.75rem', alignItems: 'center' }}>
                 <Link
                     href="/dashboard"
                     className="nav-link"
                     style={{
                         fontWeight: 600,
-                        fontSize: '0.95rem',
+                        fontSize: '0.85rem',
                         color: isActive('/dashboard') ? 'var(--primary)' : 'var(--secondary-foreground)',
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
@@ -39,7 +39,7 @@ export default function TopNavigation({ unreadCount = 0, userId }: { unreadCount
                     className="nav-link"
                     style={{
                         fontWeight: 600,
-                        fontSize: '0.95rem',
+                        fontSize: '0.85rem',
                         color: isActive('/dashboard/messages') ? 'var(--primary)' : 'var(--secondary-foreground)',
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
@@ -76,7 +76,7 @@ export default function TopNavigation({ unreadCount = 0, userId }: { unreadCount
                     className="nav-link"
                     style={{
                         fontWeight: 600,
-                        fontSize: '0.95rem',
+                        fontSize: '0.85rem',
                         color: isActive('/dashboard/programs/new') ? 'var(--primary)' : 'var(--secondary-foreground)',
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
@@ -91,7 +91,7 @@ export default function TopNavigation({ unreadCount = 0, userId }: { unreadCount
                     className="nav-link"
                     style={{
                         fontWeight: 600,
-                        fontSize: '0.95rem',
+                        fontSize: '0.85rem',
                         color: isActive('/dashboard/leaderboard') ? 'var(--primary)' : 'var(--secondary-foreground)',
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
@@ -106,7 +106,7 @@ export default function TopNavigation({ unreadCount = 0, userId }: { unreadCount
                     className="nav-link"
                     style={{
                         fontWeight: 600,
-                        fontSize: '0.95rem',
+                        fontSize: '0.85rem',
                         color: isActive('/dashboard/plate-loader') ? 'var(--primary)' : 'var(--secondary-foreground)',
                         textTransform: 'uppercase',
                         letterSpacing: '0.05em',
