@@ -1123,12 +1123,9 @@ export default function ChatInterface({
                                                         <X size={14} color="#8696a0" />
                                                     </button>
                                                 </div>
-                                            ) : (
-                                                {/* Hide generic media labels (Video/Photo) when media is attached — only show actual text captions */}
-                                                {(!msg.mediaUrl || (msg.content && !['Video', 'Photo'].includes(msg.content.trim()))) && (
-                                                    <div style={{ fontSize: 14, lineHeight: 1.4, color: 'rgba(255,255,255,0.9)', padding: msg.mediaUrl ? '0 10px' : 0, whiteSpace: 'pre-wrap' }}>{highlightMatch(msg.content)}</div>
-                                                )}
-                                            )}
+                                            ) : (!msg.mediaUrl || (msg.content && !['Video', 'Photo'].includes(msg.content.trim()))) ? (
+                                                <div style={{ fontSize: 14, lineHeight: 1.4, color: 'rgba(255,255,255,0.9)', padding: msg.mediaUrl ? '0 10px' : 0, whiteSpace: 'pre-wrap' }}>{highlightMatch(msg.content)}</div>
+                                            ) : null}
 
                                             {/* Time + Status */}
                                             <div style={{
