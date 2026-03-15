@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import React, { useState, useEffect, useCallback } from 'react';
+import { useUnreadCount } from '@/components/notifications/UnreadBadge';
 
 export interface NavItem {
     label: string;
@@ -11,8 +12,10 @@ export interface NavItem {
     unreadCount?: number;
 }
 
-export default function MobileBottomNav({ items, children, className }: { items: NavItem[], children?: React.ReactNode, className?: string }) {
+export default function MobileBottomNav({ items, children, className, userId }: { items: NavItem[], children?: React.ReactNode, className?: string, userId?: string }) {
     const pathname = usePathname();
+    const serverUnread = items.reduce((sum, item) => sum + (item.unreadCount || 0), 0);
+    const liveUnread = useUnreadCount(userId || '', serverUnread);
     const [open, setOpen] = useState(false);
 
     const isActive = (href: string) => {
@@ -48,7 +51,7 @@ export default function MobileBottomNav({ items, children, className }: { items:
         }
     }, [open, handleKeyDown]);
 
-    const totalUnread = items.reduce((sum, item) => sum + (item.unreadCount || 0), 0);
+    const totalUnread = userId ? liveUnread : items.reduce((sum, item) => sum + (item.unreadCount || 0), 0);
 
     return (
         <>

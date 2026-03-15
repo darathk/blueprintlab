@@ -86,7 +86,7 @@ export default async function AthletePortalLayout({
                         <span className="hidden md:inline whitespace-nowrap" style={{ marginLeft: '1.5rem', fontWeight: 400, color: 'var(--secondary-foreground)', fontSize: '1rem', borderLeft: '1px solid var(--card-border)', paddingLeft: '1.5rem' }}>{requestedAthlete.name}'s Portal</span>
                     </div>
                     <div className="hidden md:flex" style={{ gap: '1.5rem', alignItems: 'center', flexShrink: 0 }}>
-                        <AthleteNav id={id} unreadCount={unreadCount} />
+                        <AthleteNav id={id} unreadCount={unreadCount} userId={id} />
                         <div style={{ borderLeft: '1px solid var(--card-border)', paddingLeft: '1.5rem', display: 'flex', alignItems: 'center' }}>
                             <UserButton afterSignOutUrl="/sign-in" />
                         </div>
@@ -100,7 +100,7 @@ export default async function AthletePortalLayout({
             <main className="athlete-main" style={{ flex: 1 }}>
                 {children}
             </main>
-            <MobileBottomNav items={athleteNavItems} className="mobile-bottom-nav">
+            <MobileBottomNav items={athleteNavItems} className="mobile-bottom-nav" userId={id}>
                 <div style={{
                     display: 'flex',
                     flexDirection: 'column',

@@ -3,9 +3,12 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { UserButton } from '@clerk/nextjs';
+import { useUnreadCount } from '@/components/notifications/UnreadBadge';
 
-export default function TopNavigation({ unreadCount = 0 }: { unreadCount?: number }) {
+export default function TopNavigation({ unreadCount = 0, userId }: { unreadCount?: number; userId?: string }) {
     const pathname = usePathname();
+    const liveUnread = useUnreadCount(userId || '', unreadCount);
+    const displayUnread = userId ? liveUnread : unreadCount;
 
     const isActive = (path: string) => {
         if (path === '/dashboard' && pathname === '/dashboard') return true;
@@ -48,7 +51,7 @@ export default function TopNavigation({ unreadCount = 0 }: { unreadCount?: numbe
                     }}
                 >
                     Messages
-                    {unreadCount > 0 && (
+                    {displayUnread > 0 && (
                         <div style={{
                             position: 'absolute',
                             top: '-6px',
@@ -64,7 +67,7 @@ export default function TopNavigation({ unreadCount = 0 }: { unreadCount?: numbe
                             lineHeight: 1,
                             boxShadow: '0 0 8px rgba(239, 68, 68, 0.4)'
                         }}>
-                            {unreadCount}
+                            {displayUnread}
                         </div>
                     )}
                 </Link>

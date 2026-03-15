@@ -91,7 +91,7 @@ export default async function DashboardLayout({
                     </div>
 
                     <div className="hidden md:flex items-center gap-4">
-                        <TopNavigation unreadCount={unreadCount} />
+                        <TopNavigation unreadCount={unreadCount} userId={athleteId || undefined} />
                     </div>
 
                     <div className="md:hidden flex items-center">
@@ -109,7 +109,7 @@ export default async function DashboardLayout({
                 </div>
             </main>
 
-            <MobileBottomNav items={coachNavItems} className="mobile-bottom-nav">
+            <MobileBottomNav items={coachNavItems} className="mobile-bottom-nav" userId={athleteId || undefined}>
                 <div style={{
                     display: 'flex',
                     flexDirection: 'column',

@@ -1,43 +1,50 @@
 'use client';
 
-import { useEffect, useCallback } from 'react';
+import { useEffect, useCallback, useRef } from 'react';
 import { useUser } from '@clerk/nextjs';
+
+function urlBase64ToUint8Array(base64String: string): Uint8Array {
+    const padding = '='.repeat((4 - (base64String.length % 4)) % 4);
+    const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+        outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+}
 
 export default function PushNotificationManager() {
     const { user, isLoaded } = useUser();
+    const hasSubscribed = useRef(false);
 
     const subscribeAndSync = useCallback(async () => {
         try {
-            // Wait for SW to be ready
+            const publicVapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+            if (!publicVapidKey) {
+                console.error('[Push] VAPID public key not set');
+                return;
+            }
+
+            // Wait for any SW to be ready
             const registration = await navigator.serviceWorker.ready;
 
+            // Always get or create subscription
             let subscription = await registration.pushManager.getSubscription();
 
+            // If subscription exists, test if it's still valid by checking the endpoint
+            // If no subscription, create one
             if (!subscription) {
-                const publicVapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-                if (!publicVapidKey) {
-                    console.error('[Push] VAPID public key not set');
-                    return;
-                }
-
-                // Convert VAPID key
-                const padding = '='.repeat((4 - (publicVapidKey.length % 4)) % 4);
-                const base64 = (publicVapidKey + padding).replace(/-/g, '+').replace(/_/g, '/');
-                const rawData = window.atob(base64);
-                const applicationServerKey = new Uint8Array(rawData.length);
-                for (let i = 0; i < rawData.length; ++i) {
-                    applicationServerKey[i] = rawData.charCodeAt(i);
-                }
-
+                console.log('[Push] No existing subscription, creating new one...');
                 subscription = await registration.pushManager.subscribe({
                     userVisibleOnly: true,
-                    applicationServerKey
+                    applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
                 });
             }
 
-            // Serialize the subscription properly
+            // Always sync with server (re-upsert) to handle cases where
+            // the server lost the subscription or the user logged into a different account
             const subJSON = subscription.toJSON();
-
             const res = await fetch('/api/notifications/subscribe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -52,10 +59,36 @@ export default function PushNotificationManager() {
                 })
             });
 
-            if (!res.ok) {
+            if (res.ok) {
+                console.log('[Push] Subscription synced with server');
+            } else {
                 const err = await res.text();
                 console.error('[Push] Server sync failed:', res.status, err);
+
+                // If server says 404 (user not found), the subscription may be for a different account
+                // Unsubscribe and re-subscribe
+                if (res.status === 404) {
+                    console.log('[Push] Unsubscribing stale subscription...');
+                    await subscription.unsubscribe();
+                    const newSub = await registration.pushManager.subscribe({
+                        userVisibleOnly: true,
+                        applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
+                    });
+                    const newSubJSON = newSub.toJSON();
+                    await fetch('/api/notifications/subscribe', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            subscription: {
+                                endpoint: newSubJSON.endpoint,
+                                keys: { p256dh: newSubJSON.keys?.p256dh, auth: newSubJSON.keys?.auth }
+                            }
+                        })
+                    });
+                }
             }
+
+            hasSubscribed.current = true;
         } catch (error) {
             console.error('[Push] Subscribe error:', error);
         }
@@ -65,17 +98,23 @@ export default function PushNotificationManager() {
         if (!isLoaded || !user) return;
         if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
 
-        // Register SW first, then subscribe
-        navigator.serviceWorker.register('/sw.js').then(async (reg) => {
-            // Wait for the SW to be active
-            if (reg.installing) {
+        // Register or update the service worker
+        navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).then(async (reg) => {
+            // Force check for updates
+            reg.update().catch(() => {});
+
+            // Wait for the SW to be active if it's installing
+            const sw = reg.installing || reg.waiting || reg.active;
+            if (sw && sw.state !== 'activated') {
                 await new Promise<void>((resolve) => {
-                    reg.installing!.addEventListener('statechange', function handler() {
-                        if (this.state === 'activated') {
-                            this.removeEventListener('statechange', handler);
+                    sw.addEventListener('statechange', function handler() {
+                        if (sw.state === 'activated') {
+                            sw.removeEventListener('statechange', handler);
                             resolve();
                         }
                     });
+                    // Safety timeout
+                    setTimeout(resolve, 5000);
                 });
             }
 
@@ -100,10 +139,10 @@ export default function PushNotificationManager() {
         };
         window.addEventListener('app:request-push', handleManualTrigger);
 
-        // Clear badge on focus
+        // Clear native app badge on focus
         const clearBadge = () => {
             if ('clearAppBadge' in navigator) {
-                (navigator as any).clearAppBadge();
+                (navigator as any).clearAppBadge().catch(() => {});
             }
         };
         clearBadge();
@@ -111,12 +150,12 @@ export default function PushNotificationManager() {
         const handleVisibility = () => {
             if (document.visibilityState === 'visible') clearBadge();
         };
-        window.addEventListener('visibilitychange', handleVisibility);
+        document.addEventListener('visibilitychange', handleVisibility);
 
         return () => {
             window.removeEventListener('app:request-push', handleManualTrigger);
             window.removeEventListener('focus', clearBadge);
-            window.removeEventListener('visibilitychange', handleVisibility);
+            document.removeEventListener('visibilitychange', handleVisibility);
         };
     }, [user, isLoaded, subscribeAndSync]);
 

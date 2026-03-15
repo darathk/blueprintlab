@@ -63,13 +63,12 @@ export async function POST(request: Request) {
         });
 
         // Send push notifications BEFORE returning response
-        // (Vercel serverless kills the function after response is sent, so fire-and-forget doesn't work)
+        // (Vercel serverless kills the function after response is sent)
         try {
             const vapidPublic = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
             const vapidPrivate = process.env.VAPID_PRIVATE_KEY;
 
             if (vapidPublic && vapidPrivate) {
-                // Configure VAPID on every invocation (serverless may cold-start fresh)
                 webpush.setVapidDetails('mailto:darathkhon@gmail.com', vapidPublic, vapidPrivate);
 
                 const subscriptions = await prisma.pushSubscription.findMany({
@@ -95,14 +94,14 @@ export async function POST(request: Request) {
                         : mediaUrl ? (mediaType?.startsWith('video') ? 'Video' : mediaType?.startsWith('audio') ? 'Voice Message' : 'Photo') : 'New message';
 
                     const payload = JSON.stringify({
-                        title: `New Message from ${message.sender.name}`,
+                        title: `${message.sender.name}`,
                         body: notifBody,
                         url: redirectUrl
                     });
 
-                    console.log(`[Push] Sending to ${subscriptions.length} subscription(s) for receiver ${receiverId}`);
+                    console.log(`[Push] Sending to ${subscriptions.length} sub(s) for ${receiverId}`);
 
-                    await Promise.allSettled(
+                    const results = await Promise.allSettled(
                         subscriptions.map(async (sub) => {
                             try {
                                 await webpush.sendNotification(
@@ -110,25 +109,29 @@ export async function POST(request: Request) {
                                         endpoint: sub.endpoint,
                                         keys: { p256dh: sub.p256dh, auth: sub.auth }
                                     },
-                                    payload
+                                    payload,
+                                    { TTL: 60 * 60 } // 1 hour TTL
                                 );
-                                console.log(`[Push] Sent successfully to ${sub.endpoint.slice(-20)}`);
+                                console.log(`[Push] Sent to ...${sub.endpoint.slice(-20)}`);
                             } catch (pushError: any) {
-                                console.error(`[Push] Failed for ${sub.endpoint.slice(-20)}:`, pushError.statusCode, pushError.body);
-                                if (pushError.statusCode === 410 || pushError.statusCode === 404) {
+                                console.error(`[Push] Failed ...${sub.endpoint.slice(-20)}:`, pushError.statusCode, pushError.body);
+                                // Clean up expired/invalid subscriptions
+                                if (pushError.statusCode === 410 || pushError.statusCode === 404 || pushError.statusCode === 403) {
                                     await prisma.pushSubscription.delete({ where: { id: sub.id } }).catch(() => {});
+                                    console.log(`[Push] Deleted stale subscription ${sub.id}`);
                                 }
                             }
                         })
                     );
+                    console.log(`[Push] Results: ${results.filter(r => r.status === 'fulfilled').length}/${results.length} sent`);
                 } else {
-                    console.log(`[Push] No subscriptions found for receiver ${receiverId}`);
+                    console.log(`[Push] No subscriptions for receiver ${receiverId}`);
                 }
             } else {
-                console.warn('[Push] VAPID keys not configured — skipping push notifications');
+                console.warn('[Push] VAPID keys not configured');
             }
         } catch (pushErr) {
-            console.error('[Push] Error in push notification flow:', pushErr);
+            console.error('[Push] Error:', pushErr);
         }
 
         return NextResponse.json(message);

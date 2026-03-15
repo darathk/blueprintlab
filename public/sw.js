@@ -1,43 +1,69 @@
+// BlueprintLab Service Worker — Push Notifications
+
 self.addEventListener('push', function (event) {
-    if (event.data) {
-        const data = event.data.json();
-        const options = {
-            body: data.body || 'New message',
-            icon: '/icon-192x192.png',
-            badge: '/splash.png',
-            vibrate: [100, 50, 100],
-            tag: 'blueprint-message',
-            renotify: true,
-            data: {
-                url: data.url || '/'
-            }
-        };
+    let data = { title: 'BlueprintLab', body: 'New message', url: '/' };
 
-        // Set the app badge
-        if (navigator.setAppBadge) {
-            navigator.setAppBadge(1);
+    try {
+        if (event.data) {
+            data = event.data.json();
         }
-
-        event.waitUntil(
-            self.registration.showNotification(data.title, options)
-        );
+    } catch (e) {
+        // If JSON parse fails, use the text as body
+        if (event.data) {
+            data.body = event.data.text();
+        }
     }
+
+    const options = {
+        body: data.body || 'New message',
+        icon: '/icon-192x192.png',
+        badge: '/icon-192x192.png',
+        vibrate: [200, 100, 200],
+        tag: 'blueprint-msg-' + Date.now(), // Unique tag so each notification shows separately
+        renotify: true,
+        requireInteraction: true, // Keep notification visible until user interacts
+        silent: false,
+        data: {
+            url: data.url || '/',
+            timestamp: Date.now()
+        },
+        actions: [
+            { action: 'open', title: 'Open' },
+            { action: 'dismiss', title: 'Dismiss' }
+        ]
+    };
+
+    // Set app badge
+    if (self.navigator && self.navigator.setAppBadge) {
+        self.navigator.setAppBadge(1).catch(function () { });
+    }
+
+    event.waitUntil(
+        self.registration.showNotification(data.title || 'BlueprintLab', options)
+    );
 });
 
 self.addEventListener('notificationclick', function (event) {
     event.notification.close();
 
-    // Clear badge when user clicks notification
-    if (navigator.clearAppBadge) {
-        navigator.clearAppBadge();
+    // Clear badge
+    if (self.navigator && self.navigator.clearAppBadge) {
+        self.navigator.clearAppBadge().catch(function () { });
     }
 
-    const targetUrl = event.notification.data.url;
+    var targetUrl = event.notification.data && event.notification.data.url
+        ? event.notification.data.url
+        : '/';
 
-    // For PWA: try to focus an existing window instead of opening a new one
+    // Handle action buttons
+    if (event.action === 'dismiss') {
+        return; // Just close the notification
+    }
+
+    // Focus existing window or open new one
     event.waitUntil(
         clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function (clientList) {
-            // Try to find an existing window and focus it
+            // Try to find and focus an existing window
             for (var i = 0; i < clientList.length; i++) {
                 var client = clientList[i];
                 if ('focus' in client) {
@@ -54,7 +80,7 @@ self.addEventListener('notificationclick', function (event) {
     );
 });
 
-// Activate new service worker immediately (skip waiting)
+// Activate new service worker immediately
 self.addEventListener('install', function (event) {
     self.skipWaiting();
 });
