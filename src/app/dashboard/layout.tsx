@@ -95,10 +95,7 @@ export default async function DashboardLayout({
                     </div>
 
                     <div className="md:hidden flex items-center">
-                        {/* Only show UserButton in header if not in bottom nav, but user wants it in bottom nav.
-                            However, Clerk's UserButton is better left in header or represented as a custom trigger.
-                            Let's put the UserButton directly in the Bottom Nav as the "Profile" item.
-                        */}
+                        <UserButton afterSignOutUrl="/" />
                     </div>
                 </div>
             </header>
