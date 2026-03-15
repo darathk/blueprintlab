@@ -22,11 +22,11 @@ const DotsChart = dynamic(() => import('@/components/dashboard/DotsChart'), {
 async function AthleteHeader({ id }) {
     const athlete = await getAthleteById(id);
     return (
-        <div style={{ marginBottom: '2rem' }}>
+        <div style={{ marginBottom: '2rem', paddingTop: '1.5rem' }}>
             <Link href="/dashboard" style={{ color: 'var(--secondary-foreground)', fontSize: '0.9rem' }}>← Back to Command Center</Link>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
-                <h1 style={{ fontSize: '1.875rem', fontWeight: 700 }}>{athlete?.name || 'Athlete'} Analytics</h1>
-                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+            <div className="athlete-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <h1 style={{ fontSize: '1.875rem', fontWeight: 700, whiteSpace: 'nowrap' }}>{athlete?.name || 'Athlete'} Analytics</h1>
+                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
                     <Link href={`/dashboard/messages?athleteId=${id}`} className="btn btn-secondary" style={{ fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <MessageSquare size={16} /> Chat
                     </Link>
