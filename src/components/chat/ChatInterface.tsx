@@ -830,17 +830,29 @@ export default function ChatInterface({
                                                     >
                                                         <source src={`${msg.mediaUrl}#t=0.001`} />
                                                     </video>
-                                                    {/* Upload progress bar */}
+                                                    {/* Upload/processing progress overlay */}
                                                     {uploadProgress[msg.id] !== undefined && uploadProgress[msg.id] < 100 && (
-                                                        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, background: 'rgba(0,0,0,0.3)' }}>
+                                                        <>
                                                             <div style={{
-                                                                height: '100%',
-                                                                background: '#00a884',
-                                                                borderRadius: '0 2px 2px 0',
-                                                                transition: 'width 150ms ease',
-                                                                width: `${uploadProgress[msg.id]}%`
-                                                            }} />
-                                                        </div>
+                                                                position: 'absolute', bottom: 0, left: 0, right: 0,
+                                                                background: 'linear-gradient(transparent, rgba(0,0,0,0.7))',
+                                                                padding: '16px 10px 8px',
+                                                                display: 'flex', flexDirection: 'column', gap: 4
+                                                            }}>
+                                                                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)', fontWeight: 600 }}>
+                                                                    {uploadProgress[msg.id] < 5 ? 'Processing…' : `Sending ${uploadProgress[msg.id]}%`}
+                                                                </div>
+                                                                <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.2)', overflow: 'hidden' }}>
+                                                                    <div style={{
+                                                                        height: '100%',
+                                                                        background: '#00a884',
+                                                                        borderRadius: 2,
+                                                                        transition: 'width 150ms ease',
+                                                                        width: `${Math.max(uploadProgress[msg.id], 2)}%`
+                                                                    }} />
+                                                                </div>
+                                                            </div>
+                                                        </>
                                                     )}
                                                 </div>
                                             )}
@@ -851,8 +863,19 @@ export default function ChatInterface({
                                                     <img src={msg.mediaUrl} alt="" loading="lazy" onClick={() => window.open(msg.mediaUrl!, '_blank')} onLoad={() => scrollToBottom(false)}
                                                         style={{ width: '100%', maxWidth: '100%', maxHeight: 200, borderRadius: 14, display: 'block', cursor: 'pointer', objectFit: 'cover' }} />
                                                     {uploadProgress[msg.id] !== undefined && uploadProgress[msg.id] < 100 && (
-                                                        <div style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: 3, background: 'rgba(0,0,0,0.3)', borderRadius: '0 0 14px 14px', overflow: 'hidden' }}>
-                                                            <div style={{ height: '100%', background: '#00a884', transition: 'width 150ms ease', width: `${uploadProgress[msg.id]}%` }} />
+                                                        <div style={{
+                                                            position: 'absolute', bottom: 0, left: 0, right: 0,
+                                                            background: 'linear-gradient(transparent, rgba(0,0,0,0.6))',
+                                                            padding: '12px 10px 6px',
+                                                            borderRadius: '0 0 14px 14px',
+                                                            display: 'flex', flexDirection: 'column', gap: 3
+                                                        }}>
+                                                            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.8)', fontWeight: 600 }}>
+                                                                {uploadProgress[msg.id] < 5 ? 'Processing…' : `Sending ${uploadProgress[msg.id]}%`}
+                                                            </div>
+                                                            <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.2)', overflow: 'hidden' }}>
+                                                                <div style={{ height: '100%', background: '#00a884', borderRadius: 2, transition: 'width 150ms ease', width: `${Math.max(uploadProgress[msg.id], 2)}%` }} />
+                                                            </div>
                                                         </div>
                                                     )}
                                                 </div>

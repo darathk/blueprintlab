@@ -577,7 +577,6 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
                             boxShadow: '0 4px 20px rgba(0,0,0,0.5)'
                         }}
                         playsInline
-                        muted
                         autoPlay
                         onLoadedMetadata={handleLoadedMetadata}
                         onCanPlay={handleVideoReady}
