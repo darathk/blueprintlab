@@ -171,20 +171,36 @@ export const getAthleteById = cache(async (id) => {
 });
 
 export const getProgramsByAthlete = cache(async (athleteId) => {
-    return prisma.program.findMany({
-        where: { athleteId },
-        orderBy: { createdAt: 'desc' },
-        select: {
-            id: true,
-            athleteId: true,
-            name: true,
-            startDate: true,
-            endDate: true,
-            weeks: true,
-            status: true,
-            createdAt: true
-        }
-    });
+    try {
+        return await prisma.program.findMany({
+            where: { athleteId },
+            orderBy: { createdAt: 'desc' },
+            select: {
+                id: true,
+                athleteId: true,
+                name: true,
+                startDate: true,
+                endDate: true,
+                weeks: true,
+                status: true,
+                createdAt: true
+            }
+        });
+    } catch {
+        // Fallback if createdAt column doesn't exist yet (migration not run)
+        return prisma.program.findMany({
+            where: { athleteId },
+            select: {
+                id: true,
+                athleteId: true,
+                name: true,
+                startDate: true,
+                endDate: true,
+                weeks: true,
+                status: true
+            }
+        });
+    }
 });
 
 export const getLogsByAthlete = cache(async (athleteId) => {
