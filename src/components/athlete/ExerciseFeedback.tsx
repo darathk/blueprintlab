@@ -12,7 +12,7 @@ interface Props {
     weekNum: number;
     dayNum: number;
     blockName: string;
-    unit: 'kg' | 'lbs';
+    unit?: 'kg' | 'lbs';
     sets: Array<{
         setNumber: number;
         actual: { weight: string; reps: string; rpe: string };
@@ -20,7 +20,7 @@ interface Props {
 }
 
 export default function ExerciseFeedback({
-    athleteId, coachId: coachIdProp, exerciseName, weekNum, dayNum, blockName, unit, sets
+    athleteId, coachId: coachIdProp, exerciseName, weekNum, dayNum, blockName, unit = 'lbs', sets
 }: Props) {
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState('');
