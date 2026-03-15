@@ -9,13 +9,14 @@ export async function PATCH(
     try {
         const { id } = await params;
         const body = await request.json();
-        const { weightClass, gender } = body;
+        const { weightClass, gender, liftTargets } = body;
 
         await prisma.athlete.update({
             where: { id },
             data: {
                 ...(weightClass !== undefined && { weightClass: weightClass === null ? null : parseFloat(weightClass) }),
                 ...(gender !== undefined && { gender }),
+                ...(liftTargets !== undefined && { liftTargets }),
             },
         });
         return NextResponse.json({ success: true });
