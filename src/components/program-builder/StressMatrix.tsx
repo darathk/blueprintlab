@@ -4,12 +4,10 @@ import { useMemo } from 'react';
 import { calculateStress } from '@/lib/stress-index';
 import { EXERCISE_DB } from '@/lib/exercise-db';
 
-export default function StressMatrix({ weeks }) {
+export default function StressMatrix({ weeks, weekLabel }: { weeks: any[]; weekLabel?: string }) {
     const data = useMemo(() => {
         const categories = ['Knee', 'Hip', 'Horizontal Push', 'Vertical Push'];
-        const stats = {
-            'Sum': { central: 0, total: 0 },
-        };
+        const stats: Record<string, { central: number; total: number }> = {};
         categories.forEach(c => stats[c] = { central: 0, total: 0 });
 
         weeks.forEach(week => {
@@ -31,7 +29,6 @@ export default function StressMatrix({ weeks }) {
                         if (reps > 0 && rpe > 0) {
                             const { total, central } = calculateStress(reps, rpe);
 
-                            // Determine Category
                             let category = 'Misc';
                             if (ex.category) category = ex.category;
                             else if (EXERCISE_DB[ex.name]) category = EXERCISE_DB[ex.name].category;
@@ -45,8 +42,6 @@ export default function StressMatrix({ weeks }) {
                             if (stats[category]) {
                                 stats[category].total += total * multiplier;
                                 stats[category].central += central * multiplier;
-                                stats['Sum'].total += total * multiplier;
-                                stats['Sum'].central += central * multiplier;
                             }
                         }
                     };
@@ -63,15 +58,16 @@ export default function StressMatrix({ weeks }) {
         return stats;
     }, [weeks]);
 
-    // Max values for scaling
-    // We scale relative to the max category value (excluding Sum) to make the bars meaningful within the category comparison
-    const maxCentral = Math.max(...Object.entries(data).filter(([k]) => k !== 'Sum').map(([, v]) => v.central)) || 1;
-    const maxTotal = Math.max(...Object.entries(data).filter(([k]) => k !== 'Sum').map(([, v]) => v.total)) || 1;
+    // Compute totals across all categories
+    const totalStress = Object.values(data).reduce((sum, v) => sum + v.total, 0);
+    const totalCentral = Object.values(data).reduce((sum, v) => sum + v.central, 0);
 
-    // Fixed height for consistency
+    const maxCentral = Math.max(...Object.values(data).map(v => v.central)) || 1;
+    const maxTotal = Math.max(...Object.values(data).map(v => v.total)) || 1;
+
     const BAR_HEIGHT = 60;
 
-    const renderCell = (value, max, color = 'var(--foreground)') => (
+    const renderCell = (value: number, max: number, color = 'var(--foreground)') => (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-end', height: '100%', paddingBottom: '8px' }}>
             <span style={{ fontSize: '0.9rem', marginBottom: '4px', fontWeight: 600 }}>{value.toFixed(1)}</span>
             <div style={{
@@ -97,38 +93,31 @@ export default function StressMatrix({ weeks }) {
     const categories = ['Knee', 'Hip', 'Horizontal Push', 'Vertical Push'];
 
     return (
-        <div className="card" style={{ marginTop: '2rem', overflowX: 'auto', background: 'var(--card-bg)' }}>
-            <h3 style={{ fontSize: '1.2rem', marginBottom: '1.5rem', color: 'var(--primary)', borderBottom: '1px solid var(--card-border)', paddingBottom: '1rem' }}>Program Stress Matrix</h3>
+        <div className="card" style={{ overflowX: 'auto', background: 'var(--card-bg)' }}>
+            <h3 style={{ fontSize: '1rem', marginBottom: '1rem', color: 'var(--primary)', borderBottom: '1px solid var(--card-border)', paddingBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <span style={{ fontSize: '0.9rem' }}>📊</span>
+                {weekLabel ? `${weekLabel} Stress Index` : 'Stress Index'}
+            </h3>
 
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem', tableLayout: 'fixed' }}>
                 <thead>
                     <tr>
-                        <th style={{ textAlign: 'left', padding: '1rem', borderBottom: '1px solid var(--card-border)', width: '140px', color: 'var(--secondary-foreground)' }}>Type of Stress</th>
-                        <th style={{ padding: '0.5rem', borderBottom: '1px solid var(--card-border)', textAlign: 'center', fontWeight: 'bold' }}>Sum</th>
+                        <th style={{ textAlign: 'left', padding: '0.75rem', borderBottom: '1px solid var(--card-border)', width: '130px', color: 'var(--secondary-foreground)' }}>Stress</th>
                         {categories.map(cat => (
-                            <th key={cat} style={{ padding: '0.5rem', borderBottom: '1px solid var(--card-border)', textAlign: 'center', color: 'var(--secondary-foreground)' }}>{cat.replace('Horizontal ', '').replace('Vertical ', '') + (cat.includes('Push') || cat.includes('Pull') ? (cat.includes('Horizontal') ? '-H' : '-V') : '')}</th>
+                            <th key={cat} style={{ padding: '0.5rem', borderBottom: '1px solid var(--card-border)', textAlign: 'center', color: 'var(--secondary-foreground)' }}>
+                                {cat.replace('Horizontal ', '').replace('Vertical ', '') + (cat.includes('Push') || cat.includes('Pull') ? (cat.includes('Horizontal') ? '-H' : '-V') : '')}
+                            </th>
                         ))}
                     </tr>
                 </thead>
                 <tbody>
-                    {/* Central Stress */}
+                    {/* Total Stress (moved to top) */}
                     <tr>
-                        <td style={{ padding: '1rem', fontWeight: 'bold', borderBottom: '1px solid var(--card-border)' }}>CENTRAL</td>
-                        <td style={{ padding: '0.5rem', borderBottom: '1px solid var(--card-border)', textAlign: 'center' }}>
-                            {renderCell(data['Sum'].central, data['Sum'].central * 1.1)}
-                        </td>
-                        {categories.map(cat => (
-                            <td key={cat} style={{ padding: '0.5rem', borderBottom: '1px solid var(--card-border)', textAlign: 'center', verticalAlign: 'bottom' }}>
-                                {renderCell(data[cat].central, maxCentral)}
-                            </td>
-                        ))}
-                    </tr>
-
-                    {/* Total Stress */}
-                    <tr>
-                        <td style={{ padding: '1rem', fontWeight: 'bold', borderBottom: '1px solid var(--card-border)' }}>TOTAL</td>
-                        <td style={{ padding: '0.5rem', borderBottom: '1px solid var(--card-border)', textAlign: 'center' }}>
-                            {renderCell(data['Sum'].total, data['Sum'].total * 1.1)}
+                        <td style={{ padding: '0.75rem', fontWeight: 'bold', borderBottom: '1px solid var(--card-border)' }}>
+                            TOTAL
+                            <div style={{ fontSize: '0.7rem', color: 'var(--secondary-foreground)', fontWeight: 400, marginTop: '2px' }}>
+                                {totalStress.toFixed(1)}
+                            </div>
                         </td>
                         {categories.map(cat => (
                             <td key={cat} style={{ padding: '0.5rem', borderBottom: '1px solid var(--card-border)', textAlign: 'center', verticalAlign: 'bottom' }}>
@@ -137,16 +126,33 @@ export default function StressMatrix({ weeks }) {
                         ))}
                     </tr>
 
+                    {/* Central Stress */}
+                    <tr>
+                        <td style={{ padding: '0.75rem', fontWeight: 'bold', borderBottom: '1px solid var(--card-border)' }}>
+                            CENTRAL
+                            <div style={{ fontSize: '0.7rem', color: 'var(--secondary-foreground)', fontWeight: 400, marginTop: '2px' }}>
+                                {totalCentral.toFixed(1)}
+                            </div>
+                        </td>
+                        {categories.map(cat => (
+                            <td key={cat} style={{ padding: '0.5rem', borderBottom: '1px solid var(--card-border)', textAlign: 'center', verticalAlign: 'bottom' }}>
+                                {renderCell(data[cat].central, maxCentral)}
+                            </td>
+                        ))}
+                    </tr>
+
                     {/* CS Balance */}
                     <tr>
-                        <td style={{ padding: '1rem', fontWeight: 'bold' }}>CS BALANCE</td>
-                        <td style={{ padding: '1rem', textAlign: 'center', fontWeight: 'bold', fontSize: '1rem', color: 'var(--accent)' }}>
-                            {(data['Sum'].total > 0 ? (data['Sum'].central / data['Sum'].total) : 0).toFixed(2)}
+                        <td style={{ padding: '0.75rem', fontWeight: 'bold' }}>
+                            CS BALANCE
+                            <div style={{ fontSize: '0.7rem', color: 'var(--accent)', fontWeight: 600, marginTop: '2px' }}>
+                                {(totalStress > 0 ? (totalCentral / totalStress) : 0).toFixed(2)}
+                            </div>
                         </td>
                         {categories.map(cat => {
                             const val = data[cat].total > 0 ? (data[cat].central / data[cat].total) : 0;
                             return (
-                                <td key={cat} style={{ padding: '1rem', textAlign: 'center', opacity: val > 0 ? 1 : 0.3 }}>
+                                <td key={cat} style={{ padding: '0.75rem', textAlign: 'center', opacity: val > 0 ? 1 : 0.3 }}>
                                     {val.toFixed(2)}
                                 </td>
                             );

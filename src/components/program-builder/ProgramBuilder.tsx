@@ -947,6 +947,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                 <div key={week.id} style={{ marginBottom: '3rem' }}>
                                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '0.5rem' }}>
                                         <h2 style={{ fontSize: '1.5rem', color: 'var(--primary)' }}>Week {week.weekNumber}</h2>
+
                                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                                             {clipboard?.type === 'week' && (
                                                 <button
@@ -962,6 +963,9 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                             <button onClick={() => duplicateWeek(wIndex)} className="btn btn-secondary" style={{ fontSize: '0.8rem' }}>Duplicate</button>
                                             <button onClick={() => addSession(wIndex)} className="btn btn-secondary" style={{ fontSize: '0.8rem' }}>+ Session</button>
                                         </div>
+                                    </div>
+                                    <div style={{ marginBottom: '1rem' }}>
+                                        <StressMatrix weeks={[week]} weekLabel={`Week ${week.weekNumber}`} />
                                     </div>
                                     <div style={{ overflowX: 'auto', paddingBottom: '1rem', margin: '0 -1rem', padding: '0 1rem 1rem 1rem' }}>
                                         <div style={{ display: 'grid', gap: '1.5rem', minWidth: '700px' }}>
@@ -1057,9 +1061,6 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                 </button>
                             </div>
 
-                            <div style={{ marginBottom: '4rem' }}>
-                                <StressMatrix weeks={weeks} />
-                            </div>
                         </div>
                     )}
                 </div>
