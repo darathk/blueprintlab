@@ -61,7 +61,7 @@ export async function POST(request: Request) {
         // In order to satisfy the foreign key, either we need an athleteId or we leave it if we change schema.
         // Assuming we need a dummy 'Unassigned' athlete for imports if no explicit athleteId is passed.
         let defaultAthleteId = 'unassigned';
-        const existingUnassigned = await prisma.athlete.findUnique({ where: { id: defaultAthleteId } });
+        const existingUnassigned = await prisma.athlete.findUnique({ where: { id: defaultAthleteId }, select: { id: true } });
         if (!existingUnassigned) {
             await prisma.athlete.create({
                 data: { id: defaultAthleteId, name: 'Unassigned Programs', email: 'unassigned@example.com' }

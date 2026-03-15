@@ -7,7 +7,7 @@ import { prisma } from '@/lib/prisma';
 export default async function NewProgramPage() {
     const user = await currentUser();
     const email = user?.primaryEmailAddress?.emailAddress || '';
-    const coach = await prisma.athlete.findUnique({ where: { email } });
+    const coach = await prisma.athlete.findUnique({ where: { email }, select: { id: true } });
 
     const athletes = await getAthletes(coach?.id);
     const initialExercises = await getExerciseLibrary();
