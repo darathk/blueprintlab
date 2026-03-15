@@ -11,6 +11,7 @@ export default function UnreadBadge({ userId, initialCount = 0 }: { userId: stri
     const [count, setCount] = useState(initialCount);
 
     const fetchUnread = useCallback(async () => {
+        if (!userId) return;
         try {
             const res = await fetch(`/api/messages/unread?userId=${userId}`);
             if (res.ok) {
@@ -23,6 +24,7 @@ export default function UnreadBadge({ userId, initialCount = 0 }: { userId: stri
     }, [userId]);
 
     useEffect(() => {
+        if (!userId) return;
         // Initial fetch
         fetchUnread();
 
@@ -37,7 +39,7 @@ export default function UnreadBadge({ userId, initialCount = 0 }: { userId: stri
             clearInterval(interval);
             window.removeEventListener('focus', handleFocus);
         };
-    }, [fetchUnread]);
+    }, [fetchUnread, userId]);
 
     if (count <= 0) return null;
 
@@ -70,6 +72,7 @@ export function useUnreadCount(userId: string, initialCount = 0) {
     const [count, setCount] = useState(initialCount);
 
     const fetchUnread = useCallback(async () => {
+        if (!userId) return;
         try {
             const res = await fetch(`/api/messages/unread?userId=${userId}`);
             if (res.ok) {
@@ -82,6 +85,7 @@ export function useUnreadCount(userId: string, initialCount = 0) {
     }, [userId]);
 
     useEffect(() => {
+        if (!userId) return;
         fetchUnread();
         const interval = setInterval(fetchUnread, 15000);
         const handleFocus = () => fetchUnread();
@@ -90,7 +94,7 @@ export function useUnreadCount(userId: string, initialCount = 0) {
             clearInterval(interval);
             window.removeEventListener('focus', handleFocus);
         };
-    }, [fetchUnread]);
+    }, [fetchUnread, userId]);
 
     return count;
 }
