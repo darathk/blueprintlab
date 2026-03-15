@@ -772,6 +772,20 @@ export default function ChatInterface({
         setSelectedMessageIds(new Set());
     };
 
+    const scrollToMessage = useCallback((msgId: string) => {
+        const el = document.getElementById(`msg-${msgId}`);
+        if (!el) return;
+        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Flash highlight
+        el.style.transition = 'background 0.3s ease';
+        el.style.background = 'rgba(125, 135, 210, 0.25)';
+        el.style.borderRadius = '8px';
+        setTimeout(() => {
+            el.style.background = 'transparent';
+            setTimeout(() => { el.style.transition = ''; el.style.borderRadius = ''; }, 300);
+        }, 1500);
+    }, []);
+
     const handleDeleteMessage = async (msgId: string) => {
         if (!confirm('Are you sure you want to delete this message? This will also remove any attached media.')) return;
 
@@ -937,7 +951,7 @@ export default function ChatInterface({
                     const isSelected = selectedMessageIds.has(msg.id);
 
                     return (
-                        <div key={msg.id} style={{ position: 'relative' }}>
+                        <div key={msg.id} id={`msg-${msg.id}`} style={{ position: 'relative' }}>
                             {isSelected && <div style={{ position: 'absolute', inset: -4, background: 'rgba(6, 182, 212, 0.1)', zIndex: 0, borderRadius: 8, pointerEvents: 'none' }} />}
                             <div style={{ position: 'relative', zIndex: 1 }} onClick={() => isMultiSelecting && toggleSelection(msg.id)}>
                                 {dateSep && <div style={{ textAlign: 'center', margin: '16px 0 8px', fontSize: 11, color: 'rgba(255,255,255,0.3)', fontWeight: 500 }}>{fmtDate(msg.createdAt)}</div>}
@@ -985,7 +999,10 @@ export default function ChatInterface({
                                             }} />
                                             {/* Reply */}
                                             {msg.replyTo && (
-                                                <div style={{ margin: msg.mediaUrl ? '4px 8px 6px' : '0 0 6px', padding: '6px 8px', borderRadius: 10, background: 'rgba(0,0,0,0.15)', borderLeft: mine ? '2px solid rgba(255,255,255,0.7)' : '2px solid var(--primary)', fontSize: 11 }}>
+                                                <div
+                                                    onClick={(e) => { e.stopPropagation(); scrollToMessage(msg.replyTo!.id); }}
+                                                    style={{ margin: msg.mediaUrl ? '4px 8px 6px' : '0 0 6px', padding: '6px 8px', borderRadius: 10, background: 'rgba(0,0,0,0.15)', borderLeft: mine ? '2px solid rgba(255,255,255,0.7)' : '2px solid var(--primary)', fontSize: 11, cursor: 'pointer' }}
+                                                >
                                                     <div style={{ fontWeight: 600, color: mine ? '#fff' : 'var(--primary)', marginBottom: 2 }}>{msg.replyTo.sender.name}</div>
                                                     <div style={{ color: mine ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.4)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                         {msg.replyTo.mediaUrl ? (msg.replyTo.mediaType?.startsWith('image') ? 'Photo' : msg.replyTo.mediaType?.startsWith('audio') ? 'Voice' : 'Video') : msg.replyTo.content}
