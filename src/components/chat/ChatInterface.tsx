@@ -47,6 +47,7 @@ export default function ChatInterface({
     const [replyingTo, setReplyingTo] = useState<Message | null>(null);
     const [stagedFiles, setStagedFiles] = useState<File[]>([]);
     const [stagedFileUrls, setStagedFileUrls] = useState<string[]>([]);
+    const [stagedPosters, setStagedPosters] = useState<Record<number, string>>({});
     const [stagedPreviewIndex, setStagedPreviewIndex] = useState(0);
     const [activeMenu, setActiveMenu] = useState<string | null>(null);
     const [loaded, setLoaded] = useState(false);
@@ -292,6 +293,7 @@ export default function ChatInterface({
         setReplyingTo(null);
         setStagedFiles([]);
         setStagedFileUrls([]);
+        setStagedPosters({});
         if (fileRef.current) fileRef.current.value = '';
 
         // Create optimistic messages
@@ -532,11 +534,48 @@ export default function ChatInterface({
         if (validFiles.length === 0) return;
 
         // Go straight to staging (user can optionally trim videos from the staging overlay)
+        const startIndex = stagedFiles.length;
         setStagedFiles(prev => [...prev, ...validFiles]);
         setStagedFileUrls(prev => [...prev, ...validFiles.map(f => URL.createObjectURL(f))]);
 
+        // Generate poster thumbnails for videos (iOS won't show preview otherwise)
+        validFiles.forEach((f, i) => {
+            if (f.type.startsWith('video/')) {
+                generateVideoPoster(f, startIndex + i);
+            }
+        });
+
         // Reset input so selecting the same file again triggers onChange
         if (fileRef.current) fileRef.current.value = '';
+    };
+
+    const generateVideoPoster = (file: File, index: number) => {
+        const video = document.createElement('video');
+        video.muted = true;
+        video.playsInline = true;
+        video.preload = 'auto';
+        video.src = URL.createObjectURL(file);
+
+        video.onloadeddata = () => {
+            video.currentTime = 0.5;
+        };
+        video.onseeked = () => {
+            try {
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const ctx = canvas.getContext('2d');
+                if (ctx) {
+                    ctx.drawImage(video, 0, 0);
+                    const poster = canvas.toDataURL('image/jpeg', 0.7);
+                    setStagedPosters(prev => ({ ...prev, [index]: poster }));
+                }
+            } catch (e) {
+                console.error('Poster generation failed:', e);
+            }
+            URL.revokeObjectURL(video.src);
+            video.remove();
+        };
     };
 
     const handleCropComplete = (croppedFile: File) => {
@@ -547,9 +586,12 @@ export default function ChatInterface({
             URL.revokeObjectURL(stagedFileUrls[existingIndex]);
             setStagedFiles(prev => prev.map((f, i) => i === existingIndex ? croppedFile : f));
             setStagedFileUrls(prev => prev.map((url, i) => i === existingIndex ? URL.createObjectURL(croppedFile) : url));
+            generateVideoPoster(croppedFile, existingIndex);
         } else {
+            const newIndex = stagedFiles.length;
             setStagedFiles(prev => [...prev, croppedFile]);
             setStagedFileUrls(prev => [...prev, URL.createObjectURL(croppedFile)]);
+            generateVideoPoster(croppedFile, newIndex);
         }
         setCropFile(null);
     };
@@ -559,10 +601,12 @@ export default function ChatInterface({
             URL.revokeObjectURL(stagedFileUrls[index]);
             setStagedFiles(prev => prev.filter((_, i) => i !== index));
             setStagedFileUrls(prev => prev.filter((_, i) => i !== index));
+            setStagedPosters(prev => { const n = { ...prev }; delete n[index]; return n; });
         } else {
             stagedFileUrls.forEach(url => URL.revokeObjectURL(url));
             setStagedFiles([]);
             setStagedFileUrls([]);
+            setStagedPosters({});
         }
         if (fileRef.current) fileRef.current.value = '';
     };
@@ -1246,7 +1290,7 @@ export default function ChatInterface({
                         paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))',
                         color: '#fff', background: '#1f2c34'
                     }}>
-                        <button onClick={() => { setStagedFiles([]); setStagedFileUrls([]); setStagedPreviewIndex(0); }} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: 4 }}>
+                        <button onClick={() => { setStagedFiles([]); setStagedFileUrls([]); setStagedPosters({}); setStagedPreviewIndex(0); }} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: 4 }}>
                             <X size={26} />
                         </button>
                         <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
@@ -1275,11 +1319,12 @@ export default function ChatInterface({
                         {stagedFiles[stagedPreviewIndex]?.type.startsWith('video/') ? (
                             <video
                                 key={stagedFileUrls[stagedPreviewIndex]}
-                                src={`${stagedFileUrls[stagedPreviewIndex]}#t=0.001`}
+                                src={stagedFileUrls[stagedPreviewIndex]}
+                                poster={stagedPosters[stagedPreviewIndex] || undefined}
                                 controls
                                 playsInline
                                 webkit-playsinline="true"
-                                preload="metadata"
+                                preload="auto"
                                 style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}
                             />
                         ) : stagedFiles[stagedPreviewIndex]?.type.startsWith('audio/') ? (
@@ -1323,7 +1368,11 @@ export default function ChatInterface({
                                         cursor: 'pointer', flexShrink: 0, position: 'relative', transition: 'all 0.15s ease'
                                     }}>
                                         {stagedFiles[i]?.type.startsWith('video/') ? (
-                                            <video src={`${url}#t=0.001`} muted playsInline preload="metadata" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: i === stagedPreviewIndex ? 1 : 0.5 }} />
+                                            stagedPosters[i] ? (
+                                                <img src={stagedPosters[i]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: i === stagedPreviewIndex ? 1 : 0.5 }} />
+                                            ) : (
+                                                <video src={url} muted playsInline preload="auto" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: i === stagedPreviewIndex ? 1 : 0.5 }} />
+                                            )
                                         ) : stagedFiles[i]?.type.startsWith('audio/') ? (
                                             <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#2a3942', opacity: i === stagedPreviewIndex ? 1 : 0.5 }}>
                                                 <Mic size={18} color="#8696a0" />
