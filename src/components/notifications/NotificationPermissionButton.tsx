@@ -17,43 +17,81 @@ export default function NotificationPermissionButton() {
 
     const handleRequest = async () => {
         setSubscribing(true);
-        window.dispatchEvent(new CustomEvent('app:request-push'));
 
-        // Poll for permission change
-        const interval = setInterval(() => {
-            const current = Notification.permission;
-            if (current !== permission) {
-                setPermission(current);
-                clearInterval(interval);
-                setSubscribing(false);
+        try {
+            // Request permission (must be from user gesture)
+            const perm = await Notification.requestPermission();
+            setPermission(perm);
+
+            if (perm === 'granted') {
+                // Also dispatch event so PushNotificationManager picks it up
+                window.dispatchEvent(new CustomEvent('app:request-push'));
+
+                // Direct fallback: subscribe here too in case the event listener hasn't set up
+                try {
+                    const registration = await navigator.serviceWorker.ready;
+                    let subscription = await registration.pushManager.getSubscription();
+
+                    if (!subscription) {
+                        const publicVapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+                        if (publicVapidKey) {
+                            const padding = '='.repeat((4 - (publicVapidKey.length % 4)) % 4);
+                            const base64 = (publicVapidKey + padding).replace(/-/g, '+').replace(/_/g, '/');
+                            const rawData = window.atob(base64);
+                            const key = new Uint8Array(rawData.length);
+                            for (let i = 0; i < rawData.length; ++i) key[i] = rawData.charCodeAt(i);
+
+                            subscription = await registration.pushManager.subscribe({
+                                userVisibleOnly: true,
+                                applicationServerKey: key
+                            });
+                        }
+                    }
+
+                    if (subscription) {
+                        const subJSON = subscription.toJSON();
+                        await fetch('/api/notifications/subscribe', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                subscription: {
+                                    endpoint: subJSON.endpoint,
+                                    keys: { p256dh: subJSON.keys?.p256dh, auth: subJSON.keys?.auth }
+                                }
+                            })
+                        });
+                    }
+                } catch (subErr) {
+                    console.error('[Push] Button subscribe error:', subErr);
+                }
             }
-        }, 500);
-        setTimeout(() => { clearInterval(interval); setSubscribing(false); }, 10000);
+        } catch (err) {
+            console.error('[Push] Permission request failed:', err);
+        }
+
+        setSubscribing(false);
     };
 
     // Hide when not supported or already granted
     if (!isSupported || permission === 'granted') return null;
 
-    // Show "blocked" state if denied
     if (permission === 'denied') {
         return (
-            <div
-                style={{
-                    background: 'rgba(239, 68, 68, 0.1)',
-                    border: '1px solid rgba(239, 68, 68, 0.2)',
-                    color: '#ef4444',
-                    padding: '4px 8px',
-                    borderRadius: '6px',
-                    fontSize: '0.6rem',
-                    fontWeight: 700,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    marginBottom: '4px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em'
-                }}
-            >
+            <div style={{
+                background: 'rgba(239, 68, 68, 0.1)',
+                border: '1px solid rgba(239, 68, 68, 0.2)',
+                color: '#ef4444',
+                padding: '4px 8px',
+                borderRadius: '6px',
+                fontSize: '0.6rem',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                marginBottom: '4px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+            }}>
                 <BellOff size={10} />
                 Blocked in Settings
             </div>
