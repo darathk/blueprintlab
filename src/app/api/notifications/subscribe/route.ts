@@ -10,10 +10,16 @@ export async function POST(req: NextRequest) {
         const email = user.primaryEmailAddress?.emailAddress;
         if (!email) return NextResponse.json({ error: 'Email not found' }, { status: 400 });
 
+        // Find the athlete/coach record by email
         const athlete = await prisma.athlete.findUnique({
-            where: { email }
+            where: { email },
+            select: { id: true, role: true, name: true }
         });
-        if (!athlete) return NextResponse.json({ error: 'Athlete not found' }, { status: 404 });
+
+        if (!athlete) {
+            console.error(`[Push Subscribe] No athlete record found for email: ${email}`);
+            return NextResponse.json({ error: 'User not found in database' }, { status: 404 });
+        }
 
         const { subscription } = await req.json();
         if (!subscription || !subscription.endpoint || !subscription.keys) {
@@ -36,9 +42,11 @@ export async function POST(req: NextRequest) {
             }
         });
 
+        console.log(`[Push Subscribe] Saved subscription for ${athlete.name} (${athlete.role}) — ${athlete.id}`);
+
         return NextResponse.json({ success: true });
     } catch (error: any) {
-        console.error('Push Subscription Error:', error);
+        console.error('[Push Subscribe] Error:', error);
         return NextResponse.json({ error: error.message }, { status: 500 });
     }
 }

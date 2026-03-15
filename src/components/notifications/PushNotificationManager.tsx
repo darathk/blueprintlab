@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useUser } from '@clerk/nextjs';
 
 export default function PushNotificationManager() {
@@ -10,14 +10,20 @@ export default function PushNotificationManager() {
         if (!isLoaded || !user) return;
 
         // Check for Service Worker and Push API support
-        if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+            console.log('[Push] Browser does not support push notifications');
+            return;
+        }
 
-        // Register service worker immediately (this doesn't need permission)
-        navigator.serviceWorker.register('/sw.js').catch(err => {
-            console.error('SW registration failed:', err);
+        // Register service worker immediately
+        navigator.serviceWorker.register('/sw.js').then(reg => {
+            console.log('[Push] Service worker registered, scope:', reg.scope);
+        }).catch(err => {
+            console.error('[Push] SW registration failed:', err);
         });
 
-        // If permission already granted, subscribe silently (no prompt needed)
+        // If permission already granted, subscribe and sync every page load
+        // This ensures the subscription stays fresh and re-registers if it expired
         if (Notification.permission === 'granted') {
             subscribeAndSync();
         }
@@ -26,11 +32,12 @@ export default function PushNotificationManager() {
         const handleManualTrigger = async () => {
             try {
                 const permission = await Notification.requestPermission();
+                console.log('[Push] Permission result:', permission);
                 if (permission === 'granted') {
                     await subscribeAndSync();
                 }
             } catch (err) {
-                console.error('Permission request failed:', err);
+                console.error('[Push] Permission request failed:', err);
             }
         };
         window.addEventListener('app:request-push', handleManualTrigger);
@@ -58,30 +65,42 @@ export default function PushNotificationManager() {
     const subscribeAndSync = async () => {
         try {
             const registration = await navigator.serviceWorker.ready;
+            console.log('[Push] SW ready, checking subscription...');
 
             let subscription = await registration.pushManager.getSubscription();
 
             if (!subscription) {
                 const publicVapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
                 if (!publicVapidKey) {
-                    console.error('VAPID public key not found');
+                    console.error('[Push] VAPID public key not found in env');
                     return;
                 }
 
+                console.log('[Push] No existing subscription, creating new one...');
                 subscription = await registration.pushManager.subscribe({
                     userVisibleOnly: true,
                     applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
                 });
+                console.log('[Push] New subscription created');
+            } else {
+                console.log('[Push] Existing subscription found, syncing...');
             }
 
-            // Send subscription to server
-            await fetch('/api/notifications/subscribe', {
+            // Always sync subscription to server (handles re-registration, new devices, etc.)
+            const res = await fetch('/api/notifications/subscribe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ subscription })
             });
+
+            if (res.ok) {
+                console.log('[Push] Subscription synced to server successfully');
+            } else {
+                const err = await res.text();
+                console.error('[Push] Server sync failed:', res.status, err);
+            }
         } catch (error) {
-            console.error('Push subscription failed:', error);
+            console.error('[Push] Subscription failed:', error);
         }
     };
 
