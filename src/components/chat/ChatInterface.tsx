@@ -727,17 +727,14 @@ export default function ChatInterface({
             overscrollBehavior: 'none',
             borderRadius: 0,
             border: 'none',
-            position: 'relative' // Added for absolute positioning of glass elements
+            position: 'relative',
+            overflow: 'hidden'
         }}>
             {/* Header */}
             <div style={{
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                right: 0,
                 padding: '12px 16px',
                 paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))',
-                background: 'rgba(15, 23, 42, 0.75)', // Glassmorphic background
+                background: 'rgba(15, 23, 42, 0.95)',
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',
                 borderBottom: '1px solid rgba(255,255,255,0.08)',
@@ -747,7 +744,7 @@ export default function ChatInterface({
                 flexShrink: 0,
                 height: 'calc(var(--header-height) + env(safe-area-inset-top, 0px))',
                 width: '100%',
-                zIndex: 40 // Keep above messages
+                zIndex: 40
             }}>
                 {isMultiSelecting ? (
                     <>
@@ -812,7 +809,6 @@ export default function ChatInterface({
                 overflowX: 'hidden',
                 padding: '12px 16px',
                 minHeight: 0,
-                paddingTop: 'calc(var(--header-height) + 16px + env(safe-area-inset-top, 0px))',
                 paddingBottom: 0,
                 willChange: 'scroll-position',
                 transform: 'translateZ(0)',
@@ -1133,7 +1129,7 @@ export default function ChatInterface({
                         </div>
                     );
                 })}
-                <div ref={messagesEndRef} style={{ height: 'calc(80px + env(safe-area-inset-bottom, 0px))', flexShrink: 0, width: '100%' }} />
+                <div ref={messagesEndRef} style={{ height: 8, flexShrink: 0, width: '100%' }} />
             </div>
 
             {/* Reply bar */}
@@ -1167,13 +1163,9 @@ export default function ChatInterface({
 
             {/* Input */}
             <div style={{
-                position: 'absolute',
-                bottom: 0,
-                left: 0,
-                right: 0,
                 padding: '8px 12px',
                 paddingBottom: 'calc(8px + env(safe-area-inset-bottom, 4px))',
-                background: 'rgba(15, 23, 42, 0.75)', // Glassmorphism background
+                background: 'rgba(15, 23, 42, 0.95)',
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',
                 borderTop: '1px solid rgba(255,255,255,0.08)',
