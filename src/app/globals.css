@@ -433,6 +433,10 @@ a {
   flex-direction: column;
 }
 
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
 @keyframes scaleIn {
   from {
     opacity: 0;
