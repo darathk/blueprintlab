@@ -3,7 +3,7 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { calculateSimpleE1RM, calculateStress } from '@/lib/stress-index';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Search, ChevronDown } from 'lucide-react';
 import ExerciseFeedback from '@/components/athlete/ExerciseFeedback';
 
 /* ─────────── helpers ─────────── */
@@ -56,6 +56,9 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
     const [savedKeys, setSavedKeys] = useState<Set<string>>(new Set());
 
     const [unit, setUnit] = useState<'kg' | 'lbs'>('lbs');
+    const [sortOrder, setSortOrder] = useState<'latest' | 'oldest'>('latest');
+    const [searchQuery, setSearchQuery] = useState('');
+
     useEffect(() => {
         const saved = localStorage.getItem('athlete-unit-pref');
         if (saved === 'kg' || saved === 'lbs') setUnit(saved);
@@ -65,6 +68,25 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
         setUnit(u);
         localStorage.setItem('athlete-unit-pref', u);
     };
+
+    // Filter and sort programs
+    const filteredPrograms = useMemo(() => {
+        let result = [...programs];
+
+        // Search filter
+        if (searchQuery.trim()) {
+            const q = searchQuery.toLowerCase();
+            result = result.filter(p => p.name?.toLowerCase().includes(q));
+        }
+
+        // Sort — programs already come newest-first from DB
+        // If user picks oldest, reverse the order
+        if (sortOrder === 'oldest') {
+            result.reverse();
+        }
+
+        return result;
+    }, [programs, sortOrder, searchQuery]);
 
     const toDisplay = (val: any) => {
         if (val === undefined || val === null || val === '') return '';
@@ -235,41 +257,92 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 0, paddingBottom: '3rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '1rem', padding: '16px 16px 0' }}>
+            {/* Toolbar: Search + Sort + Unit toggle */}
+            <div style={{ padding: '16px 16px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {/* Search bar */}
                 <div style={{
-                    display: 'flex',
-                    background: 'var(--card-bg)',
-                    borderRadius: '10px',
-                    padding: '4px',
-                    border: '1px solid var(--card-border)',
-                    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.2)'
+                    display: 'flex', alignItems: 'center', gap: 8,
+                    background: 'var(--card-bg)', border: '1px solid var(--card-border)',
+                    borderRadius: 10, padding: '0 12px', height: 42,
                 }}>
-                    {(['kg', 'lbs'] as const).map(u => (
+                    <Search size={16} color="var(--secondary-foreground)" style={{ flexShrink: 0 }} />
+                    <input
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                        placeholder="Search blocks..."
+                        style={{
+                            flex: 1, background: 'transparent', border: 'none',
+                            color: 'var(--foreground)', fontSize: '0.85rem',
+                            outline: 'none', padding: '8px 0',
+                        }}
+                    />
+                    {searchQuery && (
                         <button
-                            key={u}
-                            onClick={() => toggleUnit(u)}
-                            style={{
-                                padding: '0.5rem 1.5rem',
-                                background: unit === u ? 'var(--primary)' : 'transparent',
-                                color: unit === u ? 'white' : 'var(--secondary-foreground)',
-                                border: 'none',
-                                cursor: 'pointer',
-                                fontSize: '0.8rem',
-                                fontWeight: 700,
-                                borderRadius: '8px',
-                                transition: 'all 0.2s',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                minWidth: '60px'
-                            }}
+                            onClick={() => setSearchQuery('')}
+                            style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', padding: 2 }}
                         >
-                            {u.toUpperCase()}
+                            ×
                         </button>
-                    ))}
+                    )}
+                </div>
+
+                {/* Sort + Unit row */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    {/* Sort filter */}
+                    <div style={{
+                        display: 'flex', background: 'var(--card-bg)', borderRadius: 10,
+                        padding: 3, border: '1px solid var(--card-border)',
+                    }}>
+                        {(['latest', 'oldest'] as const).map(s => (
+                            <button
+                                key={s}
+                                onClick={() => setSortOrder(s)}
+                                style={{
+                                    padding: '6px 14px', border: 'none', cursor: 'pointer',
+                                    fontSize: '0.75rem', fontWeight: 600, borderRadius: 8,
+                                    transition: 'all 0.2s',
+                                    background: sortOrder === s ? 'var(--primary)' : 'transparent',
+                                    color: sortOrder === s ? 'white' : 'var(--secondary-foreground)',
+                                }}
+                            >
+                                {s === 'latest' ? 'Latest' : 'Oldest'}
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Unit toggle */}
+                    <div style={{
+                        display: 'flex', background: 'var(--card-bg)', borderRadius: 10,
+                        padding: 3, border: '1px solid var(--card-border)',
+                    }}>
+                        {(['kg', 'lbs'] as const).map(u => (
+                            <button
+                                key={u}
+                                onClick={() => toggleUnit(u)}
+                                style={{
+                                    padding: '6px 14px', border: 'none', cursor: 'pointer',
+                                    fontSize: '0.75rem', fontWeight: 600, borderRadius: 8,
+                                    transition: 'all 0.2s',
+                                    background: unit === u ? 'var(--primary)' : 'transparent',
+                                    color: unit === u ? 'white' : 'var(--secondary-foreground)',
+                                    minWidth: 50,
+                                }}
+                            >
+                                {u.toUpperCase()}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
-            {programs.map(program => {
+
+            {/* No results */}
+            {filteredPrograms.length === 0 && searchQuery && (
+                <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--secondary-foreground)', fontSize: '0.85rem' }}>
+                    No blocks match "{searchQuery}"
+                </div>
+            )}
+
+            {filteredPrograms.map(program => {
                 const blockOpen = openBlocks.has(program.id);
                 const weeks: any[] = Array.isArray(program.weeks) ? program.weeks : [];
                 const totalWeeks = weeks.length;
