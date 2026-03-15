@@ -3,8 +3,72 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
-import { Mic, MoreVertical, Reply, Copy, Download, Paperclip, X, Send, Search, Scissors, Pencil } from 'lucide-react';
+import { Mic, MoreVertical, Reply, Copy, Download, Paperclip, X, Send, Search, Scissors, Pencil, Play } from 'lucide-react';
 import VideoCropper from './VideoCropper';
+
+// Lazy-loading video component for iOS reliability
+function LazyVideo({ src, onLoadedData, style }: { src: string; onLoadedData?: () => void; style?: React.CSSProperties }) {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const [isVisible, setIsVisible] = useState(false);
+    const [hasError, setHasError] = useState(false);
+
+    useEffect(() => {
+        const el = containerRef.current;
+        if (!el) return;
+        const observer = new IntersectionObserver(
+            ([entry]) => { if (entry.isIntersecting) { setIsVisible(true); observer.disconnect(); } },
+            { rootMargin: '200px' }
+        );
+        observer.observe(el);
+        return () => observer.disconnect();
+    }, []);
+
+    const handleError = useCallback(() => {
+        setHasError(true);
+    }, []);
+
+    const handleRetry = useCallback(() => {
+        setHasError(false);
+        const vid = videoRef.current;
+        if (vid) { vid.load(); }
+    }, []);
+
+    return (
+        <div ref={containerRef} style={{ minHeight: 120, background: '#000', borderRadius: 14, overflow: 'hidden', position: 'relative' }}>
+            {isVisible && !hasError ? (
+                <video
+                    ref={videoRef}
+                    controls
+                    playsInline
+                    webkit-playsinline="true"
+                    muted
+                    preload="metadata"
+                    onLoadedData={onLoadedData}
+                    onError={handleError}
+                    src={`${src}#t=0.001`}
+                    style={style}
+                />
+            ) : hasError ? (
+                <div
+                    onClick={handleRetry}
+                    style={{
+                        minHeight: 120, display: 'flex', flexDirection: 'column',
+                        alignItems: 'center', justifyContent: 'center', gap: 8,
+                        cursor: 'pointer', color: 'rgba(255,255,255,0.6)', padding: 20
+                    }}
+                >
+                    <Play size={32} />
+                    <span style={{ fontSize: 12 }}>Tap to load video</span>
+                </div>
+            ) : (
+                <div style={{ minHeight: 120, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ width: 24, height: 24, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                </div>
+            )}
+        </div>
+    );
+}
 
 interface Message {
     id: string;
@@ -892,18 +956,12 @@ export default function ChatInterface({
 
                                             {/* Video */}
                                             {msg.mediaUrl && isVid && (
-                                                <div style={{ minHeight: 120, background: '#000', borderRadius: 14, overflow: 'hidden', position: 'relative' }}>
-                                                    <video
-                                                        controls
-                                                        playsInline
-                                                        webkit-playsinline="true"
-                                                        muted
-                                                        preload="metadata"
+                                                <div style={{ position: 'relative' }}>
+                                                    <LazyVideo
+                                                        src={msg.mediaUrl}
                                                         onLoadedData={() => scrollToBottom(false)}
                                                         style={{ width: '100%', maxWidth: '100%', maxHeight: 300, display: 'block', objectFit: 'contain' }}
-                                                    >
-                                                        <source src={`${msg.mediaUrl}#t=0.001`} />
-                                                    </video>
+                                                    />
                                                     {/* Upload/processing progress overlay */}
                                                     {uploadProgress[msg.id] !== undefined && uploadProgress[msg.id] < 100 && (
                                                         <>
