@@ -94,12 +94,13 @@ export async function POST(request: Request) {
                     ? `/dashboard/messages?athleteId=${senderId}`
                     : `/athlete/${receiverId}/chat`;
 
-                // Debug logging (can be removed later)
-                console.log(`[Push Notification] Receiver: ${receiver?.email}, Role: ${receiver?.role}, AdminEmail: ${adminEmail}, isCoach: ${isReceiverCoach}, redirectUrl: ${redirectUrl}`);
+                const notifBody = content && content.trim()
+                    ? (content.length > 50 ? content.substring(0, 47) + '...' : content)
+                    : mediaUrl ? (mediaType?.startsWith('video') ? 'Video' : mediaType?.startsWith('audio') ? 'Voice Message' : 'Photo') : 'New message';
 
                 const payload = JSON.stringify({
                     title: `New Message from ${message.sender.name}`,
-                    body: content.length > 50 ? content.substring(0, 47) + '...' : content,
+                    body: notifBody,
                     url: redirectUrl
                 });
 

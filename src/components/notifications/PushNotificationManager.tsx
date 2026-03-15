@@ -5,59 +5,63 @@ import { useUser } from '@clerk/nextjs';
 
 export default function PushNotificationManager() {
     const { user, isLoaded } = useUser();
-    const [isSupported, setIsSupported] = useState(false);
 
     useEffect(() => {
         if (!isLoaded || !user) return;
 
         // Check for Service Worker and Push API support
-        if ('serviceWorker' in navigator && 'PushManager' in window) {
-            setIsSupported(true);
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) return;
 
-            // Try to auto-register (will work for SW, but permission might be blocked on iOS if not a click)
-            registerAndSubscribe(false);
+        // Register service worker immediately (this doesn't need permission)
+        navigator.serviceWorker.register('/sw.js').catch(err => {
+            console.error('SW registration failed:', err);
+        });
 
-            // Listen for manual trigger
-            const handleManualTrigger = () => registerAndSubscribe(true);
-            window.addEventListener('app:request-push', handleManualTrigger);
-
-            // Clear badge on init/focus
-            const clearBadge = () => {
-                if ('clearAppBadge' in navigator) {
-                    (navigator as any).clearAppBadge();
-                }
-            };
-
-            clearBadge();
-            window.addEventListener('focus', clearBadge);
-            window.addEventListener('visibilitychange', () => {
-                if (document.visibilityState === 'visible') clearBadge();
-            });
-
-            return () => {
-                window.removeEventListener('app:request-push', handleManualTrigger);
-                window.removeEventListener('focus', clearBadge);
-            };
+        // If permission already granted, subscribe silently (no prompt needed)
+        if (Notification.permission === 'granted') {
+            subscribeAndSync();
         }
+
+        // Listen for manual trigger from NotificationPermissionButton (user gesture)
+        const handleManualTrigger = async () => {
+            try {
+                const permission = await Notification.requestPermission();
+                if (permission === 'granted') {
+                    await subscribeAndSync();
+                }
+            } catch (err) {
+                console.error('Permission request failed:', err);
+            }
+        };
+        window.addEventListener('app:request-push', handleManualTrigger);
+
+        // Clear badge on focus/visibility
+        const clearBadge = () => {
+            if ('clearAppBadge' in navigator) {
+                (navigator as any).clearAppBadge();
+            }
+        };
+        clearBadge();
+        window.addEventListener('focus', clearBadge);
+        const handleVisibility = () => {
+            if (document.visibilityState === 'visible') clearBadge();
+        };
+        window.addEventListener('visibilitychange', handleVisibility);
+
+        return () => {
+            window.removeEventListener('app:request-push', handleManualTrigger);
+            window.removeEventListener('focus', clearBadge);
+            window.removeEventListener('visibilitychange', handleVisibility);
+        };
     }, [user, isLoaded]);
 
-    const registerAndSubscribe = async (isManual: boolean) => {
+    const subscribeAndSync = async () => {
         try {
-            // Register service worker
-            const registration = await navigator.serviceWorker.register('/sw.js');
+            const registration = await navigator.serviceWorker.ready;
 
-            // If manual or default, try to request
-            if (Notification.permission === 'default' || (isManual && Notification.permission !== 'granted')) {
-                // IMPORTANT: Notification.requestPermission() MUST be called in response to user interaction
-                const permission = await Notification.requestPermission();
-                if (permission !== 'granted') return;
-            }
-
-            // Get existing subscription
             let subscription = await registration.pushManager.getSubscription();
 
             if (!subscription) {
-                // Subscribe if not subscribed
                 const publicVapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
                 if (!publicVapidKey) {
                     console.error('VAPID public key not found');
@@ -76,9 +80,8 @@ export default function PushNotificationManager() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ subscription })
             });
-
         } catch (error) {
-            console.error('Failed to register/subscribe for push notifications:', error);
+            console.error('Push subscription failed:', error);
         }
     };
 
@@ -97,6 +100,5 @@ export default function PushNotificationManager() {
         return outputArray;
     }
 
-    // This component doesn't render anything visible
     return null;
 }

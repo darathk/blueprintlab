@@ -7,6 +7,7 @@ import TopNavigation from '@/components/dashboard/TopNavigation';
 import MobileBottomNav, { NavItem } from '@/components/navigation/MobileBottomNav';
 import { Home, MessageSquare, Hammer, Dumbbell, Calculator } from 'lucide-react';
 import { UserButton } from '@clerk/nextjs';
+import NotificationPermissionButton from '@/components/notifications/NotificationPermissionButton';
 
 // Cache the auth check so it only runs once per request lifecycle
 const getAuthState = cache(async () => {
@@ -113,6 +114,7 @@ export default async function DashboardLayout({
                     gap: '4px',
                     flex: 1
                 }}>
+                    <NotificationPermissionButton />
                     <UserButton afterSignOutUrl="/" />
                     <span style={{
                         fontSize: '0.6rem',
