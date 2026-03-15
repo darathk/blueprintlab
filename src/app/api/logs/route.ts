@@ -9,7 +9,8 @@ export async function POST(request: Request) {
 
         // Ensure program exists before logging
         const programRecord = await prisma.program.findUnique({
-            where: { id: body.programId }
+            where: { id: body.programId },
+            select: { id: true }
         });
 
         if (!programRecord) {

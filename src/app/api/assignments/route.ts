@@ -38,7 +38,7 @@ export async function POST(request: Request) {
         // Fetch fresh athlete data mapping for the frontend wrapper
         const updatedAthlete = await prisma.athlete.findUnique({
             where: { id: athleteId },
-            include: { programs: { where: { status: 'active' } } }
+            include: { programs: { where: { status: 'active' }, select: { id: true } } }
         });
 
         const frontendAthlete = {
