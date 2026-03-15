@@ -325,6 +325,18 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
     // Track selected session for "Click to Add"
     const [activeLocation, setActiveLocation] = useState({ w: 0, s: 0 });
 
+    // Collapse/expand state for weeks and sessions
+    const [collapsedWeeks, setCollapsedWeeks] = useState<Record<string, boolean>>({});
+    const [collapsedSessions, setCollapsedSessions] = useState<Record<string, boolean>>({});
+
+    const toggleWeek = (weekId: string) => {
+        setCollapsedWeeks(prev => ({ ...prev, [weekId]: !prev[weekId] }));
+    };
+
+    const toggleSession = (sessionId: string) => {
+        setCollapsedSessions(prev => ({ ...prev, [sessionId]: !prev[sessionId] }));
+    };
+
     const addWeek = () => {
         setWeeks([...weeks, {
             id: generateId(),
@@ -849,10 +861,29 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
     return (
         <div className="program-builder-layout" style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '2rem', height: 'calc(100vh - 100px)', paddingTop: '1.5rem' }}>
 
-            {/* LEFTSIDE BAR: Exercise Picker (ALWAYS VISIBLE - "Same as previously") */}
-            <div className="program-builder-sidebar" style={{ display: 'flex', flexDirection: 'column', gap: '2rem', height: '100%', overflow: 'hidden' }}>
-                <div style={{ flex: 1, overflow: 'hidden' }}>
+            {/* LEFTSIDE BAR: Exercise Picker + Stress Index */}
+            <div className="program-builder-sidebar" style={{ display: 'flex', flexDirection: 'column', gap: '0', height: '100%', overflow: 'hidden' }}>
+                <div style={{ flex: 1, overflow: 'hidden', minHeight: 0 }}>
                     <ExercisePicker initialExercises={initialExercises} onAdd={addExerciseToActiveSession} onDragStart={() => { }} />
+                </div>
+                <div style={{
+                    borderTop: '1px solid var(--card-border)',
+                    maxHeight: '40%',
+                    overflow: 'auto',
+                }}>
+                    <div style={{
+                        padding: '0.5rem',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.08em',
+                        color: 'var(--accent)',
+                        borderBottom: '1px solid var(--card-border)',
+                        background: 'rgba(255,255,255,0.03)',
+                    }}>
+                        Stress Index
+                    </div>
+                    <StressMatrix weeks={weeks} />
                 </div>
             </div>
 
@@ -945,8 +976,26 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                         <div>
                             {weeks.map((week, wIndex) => (
                                 <div key={week.id} style={{ marginBottom: '3rem' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '0.5rem' }}>
-                                        <h2 style={{ fontSize: '1.5rem', color: 'var(--primary)' }}>Week {week.weekNumber}</h2>
+                                    <div
+                                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: collapsedWeeks[week.id] ? '0' : '1rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '0.5rem', cursor: 'pointer' }}
+                                    >
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => toggleWeek(week.id)}>
+                                            <span style={{
+                                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                width: '20px', height: '20px', fontSize: '0.7rem',
+                                                border: '1px solid var(--card-border)', borderRadius: '3px',
+                                                color: 'var(--secondary-foreground)', transition: 'transform 0.2s',
+                                                transform: collapsedWeeks[week.id] ? 'rotate(-90deg)' : 'rotate(0deg)',
+                                            }}>
+                                                ▼
+                                            </span>
+                                            <h2 style={{ fontSize: '1.5rem', color: 'var(--primary)', margin: 0 }}>Week {week.weekNumber}</h2>
+                                            {collapsedWeeks[week.id] && (
+                                                <span style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', marginLeft: '0.5rem' }}>
+                                                    ({week.sessions.length} session{week.sessions.length !== 1 ? 's' : ''})
+                                                </span>
+                                            )}
+                                        </div>
 
                                         <div style={{ display: 'flex', gap: '0.5rem' }}>
                                             {clipboard?.type === 'week' && (
@@ -964,9 +1013,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                             <button onClick={() => addSession(wIndex)} className="btn btn-secondary" style={{ fontSize: '0.8rem' }}>+ Session</button>
                                         </div>
                                     </div>
-                                    <div style={{ marginBottom: '1rem' }}>
-                                        <StressMatrix weeks={[week]} weekLabel={`Week ${week.weekNumber}`} />
-                                    </div>
+                                    {!collapsedWeeks[week.id] && (
                                     <div style={{ overflowX: 'auto', paddingBottom: '1rem', margin: '0 -1rem', padding: '0 1rem 1rem 1rem' }}>
                                         <div style={{ display: 'grid', gap: '1.5rem', minWidth: '700px' }}>
                                             {week.sessions.map((session, sIndex) => (
@@ -977,7 +1024,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                                     style={{
                                                         border: (activeLocation.w === wIndex && activeLocation.s === sIndex) ? '1px solid var(--accent)' : '1px solid var(--card-border)',
                                                         transition: 'all 0.2s',
-                                                        position: 'relative' // Added for absolute positioning of ACTIVE tag
+                                                        position: 'relative'
                                                     }}
                                                 >
                                                     {/* Selection Indicator */}
@@ -991,17 +1038,37 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                                         </div>
                                                     )}
 
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1rem', alignItems: 'center', gap: '1rem' }}>
-                                                        <input
-                                                            value={session.name}
-                                                            onChange={e => {
-                                                                const newWeeks = [...weeks];
-                                                                newWeeks[wIndex].sessions[sIndex].name = e.target.value;
-                                                                setWeeks(newWeeks);
-                                                            }}
-                                                            style={{ background: 'transparent', border: 'none', color: 'var(--foreground)', fontSize: '1.1rem', fontWeight: 600, flex: 1 }}
-                                                            placeholder="Session Name"
-                                                        />
+                                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: collapsedSessions[session.id] ? '0' : '1rem', alignItems: 'center', gap: '1rem' }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
+                                                            <span
+                                                                onClick={(e) => { e.stopPropagation(); toggleSession(session.id); }}
+                                                                style={{
+                                                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                                                    width: '18px', height: '18px', fontSize: '0.6rem',
+                                                                    border: '1px solid var(--card-border)', borderRadius: '3px',
+                                                                    color: 'var(--secondary-foreground)', cursor: 'pointer',
+                                                                    transition: 'transform 0.2s', flexShrink: 0,
+                                                                    transform: collapsedSessions[session.id] ? 'rotate(-90deg)' : 'rotate(0deg)',
+                                                                }}
+                                                            >
+                                                                ▼
+                                                            </span>
+                                                            <input
+                                                                value={session.name}
+                                                                onChange={e => {
+                                                                    const newWeeks = [...weeks];
+                                                                    newWeeks[wIndex].sessions[sIndex].name = e.target.value;
+                                                                    setWeeks(newWeeks);
+                                                                }}
+                                                                style={{ background: 'transparent', border: 'none', color: 'var(--foreground)', fontSize: '1.1rem', fontWeight: 600, flex: 1 }}
+                                                                placeholder="Session Name"
+                                                            />
+                                                            {collapsedSessions[session.id] && (
+                                                                <span style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)' }}>
+                                                                    {session.exercises.length} exercise{session.exercises.length !== 1 ? 's' : ''}
+                                                                </span>
+                                                            )}
+                                                        </div>
                                                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                                             <span style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)' }}>Date:</span>
                                                             <input
@@ -1032,6 +1099,8 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                                         </div>
                                                     </div>
 
+                                                    {!collapsedSessions[session.id] && (
+                                                    <>
                                                     {session.exercises.length === 0 ? (
                                                         <div style={{ padding: '2rem', textAlign: 'center', border: '2px dashed var(--card-border)', borderRadius: '8px', color: 'var(--secondary-foreground)' }}>
                                                             Select cards to "Active" then add exercises from sidebar
@@ -1048,10 +1117,13 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                                             ))}
                                                         </div>
                                                     )}
+                                                    </>
+                                                    )}
                                                 </div>
                                             ))}
                                         </div>
                                     </div>
+                                    )}
                                 </div>
                             ))}
 
