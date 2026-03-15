@@ -4,6 +4,9 @@ import { getAthleteById, getProgramsByAthlete, getLogsByAthlete } from '@/lib/st
 import dynamic from 'next/dynamic';
 
 const ScheduleView = dynamic(() => import('@/components/athlete/ScheduleView'));
+const LeaderboardRankWidget = dynamic(
+    () => import('@/components/leaderboard/Leaderboard').then(mod => ({ default: mod.LeaderboardRankWidget }))
+);
 
 async function AsyncSchedule({ id }: { id: string }) {
     try {
@@ -46,6 +49,12 @@ export default async function AthleteDashboard({ params }) {
                 </div>
                 <Link href="/" style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)' }}>Logout</Link>
             </header>
+
+            {athlete.coachId && (
+                <Link href={`/athlete/${id}/leaderboard`} style={{ textDecoration: 'none', color: 'inherit', display: 'block', marginBottom: '1rem' }}>
+                    <LeaderboardRankWidget coachId={athlete.coachId} athleteId={id} athleteName={athlete.name} />
+                </Link>
+            )}
 
             <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--card-border)', background: 'var(--card-bg)' }}>
                 <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center', color: 'var(--secondary-foreground)' }} className="pulse">Loading schedule…</div>}>

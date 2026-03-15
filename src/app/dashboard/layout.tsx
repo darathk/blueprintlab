@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { cache } from 'react';
 import TopNavigation from '@/components/dashboard/TopNavigation';
 import MobileBottomNav, { NavItem } from '@/components/navigation/MobileBottomNav';
-import { Home, MessageSquare, Hammer, Dumbbell, Calculator } from 'lucide-react';
+import { Home, MessageSquare, Hammer, Dumbbell, Calculator, Trophy } from 'lucide-react';
 import { UserButton } from '@clerk/nextjs';
 import NotificationPermissionButton from '@/components/notifications/NotificationPermissionButton';
 
@@ -62,6 +62,7 @@ export default async function DashboardLayout({
     const coachNavItems: NavItem[] = [
         { label: 'Home', href: '/dashboard', icon: <Home size={20} /> },
         { label: 'Messages', href: '/dashboard/messages', icon: <MessageSquare size={20} />, unreadCount },
+        { label: 'Board', href: '/dashboard/leaderboard', icon: <Trophy size={20} /> },
         { label: 'Builder', href: '/dashboard/programs/new', icon: <Hammer size={20} /> },
         { label: 'Loader', href: '/dashboard/plate-loader', icon: <Dumbbell size={20} /> }
     ];

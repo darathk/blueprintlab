@@ -84,6 +84,21 @@ export default function TopNavigation({ unreadCount = 0 }: { unreadCount?: numbe
                     Program Builder
                 </Link>
                 <Link
+                    href="/dashboard/leaderboard"
+                    className="nav-link"
+                    style={{
+                        fontWeight: 600,
+                        fontSize: '0.95rem',
+                        color: isActive('/dashboard/leaderboard') ? 'var(--primary)' : 'var(--secondary-foreground)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        transition: 'color 0.2s ease',
+                        textShadow: isActive('/dashboard/leaderboard') ? '0 0 10px rgba(125, 135, 210,0.4)' : 'none'
+                    }}
+                >
+                    Leaderboard
+                </Link>
+                <Link
                     href="/dashboard/plate-loader"
                     className="nav-link"
                     style={{

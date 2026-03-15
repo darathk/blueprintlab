@@ -61,6 +61,7 @@ export default async function AthletePortalLayout({
     const athleteNavItems: NavItem[] = [
         { label: 'Dashboard', href: `/athlete/${id}/dashboard`, icon: <LayoutDashboard size={20} /> },
         { label: 'Messages', href: `/athlete/${id}/chat`, icon: <MessageSquare size={20} />, unreadCount },
+        { label: 'Board', href: `/athlete/${id}/leaderboard`, icon: <Trophy size={20} /> },
         { label: 'Loader', href: `/athlete/${id}/plate-loader`, icon: <Dumbbell size={20} /> }
     ];
 
