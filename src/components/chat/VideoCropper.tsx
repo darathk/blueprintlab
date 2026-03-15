@@ -401,7 +401,7 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
             </div>
 
             {/* Filmstrip Timeline */}
-            <div style={{ padding: '12px 24px 8px', background: '#1f2c34' }}>
+            <div style={{ padding: '12px 44px 8px', background: '#1f2c34' }}>
                 <div
                     ref={filmstripRef}
                     onClick={handleFilmstripTap}

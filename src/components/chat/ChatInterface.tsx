@@ -1214,12 +1214,13 @@ export default function ChatInterface({
                     <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', padding: 16 }}>
                         {stagedFiles[stagedPreviewIndex]?.type.startsWith('video/') ? (
                             <video
-                                src={stagedFileUrls[stagedPreviewIndex]}
+                                key={stagedFileUrls[stagedPreviewIndex]}
+                                src={`${stagedFileUrls[stagedPreviewIndex]}#t=0.001`}
                                 controls
                                 playsInline
                                 webkit-playsinline="true"
+                                preload="metadata"
                                 style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}
-                                onLoadedData={(e) => { (e.target as HTMLVideoElement).currentTime = 0.1; }}
                             />
                         ) : stagedFiles[stagedPreviewIndex]?.type.startsWith('audio/') ? (
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: 40 }}>
@@ -1262,7 +1263,7 @@ export default function ChatInterface({
                                         cursor: 'pointer', flexShrink: 0, position: 'relative', transition: 'all 0.15s ease'
                                     }}>
                                         {stagedFiles[i]?.type.startsWith('video/') ? (
-                                            <video src={url} muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: i === stagedPreviewIndex ? 1 : 0.5 }} />
+                                            <video src={`${url}#t=0.001`} muted playsInline preload="metadata" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: i === stagedPreviewIndex ? 1 : 0.5 }} />
                                         ) : stagedFiles[i]?.type.startsWith('audio/') ? (
                                             <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#2a3942', opacity: i === stagedPreviewIndex ? 1 : 0.5 }}>
                                                 <Mic size={18} color="#8696a0" />
