@@ -36,9 +36,15 @@ async function AsyncSchedule({ id }: { id: string }) {
 
 export default async function AthleteDashboard({ params }) {
     const { id } = await params;
-    const athlete = await getAthleteById(id);
+    let athlete;
+    try {
+        athlete = await getAthleteById(id);
+    } catch (e) {
+        console.error('AthleteDashboard fetch error:', e);
+        return <div style={{ padding: '2rem', textAlign: 'center' }}>Error loading profile. Please try again.</div>;
+    }
 
-    if (!athlete) return <div>Athlete not found</div>;
+    if (!athlete) return <div style={{ padding: '2rem', textAlign: 'center' }}>Athlete not found</div>;
 
     return (
         <div style={{ minHeight: '100vh', padding: '1rem', maxWidth: 600, margin: '0 auto' }}>

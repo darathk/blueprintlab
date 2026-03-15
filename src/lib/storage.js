@@ -288,39 +288,44 @@ export const getMessagesByAthlete = cache(async (athleteId) => {
         return messages.reverse();
     } catch {
         // Fallback without reactions if column doesn't exist
-        const messages = await prisma.message.findMany({
-            where: {
-                OR: [
-                    { senderId: athleteId },
-                    { receiverId: athleteId }
-                ]
-            },
-            orderBy: { createdAt: 'desc' },
-            take: 100,
-            select: {
-                id: true,
-                senderId: true,
-                receiverId: true,
-                content: true,
-                mediaUrl: true,
-                mediaType: true,
-                createdAt: true,
-                read: true,
-                replyToId: true,
-                sender: { select: { id: true, name: true, email: true } },
-                receiver: { select: { id: true, name: true, email: true } },
-                replyTo: {
-                    select: {
-                        id: true,
-                        content: true,
-                        mediaUrl: true,
-                        mediaType: true,
-                        sender: { select: { name: true } }
+        try {
+            const messages = await prisma.message.findMany({
+                where: {
+                    OR: [
+                        { senderId: athleteId },
+                        { receiverId: athleteId }
+                    ]
+                },
+                orderBy: { createdAt: 'desc' },
+                take: 100,
+                select: {
+                    id: true,
+                    senderId: true,
+                    receiverId: true,
+                    content: true,
+                    mediaUrl: true,
+                    mediaType: true,
+                    createdAt: true,
+                    read: true,
+                    replyToId: true,
+                    sender: { select: { id: true, name: true, email: true } },
+                    receiver: { select: { id: true, name: true, email: true } },
+                    replyTo: {
+                        select: {
+                            id: true,
+                            content: true,
+                            mediaUrl: true,
+                            mediaType: true,
+                            sender: { select: { name: true } }
+                        }
                     }
                 }
-            }
-        });
-        return messages.reverse();
+            });
+            return messages.reverse();
+        } catch (e2) {
+            console.error('getMessagesByAthlete fallback failed:', e2);
+            return [];
+        }
     }
 });
 

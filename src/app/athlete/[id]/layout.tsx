@@ -22,16 +22,37 @@ export default async function AthletePortalLayout({
     const { id } = await params;
 
     // Fetch athlete and unread count in parallel
-    const [requestedAthlete, unreadCount] = await Promise.all([
-        prisma.athlete.findUnique({
-            where: { id },
-            select: { id: true, name: true, email: true, role: true, meetAttempts: true }
-        }),
-        prisma.message.count({ where: { receiverId: id, read: false } })
-    ]);
+    let requestedAthlete: any = null;
+    let unreadCount = 0;
+
+    try {
+        const [athlete, unreads] = await Promise.all([
+            prisma.athlete.findUnique({
+                where: { id },
+                select: { id: true, name: true, email: true, role: true, meetAttempts: true }
+            }),
+            prisma.message.count({ where: { receiverId: id, read: false } }).catch(() => 0)
+        ]);
+        requestedAthlete = athlete;
+        unreadCount = unreads;
+    } catch (e) {
+        console.error('AthletePortalLayout data fetch error:', e);
+        // If we can't even fetch the athlete, we might be in a bad state
+    }
 
     if (!requestedAthlete) {
-        redirect('/athlete'); // Not found
+        // Double check by searching by email if ID is somehow invalid
+        requestedAthlete = await prisma.athlete.findUnique({
+            where: { email },
+            select: { id: true, name: true, email: true, role: true, meetAttempts: true }
+        }).catch(() => null);
+
+        if (!requestedAthlete) {
+            redirect('/athlete'); // Not found
+        } else if (requestedAthlete.id !== id) {
+            // Wrong ID in URL but we found the user? Redirect to right ID
+            redirect(`/athlete/${requestedAthlete.id}/dashboard`);
+        }
     }
 
     // Is the logged in user actually THIS athlete?
@@ -40,7 +61,7 @@ export default async function AthletePortalLayout({
         const loggedInUser = await prisma.athlete.findUnique({
             where: { email },
             select: { id: true, role: true }
-        });
+        }).catch(() => null);
 
         // If they are a coach, redirect to the coach dashboard
         // Coaches should NOT be in the athlete portal side of things
