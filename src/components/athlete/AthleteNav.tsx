@@ -2,12 +2,16 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useUnreadCount } from '@/components/notifications/UnreadBadge';
 
-export default function AthleteNav({ id, unreadCount }: { id: string; unreadCount: number }) {
+export default function AthleteNav({ id, unreadCount, userId }: { id: string; unreadCount: number; userId?: string }) {
     const pathname = usePathname();
     const chatPath = `/athlete/${id}/chat`;
     const isActive = pathname === chatPath;
     const leaderboardPath = `/athlete/${id}/leaderboard`;
+
+    const liveUnread = useUnreadCount(userId || id, unreadCount);
+    const displayUnread = liveUnread;
 
     return (
         <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', flexShrink: 0 }}>
@@ -62,7 +66,7 @@ export default function AthleteNav({ id, unreadCount }: { id: string; unreadCoun
             }}>
                 <span style={{ fontSize: '1.1rem' }}>💬</span>
                 <span className="hidden sm:inline">Messages</span>
-                {unreadCount > 0 && (
+                {displayUnread > 0 && (
                     <div style={{
                         position: 'absolute',
                         top: '0px',
@@ -78,7 +82,7 @@ export default function AthleteNav({ id, unreadCount }: { id: string; unreadCoun
                         lineHeight: 1,
                         boxShadow: '0 0 8px rgba(239, 68, 68, 0.4)'
                     }}>
-                        {unreadCount}
+                        {displayUnread}
                     </div>
                 )}
             </Link>
