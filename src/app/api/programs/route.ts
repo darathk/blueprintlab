@@ -12,7 +12,9 @@ export async function GET(request: Request) {
             const programs = await getProgramsByAthlete(athleteId);
             return NextResponse.json(programs);
         }
-        const programs = await prisma.program.findMany();
+        const programs = await prisma.program.findMany({
+            select: { id: true, athleteId: true, name: true, startDate: true, endDate: true, weeks: true, status: true }
+        });
         return NextResponse.json(programs);
     } catch (error) {
         console.error('API GET /programs error:', error);

@@ -160,7 +160,12 @@ export async function saveReadiness(log) {
 export const getAthleteById = cache(async (id) => {
     const athlete = await prisma.athlete.findUnique({
         where: { id },
-        include: { programs: { where: { status: 'active' } } }
+        include: {
+            programs: {
+                where: { status: 'active' },
+                select: { id: true }
+            }
+        }
     });
     if (!athlete) return null;
     const { programs, ...rest } = athlete;
