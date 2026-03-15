@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { MessageSquare, Calendar as CalendarIcon, Search, X } from 'lucide-react';
+import { MessageSquare, Calendar as CalendarIcon, Search, X, MailOpen } from 'lucide-react';
 import ChatInterface from './ChatInterface';
 import AthleteProgramPane from './AthleteProgramPane';
 
@@ -32,6 +32,28 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
     );
 
     const totalUnread = convos.reduce((s, c) => s + c.unreadCount, 0);
+
+    const markAsUnread = async (athleteId: string, e: React.MouseEvent) => {
+        e.stopPropagation();
+        try {
+            await fetch('/api/messages/mark-unread', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ senderId: athleteId, receiverId: coachId })
+            });
+            // Update local state immediately
+            setConvos(prev => prev.map(cv =>
+                cv.athleteId === athleteId ? { ...cv, unreadCount: Math.max(cv.unreadCount, 1) } : cv
+            ));
+            // If this was the selected conversation, deselect so it shows as unread
+            if (selectedId === athleteId) {
+                setSelectedId(null);
+            }
+            window.dispatchEvent(new Event('unread-refresh'));
+        } catch (err) {
+            console.error('Failed to mark as unread:', err);
+        }
+    };
 
     useEffect(() => {
         const check = () => setIsMobile(window.innerWidth < 640);
@@ -96,7 +118,14 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                 <div style={{ flex: 1, overflowY: 'auto' }}>
                     {filteredConvos.length === 0 && <div style={{ textAlign: 'center', padding: 32, fontSize: 12, color: 'var(--secondary-foreground)' }}>{searchTerm ? 'No athletes match your search' : 'No conversations'}</div>}
                     {filteredConvos.map(c => (
-                        <button key={c.athleteId} onClick={() => { setSelectedId(c.athleteId); setShowProgram(false); }}
+                        <button key={c.athleteId} onClick={() => {
+                            setSelectedId(c.athleteId);
+                            setShowProgram(false);
+                            // Immediately clear unread count in sidebar
+                            if (c.unreadCount > 0) {
+                                setConvos(prev => prev.map(cv => cv.athleteId === c.athleteId ? { ...cv, unreadCount: 0 } : cv));
+                            }
+                        }}
                             style={{
                                 display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 14px', border: 'none', cursor: 'pointer', textAlign: 'left' as const,
                                 background: selectedId === c.athleteId ? 'linear-gradient(90deg, rgba(125,135,210,0.15), transparent)' : 'transparent',
@@ -113,7 +142,25 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                             <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <span style={{ fontSize: 13, fontWeight: c.unreadCount > 0 ? 700 : 400, color: c.unreadCount > 0 ? 'var(--foreground)' : 'var(--secondary-foreground)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{c.athleteName}</span>
-                                    <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', flexShrink: 0, marginLeft: 6 }}>{c.lastMessageAt === '1970-01-01T00:00:00Z' ? '' : fmtTime(c.lastMessageAt)}</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, marginLeft: 6 }}>
+                                        {c.unreadCount === 0 && (
+                                            <button
+                                                onClick={(e) => markAsUnread(c.athleteId, e)}
+                                                title="Mark as unread"
+                                                className="mark-unread-btn"
+                                                style={{
+                                                    background: 'none', border: 'none', cursor: 'pointer', padding: 2,
+                                                    color: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center',
+                                                    borderRadius: 4, transition: 'color 0.15s',
+                                                }}
+                                                onMouseEnter={e => (e.currentTarget.style.color = 'var(--primary)')}
+                                                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.15)')}
+                                            >
+                                                <MailOpen size={12} />
+                                            </button>
+                                        )}
+                                        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>{c.lastMessageAt === '1970-01-01T00:00:00Z' ? '' : fmtTime(c.lastMessageAt)}</span>
+                                    </div>
                                 </div>
                                 <div style={{ fontSize: 11, color: c.unreadCount > 0 ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.25)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const, marginTop: 1 }}>{c.lastMessage || 'No messages yet'}</div>
                             </div>

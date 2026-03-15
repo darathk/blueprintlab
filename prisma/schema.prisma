@@ -23,6 +23,7 @@ model Athlete {
   periodization    Json?
   meetAttempts     Json?
   pastMeets        Json?
+  liftTargets      Json?     // { liftName: { timeToPeak: weeks, stressTarget: number } }
   programs         Program[]
   reports          Report[]
   readiness        Readiness[]

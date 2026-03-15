@@ -192,12 +192,68 @@ const BuilderExerciseCard = ({ exercise, onUpdate, onRemove }) => {
 
 
 
-export default function ProgramBuilder({ athleteId, initialData = null, athletes = [], initialExercises = null }: { athleteId?: string, initialData?: any, athletes?: any[], initialExercises?: any }) {
+export default function ProgramBuilder({ athleteId, initialData = null, athletes = [], initialExercises = null, athleteLiftTargets = null, athleteName = '' }: { athleteId?: string, initialData?: any, athletes?: any[], initialExercises?: any, athleteLiftTargets?: any, athleteName?: string }) {
     const router = useRouter();
     const [programName, setProgramName] = useState('');
     const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
     // State for selected athlete in assigning mode
     const [selectedAthleteId, setSelectedAthleteId] = useState(athleteId || '');
+
+    // Lift targets state (only used when building from athlete dashboard)
+    const DEFAULT_LIFTS = ['Squat', 'Bench', 'Deadlift'];
+    const [liftTargets, setLiftTargets] = useState<Record<string, { timeToPeak: string; stressTarget: string }>>(() => {
+        if (athleteLiftTargets && typeof athleteLiftTargets === 'object') {
+            return athleteLiftTargets;
+        }
+        const defaults: Record<string, { timeToPeak: string; stressTarget: string }> = {};
+        DEFAULT_LIFTS.forEach(lift => { defaults[lift] = { timeToPeak: '', stressTarget: '' }; });
+        return defaults;
+    });
+    const [liftTargetsExpanded, setLiftTargetsExpanded] = useState(true);
+    const [savingTargets, setSavingTargets] = useState(false);
+    const [targetsSaved, setTargetsSaved] = useState(false);
+
+    const updateLiftTarget = (lift: string, field: 'timeToPeak' | 'stressTarget', value: string) => {
+        setLiftTargets(prev => ({
+            ...prev,
+            [lift]: { ...prev[lift], [field]: value }
+        }));
+        setTargetsSaved(false);
+    };
+
+    const addCustomLift = () => {
+        const name = prompt('Enter lift name:');
+        if (name && name.trim() && !liftTargets[name.trim()]) {
+            setLiftTargets(prev => ({ ...prev, [name.trim()]: { timeToPeak: '', stressTarget: '' } }));
+        }
+    };
+
+    const removeCustomLift = (lift: string) => {
+        if (DEFAULT_LIFTS.includes(lift)) return;
+        setLiftTargets(prev => {
+            const next = { ...prev };
+            delete next[lift];
+            return next;
+        });
+    };
+
+    const saveLiftTargets = async () => {
+        if (!athleteId) return;
+        setSavingTargets(true);
+        try {
+            await fetch(`/api/athletes/${athleteId}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ liftTargets })
+            });
+            setTargetsSaved(true);
+            setTimeout(() => setTargetsSaved(false), 2000);
+        } catch (err) {
+            console.error('Failed to save lift targets:', err);
+        } finally {
+            setSavingTargets(false);
+        }
+    };
 
     const handleImport = (importedData: any) => {
         if (confirm('Importing will overwrite current program data. Continue?')) {
@@ -866,8 +922,152 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                 <div style={{ flex: 1, overflow: 'hidden', minHeight: 0 }}>
                     <ExercisePicker initialExercises={initialExercises} onAdd={addExerciseToActiveSession} onDragStart={() => { }} />
                 </div>
+                {/* Lift Targets Panel - only in athlete-specific program builder */}
+                {athleteId && (
+                    <div style={{
+                        overflow: 'auto',
+                        margin: '0.5rem',
+                        background: 'var(--card-bg)',
+                        border: '1px solid var(--card-border)',
+                        borderRadius: 'var(--radius)',
+                        flexShrink: 0,
+                    }}>
+                        <div
+                            onClick={() => setLiftTargetsExpanded(!liftTargetsExpanded)}
+                            style={{
+                                padding: '0.5rem 0.65rem',
+                                fontSize: '0.7rem',
+                                fontWeight: 700,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.08em',
+                                color: 'var(--primary)',
+                                borderBottom: liftTargetsExpanded ? '1px solid var(--card-border)' : 'none',
+                                background: 'rgba(6, 182, 212, 0.05)',
+                                borderRadius: liftTargetsExpanded ? 'var(--radius) var(--radius) 0 0' : 'var(--radius)',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                alignItems: 'center',
+                            }}
+                        >
+                            <span>Lift Targets{athleteName ? ` — ${athleteName}` : ''}</span>
+                            <span style={{ fontSize: '0.65rem', opacity: 0.7 }}>{liftTargetsExpanded ? '▼' : '▶'}</span>
+                        </div>
+                        {liftTargetsExpanded && (
+                            <div style={{ padding: '0.5rem' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 70px 70px 20px', gap: '4px', alignItems: 'center', marginBottom: '4px' }}>
+                                    <div style={{ fontSize: '0.6rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Lift</div>
+                                    <div style={{ fontSize: '0.6rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>Peak (wks)</div>
+                                    <div style={{ fontSize: '0.6rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>Stress</div>
+                                    <div></div>
+                                </div>
+                                {Object.entries(liftTargets).map(([lift, targets]) => (
+                                    <div key={lift} style={{ display: 'grid', gridTemplateColumns: '1fr 70px 70px 20px', gap: '4px', alignItems: 'center', marginBottom: '3px' }}>
+                                        <div style={{
+                                            fontSize: '0.75rem',
+                                            fontWeight: 600,
+                                            color: 'var(--foreground)',
+                                            padding: '4px 6px',
+                                            background: 'rgba(255,255,255,0.03)',
+                                            borderRadius: '4px',
+                                            whiteSpace: 'nowrap',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                        }}>{lift}</div>
+                                        <input
+                                            type="number"
+                                            min="1"
+                                            max="52"
+                                            placeholder="—"
+                                            value={targets.timeToPeak}
+                                            onChange={e => updateLiftTarget(lift, 'timeToPeak', e.target.value)}
+                                            style={{
+                                                background: 'rgba(15, 23, 42, 0.6)',
+                                                border: '1px solid var(--card-border)',
+                                                borderRadius: '4px',
+                                                color: 'var(--foreground)',
+                                                fontSize: '0.75rem',
+                                                padding: '4px 6px',
+                                                textAlign: 'center',
+                                                width: '100%',
+                                            }}
+                                        />
+                                        <input
+                                            type="number"
+                                            min="0"
+                                            step="0.1"
+                                            placeholder="—"
+                                            value={targets.stressTarget}
+                                            onChange={e => updateLiftTarget(lift, 'stressTarget', e.target.value)}
+                                            style={{
+                                                background: 'rgba(15, 23, 42, 0.6)',
+                                                border: '1px solid var(--card-border)',
+                                                borderRadius: '4px',
+                                                color: 'var(--foreground)',
+                                                fontSize: '0.75rem',
+                                                padding: '4px 6px',
+                                                textAlign: 'center',
+                                                width: '100%',
+                                            }}
+                                        />
+                                        <button
+                                            onClick={() => removeCustomLift(lift)}
+                                            style={{
+                                                background: 'none',
+                                                border: 'none',
+                                                color: DEFAULT_LIFTS.includes(lift) ? 'transparent' : 'var(--secondary-foreground)',
+                                                cursor: DEFAULT_LIFTS.includes(lift) ? 'default' : 'pointer',
+                                                fontSize: '0.7rem',
+                                                padding: 0,
+                                                pointerEvents: DEFAULT_LIFTS.includes(lift) ? 'none' : 'auto',
+                                            }}
+                                        >
+                                            ×
+                                        </button>
+                                    </div>
+                                ))}
+                                <div style={{ display: 'flex', gap: '4px', marginTop: '6px' }}>
+                                    <button
+                                        onClick={addCustomLift}
+                                        style={{
+                                            flex: 1,
+                                            background: 'rgba(255,255,255,0.05)',
+                                            border: '1px dashed var(--card-border)',
+                                            borderRadius: '4px',
+                                            color: 'var(--secondary-foreground)',
+                                            cursor: 'pointer',
+                                            fontSize: '0.65rem',
+                                            padding: '4px 8px',
+                                            fontWeight: 600,
+                                        }}
+                                    >
+                                        + Add Lift
+                                    </button>
+                                    <button
+                                        onClick={saveLiftTargets}
+                                        disabled={savingTargets}
+                                        style={{
+                                            flex: 1,
+                                            background: targetsSaved ? 'rgba(34, 197, 94, 0.2)' : 'rgba(6, 182, 212, 0.15)',
+                                            border: `1px solid ${targetsSaved ? 'rgba(34, 197, 94, 0.4)' : 'rgba(6, 182, 212, 0.3)'}`,
+                                            borderRadius: '4px',
+                                            color: targetsSaved ? '#22c55e' : 'var(--primary)',
+                                            cursor: 'pointer',
+                                            fontSize: '0.65rem',
+                                            padding: '4px 8px',
+                                            fontWeight: 600,
+                                        }}
+                                    >
+                                        {savingTargets ? 'Saving...' : targetsSaved ? 'Saved!' : 'Save Targets'}
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                )}
+
                 <div style={{
-                    maxHeight: '45%',
+                    maxHeight: athleteId ? '35%' : '45%',
                     overflow: 'auto',
                     margin: '0.5rem',
                     background: 'var(--card-bg)',

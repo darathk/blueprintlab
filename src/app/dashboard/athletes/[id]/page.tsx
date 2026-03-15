@@ -102,7 +102,7 @@ export default async function AthleteAnalyticsPage({ params }) {
                 <AthleteHeader id={id} />
             </Suspense>
 
-            <CollapsibleSection title="DOTs Score Progress" defaultOpen={true}>
+            <CollapsibleSection title="Athlete's Progress" defaultOpen={true}>
                 <Suspense fallback={<Loader />}>
                     <AsyncDotsChart id={id} />
                 </Suspense>

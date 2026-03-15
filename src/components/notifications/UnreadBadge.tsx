@@ -90,9 +90,15 @@ export function useUnreadCount(userId: string, initialCount = 0) {
         const interval = setInterval(fetchUnread, 15000);
         const handleFocus = () => fetchUnread();
         window.addEventListener('focus', handleFocus);
+
+        // Listen for custom event to immediately refresh unread count
+        const handleRefresh = () => fetchUnread();
+        window.addEventListener('unread-refresh', handleRefresh);
+
         return () => {
             clearInterval(interval);
             window.removeEventListener('focus', handleFocus);
+            window.removeEventListener('unread-refresh', handleRefresh);
         };
     }, [fetchUnread, userId]);
 
