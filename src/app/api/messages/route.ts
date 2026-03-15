@@ -214,7 +214,13 @@ export async function DELETE(request: Request) {
             }
         }
 
-        // 3. Delete from DB
+        // 3. Nullify any replies pointing to this message so FK doesn't block deletion
+        await prisma.message.updateMany({
+            where: { replyToId: id },
+            data: { replyToId: null }
+        });
+
+        // 4. Delete from DB
         await prisma.message.delete({ where: { id } });
 
         return NextResponse.json({ success: true });
