@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
-import { Mic, MoreVertical, Reply, Copy, Download, Paperclip, X, Send, Search, Scissors, Pencil, Play } from 'lucide-react';
+import { Mic, MoreVertical, Reply, Copy, Download, Paperclip, X, Send, Search, Scissors, Pencil, Play, Maximize } from 'lucide-react';
 import VideoCropper from './VideoCropper';
 
 // Lazy-loading video component for iOS reliability
@@ -34,21 +34,60 @@ function LazyVideo({ src, onLoadedData, style }: { src: string; onLoadedData?: (
         if (vid) { vid.load(); }
     }, []);
 
+    const handleFullscreen = useCallback(() => {
+        const vid = videoRef.current;
+        if (!vid) return;
+        if (vid.requestFullscreen) {
+            vid.requestFullscreen();
+        } else if ((vid as any).webkitEnterFullscreen) {
+            // iOS Safari uses webkitEnterFullscreen on the video element
+            (vid as any).webkitEnterFullscreen();
+        } else if ((vid as any).webkitRequestFullscreen) {
+            (vid as any).webkitRequestFullscreen();
+        }
+    }, []);
+
     return (
         <div ref={containerRef} style={{ minHeight: 120, background: '#000', borderRadius: 14, overflow: 'hidden', position: 'relative' }}>
             {isVisible && !hasError ? (
-                <video
-                    ref={videoRef}
-                    controls
-                    playsInline
-                    webkit-playsinline="true"
-                    muted
-                    preload="metadata"
-                    onLoadedData={onLoadedData}
-                    onError={handleError}
-                    src={`${src}#t=0.001`}
-                    style={style}
-                />
+                <>
+                    <video
+                        ref={videoRef}
+                        controls
+                        playsInline
+                        webkit-playsinline="true"
+                        muted
+                        preload="metadata"
+                        onLoadedData={onLoadedData}
+                        onError={handleError}
+                        src={`${src}#t=0.001`}
+                        style={style}
+                    />
+                    <button
+                        onClick={handleFullscreen}
+                        style={{
+                            position: 'absolute',
+                            bottom: 8,
+                            right: 8,
+                            width: 32,
+                            height: 32,
+                            borderRadius: 6,
+                            background: 'rgba(0, 0, 0, 0.6)',
+                            border: '1px solid rgba(255,255,255,0.2)',
+                            color: '#fff',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            zIndex: 5,
+                            backdropFilter: 'blur(4px)',
+                            WebkitBackdropFilter: 'blur(4px)',
+                        }}
+                        title="Fullscreen"
+                    >
+                        <Maximize size={16} />
+                    </button>
+                </>
             ) : hasError ? (
                 <div
                     onClick={handleRetry}
