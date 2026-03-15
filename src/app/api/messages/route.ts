@@ -3,14 +3,6 @@ import { prisma } from '@/lib/prisma';
 import { supabase } from '@/lib/supabase';
 import webpush from 'web-push';
 
-if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
-    webpush.setVapidDetails(
-        'mailto:darathkhon@gmail.com',
-        process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY,
-        process.env.VAPID_PRIVATE_KEY
-    );
-}
-
 export const dynamic = 'force-dynamic';
 
 // GET /api/messages?athleteId=X — fetch conversation messages (last 100)
@@ -73,7 +65,13 @@ export async function POST(request: Request) {
         // Send push notifications BEFORE returning response
         // (Vercel serverless kills the function after response is sent, so fire-and-forget doesn't work)
         try {
-            if (process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY) {
+            const vapidPublic = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
+            const vapidPrivate = process.env.VAPID_PRIVATE_KEY;
+
+            if (vapidPublic && vapidPrivate) {
+                // Configure VAPID on every invocation (serverless may cold-start fresh)
+                webpush.setVapidDetails('mailto:darathkhon@gmail.com', vapidPublic, vapidPrivate);
+
                 const subscriptions = await prisma.pushSubscription.findMany({
                     where: { athleteId: receiverId }
                 });

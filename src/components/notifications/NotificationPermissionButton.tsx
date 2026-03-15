@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Bell, BellOff, Check } from 'lucide-react';
+import { Bell, BellOff } from 'lucide-react';
 
 export default function NotificationPermissionButton() {
     const [permission, setPermission] = useState<NotificationPermission>('default');
@@ -31,33 +31,10 @@ export default function NotificationPermissionButton() {
         setTimeout(() => { clearInterval(interval); setSubscribing(false); }, 10000);
     };
 
-    if (!isSupported) return null;
+    // Hide when not supported or already granted
+    if (!isSupported || permission === 'granted') return null;
 
-    if (permission === 'granted') {
-        return (
-            <div
-                style={{
-                    background: 'rgba(0, 168, 132, 0.15)',
-                    border: '1px solid rgba(0, 168, 132, 0.3)',
-                    color: '#00a884',
-                    padding: '4px 8px',
-                    borderRadius: '6px',
-                    fontSize: '0.6rem',
-                    fontWeight: 700,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    marginBottom: '4px',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.05em'
-                }}
-            >
-                <Check size={10} />
-                Notifications On
-            </div>
-        );
-    }
-
+    // Show "blocked" state if denied
     if (permission === 'denied') {
         return (
             <div
