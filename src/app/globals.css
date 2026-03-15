@@ -401,7 +401,7 @@ a {
     border-radius: 0 !important;
   }
 
-  /* Hide the global header and bottom nav entirely when chat is open */
+  /* Hide the global header and nav entirely when chat is open */
   body:has(.chat-full-screen) .athlete-portal-header,
   body:has(.chat-full-screen) .dashboard-header,
   body:has(.chat-full-screen) .mobile-bottom-nav {

@@ -100,7 +100,7 @@ export default async function DashboardLayout({
                 </div>
             </header>
 
-            <main className="dashboard-main has-mobile-nav" style={{ flex: 1, position: 'relative' }}>
+            <main className="dashboard-main" style={{ flex: 1, position: 'relative' }}>
                 <div className="container">
                     {children}
                 </div>
