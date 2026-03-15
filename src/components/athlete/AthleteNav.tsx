@@ -7,9 +7,27 @@ export default function AthleteNav({ id, unreadCount }: { id: string; unreadCoun
     const pathname = usePathname();
     const chatPath = `/athlete/${id}/chat`;
     const isActive = pathname === chatPath;
+    const leaderboardPath = `/athlete/${id}/leaderboard`;
 
     return (
         <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', flexShrink: 0 }}>
+            <Link href={leaderboardPath} style={{
+                fontSize: '0.9rem',
+                fontWeight: 600,
+                color: pathname === leaderboardPath ? 'var(--primary)' : 'var(--secondary-foreground)',
+                textDecoration: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.5rem 1rem',
+                borderRadius: '12px',
+                border: '1px solid transparent',
+                background: pathname === leaderboardPath ? 'rgba(125, 135, 210, 0.1)' : 'transparent',
+                transition: 'all 0.2s',
+            }}>
+                <span style={{ fontSize: '1.1rem' }}>🏆</span>
+                <span className="hidden sm:inline">Leaderboard</span>
+            </Link>
             <Link href={`/athlete/${id}/plate-loader`} style={{
                 fontSize: '0.9rem',
                 fontWeight: 600,
