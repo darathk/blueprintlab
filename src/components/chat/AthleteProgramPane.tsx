@@ -49,7 +49,7 @@ export default function AthleteProgramPane({ athleteId, coachId, onClose }: Prop
     }, [athleteId]);
 
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'rgba(15, 23, 42, 0.75)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', height: '100%', background: 'rgba(15, 23, 42, 0.97)' }}>
             <div style={{
                 padding: '12px 16px',
                 paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))',
