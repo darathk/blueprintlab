@@ -33,6 +33,18 @@ export default async function WorkoutPage({ params }) {
         l.sessionId === sessionId
     );
 
+    // Pass all sessions in this week for the week overview drawer
+    const weekSessions = week?.sessions || [];
+
+    // Determine the week start date for display
+    const programStart = program.startDate ? new Date(program.startDate) : null;
+    let weekStartDate = '';
+    if (programStart) {
+        const start = new Date(programStart);
+        start.setDate(start.getDate() + (weekNum - 1) * 7);
+        weekStartDate = start.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' });
+    }
+
     return (
         <div style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
             <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>{session.name}</h1>
@@ -50,6 +62,9 @@ export default async function WorkoutPage({ params }) {
                 blockName={program.name}
                 exercises={session.exercises}
                 initialLog={existingLog}
+                weekSessions={weekSessions}
+                weekStartDate={weekStartDate}
+                programName={program.name}
             />
         </div>
     );

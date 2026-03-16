@@ -7,10 +7,57 @@ import { getExerciseCategory } from '@/lib/exercise-db';
 import Link from 'next/link';
 import ExerciseFeedback from '@/components/athlete/ExerciseFeedback';
 
-export default function WorkoutLogger({ athleteId, coachId = '', programId, sessionId, weekNum = 1, dayNum = 1, blockName = 'Block', exercises, initialLog }) {
+// Category-based colors for exercise names
+const CATEGORY_COLORS = {
+    'Knee': '#EAB308',              // Yellow/Gold - squats
+    'Hip': '#EF4444',               // Red/Coral - deadlifts
+    'Horizontal Push': '#22C55E',   // Green - bench press
+    'Vertical Push': '#F59E0B',     // Amber - overhead press
+    'Horizontal Pull': '#06B6D4',   // Cyan - rows
+    'Vertical Pull': '#3B82F6',     // Blue - pull-ups
+    'Isolation (Upper)': '#A78BFA', // Purple - upper isolation
+    'Isolation (Lower)': '#F472B6', // Pink - lower isolation
+    'Isolation/Accessory': '#8B5CF6' // Violet - general isolation
+};
+
+const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+function formatSetsSummary(sets) {
+    if (!Array.isArray(sets) || sets.length === 0) return '';
+    const parts = [];
+    let i = 0;
+    while (i < sets.length) {
+        const s = sets[i];
+        const reps = s.reps || '';
+        const rpe = s.rpe || '';
+        const weight = s.weight || '';
+        // Count consecutive identical sets
+        let count = 1;
+        while (i + count < sets.length) {
+            const next = sets[i + count];
+            if (String(next.reps) === String(reps) && String(next.rpe) === String(rpe) && String(next.weight) === String(weight)) {
+                count++;
+            } else break;
+        }
+        let part = '';
+        if (count > 1) {
+            part = `${count}x${reps}`;
+        } else {
+            part = `x${reps}`;
+        }
+        if (rpe) part += ` @${rpe}`;
+        if (weight && String(weight).includes('%')) part += ` @${weight}`;
+        parts.push(part);
+        i += count;
+    }
+    return parts.join(', ');
+}
+
+export default function WorkoutLogger({ athleteId, coachId = '', programId, sessionId, weekNum = 1, dayNum = 1, blockName = 'Block', exercises, initialLog, weekSessions = [], weekStartDate = '', programName = '' }) {
     const router = useRouter();
     const [isSaving, setIsSaving] = useState(false);
     const [lastSaved, setLastSaved] = useState(Date.now());
+    const [weekDrawerOpen, setWeekDrawerOpen] = useState(false);
 
     // Initialize logs
     const [exerciseLogs, setExerciseLogs] = useState(() => {
@@ -481,7 +528,173 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                 </div>
             </div>
 
-            {/* Footer Buttons */}
+            {/* Week Overview Drawer Backdrop */}
+            {weekDrawerOpen && (
+                <div
+                    onClick={() => setWeekDrawerOpen(false)}
+                    style={{
+                        position: 'fixed',
+                        inset: 0,
+                        background: 'rgba(0, 0, 0, 0.6)',
+                        zIndex: 200,
+                        transition: 'opacity 0.3s ease'
+                    }}
+                />
+            )}
+
+            {/* Week Overview Drawer */}
+            <div style={{
+                position: 'fixed',
+                bottom: 0,
+                left: 0,
+                right: 0,
+                zIndex: 201,
+                transform: weekDrawerOpen ? 'translateY(0)' : 'translateY(100%)',
+                transition: 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+                maxHeight: '85vh',
+                overflowY: 'auto',
+                background: 'var(--background)',
+                borderTop: '2px solid var(--primary)',
+                borderRadius: '16px 16px 0 0',
+                padding: '0 0 2rem 0'
+            }}>
+                {/* Drawer Handle */}
+                <div
+                    onClick={() => setWeekDrawerOpen(false)}
+                    style={{
+                        display: 'flex',
+                        justifyContent: 'center',
+                        padding: '12px 0 8px 0',
+                        cursor: 'pointer'
+                    }}
+                >
+                    <div style={{
+                        width: 40,
+                        height: 4,
+                        borderRadius: 2,
+                        background: 'var(--card-border)'
+                    }} />
+                </div>
+
+                {/* Drawer Header */}
+                <div style={{
+                    textAlign: 'center',
+                    padding: '0 1rem 1rem 1rem',
+                    borderBottom: '1px solid var(--card-border)'
+                }}>
+                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}>
+                        <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--foreground)', margin: 0 }}>
+                            Training Program
+                        </h2>
+                        <span style={{ fontSize: '1.1rem', opacity: 0.6 }}>&#128197;</span>
+                    </div>
+                    <p style={{ fontSize: '0.9rem', color: 'var(--secondary-foreground)', margin: '4px 0 0 0' }}>
+                        {weekStartDate ? `Week of ${weekStartDate}` : `Week ${weekNum}`}
+                    </p>
+                </div>
+
+                {/* Sessions by Day */}
+                <div style={{ padding: '1rem' }}>
+                    {weekSessions
+                        .sort((a, b) => a.day - b.day)
+                        .map((sess) => {
+                            const dayName = sess.name || DAY_NAMES[(sess.day - 1) % 7] || `Day ${sess.day}`;
+                            const isCurrentSession = sess.day === dayNum;
+
+                            return (
+                                <div key={sess.day} style={{ marginBottom: '1.25rem' }}>
+                                    {/* Day Label */}
+                                    <div style={{
+                                        fontSize: '0.75rem',
+                                        fontWeight: 700,
+                                        letterSpacing: '0.05em',
+                                        textTransform: 'uppercase',
+                                        color: isCurrentSession ? 'var(--primary)' : 'var(--secondary-foreground)',
+                                        marginBottom: '0.5rem',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.5rem'
+                                    }}>
+                                        {dayName}
+                                        {isCurrentSession && (
+                                            <span style={{
+                                                fontSize: '0.65rem',
+                                                background: 'rgba(6, 182, 212, 0.15)',
+                                                color: 'var(--primary)',
+                                                padding: '2px 8px',
+                                                borderRadius: '9999px',
+                                                fontWeight: 600,
+                                                textTransform: 'none'
+                                            }}>Current</span>
+                                        )}
+                                    </div>
+
+                                    {/* Exercise Cards */}
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                        {(sess.exercises || []).map((ex, exIdx) => {
+                                            const category = getExerciseCategory(ex.name);
+                                            const color = CATEGORY_COLORS[category] || '#94A3B8';
+                                            const setsSummary = formatSetsSummary(ex.sets);
+                                            const targetSessionId = `${programId}_w${weekNum}_d${sess.day}`;
+
+                                            return (
+                                                <div
+                                                    key={ex.id || exIdx}
+                                                    onClick={() => {
+                                                        if (!isCurrentSession) {
+                                                            setWeekDrawerOpen(false);
+                                                            router.push(`/athlete/${athleteId}/workout/${targetSessionId}`);
+                                                        }
+                                                    }}
+                                                    style={{
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        alignItems: 'center',
+                                                        padding: '0.75rem 1rem',
+                                                        background: 'var(--card-bg)',
+                                                        border: `1px solid ${color}30`,
+                                                        borderRadius: '8px',
+                                                        cursor: isCurrentSession ? 'default' : 'pointer',
+                                                        transition: 'background 0.15s ease'
+                                                    }}
+                                                >
+                                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                                        <div style={{
+                                                            fontSize: '0.95rem',
+                                                            fontWeight: 600,
+                                                            color: color,
+                                                            marginBottom: '2px'
+                                                        }}>
+                                                            {ex.name}
+                                                        </div>
+                                                        <div style={{
+                                                            fontSize: '0.8rem',
+                                                            color: 'var(--secondary-foreground)',
+                                                            opacity: 0.8
+                                                        }}>
+                                                            {setsSummary}
+                                                        </div>
+                                                    </div>
+                                                    {!isCurrentSession && (
+                                                        <span style={{
+                                                            color: color,
+                                                            fontSize: '1.2rem',
+                                                            fontWeight: 700,
+                                                            marginLeft: '0.75rem',
+                                                            opacity: 0.7
+                                                        }}>+</span>
+                                                    )}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                </div>
+            </div>
+
+            {/* Footer with Finish Button + Week Overview Toggle */}
             <div style={{
                 position: 'fixed',
                 bottom: 0,
@@ -490,7 +703,11 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                 background: 'var(--background)',
                 borderTop: '1px solid #cbd5e1',
                 padding: '1rem',
-                zIndex: 100
+                zIndex: 100,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                gap: '0.5rem'
             }}>
                 <button
                     onClick={() => router.push(`/athlete/${athleteId}/dashboard`)}
@@ -508,6 +725,32 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                 >
                     Finish Session
                 </button>
+
+                {/* Week Overview Toggle Button */}
+                {weekSessions.length > 0 && (
+                    <button
+                        onClick={() => setWeekDrawerOpen(true)}
+                        style={{
+                            background: '#3B82F6',
+                            color: 'white',
+                            border: 'none',
+                            width: '56px',
+                            height: '36px',
+                            borderRadius: '12px',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontSize: '1.2rem',
+                            boxShadow: '0 2px 8px rgba(59, 130, 246, 0.4)',
+                            transition: 'transform 0.15s ease'
+                        }}
+                    >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                            <polyline points="18 15 12 9 6 15" />
+                        </svg>
+                    </button>
+                )}
             </div>
         </div>
     );
