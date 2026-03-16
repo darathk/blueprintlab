@@ -186,6 +186,7 @@ export default function ChatInterface({
 
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const fileRef = useRef<HTMLInputElement>(null);
+    const inputRef = useRef<HTMLTextAreaElement>(null);
 
     // Initial fetch — once
     useEffect(() => {
@@ -316,6 +317,7 @@ export default function ChatInterface({
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioChunksRef = useRef<Blob[]>([]);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const longPressRef = useRef<NodeJS.Timeout | null>(null);
 
     const formatRecordingTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
@@ -1021,6 +1023,13 @@ export default function ChatInterface({
 
                                     <div style={{ position: 'relative', maxWidth: '75%', cursor: isMultiSelecting ? 'pointer' : 'default' }}>
                                         <div
+                                            onTouchStart={() => {
+                                                longPressRef.current = setTimeout(() => {
+                                                    setActiveMenu(activeMenu === msg.id ? null : msg.id);
+                                                }, 500);
+                                            }}
+                                            onTouchEnd={() => { if (longPressRef.current) { clearTimeout(longPressRef.current); longPressRef.current = null; } }}
+                                            onTouchMove={() => { if (longPressRef.current) { clearTimeout(longPressRef.current); longPressRef.current = null; } }}
                                             onClick={(e) => {
                                                 if (isMultiSelecting) { e.stopPropagation(); toggleSelection(msg.id); }
                                             }}
@@ -1263,7 +1272,7 @@ export default function ChatInterface({
                                                         ))}
                                                     </div>
 
-                                                    <button onClick={() => { setReplyingTo(msg); setActiveMenu(null); }}
+                                                    <button onClick={() => { setReplyingTo(msg); setActiveMenu(null); setTimeout(() => inputRef.current?.focus(), 50); }}
                                                         style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: '#e9edef', cursor: 'pointer' }}><Reply size={16} color="#8696a0" /> Reply</button>
                                                     {mine && msg.content && !msg.mediaUrl && (
                                                         <button onClick={() => { setEditingMessageId(msg.id); setEditText(msg.content); setActiveMenu(null); }}
@@ -1380,7 +1389,7 @@ export default function ChatInterface({
                             minHeight: 48,
                             boxShadow: '0 1px 1px rgba(0,0,0,0.2)'
                         }}>
-                            <textarea value={newMessage} onChange={e => setNewMessage(e.target.value)}
+                            <textarea ref={inputRef} value={newMessage} onChange={e => setNewMessage(e.target.value)}
                                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
                                 placeholder="Type a message"
                                 rows={1}
