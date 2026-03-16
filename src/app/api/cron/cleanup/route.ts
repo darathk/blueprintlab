@@ -8,7 +8,8 @@ function extractStoragePath(publicUrl: string): string | null {
     const marker = '/storage/v1/object/public/lift-videos/';
     const idx = publicUrl.indexOf(marker);
     if (idx === -1) return null;
-    return publicUrl.substring(idx + marker.length);
+    // Strip media fragment URI (#t=...) if present
+    return publicUrl.substring(idx + marker.length).split('#')[0];
 }
 
 export async function GET(request: Request) {

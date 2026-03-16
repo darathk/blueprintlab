@@ -247,7 +247,8 @@ export async function DELETE(request: Request) {
                 // URL looks like: https://.../storage/v1/object/public/lift-videos/ATHLETE_ID/FILENAME
                 const urlParts = msg.mediaUrl.split('/lift-videos/');
                 if (urlParts.length > 1) {
-                    const filePath = urlParts[1];
+                    // Strip media fragment URI (#t=...) if present
+                    const filePath = urlParts[1].split('#')[0];
                     const { error } = await supabase.storage.from('lift-videos').remove([filePath]);
                     if (error) console.error('Supabase media deletion error:', error);
                 }

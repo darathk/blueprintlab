@@ -39,6 +39,7 @@ export default function ExerciseFeedback({
 
     // Video cropper
     const [cropFile, setCropFile] = useState<File | null>(null);
+    const [stagedTrimData, setStagedTrimData] = useState<Record<number, { start: number; end: number }>>({});
 
     const fileRef = useRef<HTMLInputElement>(null);
 
@@ -158,6 +159,7 @@ export default function ExerciseFeedback({
             setStagedFiles(prev => prev.filter((_, i) => i !== index));
             setStagedFileUrls(prev => prev.filter((_, i) => i !== index));
             setStagedPosters(prev => { const n = { ...prev }; delete n[index]; return n; });
+            setStagedTrimData(prev => { const n = { ...prev }; delete n[index]; return n; });
             if (stagedPreviewIndex >= stagedFiles.length - 1) {
                 setStagedPreviewIndex(Math.max(0, stagedFiles.length - 2));
             }
@@ -166,6 +168,7 @@ export default function ExerciseFeedback({
             setStagedFiles([]);
             setStagedFileUrls([]);
             setStagedPosters({});
+            setStagedTrimData({});
         }
     };
 
@@ -177,18 +180,26 @@ export default function ExerciseFeedback({
         setShowStaging(false);
     };
 
-    const handleCropComplete = (croppedFile: File) => {
+    const handleCropComplete = (file: File, trimStart?: number, trimEnd?: number) => {
         const existingIndex = stagedFiles.findIndex(f => f === cropFile);
         if (existingIndex >= 0) {
             URL.revokeObjectURL(stagedFileUrls[existingIndex]);
-            setStagedFiles(prev => prev.map((f, i) => i === existingIndex ? croppedFile : f));
-            setStagedFileUrls(prev => prev.map((url, i) => i === existingIndex ? URL.createObjectURL(croppedFile) : url));
-            generateVideoPoster(croppedFile, existingIndex);
+            setStagedFiles(prev => prev.map((f, i) => i === existingIndex ? file : f));
+            setStagedFileUrls(prev => prev.map((url, i) => i === existingIndex ? URL.createObjectURL(file) : url));
+            generateVideoPoster(file, existingIndex);
+            if (trimStart !== undefined && trimEnd !== undefined) {
+                setStagedTrimData(prev => ({ ...prev, [existingIndex]: { start: trimStart, end: trimEnd } }));
+            } else {
+                setStagedTrimData(prev => { const n = { ...prev }; delete n[existingIndex]; return n; });
+            }
         } else {
             const newIndex = stagedFiles.length;
-            setStagedFiles(prev => [...prev, croppedFile]);
-            setStagedFileUrls(prev => [...prev, URL.createObjectURL(croppedFile)]);
-            generateVideoPoster(croppedFile, newIndex);
+            setStagedFiles(prev => [...prev, file]);
+            setStagedFileUrls(prev => [...prev, URL.createObjectURL(file)]);
+            generateVideoPoster(file, newIndex);
+            if (trimStart !== undefined && trimEnd !== undefined) {
+                setStagedTrimData(prev => ({ ...prev, [newIndex]: { start: trimStart, end: trimEnd } }));
+            }
         }
         setCropFile(null);
     };
@@ -257,7 +268,9 @@ export default function ExerciseFeedback({
             // Upload first file (messages support single media)
             if (stagedFiles.length > 0) {
                 const result = await uploadFile(stagedFiles[0], 0);
-                mediaUrl = result.url;
+                // Append media fragment URI for trimmed videos
+                const trim = stagedTrimData[0];
+                mediaUrl = trim ? `${result.url}#t=${trim.start},${trim.end}` : result.url;
                 mediaType = result.type;
             }
 
