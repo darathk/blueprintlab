@@ -292,6 +292,21 @@ export default function ExerciseFeedback({
 
             if (!res.ok) throw new Error('Failed to send');
 
+            // Fire-and-forget: trigger background transcoding for videos
+            if (mediaType?.startsWith('video/') && stagedFiles.length > 0) {
+                const real = await res.json().catch(() => null);
+                if (real?.id) {
+                    const storagePath = mediaUrl?.split('/lift-videos/')[1]?.split('#')[0] || '';
+                    if (storagePath) {
+                        fetch('/api/transcode', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ filePath: storagePath, mediaType, messageId: real.id }),
+                        }).catch(() => { /* best-effort */ });
+                    }
+                }
+            }
+
             setSent(true);
             setTimeout(() => {
                 setOpen(false);
