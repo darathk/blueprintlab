@@ -564,26 +564,6 @@ export default function ChatInterface({
                     if (res.ok) {
                         const real = await res.json();
                         setMessages(prev => prev.map(m => m.id === tempId ? real : m));
-
-                        // Fire-and-forget: trigger background transcoding for videos
-                        if (isVid && real.id) {
-                            const storagePath = uploadPath;
-                            fetch('/api/transcode', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ filePath: storagePath, mediaType: mime, messageId: real.id }),
-                            }).then(async (r) => {
-                                if (r.ok) {
-                                    const data = await r.json();
-                                    if (data.success && data.optimizedUrl) {
-                                        // Update the message in state with the optimized URL
-                                        setMessages(prev => prev.map(m =>
-                                            m.id === real.id ? { ...m, mediaUrl: data.optimizedUrl } : m
-                                        ));
-                                    }
-                                }
-                            }).catch(() => { /* transcoding is best-effort */ });
-                        }
                     } else {
                         const errBody = await res.text();
                         console.error('[API] Message create failed:', res.status, errBody);
