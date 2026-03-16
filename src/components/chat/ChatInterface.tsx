@@ -5,7 +5,6 @@ import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { Mic, MoreVertical, Reply, Copy, Download, Paperclip, X, Send, Search, Scissors, Pencil, Play, Maximize } from 'lucide-react';
 import VideoCropper from './VideoCropper';
-import { compressVideo } from '@/lib/videoCompressor';
 
 // Lazy-loading video component for iOS reliability
 function LazyVideo({ src, onLoadedData, style }: { src: string; onLoadedData?: () => void; style?: React.CSSProperties }) {
@@ -147,7 +146,6 @@ export default function ChatInterface({
     const [uploading, setUploading] = useState(false);
     const [sending, setSending] = useState(false);
     const [statusText, setStatusText] = useState('');
-    const [compressProgress, setCompressProgress] = useState(-1);
     const [replyingTo, setReplyingTo] = useState<Message | null>(null);
     const [stagedFiles, setStagedFiles] = useState<File[]>([]);
     const [stagedFileUrls, setStagedFileUrls] = useState<string[]>([]);
@@ -463,6 +461,7 @@ export default function ChatInterface({
                 }
             } else {
                 setUploading(true);
+                setStatusText('Uploading…');
 
                 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
                 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -471,37 +470,14 @@ export default function ChatInterface({
                     throw new Error('Supabase not configured');
                 }
 
-                // Phase 1: Compress all media (videos + images) before uploading
-                // Videos compress sequentially (MediaRecorder limitation), images in parallel
+                // Compress images in parallel (fast, keeps quality)
+                // Videos upload at original quality — no re-encoding means
+                // lossless quality, working audio, and no processing delay
                 const compressedBlobs: (File | Blob)[] = [...filesToSend];
                 const compressedMimes: string[] = filesToSend.map(f => f.type);
 
-                const videoIndices = filesToSend.map((f, i) => f.type.startsWith('video/') ? i : -1).filter(i => i >= 0);
                 const imageIndices = filesToSend.map((f, i) => f.type.startsWith('image/') ? i : -1).filter(i => i >= 0);
-
-                // Compress videos sequentially (each uses MediaRecorder which is single-instance)
-                for (let vi = 0; vi < videoIndices.length; vi++) {
-                    const i = videoIndices[vi];
-                    const file = filesToSend[i];
-                    const label = videoIndices.length > 1 ? `Compressing video ${vi + 1}/${videoIndices.length}…` : 'Compressing video…';
-                    setStatusText(label);
-                    setCompressProgress(0);
-
-                    try {
-                        const compressed = await compressVideo(file, (pct) => setCompressProgress(pct));
-                        if (compressed && compressed.size < file.size) {
-                            compressedBlobs[i] = compressed;
-                            compressedMimes[i] = 'video/mp4';
-                        }
-                    } catch (err) {
-                        console.warn('Video compression failed, uploading original:', err);
-                    }
-                }
-
-                // Compress images in parallel
                 if (imageIndices.length > 0) {
-                    setStatusText('Compressing images…');
-                    setCompressProgress(50);
                     await Promise.all(imageIndices.map(async (i) => {
                         try {
                             const imageCompression = (await import('browser-image-compression')).default;
@@ -512,11 +488,7 @@ export default function ChatInterface({
                     }));
                 }
 
-                setCompressProgress(-1);
-
-                // Phase 2: Upload all compressed files in parallel
-                setStatusText('Uploading…');
-
+                // Upload all files in parallel
                 const uploadOne = async (i: number) => {
                     const tempId = optimisticMessages[i].id;
                     const blob = compressedBlobs[i];
@@ -620,7 +592,6 @@ export default function ChatInterface({
         finally {
             setSending(false);
             setUploading(false);
-            setCompressProgress(-1);
             setStatusText('');
         }
     };
@@ -1321,15 +1292,15 @@ export default function ChatInterface({
                 )
             }
 
-            {/* Compress / Upload progress */}
+            {/* Upload progress */}
             {
                 uploading && (
                     <div style={{ padding: '8px 16px', borderTop: '1px solid var(--card-border)', flexShrink: 0 }}>
                         <div style={{ fontSize: 12, color: 'var(--primary)', fontWeight: 600, marginBottom: 4 }}>
-                            {compressProgress >= 0 ? `${statusText} ${compressProgress}%` : statusText || 'Uploading…'}
+                            {statusText || 'Uploading…'}
                         </div>
                         <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
-                            <div style={{ height: '100%', borderRadius: 2, background: 'linear-gradient(90deg, #7d87d2, #a855f7)', transition: 'width 200ms', width: compressProgress >= 0 ? `${compressProgress}%` : (() => { const vals = Object.values(uploadProgress); return vals.length > 0 ? `${Math.round(vals.reduce((a, b) => a + b, 0) / vals.length)}%` : '0%'; })() }} />
+                            <div style={{ height: '100%', borderRadius: 2, background: 'linear-gradient(90deg, #7d87d2, #a855f7)', transition: 'width 200ms', width: (() => { const vals = Object.values(uploadProgress); return vals.length > 0 ? `${Math.round(vals.reduce((a, b) => a + b, 0) / vals.length)}%` : '0%'; })() }} />
                         </div>
                     </div>
                 )
