@@ -60,7 +60,7 @@ function LazyVideo({ src, onLoadedData, style }: { src: string; onLoadedData?: (
                         preload="metadata"
                         onLoadedData={onLoadedData}
                         onError={handleError}
-                        src={`${src}#t=0.001`}
+                        src={src.includes('#t=') ? src : `${src}#t=0.001`}
                         style={style}
                     />
                     <button
@@ -145,7 +145,6 @@ export default function ChatInterface({
     const [newMessage, setNewMessage] = useState('');
     const [uploading, setUploading] = useState(false);
     const [sending, setSending] = useState(false);
-    const [compressProgress, setCompressProgress] = useState(-1);
     const [statusText, setStatusText] = useState('');
     const [replyingTo, setReplyingTo] = useState<Message | null>(null);
     const [stagedFiles, setStagedFiles] = useState<File[]>([]);
@@ -159,6 +158,9 @@ export default function ChatInterface({
 
     // Video Cropper state
     const [cropFile, setCropFile] = useState<File | null>(null);
+
+    // Trim metadata per staged file index (from VideoCropper)
+    const [stagedTrimData, setStagedTrimData] = useState<Record<number, { start: number; end: number }>>({});
 
     // Upload progress per message (tempId → 0-100)
     const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
@@ -182,7 +184,6 @@ export default function ChatInterface({
 
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const fileRef = useRef<HTMLInputElement>(null);
-    const isCompressing = compressProgress >= 0 && compressProgress <= 100;
 
     // Initial fetch — once
     useEffect(() => {
@@ -393,12 +394,14 @@ export default function ChatInterface({
         // Copy the files and clear UI state immediately
         const filesToSend = [...stagedFiles];
         const urlsToSend = [...stagedFileUrls];
+        const trimDataToSend = { ...stagedTrimData };
 
         setNewMessage('');
         setReplyingTo(null);
         setStagedFiles([]);
         setStagedFileUrls([]);
         setStagedPosters({});
+        setStagedTrimData({});
         if (fileRef.current) fileRef.current.value = '';
 
         // Create optimistic messages
@@ -455,25 +458,33 @@ export default function ChatInterface({
                     alert('Failed to send message. Please try again.');
                 }
             } else {
-                // Send files sequentially
+                // Upload all files in parallel for speed
                 setUploading(true);
-                for (let i = 0; i < filesToSend.length; i++) {
+                setStatusText('Uploading…');
+
+                const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+                const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+                if (!supabaseUrl || !supabaseKey) {
+                    throw new Error('Supabase not configured');
+                }
+
+                const uploadOne = async (i: number) => {
                     const file = filesToSend[i];
                     const tempId = optimisticMessages[i].id;
                     const isVid = file.type.startsWith('video/');
                     let blob: File | Blob = file;
                     let mime = file.type;
 
-                    setStatusText(filesToSend.length > 1 ? `Uploading ${i + 1} of ${filesToSend.length}…` : 'Uploading…');
                     setUploadProgress(prev => ({ ...prev, [tempId]: 0 }));
-                    setCompressProgress(10);
 
+                    // Compress images (skip for videos — no re-encoding needed)
                     const isImage = file.type.startsWith('image/');
                     if (isImage) {
                         try {
                             const imageCompression = (await import('browser-image-compression')).default;
-                            const c = await (imageCompression as any)(file, { maxSizeMB: 0.5, maxWidthOrHeight: 1280, useWebWorker: false });
-                            blob = c; mime = c.type; setCompressProgress(40);
+                            const c = await (imageCompression as any)(file, { maxSizeMB: 0.5, maxWidthOrHeight: 1280, useWebWorker: true });
+                            blob = c; mime = c.type;
                         } catch { /* skip compression */ }
                     }
 
@@ -489,63 +500,48 @@ export default function ChatInterface({
                         else mime = 'application/octet-stream';
                     }
 
-                    setCompressProgress(80);
                     const ext = mime.includes('png') ? '.png' : mime.includes('jpeg') || mime.includes('jpg') ? '.jpg' : mime.includes('quicktime') ? '.mov' : mime.includes('webm') ? '.webm' : mime.includes('audio') ? '.m4a' : '.mp4';
                     const uploadPath = `${athleteId}/${Date.now()}-${i}${ext}`;
 
                     // Upload with XHR for progress tracking
-                    let publicUrl = '';
-                    try {
-                        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-                        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+                    const publicUrl = await new Promise<string>((resolve, reject) => {
+                        const xhr = new XMLHttpRequest();
+                        const url = `${supabaseUrl}/storage/v1/object/lift-videos/${uploadPath}`;
 
-                        if (!supabaseUrl || !supabaseKey) {
-                            throw new Error('Supabase not configured');
-                        }
+                        xhr.upload.onprogress = (e) => {
+                            if (e.lengthComputable) {
+                                const pct = Math.round((e.loaded / e.total) * 100);
+                                setUploadProgress(prev => ({ ...prev, [tempId]: pct }));
+                            }
+                        };
 
-                        publicUrl = await new Promise<string>((resolve, reject) => {
-                            const xhr = new XMLHttpRequest();
-                            const url = `${supabaseUrl}/storage/v1/object/lift-videos/${uploadPath}`;
+                        xhr.onload = () => {
+                            if (xhr.status >= 200 && xhr.status < 300) {
+                                const { data: u } = supabase.storage.from('lift-videos').getPublicUrl(uploadPath);
+                                resolve(u.publicUrl);
+                            } else {
+                                reject(new Error(`Upload failed: ${xhr.status} ${xhr.responseText}`));
+                            }
+                        };
 
-                            xhr.upload.onprogress = (e) => {
-                                if (e.lengthComputable) {
-                                    const pct = Math.round((e.loaded / e.total) * 100);
-                                    setUploadProgress(prev => ({ ...prev, [tempId]: pct }));
-                                    setCompressProgress(80 + Math.round(pct * 0.2));
-                                }
-                            };
+                        xhr.onerror = () => reject(new Error('Network error during upload'));
+                        xhr.ontimeout = () => reject(new Error('Upload timed out'));
+                        xhr.timeout = 300000;
 
-                            xhr.onload = () => {
-                                if (xhr.status >= 200 && xhr.status < 300) {
-                                    const { data: u } = supabase.storage.from('lift-videos').getPublicUrl(uploadPath);
-                                    resolve(u.publicUrl);
-                                } else {
-                                    reject(new Error(`Upload failed: ${xhr.status} ${xhr.responseText}`));
-                                }
-                            };
+                        xhr.open('POST', url, true);
+                        xhr.setRequestHeader('Authorization', `Bearer ${supabaseKey}`);
+                        xhr.setRequestHeader('apikey', supabaseKey);
+                        xhr.setRequestHeader('Content-Type', mime);
+                        xhr.setRequestHeader('Cache-Control', '604800');
+                        xhr.setRequestHeader('x-upsert', 'true');
+                        xhr.send(blob);
+                    });
 
-                            xhr.onerror = () => reject(new Error('Network error during upload'));
-                            xhr.ontimeout = () => reject(new Error('Upload timed out'));
-                            xhr.timeout = 300000; // 5 min timeout
-
-                            xhr.open('POST', url, true);
-                            xhr.setRequestHeader('Authorization', `Bearer ${supabaseKey}`);
-                            xhr.setRequestHeader('apikey', supabaseKey);
-                            xhr.setRequestHeader('Content-Type', mime);
-                            xhr.setRequestHeader('Cache-Control', '604800');
-                            xhr.setRequestHeader('x-upsert', 'true');
-                            xhr.send(blob);
-                        });
-                    } catch (uploadErr: any) {
-                        console.error('[Upload] Failed:', uploadErr);
-                        setMessages(prev => prev.filter(m => m.id !== tempId));
-                        setUploadProgress(prev => { const n = { ...prev }; delete n[tempId]; return n; });
-                        alert(`Upload failed: ${uploadErr.message}`);
-                        continue;
-                    }
-
-                    setCompressProgress(100);
                     setUploadProgress(prev => ({ ...prev, [tempId]: 100 }));
+
+                    // Append media fragment URI for trimmed videos (#t=start,end)
+                    const trim = trimDataToSend[i];
+                    const mediaUrl = trim ? `${publicUrl}#t=${trim.start},${trim.end}` : publicUrl;
 
                     const isAudio = file.type.startsWith('audio/');
                     const content = i === 0 && text ? text : isAudio ? 'Voice Message' : isVid ? 'Video' : 'Photo';
@@ -553,7 +549,7 @@ export default function ChatInterface({
 
                     const res = await fetch('/api/messages', {
                         method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ senderId: currentUserId, receiverId: otherUserId, content, mediaUrl: publicUrl, mediaType: mime, replyToId })
+                        body: JSON.stringify({ senderId: currentUserId, receiverId: otherUserId, content, mediaUrl, mediaType: mime, replyToId })
                     });
 
                     if (res.ok) {
@@ -563,11 +559,21 @@ export default function ChatInterface({
                         const errBody = await res.text();
                         console.error('[API] Message create failed:', res.status, errBody);
                         setMessages(prev => prev.filter(m => m.id !== tempId));
-                        alert(`Failed to send message: ${res.status} - ${errBody}`);
                     }
 
                     setUploadProgress(prev => { const n = { ...prev }; delete n[tempId]; return n; });
                     URL.revokeObjectURL(urlsToSend[i]);
+                };
+
+                // Fire all uploads in parallel
+                const results = await Promise.allSettled(
+                    filesToSend.map((_, i) => uploadOne(i))
+                );
+
+                const failures = results.filter(r => r.status === 'rejected');
+                if (failures.length > 0) {
+                    console.error('[Upload] Some uploads failed:', failures);
+                    alert(`${failures.length} upload(s) failed.`);
                 }
             }
         } catch (e: any) {
@@ -577,7 +583,6 @@ export default function ChatInterface({
         finally {
             setSending(false);
             setUploading(false);
-            setCompressProgress(-1);
             setStatusText('');
         }
     };
@@ -683,20 +688,28 @@ export default function ChatInterface({
         };
     };
 
-    const handleCropComplete = (croppedFile: File) => {
+    const handleCropComplete = (file: File, trimStart?: number, trimEnd?: number) => {
         // Check if we're re-trimming an already staged file
         const existingIndex = stagedFiles.findIndex(f => f === cropFile);
         if (existingIndex >= 0) {
-            // Replace the existing staged file with the trimmed version
             URL.revokeObjectURL(stagedFileUrls[existingIndex]);
-            setStagedFiles(prev => prev.map((f, i) => i === existingIndex ? croppedFile : f));
-            setStagedFileUrls(prev => prev.map((url, i) => i === existingIndex ? URL.createObjectURL(croppedFile) : url));
-            generateVideoPoster(croppedFile, existingIndex);
+            setStagedFiles(prev => prev.map((f, i) => i === existingIndex ? file : f));
+            setStagedFileUrls(prev => prev.map((url, i) => i === existingIndex ? URL.createObjectURL(file) : url));
+            generateVideoPoster(file, existingIndex);
+            // Store or clear trim metadata
+            if (trimStart !== undefined && trimEnd !== undefined) {
+                setStagedTrimData(prev => ({ ...prev, [existingIndex]: { start: trimStart, end: trimEnd } }));
+            } else {
+                setStagedTrimData(prev => { const n = { ...prev }; delete n[existingIndex]; return n; });
+            }
         } else {
             const newIndex = stagedFiles.length;
-            setStagedFiles(prev => [...prev, croppedFile]);
-            setStagedFileUrls(prev => [...prev, URL.createObjectURL(croppedFile)]);
-            generateVideoPoster(croppedFile, newIndex);
+            setStagedFiles(prev => [...prev, file]);
+            setStagedFileUrls(prev => [...prev, URL.createObjectURL(file)]);
+            generateVideoPoster(file, newIndex);
+            if (trimStart !== undefined && trimEnd !== undefined) {
+                setStagedTrimData(prev => ({ ...prev, [newIndex]: { start: trimStart, end: trimEnd } }));
+            }
         }
         setCropFile(null);
     };
@@ -707,11 +720,13 @@ export default function ChatInterface({
             setStagedFiles(prev => prev.filter((_, i) => i !== index));
             setStagedFileUrls(prev => prev.filter((_, i) => i !== index));
             setStagedPosters(prev => { const n = { ...prev }; delete n[index]; return n; });
+            setStagedTrimData(prev => { const n = { ...prev }; delete n[index]; return n; });
         } else {
             stagedFileUrls.forEach(url => URL.revokeObjectURL(url));
             setStagedFiles([]);
             setStagedFileUrls([]);
             setStagedPosters({});
+            setStagedTrimData({});
         }
         if (fileRef.current) fileRef.current.value = '';
     };
@@ -1266,10 +1281,10 @@ export default function ChatInterface({
                 uploading && (
                     <div style={{ padding: '8px 16px', borderTop: '1px solid var(--card-border)', flexShrink: 0 }}>
                         <div style={{ fontSize: 12, color: 'var(--primary)', fontWeight: 600, marginBottom: 4 }}>
-                            {isCompressing ? `${statusText} ${compressProgress}%` : statusText || 'Uploading…'}
+                            {statusText || 'Uploading…'}
                         </div>
                         <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
-                            <div style={{ height: '100%', borderRadius: 2, background: 'linear-gradient(90deg, #7d87d2, #a855f7)', transition: 'width 200ms', width: isCompressing ? `${compressProgress}%` : '100%' }} />
+                            <div style={{ height: '100%', borderRadius: 2, background: 'linear-gradient(90deg, #7d87d2, #a855f7)', transition: 'width 200ms', width: (() => { const vals = Object.values(uploadProgress); return vals.length > 0 ? `${Math.round(vals.reduce((a, b) => a + b, 0) / vals.length)}%` : '0%'; })() }} />
                         </div>
                     </div>
                 )
@@ -1287,9 +1302,7 @@ export default function ChatInterface({
                 zIndex: 40
             }}>
                 <input ref={fileRef} type="file" multiple accept="video/*,image/*" onChange={handleMedia} style={{ display: 'none' }} />
-                {isCompressing && stagedFiles.length === 0 ? (
-                    <div style={{ textAlign: 'center', fontSize: 12, padding: 6, color: 'var(--secondary-foreground)' }}>Processing…</div>
-                ) : isRecording ? (
+                {isRecording ? (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, padding: '0 8px' }}>
                         <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ef4444', animation: 'pulse 1.5s infinite' }} />
                         <div style={{ color: '#ef4444', fontWeight: 600, fontSize: 14, flex: 1 }}>

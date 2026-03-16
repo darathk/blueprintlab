@@ -4,7 +4,7 @@ import { X, Check, Play, Scissors } from 'lucide-react';
 interface Props {
     file: File;
     onCancel: () => void;
-    onComplete: (croppedFile: File) => void;
+    onComplete: (file: File, trimStart?: number, trimEnd?: number) => void;
 }
 
 export default function VideoCropper({ file, onCancel, onComplete }: Props) {
@@ -14,8 +14,6 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
     const [endTime, setEndTime] = useState(0);
     const [currentTime, setCurrentTime] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [processing, setProcessing] = useState(false);
-    const [progress, setProgress] = useState(0);
     const [thumbnails, setThumbnails] = useState<string[]>([]);
     const [fileSize, setFileSize] = useState('');
 
@@ -36,11 +34,11 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
         return () => URL.revokeObjectURL(url);
     }, [file]);
 
-    // Generate filmstrip thumbnails
+    // Generate filmstrip thumbnails (optimized: fewer thumbs, smaller canvas)
     const generateThumbnails = useCallback(async () => {
         if (!videoUrl || duration <= 0) return;
 
-        const thumbCount = 15;
+        const thumbCount = 8;
         const thumbVideo = document.createElement('video');
         thumbVideo.src = videoUrl;
         thumbVideo.muted = true;
@@ -56,8 +54,8 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        canvas.width = 60;
-        canvas.height = 80;
+        canvas.width = 40;
+        canvas.height = 53;
 
         const thumbs: string[] = [];
 
@@ -67,7 +65,7 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
             await new Promise<void>((resolve) => {
                 thumbVideo.onseeked = () => {
                     ctx.drawImage(thumbVideo, 0, 0, canvas.width, canvas.height);
-                    thumbs.push(canvas.toDataURL('image/jpeg', 0.5));
+                    thumbs.push(canvas.toDataURL('image/jpeg', 0.3));
                     resolve();
                 };
             });
@@ -202,151 +200,16 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
 
     const processVideo = async () => {
         if (!videoRef.current) return;
-        setProcessing(true);
-        setProgress(0);
 
         const noTrimmingApplied = Math.abs(startTime) < 0.1 && Math.abs(endTime - duration) < 0.1;
 
         if (noTrimmingApplied) {
+            // No trim — pass file through with no trim metadata
             onComplete(file);
-            setProcessing(false);
-            return;
-        }
-
-        try {
-            // Create a fresh video element for recording (keeps preview video intact)
-            const recVideo = document.createElement('video');
-            recVideo.src = videoUrl;
-            recVideo.playsInline = true;
-            recVideo.crossOrigin = 'anonymous';
-            // Do NOT mute — we need audio in the recording
-            recVideo.volume = 0.01; // Near-silent so user doesn't hear double audio
-
-            await new Promise<void>((resolve) => {
-                recVideo.onloadeddata = () => resolve();
-                recVideo.load();
-            });
-
-            const originalWidth = recVideo.videoWidth;
-            const originalHeight = recVideo.videoHeight;
-
-            const canvas = document.createElement('canvas');
-            canvas.width = originalWidth;
-            canvas.height = originalHeight;
-            const ctx = canvas.getContext('2d');
-            if (!ctx) throw new Error('Canvas 2d context unavailable');
-
-            if (typeof (canvas as any).captureStream !== 'function') {
-                throw new Error('captureStream not supported');
-            }
-
-            const canvasStream = (canvas as any).captureStream(30) as MediaStream;
-
-            // Capture audio from the recording video via AudioContext
-            const combinedStream = new MediaStream();
-            // Add video tracks from canvas
-            canvasStream.getVideoTracks().forEach((t: MediaStreamTrack) => combinedStream.addTrack(t));
-
-            // Add audio tracks from the video element
-            let audioCtx: AudioContext | null = null;
-            try {
-                audioCtx = new AudioContext();
-                const source = audioCtx.createMediaElementSource(recVideo);
-                const dest = audioCtx.createMediaStreamDestination();
-                source.connect(dest);
-                source.connect(audioCtx.destination);
-                dest.stream.getAudioTracks().forEach((t: MediaStreamTrack) => combinedStream.addTrack(t));
-            } catch {
-                // No audio capture available — video-only
-            }
-
-            const mimeType = MediaRecorder.isTypeSupported('video/mp4;codecs=avc1')
-                ? 'video/mp4;codecs=avc1'
-                : MediaRecorder.isTypeSupported('video/mp4')
-                    ? 'video/mp4'
-                    : MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')
-                        ? 'video/webm;codecs=vp9,opus'
-                        : MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')
-                            ? 'video/webm;codecs=vp8,opus'
-                            : MediaRecorder.isTypeSupported('video/webm')
-                                ? 'video/webm'
-                                : '';
-
-            if (!mimeType) throw new Error('No supported recording format');
-
-            const recorder = new MediaRecorder(combinedStream, { mimeType });
-            const chunks: Blob[] = [];
-
-            recorder.ondataavailable = (e) => { if (e.data.size > 0) chunks.push(e.data); };
-
-            const finished = new Promise<File>((resolve, reject) => {
-                recorder.onstop = () => {
-                    try {
-                        const finalMime = mimeType.split(';')[0];
-                        const blob = new Blob(chunks, { type: finalMime });
-                        if (blob.size < 1000) {
-                            reject(new Error('Empty recording'));
-                            return;
-                        }
-                        const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
-                        const outFile = new File([blob], `trimmed_${file.name.split('.')[0]}.${ext}`, { type: finalMime });
-                        resolve(outFile);
-                    } catch (e) {
-                        reject(e);
-                    }
-                };
-                recorder.onerror = reject;
-            });
-
-            // Pause preview video during processing
-            if (videoRef.current) {
-                videoRef.current.pause();
-                setIsPlaying(false);
-            }
-
-            recVideo.currentTime = startTime;
-            await new Promise<void>((r) => { recVideo.onseeked = () => r(); });
-
-            recorder.start(100);
-            await recVideo.play();
-
-            const totalTime = endTime - startTime;
-            await new Promise<void>((resolve) => {
-                const interval = setInterval(() => {
-                    const elapsed = recVideo.currentTime - startTime;
-                    setProgress(Math.min((elapsed / totalTime) * 100, 99));
-
-                    ctx.drawImage(recVideo, 0, 0, originalWidth, originalHeight);
-
-                    if (recVideo.currentTime >= endTime || recVideo.ended || recVideo.paused) {
-                        clearInterval(interval);
-                        recVideo.pause();
-                        recorder.stop();
-                        resolve();
-                    }
-                }, 1000 / 30);
-
-                setTimeout(() => {
-                    clearInterval(interval);
-                    recVideo.pause();
-                    if (recorder.state !== 'inactive') recorder.stop();
-                    resolve();
-                }, (totalTime + 5) * 1000);
-            });
-
-            const outFile = await finished;
-            setProgress(100);
-
-            // Cleanup
-            recVideo.remove();
-            if (audioCtx) audioCtx.close().catch(() => {});
-
-            onComplete(outFile);
-        } catch (err) {
-            console.warn('Video processing failed, using original file:', err);
-            onComplete(file);
-        } finally {
-            setProcessing(false);
+        } else {
+            // Pass original file + trim bounds — no re-encoding needed.
+            // The player will use Media Fragment URI (#t=start,end) for playback trimming.
+            onComplete(file, Math.round(startTime * 100) / 100, Math.round(endTime * 100) / 100);
         }
     };
 
@@ -380,7 +243,6 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
                 </div>
                 <button
                     onClick={processVideo}
-                    disabled={processing}
                     style={{
                         background: '#00a884',
                         border: 'none',
@@ -392,11 +254,10 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
                         fontSize: 14,
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 6,
-                        opacity: processing ? 0.6 : 1
+                        gap: 6
                     }}
                 >
-                    {processing ? `${progress.toFixed(0)}%` : <><Check size={18} /> Done</>}
+                    <Check size={18} /> Done
                 </button>
             </div>
 
@@ -638,34 +499,6 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
                 )}
             </div>
 
-            {/* Processing overlay */}
-            {processing && (
-                <div style={{
-                    position: 'absolute', inset: 0,
-                    background: 'rgba(0,0,0,0.8)',
-                    display: 'flex', flexDirection: 'column',
-                    alignItems: 'center', justifyContent: 'center',
-                    zIndex: 100
-                }}>
-                    <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 16, color: '#fff' }}>
-                        Processing video...
-                    </div>
-                    <div style={{
-                        width: 200, height: 4, borderRadius: 2,
-                        background: 'rgba(255,255,255,0.1)', overflow: 'hidden'
-                    }}>
-                        <div style={{
-                            height: '100%', borderRadius: 2,
-                            background: '#00a884',
-                            transition: 'width 200ms',
-                            width: `${progress}%`
-                        }} />
-                    </div>
-                    <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginTop: 8 }}>
-                        {progress.toFixed(0)}%
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
