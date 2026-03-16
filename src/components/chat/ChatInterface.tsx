@@ -152,6 +152,8 @@ export default function ChatInterface({
     const [stagedPosters, setStagedPosters] = useState<Record<number, string>>({});
     const [stagedPreviewIndex, setStagedPreviewIndex] = useState(0);
     const [activeMenu, setActiveMenu] = useState<string | null>(null);
+    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+    const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
     const [loaded, setLoaded] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [searchText, setSearchText] = useState('');
@@ -386,7 +388,7 @@ export default function ChatInterface({
     };
 
     // Close action menu on click outside but ignore if multi-selecting
-    useEffect(() => { const c = () => setActiveMenu(null); window.addEventListener('click', c); return () => window.removeEventListener('click', c); }, []);
+    useEffect(() => { const c = () => { setActiveMenu(null); setConfirmDeleteId(null); }; window.addEventListener('click', c); return () => window.removeEventListener('click', c); }, []);
 
     // Send — optimistic
     const handleSend = async () => {
@@ -811,8 +813,13 @@ export default function ChatInterface({
     }, []);
 
     const handleDeleteMessage = async (msgId: string) => {
-        if (!confirm('Are you sure you want to delete this message? This will also remove any attached media.')) return;
+        // First tap shows confirm, second tap deletes
+        if (confirmDeleteId !== msgId) {
+            setConfirmDeleteId(msgId);
+            return;
+        }
 
+        setConfirmDeleteId(null);
         // Optimistic UI
         setMessages(prev => prev.filter(m => m.id !== msgId));
         setActiveMenu(null);
@@ -822,12 +829,10 @@ export default function ChatInterface({
             if (!res.ok) {
                 const err = await res.json();
                 console.error('Delete failed:', err);
-                alert('Failed to delete message. Refreshing…');
                 window.location.reload();
             }
         } catch (e) {
             console.error('Delete error:', e);
-            alert('Delete failed.');
             window.location.reload();
         }
     };
@@ -892,7 +897,7 @@ export default function ChatInterface({
                         <button onClick={() => setSelectedMessageIds(new Set())} style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><X size={20} /></button>
                         <div style={{ flex: 1, fontWeight: 600, color: 'var(--primary)', fontSize: 16 }}>{selectedMessageIds.size} Selected</div>
                         <button onClick={handleCopyMultiple} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: '#fff', fontSize: 14, fontWeight: 500, cursor: 'pointer', marginRight: 8 }}><Copy size={16} color="#fff" /> Copy</button>
-                        <button onClick={async () => { if (!confirm(`Delete ${selectedMessageIds.size} message(s)?`)) return; for (const id of selectedMessageIds) { setMessages(prev => prev.filter(m => m.id !== id)); await fetch(`/api/messages?id=${id}`, { method: 'DELETE' }); } setSelectedMessageIds(new Set()); }} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: '#ef4444', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}><X size={16} color="#ef4444" /> Delete</button>
+                        <button onClick={async () => { if (!confirmBulkDelete) { setConfirmBulkDelete(true); return; } setConfirmBulkDelete(false); for (const id of selectedMessageIds) { setMessages(prev => prev.filter(m => m.id !== id)); await fetch(`/api/messages?id=${id}`, { method: 'DELETE' }); } setSelectedMessageIds(new Set()); }} style={{ display: 'flex', alignItems: 'center', gap: 6, background: confirmBulkDelete ? 'rgba(239,68,68,0.15)' : 'none', border: 'none', color: '#ef4444', fontSize: 14, fontWeight: 600, cursor: 'pointer', borderRadius: 6, padding: '4px 8px' }}><X size={16} color="#ef4444" /> {confirmBulkDelete ? 'Tap to confirm' : 'Delete'}</button>
                     </>
                 ) : (
                     <>
@@ -1263,7 +1268,7 @@ export default function ChatInterface({
                                                         style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: '#e9edef', cursor: 'pointer' }}><Download size={16} color="#8696a0" /> Save</button>}
                                                     <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '4px 0' }} />
                                                     <button onClick={() => handleDeleteMessage(msg.id)}
-                                                        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: '#ef4444', cursor: 'pointer', fontWeight: 600 }}><X size={16} color="#ef4444" /> Delete</button>
+                                                        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: confirmDeleteId === msg.id ? 'rgba(239,68,68,0.15)' : 'none', border: 'none', fontSize: 13, color: '#ef4444', cursor: 'pointer', fontWeight: 600 }}><X size={16} color="#ef4444" /> {confirmDeleteId === msg.id ? 'Tap again to delete' : 'Delete'}</button>
                                                 </div>
                                             </>
                                         )}
