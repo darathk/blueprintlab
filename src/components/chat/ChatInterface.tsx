@@ -5,7 +5,6 @@ import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import { Mic, MoreVertical, Reply, Copy, Download, Paperclip, X, Send, Search, Scissors, Pencil, Play, Maximize } from 'lucide-react';
 import VideoCropper from './VideoCropper';
-import { compressVideo } from '@/lib/videoCompressor';
 
 // Lazy-loading video component for iOS reliability
 function LazyVideo({ src, onLoadedData, style }: { src: string; onLoadedData?: () => void; style?: React.CSSProperties }) {
@@ -147,13 +146,14 @@ export default function ChatInterface({
     const [uploading, setUploading] = useState(false);
     const [sending, setSending] = useState(false);
     const [statusText, setStatusText] = useState('');
-    const [compressProgress, setCompressProgress] = useState(-1);
     const [replyingTo, setReplyingTo] = useState<Message | null>(null);
     const [stagedFiles, setStagedFiles] = useState<File[]>([]);
     const [stagedFileUrls, setStagedFileUrls] = useState<string[]>([]);
     const [stagedPosters, setStagedPosters] = useState<Record<number, string>>({});
     const [stagedPreviewIndex, setStagedPreviewIndex] = useState(0);
     const [activeMenu, setActiveMenu] = useState<string | null>(null);
+    const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+    const [confirmBulkDelete, setConfirmBulkDelete] = useState(false);
     const [loaded, setLoaded] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [searchText, setSearchText] = useState('');
@@ -186,6 +186,7 @@ export default function ChatInterface({
 
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const fileRef = useRef<HTMLInputElement>(null);
+    const inputRef = useRef<HTMLTextAreaElement>(null);
 
     // Initial fetch — once
     useEffect(() => {
@@ -316,6 +317,7 @@ export default function ChatInterface({
     const mediaRecorderRef = useRef<MediaRecorder | null>(null);
     const audioChunksRef = useRef<Blob[]>([]);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
+    const longPressRef = useRef<NodeJS.Timeout | null>(null);
 
     const formatRecordingTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
@@ -386,7 +388,7 @@ export default function ChatInterface({
     };
 
     // Close action menu on click outside but ignore if multi-selecting
-    useEffect(() => { const c = () => setActiveMenu(null); window.addEventListener('click', c); return () => window.removeEventListener('click', c); }, []);
+    useEffect(() => { const c = () => { setActiveMenu(null); setConfirmDeleteId(null); }; window.addEventListener('click', c); return () => window.removeEventListener('click', c); }, []);
 
     // Send — optimistic
     const handleSend = async () => {
@@ -461,6 +463,7 @@ export default function ChatInterface({
                 }
             } else {
                 setUploading(true);
+                setStatusText('Uploading…');
 
                 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
                 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -469,37 +472,14 @@ export default function ChatInterface({
                     throw new Error('Supabase not configured');
                 }
 
-                // Phase 1: Compress all media (videos + images) before uploading
-                // Videos compress sequentially (MediaRecorder limitation), images in parallel
+                // Compress images in parallel (fast, keeps quality)
+                // Videos upload at original quality — no re-encoding means
+                // lossless quality, working audio, and no processing delay
                 const compressedBlobs: (File | Blob)[] = [...filesToSend];
                 const compressedMimes: string[] = filesToSend.map(f => f.type);
 
-                const videoIndices = filesToSend.map((f, i) => f.type.startsWith('video/') ? i : -1).filter(i => i >= 0);
                 const imageIndices = filesToSend.map((f, i) => f.type.startsWith('image/') ? i : -1).filter(i => i >= 0);
-
-                // Compress videos sequentially (each uses MediaRecorder which is single-instance)
-                for (let vi = 0; vi < videoIndices.length; vi++) {
-                    const i = videoIndices[vi];
-                    const file = filesToSend[i];
-                    const label = videoIndices.length > 1 ? `Compressing video ${vi + 1}/${videoIndices.length}…` : 'Compressing video…';
-                    setStatusText(label);
-                    setCompressProgress(0);
-
-                    try {
-                        const compressed = await compressVideo(file, (pct) => setCompressProgress(pct));
-                        if (compressed && compressed.size < file.size) {
-                            compressedBlobs[i] = compressed;
-                            compressedMimes[i] = 'video/mp4';
-                        }
-                    } catch (err) {
-                        console.warn('Video compression failed, uploading original:', err);
-                    }
-                }
-
-                // Compress images in parallel
                 if (imageIndices.length > 0) {
-                    setStatusText('Compressing images…');
-                    setCompressProgress(50);
                     await Promise.all(imageIndices.map(async (i) => {
                         try {
                             const imageCompression = (await import('browser-image-compression')).default;
@@ -510,11 +490,7 @@ export default function ChatInterface({
                     }));
                 }
 
-                setCompressProgress(-1);
-
-                // Phase 2: Upload all compressed files in parallel
-                setStatusText('Uploading…');
-
+                // Upload all files in parallel
                 const uploadOne = async (i: number) => {
                     const tempId = optimisticMessages[i].id;
                     const blob = compressedBlobs[i];
@@ -618,7 +594,6 @@ export default function ChatInterface({
         finally {
             setSending(false);
             setUploading(false);
-            setCompressProgress(-1);
             setStatusText('');
         }
     };
@@ -838,8 +813,13 @@ export default function ChatInterface({
     }, []);
 
     const handleDeleteMessage = async (msgId: string) => {
-        if (!confirm('Are you sure you want to delete this message? This will also remove any attached media.')) return;
+        // First tap shows confirm, second tap deletes
+        if (confirmDeleteId !== msgId) {
+            setConfirmDeleteId(msgId);
+            return;
+        }
 
+        setConfirmDeleteId(null);
         // Optimistic UI
         setMessages(prev => prev.filter(m => m.id !== msgId));
         setActiveMenu(null);
@@ -849,12 +829,10 @@ export default function ChatInterface({
             if (!res.ok) {
                 const err = await res.json();
                 console.error('Delete failed:', err);
-                alert('Failed to delete message. Refreshing…');
                 window.location.reload();
             }
         } catch (e) {
             console.error('Delete error:', e);
-            alert('Delete failed.');
             window.location.reload();
         }
     };
@@ -919,7 +897,7 @@ export default function ChatInterface({
                         <button onClick={() => setSelectedMessageIds(new Set())} style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><X size={20} /></button>
                         <div style={{ flex: 1, fontWeight: 600, color: 'var(--primary)', fontSize: 16 }}>{selectedMessageIds.size} Selected</div>
                         <button onClick={handleCopyMultiple} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: '#fff', fontSize: 14, fontWeight: 500, cursor: 'pointer', marginRight: 8 }}><Copy size={16} color="#fff" /> Copy</button>
-                        <button onClick={async () => { if (!confirm(`Delete ${selectedMessageIds.size} message(s)?`)) return; for (const id of selectedMessageIds) { setMessages(prev => prev.filter(m => m.id !== id)); await fetch(`/api/messages?id=${id}`, { method: 'DELETE' }); } setSelectedMessageIds(new Set()); }} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: '#ef4444', fontSize: 14, fontWeight: 600, cursor: 'pointer' }}><X size={16} color="#ef4444" /> Delete</button>
+                        <button onClick={async () => { if (!confirmBulkDelete) { setConfirmBulkDelete(true); return; } setConfirmBulkDelete(false); for (const id of selectedMessageIds) { setMessages(prev => prev.filter(m => m.id !== id)); await fetch(`/api/messages?id=${id}`, { method: 'DELETE' }); } setSelectedMessageIds(new Set()); }} style={{ display: 'flex', alignItems: 'center', gap: 6, background: confirmBulkDelete ? 'rgba(239,68,68,0.15)' : 'none', border: 'none', color: '#ef4444', fontSize: 14, fontWeight: 600, cursor: 'pointer', borderRadius: 6, padding: '4px 8px' }}><X size={16} color="#ef4444" /> {confirmBulkDelete ? 'Tap to confirm' : 'Delete'}</button>
                     </>
                 ) : (
                     <>
@@ -1021,6 +999,13 @@ export default function ChatInterface({
 
                                     <div style={{ position: 'relative', maxWidth: '75%', cursor: isMultiSelecting ? 'pointer' : 'default' }}>
                                         <div
+                                            onTouchStart={() => {
+                                                longPressRef.current = setTimeout(() => {
+                                                    setActiveMenu(activeMenu === msg.id ? null : msg.id);
+                                                }, 500);
+                                            }}
+                                            onTouchEnd={() => { if (longPressRef.current) { clearTimeout(longPressRef.current); longPressRef.current = null; } }}
+                                            onTouchMove={() => { if (longPressRef.current) { clearTimeout(longPressRef.current); longPressRef.current = null; } }}
                                             onClick={(e) => {
                                                 if (isMultiSelecting) { e.stopPropagation(); toggleSelection(msg.id); }
                                             }}
@@ -1227,14 +1212,20 @@ export default function ChatInterface({
                                         {/* Dropdown action menu — opens upward to avoid bottom cutoff */}
                                         {activeMenu === msg.id && !isMultiSelecting && (
                                             <>
-                                                <div onClick={(e) => { e.stopPropagation(); setActiveMenu(null); }} style={{ position: 'fixed', inset: 0, zIndex: 999 }} />
+                                                {/* Backdrop to close menu — uses onTouchStart + onClick for reliable mobile dismissal */}
                                                 <div
+                                                    onTouchStart={(e) => { e.stopPropagation(); setActiveMenu(null); }}
+                                                    onClick={(e) => { e.stopPropagation(); setActiveMenu(null); }}
+                                                    style={{ position: 'fixed', inset: 0, zIndex: 998 }}
+                                                />
+                                                <div
+                                                    onTouchStart={e => e.stopPropagation()}
                                                     onClick={e => e.stopPropagation()}
                                                     style={{
                                                         position: 'absolute',
                                                         bottom: 0,
                                                         [mine ? 'right' : 'left']: 0,
-                                                        zIndex: 1000,
+                                                        zIndex: 999,
                                                         background: '#1f2c34',
                                                         border: '1px solid rgba(255,255,255,0.1)',
                                                         borderRadius: 12,
@@ -1263,7 +1254,7 @@ export default function ChatInterface({
                                                         ))}
                                                     </div>
 
-                                                    <button onClick={() => { setReplyingTo(msg); setActiveMenu(null); }}
+                                                    <button onClick={() => { setReplyingTo(msg); setActiveMenu(null); setTimeout(() => inputRef.current?.focus(), 50); }}
                                                         style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: '#e9edef', cursor: 'pointer' }}><Reply size={16} color="#8696a0" /> Reply</button>
                                                     {mine && msg.content && !msg.mediaUrl && (
                                                         <button onClick={() => { setEditingMessageId(msg.id); setEditText(msg.content); setActiveMenu(null); }}
@@ -1277,7 +1268,7 @@ export default function ChatInterface({
                                                         style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: '#e9edef', cursor: 'pointer' }}><Download size={16} color="#8696a0" /> Save</button>}
                                                     <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '4px 0' }} />
                                                     <button onClick={() => handleDeleteMessage(msg.id)}
-                                                        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: '#ef4444', cursor: 'pointer', fontWeight: 600 }}><X size={16} color="#ef4444" /> Delete</button>
+                                                        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: confirmDeleteId === msg.id ? 'rgba(239,68,68,0.15)' : 'none', border: 'none', fontSize: 13, color: '#ef4444', cursor: 'pointer', fontWeight: 600 }}><X size={16} color="#ef4444" /> {confirmDeleteId === msg.id ? 'Tap again to delete' : 'Delete'}</button>
                                                 </div>
                                             </>
                                         )}
@@ -1312,15 +1303,15 @@ export default function ChatInterface({
                 )
             }
 
-            {/* Compress / Upload progress */}
+            {/* Upload progress */}
             {
                 uploading && (
                     <div style={{ padding: '8px 16px', borderTop: '1px solid var(--card-border)', flexShrink: 0 }}>
                         <div style={{ fontSize: 12, color: 'var(--primary)', fontWeight: 600, marginBottom: 4 }}>
-                            {compressProgress >= 0 ? `${statusText} ${compressProgress}%` : statusText || 'Uploading…'}
+                            {statusText || 'Uploading…'}
                         </div>
                         <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
-                            <div style={{ height: '100%', borderRadius: 2, background: 'linear-gradient(90deg, #7d87d2, #a855f7)', transition: 'width 200ms', width: compressProgress >= 0 ? `${compressProgress}%` : (() => { const vals = Object.values(uploadProgress); return vals.length > 0 ? `${Math.round(vals.reduce((a, b) => a + b, 0) / vals.length)}%` : '0%'; })() }} />
+                            <div style={{ height: '100%', borderRadius: 2, background: 'linear-gradient(90deg, #7d87d2, #a855f7)', transition: 'width 200ms', width: (() => { const vals = Object.values(uploadProgress); return vals.length > 0 ? `${Math.round(vals.reduce((a, b) => a + b, 0) / vals.length)}%` : '0%'; })() }} />
                         </div>
                     </div>
                 )
@@ -1380,7 +1371,7 @@ export default function ChatInterface({
                             minHeight: 48,
                             boxShadow: '0 1px 1px rgba(0,0,0,0.2)'
                         }}>
-                            <textarea value={newMessage} onChange={e => setNewMessage(e.target.value)}
+                            <textarea ref={inputRef} value={newMessage} onChange={e => setNewMessage(e.target.value)}
                                 onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
                                 placeholder="Type a message"
                                 rows={1}
