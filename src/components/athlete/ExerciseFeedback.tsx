@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { MessageCircle, Video, X, Send, CheckCircle, Scissors, Paperclip, Image } from 'lucide-react';
 import VideoCropper from '@/components/chat/VideoCropper';
+import { compressVideo } from '@/lib/videoCompressor';
 
 interface Props {
     athleteId: string;
@@ -267,7 +268,22 @@ export default function ExerciseFeedback({
 
             // Upload first file (messages support single media)
             if (stagedFiles.length > 0) {
-                const result = await uploadFile(stagedFiles[0], 0);
+                let fileToUpload = stagedFiles[0];
+
+                // Compress video before upload (iOS Safari + Chrome 121+ support)
+                if (fileToUpload.type.startsWith('video/')) {
+                    setUploadProgress(0);
+                    try {
+                        const compressed = await compressVideo(fileToUpload, (pct) => setUploadProgress(Math.round(pct * 0.5)));
+                        if (compressed && compressed.size < fileToUpload.size) {
+                            fileToUpload = new File([compressed], fileToUpload.name.replace(/\.\w+$/, '.mp4'), { type: 'video/mp4' });
+                        }
+                    } catch (err) {
+                        console.warn('Video compression failed, uploading original:', err);
+                    }
+                }
+
+                const result = await uploadFile(fileToUpload, 0);
                 // Append media fragment URI for trimmed videos
                 const trim = stagedTrimData[0];
                 mediaUrl = trim ? `${result.url}#t=${trim.start},${trim.end}` : result.url;
