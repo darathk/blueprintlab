@@ -1207,14 +1207,20 @@ export default function ChatInterface({
                                         {/* Dropdown action menu — opens upward to avoid bottom cutoff */}
                                         {activeMenu === msg.id && !isMultiSelecting && (
                                             <>
-                                                <div onClick={(e) => { e.stopPropagation(); setActiveMenu(null); }} style={{ position: 'fixed', inset: 0, zIndex: 999 }} />
+                                                {/* Backdrop to close menu — uses onTouchStart + onClick for reliable mobile dismissal */}
                                                 <div
+                                                    onTouchStart={(e) => { e.stopPropagation(); setActiveMenu(null); }}
+                                                    onClick={(e) => { e.stopPropagation(); setActiveMenu(null); }}
+                                                    style={{ position: 'fixed', inset: 0, zIndex: 998 }}
+                                                />
+                                                <div
+                                                    onTouchStart={e => e.stopPropagation()}
                                                     onClick={e => e.stopPropagation()}
                                                     style={{
                                                         position: 'absolute',
                                                         bottom: 0,
                                                         [mine ? 'right' : 'left']: 0,
-                                                        zIndex: 1000,
+                                                        zIndex: 999,
                                                         background: '#1f2c34',
                                                         border: '1px solid rgba(255,255,255,0.1)',
                                                         borderRadius: 12,
