@@ -5,6 +5,47 @@ import { useRouter } from 'next/navigation';
 import { calculateSimpleE1RM, calculateStress } from '@/lib/stress-index';
 import { ArrowRight, Search, ChevronDown } from 'lucide-react';
 import ExerciseFeedback from '@/components/athlete/ExerciseFeedback';
+import { getExerciseCategory } from '@/lib/exercise-db';
+
+/* ─────────── constants ─────────── */
+const CATEGORY_COLORS: Record<string, string> = {
+    'Knee': '#EAB308',
+    'Hip': '#EF4444',
+    'Horizontal Push': '#22C55E',
+    'Vertical Push': '#F59E0B',
+    'Horizontal Pull': '#06B6D4',
+    'Vertical Pull': '#3B82F6',
+    'Isolation (Upper)': '#A78BFA',
+    'Isolation (Lower)': '#F472B6',
+    'Isolation/Accessory': '#8B5CF6'
+};
+
+const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+function formatSetsSummary(sets: any[]) {
+    if (!Array.isArray(sets) || sets.length === 0) return '';
+    const parts: string[] = [];
+    let i = 0;
+    while (i < sets.length) {
+        const s = sets[i];
+        const reps = s.reps || '';
+        const rpe = s.rpe || '';
+        const weight = s.weight || '';
+        let count = 1;
+        while (i + count < sets.length) {
+            const next = sets[i + count];
+            if (String(next.reps) === String(reps) && String(next.rpe) === String(rpe) && String(next.weight) === String(weight)) {
+                count++;
+            } else break;
+        }
+        let part = count > 1 ? `${count}x${reps}` : `x${reps}`;
+        if (rpe) part += ` @${rpe}`;
+        if (weight && String(weight).includes('%')) part += ` @${weight}`;
+        parts.push(part);
+        i += count;
+    }
+    return parts.join(', ');
+}
 
 /* ─────────── helpers ─────────── */
 function sessionKey(programId: string, weekNum: number, day: number) {
@@ -58,6 +99,27 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
     const [unit, setUnit] = useState<'kg' | 'lbs'>('lbs');
     const [sortOrder, setSortOrder] = useState<'latest' | 'oldest'>('latest');
     const [searchQuery, setSearchQuery] = useState('');
+
+    // Week overview drawer state
+    const [weekDrawer, setWeekDrawer] = useState<{ open: boolean; programId: string; programName: string; weekNum: number; sessions: any[]; startDate: string } | null>(null);
+
+    const openWeekDrawer = (program: any, week: any) => {
+        const programStart = program.startDate ? new Date(program.startDate) : null;
+        let weekStartDate = '';
+        if (programStart) {
+            const start = new Date(programStart);
+            start.setDate(start.getDate() + ((week.weekNumber || 1) - 1) * 7);
+            weekStartDate = start.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' });
+        }
+        setWeekDrawer({
+            open: true,
+            programId: program.id,
+            programName: program.name,
+            weekNum: week.weekNumber || 1,
+            sessions: Array.isArray(week.sessions) ? week.sessions : [],
+            startDate: weekStartDate
+        });
+    };
 
     useEffect(() => {
         const saved = localStorage.getItem('athlete-unit-pref');
@@ -424,18 +486,51 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
 
                             return (
                                 <div key={weekKey} style={{ background: 'var(--card-bg)', color: 'var(--foreground)' }}> {/* Light grey background for RTS style */}
-                                    <button
-                                        onClick={() => toggle(openWeeks, weekKey, setOpenWeeks)}
-                                        style={{
-                                            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                            padding: '12px 16px', background: 'var(--background)',
-                                            border: 'none', borderBottom: '1px solid var(--card-border)', borderLeft: '1px solid var(--card-border)', borderRight: '1px solid var(--card-border)',
-                                            color: 'var(--foreground)', cursor: 'pointer', fontSize: '1rem', fontWeight: 600
-                                        }}
-                                    >
-                                        <span>Week {weekNum} <span style={{ fontWeight: 400, color: 'var(--secondary-foreground)', fontSize: '0.85rem' }}>• {sessions.length} session{sessions.length !== 1 ? 's' : ''}</span></span>
-                                        <span style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', transition: 'transform 200ms', transform: weekOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
-                                    </button>
+                                    <div style={{
+                                        display: 'flex', alignItems: 'center',
+                                        background: 'var(--background)',
+                                        borderBottom: '1px solid var(--card-border)', borderLeft: '1px solid var(--card-border)', borderRight: '1px solid var(--card-border)',
+                                    }}>
+                                        <button
+                                            onClick={() => toggle(openWeeks, weekKey, setOpenWeeks)}
+                                            style={{
+                                                flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                                padding: '12px 16px', background: 'transparent',
+                                                border: 'none',
+                                                color: 'var(--foreground)', cursor: 'pointer', fontSize: '1rem', fontWeight: 600
+                                            }}
+                                        >
+                                            <span>Week {weekNum} <span style={{ fontWeight: 400, color: 'var(--secondary-foreground)', fontSize: '0.85rem' }}>• {sessions.length} session{sessions.length !== 1 ? 's' : ''}</span></span>
+                                            <span style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', transition: 'transform 200ms', transform: weekOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+                                        </button>
+                                        {/* Week Overview Button */}
+                                        <button
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                openWeekDrawer(program, week);
+                                            }}
+                                            title="View week overview"
+                                            style={{
+                                                background: '#3B82F6',
+                                                color: 'white',
+                                                border: 'none',
+                                                width: '32px',
+                                                height: '32px',
+                                                borderRadius: '8px',
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                justifyContent: 'center',
+                                                marginRight: '12px',
+                                                flexShrink: 0,
+                                                boxShadow: '0 1px 4px rgba(59, 130, 246, 0.3)',
+                                            }}
+                                        >
+                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                                <polyline points="18 15 12 9 6 15" />
+                                            </svg>
+                                        </button>
+                                    </div>
 
                                     {/* ═══ Sessions (Days) ═══ */}
                                     {weekOpen && sessions.map((session: any) => {
@@ -448,7 +543,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                                         const progress = sessionProgress(exercises, log, editState[sKey]);
 
                                         return (
-                                            <div key={sKey} style={{ borderBottom: '1px solid var(--card-border)', borderLeft: '1px solid var(--card-border)', borderRight: '1px solid var(--card-border)' }}>
+                                            <div key={sKey} id={`session-${sKey}`} style={{ borderBottom: '1px solid var(--card-border)', borderLeft: '1px solid var(--card-border)', borderRight: '1px solid var(--card-border)' }}>
                                                 {/* Session header */}
                                                 <div style={{
                                                     display: 'flex',
@@ -728,6 +823,156 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                     </div>
                 );
             })}
+            {/* ═══ Week Overview Drawer ═══ */}
+            {weekDrawer && (
+                <>
+                    {/* Backdrop */}
+                    {weekDrawer.open && (
+                        <div
+                            onClick={() => setWeekDrawer(null)}
+                            style={{
+                                position: 'fixed',
+                                inset: 0,
+                                background: 'rgba(0, 0, 0, 0.6)',
+                                zIndex: 200,
+                            }}
+                        />
+                    )}
+
+                    {/* Drawer */}
+                    <div style={{
+                        position: 'fixed',
+                        bottom: 0,
+                        left: 0,
+                        right: 0,
+                        zIndex: 201,
+                        transform: weekDrawer.open ? 'translateY(0)' : 'translateY(100%)',
+                        transition: 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+                        maxHeight: '85vh',
+                        overflowY: 'auto',
+                        background: 'var(--background)',
+                        borderTop: '2px solid var(--primary)',
+                        borderRadius: '16px 16px 0 0',
+                        padding: '0 0 2rem 0'
+                    }}>
+                        {/* Drag Handle */}
+                        <div
+                            onClick={() => setWeekDrawer(null)}
+                            style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 8px 0', cursor: 'pointer' }}
+                        >
+                            <div style={{ width: 40, height: 4, borderRadius: 2, background: 'var(--card-border)' }} />
+                        </div>
+
+                        {/* Header */}
+                        <div style={{ textAlign: 'center', padding: '0 1rem 1rem 1rem', borderBottom: '1px solid var(--card-border)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}>
+                                <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--foreground)', margin: 0 }}>
+                                    {weekDrawer.programName || 'Training Program'}
+                                </h2>
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--secondary-foreground)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.6 }}>
+                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+                                    <line x1="16" y1="2" x2="16" y2="6" />
+                                    <line x1="8" y1="2" x2="8" y2="6" />
+                                    <line x1="3" y1="10" x2="21" y2="10" />
+                                </svg>
+                            </div>
+                            <p style={{ fontSize: '0.9rem', color: 'var(--secondary-foreground)', margin: '4px 0 0 0' }}>
+                                {weekDrawer.startDate ? `Week of ${weekDrawer.startDate}` : `Week ${weekDrawer.weekNum}`}
+                            </p>
+                        </div>
+
+                        {/* Sessions by Day */}
+                        <div style={{ padding: '1rem' }}>
+                            {weekDrawer.sessions
+                                .sort((a: any, b: any) => (a.day || 1) - (b.day || 1))
+                                .map((sess: any) => {
+                                    const dayName = sess.name || DAY_NAMES[((sess.day || 1) - 1) % 7] || `Day ${sess.day}`;
+                                    return (
+                                        <div key={sess.day} style={{ marginBottom: '1.25rem' }}>
+                                            {/* Day Label */}
+                                            <div style={{
+                                                fontSize: '0.75rem',
+                                                fontWeight: 700,
+                                                letterSpacing: '0.05em',
+                                                textTransform: 'uppercase',
+                                                color: 'var(--secondary-foreground)',
+                                                marginBottom: '0.5rem'
+                                            }}>
+                                                {dayName}
+                                            </div>
+
+                                            {/* Exercise Cards */}
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                                {(sess.exercises || []).map((ex: any, exIdx: number) => {
+                                                    const category = getExerciseCategory(ex.name);
+                                                    const color = CATEGORY_COLORS[category] || '#94A3B8';
+                                                    const setsSummary = formatSetsSummary(ex.sets);
+                                                    const targetSessionId = `${weekDrawer.programId}_w${weekDrawer.weekNum}_d${sess.day}`;
+
+                                                    return (
+                                                        <div
+                                                            key={ex.id || exIdx}
+                                                            onClick={() => {
+                                                                setWeekDrawer(null);
+                                                                // Open the session in ScheduleView
+                                                                const sKey = sessionKey(weekDrawer.programId, weekDrawer.weekNum, sess.day);
+                                                                const weekKey = `${weekDrawer.programId}-w${weekDrawer.weekNum}`;
+                                                                setOpenBlocks(prev => new Set(prev).add(weekDrawer.programId));
+                                                                setOpenWeeks(prev => new Set(prev).add(weekKey));
+                                                                setOpenSessions(prev => new Set(prev).add(sKey));
+                                                                // Scroll to it after state updates
+                                                                setTimeout(() => {
+                                                                    const el = document.getElementById(`session-${sKey}`);
+                                                                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                                                                }, 100);
+                                                            }}
+                                                            style={{
+                                                                display: 'flex',
+                                                                justifyContent: 'space-between',
+                                                                alignItems: 'center',
+                                                                padding: '0.75rem 1rem',
+                                                                background: 'var(--card-bg)',
+                                                                border: `1px solid ${color}30`,
+                                                                borderRadius: '8px',
+                                                                cursor: 'pointer',
+                                                                transition: 'background 0.15s ease'
+                                                            }}
+                                                        >
+                                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                                <div style={{
+                                                                    fontSize: '0.95rem',
+                                                                    fontWeight: 600,
+                                                                    color: color,
+                                                                    marginBottom: '2px'
+                                                                }}>
+                                                                    {ex.name}
+                                                                </div>
+                                                                <div style={{
+                                                                    fontSize: '0.8rem',
+                                                                    color: 'var(--secondary-foreground)',
+                                                                    opacity: 0.8
+                                                                }}>
+                                                                    {setsSummary}
+                                                                </div>
+                                                            </div>
+                                                            <span style={{
+                                                                color: color,
+                                                                fontSize: '1.2rem',
+                                                                fontWeight: 700,
+                                                                marginLeft: '0.75rem',
+                                                                opacity: 0.7
+                                                            }}>+</span>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                        </div>
+                    </div>
+                </>
+            )}
         </div >
     );
 }
