@@ -117,10 +117,17 @@ export default async function AthleteAnalyticsPage({ params }) {
             </CollapsibleSection>
 
             <CollapsibleSection title="Meet Planner" defaultOpen={false}>
-                <Suspense fallback={<Loader />}>
-                    <AsyncMeetAttempts id={id} />
-                    <AsyncBlockOrganizer id={id} />
-                </Suspense>
+                <CollapsibleSection title="Periodization Planner" defaultOpen={true}>
+                    <Suspense fallback={<Loader />}>
+                        <AsyncBlockOrganizer id={id} />
+                    </Suspense>
+                </CollapsibleSection>
+
+                <CollapsibleSection title="Attempt Selection" defaultOpen={false}>
+                    <Suspense fallback={<Loader />}>
+                        <AsyncMeetAttempts id={id} />
+                    </Suspense>
+                </CollapsibleSection>
             </CollapsibleSection>
 
             <CollapsibleSection title="Historical Performance" defaultOpen={false}>
