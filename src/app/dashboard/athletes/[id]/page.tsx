@@ -17,6 +17,10 @@ const DotsChart = dynamic(() => import('@/components/dashboard/DotsChart'), {
     loading: () => <div style={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="pulse">Loading DOTs chart...</div>
 });
 
+const FatigueChart = dynamic(() => import('@/components/dashboard/FatigueChart'), {
+    loading: () => <div style={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="pulse">Loading fatigue chart...</div>
+});
+
 // Extracted Async Components for Granular Streaming
 
 async function AthleteHeader({ id }) {
@@ -90,6 +94,11 @@ async function AsyncDotsChart({ id }) {
     );
 }
 
+async function AsyncFatigueChart({ id }) {
+    const readinessLogs = await getReadinessByAthlete(id);
+    return <FatigueChart readinessLogs={readinessLogs} />;
+}
+
 // Main Page Skeleton Layout (Renders Instantly)
 export default async function AthleteAnalyticsPage({ params }) {
     const { id } = await params;
@@ -105,6 +114,12 @@ export default async function AthleteAnalyticsPage({ params }) {
             <CollapsibleSection title="Athlete's Progress" defaultOpen={true}>
                 <Suspense fallback={<Loader />}>
                     <AsyncDotsChart id={id} />
+                </Suspense>
+            </CollapsibleSection>
+
+            <CollapsibleSection title="Fatigue & Readiness Metrics" defaultOpen={true}>
+                <Suspense fallback={<Loader />}>
+                    <AsyncFatigueChart id={id} />
                 </Suspense>
             </CollapsibleSection>
 
