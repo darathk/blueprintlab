@@ -4,13 +4,13 @@ import { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, Activity } from 'lucide-react';
 
 const METRICS = [
-    { id: 'leg_soreness', label: 'Legs', emoji: '🦵', type: 'soreness' },
-    { id: 'push_soreness', label: 'Push', emoji: '💪', type: 'soreness' },
-    { id: 'pull_soreness', label: 'Pull', emoji: '🔙', type: 'soreness' },
-    { id: 'tiredness', label: 'Energy', emoji: '⚡', type: 'general' },
-    { id: 'recovery', label: 'Recovery', emoji: '🔋', type: 'general' },
-    { id: 'motivation', label: 'Drive', emoji: '🔥', type: 'general' },
-    { id: 'training_load', label: 'Load', emoji: '🏋️', type: 'general' },
+    { id: 'leg_soreness', label: 'Legs', desc: 'How sore are your legs?', emoji: '🦵' },
+    { id: 'push_soreness', label: 'Push', desc: 'Chest, shoulders & triceps soreness', emoji: '💪' },
+    { id: 'pull_soreness', label: 'Pull', desc: 'Back & biceps soreness', emoji: '🔙' },
+    { id: 'tiredness', label: 'Energy', desc: 'Overall energy & alertness level', emoji: '⚡' },
+    { id: 'recovery', label: 'Recovery', desc: 'How recovered do you feel?', emoji: '🔋' },
+    { id: 'motivation', label: 'Drive', desc: 'Motivation to train today', emoji: '🔥' },
+    { id: 'training_load', label: 'Load', desc: 'How heavy does training feel?', emoji: '🏋️' },
 ];
 
 const SCORE_COLORS = ['', '#ef4444', '#f87171', '#fbbf24', '#34d399', '#10b981'];
@@ -87,17 +87,30 @@ export default function ReadinessCheckin({ athleteId, sessionKey, programId }: P
             <button
                 onClick={() => setExpanded(true)}
                 style={{
-                    width: '100%', display: 'flex', alignItems: 'center', gap: 10,
+                    width: '100%', display: 'flex', flexDirection: 'column', gap: 8,
                     background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)',
-                    borderRadius: 10, padding: '10px 14px', cursor: 'pointer', marginBottom: 12,
+                    borderRadius: 10, padding: '10px 12px', cursor: 'pointer', marginBottom: 12,
+                    boxSizing: 'border-box',
                 }}
             >
-                <Activity size={16} style={{ color: '#10b981', flexShrink: 0 }} />
-                <span style={{ fontSize: 13, color: 'var(--foreground)', fontWeight: 600 }}>Readiness</span>
-                <div style={{ display: 'flex', gap: 6, flex: 1, justifyContent: 'center' }}>
+                {/* Top row: icon + label + avg */}
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <Activity size={15} style={{ color: '#10b981', flexShrink: 0 }} />
+                        <span style={{ fontSize: 13, color: 'var(--foreground)', fontWeight: 600 }}>Readiness</span>
+                        <span style={{ fontSize: 11, color: '#10b981', fontWeight: 600 }}>✓</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: 16, fontWeight: 800, color: avgColor }}>{avgScore}</span>
+                        <span style={{ fontSize: 10, color: 'var(--secondary-foreground)' }}>/ 5</span>
+                        <ChevronDown size={14} style={{ color: 'var(--secondary-foreground)' }} />
+                    </div>
+                </div>
+                {/* Bottom row: score pills */}
+                <div style={{ display: 'flex', gap: 4, width: '100%', justifyContent: 'space-between' }}>
                     {METRICS.map(m => (
                         <div key={m.id} style={{
-                            width: 24, height: 24, borderRadius: 6, fontSize: 11, fontWeight: 700,
+                            flex: 1, height: 22, borderRadius: 5, fontSize: 10, fontWeight: 700,
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             background: `${SCORE_COLORS[scores[m.id]] || '#555'}22`,
                             color: SCORE_COLORS[scores[m.id]] || '#999',
@@ -107,42 +120,50 @@ export default function ReadinessCheckin({ athleteId, sessionKey, programId }: P
                         </div>
                     ))}
                 </div>
-                <div style={{
-                    fontSize: 15, fontWeight: 800, color: avgColor,
-                    background: `${avgColor}15`, borderRadius: 8, padding: '4px 10px',
-                    flexShrink: 0,
-                }}>
-                    {avgScore}
-                </div>
-                <ChevronDown size={14} style={{ color: 'var(--secondary-foreground)', flexShrink: 0 }} />
             </button>
         );
     }
 
     return (
         <div style={{
-            background: 'rgba(15, 23, 42, 0.4)', border: '1px solid rgba(255,255,255,0.08)',
+            background: expanded ? 'rgba(15, 23, 42, 0.5)' : 'linear-gradient(135deg, rgba(125,135,210,0.15), rgba(168,85,247,0.12))',
+            border: expanded ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(125,135,210,0.35)',
             borderRadius: 12, marginBottom: 12, overflow: 'hidden',
+            boxShadow: expanded ? 'none' : '0 0 20px rgba(125,135,210,0.15), inset 0 1px 0 rgba(255,255,255,0.08)',
         }}>
             {/* Header */}
             <button
                 onClick={() => setExpanded(!expanded)}
                 style={{
                     width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    background: 'none', border: 'none', cursor: 'pointer',
+                    background: expanded ? 'none' : 'linear-gradient(90deg, rgba(125,135,210,0.08), rgba(168,85,247,0.06))',
+                    border: 'none', cursor: 'pointer',
                     padding: '12px 14px', color: 'var(--foreground)',
                 }}
             >
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Activity size={16} style={{ color: 'var(--primary)' }} />
-                    <span style={{ fontSize: 13, fontWeight: 600 }}>Pre-Session Readiness</span>
-                    {!expanded && !submitted && (
-                        <span style={{ fontSize: 11, color: 'var(--primary)', fontWeight: 500, opacity: 0.7 }}>
-                            Tap to check in
-                        </span>
-                    )}
+                    <div style={{
+                        width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: expanded ? 'rgba(125,135,210,0.2)' : 'linear-gradient(135deg, #7d87d2, #a855f7)',
+                        boxShadow: expanded ? 'none' : '0 0 12px rgba(125,135,210,0.4)',
+                    }}>
+                        <Activity size={15} style={{ color: '#fff' }} />
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
+                        <span style={{ fontSize: 13, fontWeight: 700 }}>Pre-Session Readiness</span>
+                        {!expanded && !submitted && (
+                            <span style={{ fontSize: 10, color: '#a78bfa', fontWeight: 600, letterSpacing: '0.03em' }}>
+                                Tap to check in before training
+                            </span>
+                        )}
+                    </div>
                 </div>
-                {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                <div style={{
+                    width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: expanded ? 'rgba(255,255,255,0.05)' : 'rgba(125,135,210,0.2)',
+                }}>
+                    {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} style={{ color: '#a78bfa' }} />}
+                </div>
             </button>
 
             {/* Expanded form */}
@@ -151,9 +172,12 @@ export default function ReadinessCheckin({ athleteId, sessionKey, programId }: P
                     <div style={{ display: 'grid', gap: 10 }}>
                         {METRICS.map(m => (
                             <div key={m.id}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 6 }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
                                     <span style={{ fontSize: 14 }}>{m.emoji}</span>
                                     <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--foreground)' }}>{m.label}</span>
+                                </div>
+                                <div style={{ fontSize: 10, color: 'var(--secondary-foreground)', marginBottom: 6, paddingLeft: 22, opacity: 0.7 }}>
+                                    {m.desc}
                                 </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4 }}>
                                     {[1, 2, 3, 4, 5].map(val => {
