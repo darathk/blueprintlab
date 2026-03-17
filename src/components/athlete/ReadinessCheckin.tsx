@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { ChevronDown, ChevronUp, Activity } from 'lucide-react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Activity } from 'lucide-react';
 
 // Per-level descriptions from the coach's chart
 // 1 = best, 5 = worst
@@ -74,6 +74,219 @@ interface Props {
     athleteId: string;
     sessionKey: string;
     programId: string;
+}
+
+/* ── Lateral-scroll card form ── */
+function ExpandedForm({
+    scores, submitted, saving, isComplete, avgScore, avgColor,
+    onSelect, onSubmit, onCollapse,
+}: {
+    scores: Record<string, number>;
+    submitted: boolean;
+    saving: boolean;
+    isComplete: boolean;
+    avgScore: string | null;
+    avgColor: string;
+    onSelect: (id: string, val: number) => void;
+    onSubmit: () => void;
+    onCollapse: () => void;
+}) {
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const [activeIdx, setActiveIdx] = useState(0);
+
+    const scrollTo = useCallback((idx: number) => {
+        const clamped = Math.max(0, Math.min(METRICS.length - 1, idx));
+        scrollRef.current?.children[clamped]?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+        setActiveIdx(clamped);
+    }, []);
+
+    const handleScroll = useCallback(() => {
+        const el = scrollRef.current;
+        if (!el) return;
+        const scrollLeft = el.scrollLeft;
+        const cardWidth = el.scrollWidth / METRICS.length;
+        setActiveIdx(Math.round(scrollLeft / cardWidth));
+    }, []);
+
+    const m = METRICS[activeIdx];
+    const selectedVal = m ? scores[m.id] : 0;
+    const filledCount = METRICS.filter(met => scores[met.id]).length;
+
+    return (
+        <div style={{ padding: '0 0 14px' }}>
+            {/* Hide scrollbar */}
+            <style>{`.readiness-scroll::-webkit-scrollbar { display: none; }`}</style>
+
+            {/* Progress dots + counter */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 10, padding: '0 14px' }}>
+                {METRICS.map((met, i) => (
+                    <button key={met.id} onClick={() => scrollTo(i)} style={{
+                        width: i === activeIdx ? 18 : 8, height: 8, borderRadius: 4, border: 'none', cursor: 'pointer', padding: 0,
+                        background: scores[met.id]
+                            ? SCORE_COLORS[scores[met.id]]
+                            : i === activeIdx ? 'var(--primary)' : 'rgba(255,255,255,0.15)',
+                        transition: 'all 0.2s',
+                    }} />
+                ))}
+                <span style={{ fontSize: 10, color: 'var(--secondary-foreground)', marginLeft: 4 }}>
+                    {filledCount}/{METRICS.length}
+                </span>
+            </div>
+
+            {/* Horizontal scroll container */}
+            <div
+                ref={scrollRef}
+                onScroll={handleScroll}
+                className="readiness-scroll"
+                style={{
+                    display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory',
+                    WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none',
+                    gap: 0, padding: '0 14px',
+                }}
+            >
+                {METRICS.map((met, i) => {
+                    const val = scores[met.id];
+                    const desc = val ? SCORE_DESCRIPTIONS[met.id]?.[val] : null;
+                    const descColor = val ? SCORE_COLORS[val] : 'var(--secondary-foreground)';
+
+                    return (
+                        <div key={met.id} style={{
+                            flex: '0 0 100%', scrollSnapAlign: 'center',
+                            padding: '0 4px', boxSizing: 'border-box',
+                        }}>
+                            <div style={{
+                                background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
+                                borderRadius: 12, padding: 16,
+                            }}>
+                                {/* Metric header */}
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 6 }}>
+                                    <span style={{ fontSize: 22 }}>{met.emoji}</span>
+                                    <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--foreground)' }}>{met.label}</span>
+                                </div>
+
+                                {/* Scale hint */}
+                                <div style={{
+                                    display: 'flex', justifyContent: 'space-between', marginBottom: 10,
+                                    fontSize: 9, padding: '0 2px',
+                                }}>
+                                    <span style={{ color: '#10b981', fontWeight: 600 }}>1 Best</span>
+                                    <span style={{ color: '#ef4444', fontWeight: 600 }}>5 Worst</span>
+                                </div>
+
+                                {/* Score buttons */}
+                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6 }}>
+                                    {[1, 2, 3, 4, 5].map(v => {
+                                        const selected = val === v;
+                                        const color = SCORE_COLORS[v];
+                                        return (
+                                            <button
+                                                key={v}
+                                                onClick={() => !submitted && onSelect(met.id, v)}
+                                                style={{
+                                                    height: 42, borderRadius: 10, border: 'none',
+                                                    cursor: submitted ? 'default' : 'pointer',
+                                                    fontSize: 16, fontWeight: 800,
+                                                    background: selected ? color : 'rgba(255,255,255,0.05)',
+                                                    color: selected ? '#000' : 'rgba(255,255,255,0.3)',
+                                                    opacity: val && !selected ? 0.3 : 1,
+                                                    transition: 'all 0.15s',
+                                                    boxShadow: selected ? `0 0 16px ${color}55` : 'none',
+                                                }}
+                                            >
+                                                {v}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+
+                                {/* Dynamic description */}
+                                <div style={{
+                                    minHeight: 36, marginTop: 10, fontSize: 12, textAlign: 'center',
+                                    padding: '6px 10px', borderRadius: 8, transition: 'all 0.2s',
+                                    color: desc ? descColor : 'rgba(255,255,255,0.2)',
+                                    background: desc ? `${descColor}10` : 'transparent',
+                                    border: desc ? `1px solid ${descColor}25` : '1px solid transparent',
+                                }}>
+                                    {desc || 'Select a score'}
+                                </div>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            {/* Navigation arrows */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px 0' }}>
+                <button
+                    onClick={() => scrollTo(activeIdx - 1)}
+                    disabled={activeIdx === 0}
+                    style={{
+                        width: 36, height: 36, borderRadius: 10, border: 'none', cursor: activeIdx === 0 ? 'default' : 'pointer',
+                        background: activeIdx === 0 ? 'rgba(255,255,255,0.03)' : 'rgba(125,135,210,0.15)',
+                        color: activeIdx === 0 ? 'rgba(255,255,255,0.1)' : '#a78bfa',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}
+                >
+                    <ChevronLeft size={18} />
+                </button>
+
+                {/* Center: avg or submit */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    {isComplete && !submitted && (
+                        <button
+                            onClick={onSubmit}
+                            disabled={saving}
+                            style={{
+                                padding: '9px 24px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                                fontSize: 14, fontWeight: 700,
+                                background: 'linear-gradient(135deg, #7d87d2, #a855f7)',
+                                color: '#fff', boxShadow: '0 0 16px rgba(125,135,210,0.4)',
+                            }}
+                        >
+                            {saving ? 'Saving...' : 'Submit'}
+                        </button>
+                    )}
+                    {submitted && (
+                        <button onClick={onCollapse} style={{
+                            padding: '8px 20px', borderRadius: 8, border: '1px solid rgba(16,185,129,0.3)',
+                            background: 'rgba(16,185,129,0.1)', color: '#10b981', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                        }}>
+                            ✓ Submitted — Collapse
+                        </button>
+                    )}
+                    {!isComplete && !submitted && avgScore && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <span style={{ fontSize: 11, color: 'var(--secondary-foreground)' }}>Avg:</span>
+                            <span style={{ fontSize: 16, fontWeight: 800, color: avgColor }}>{avgScore}</span>
+                        </div>
+                    )}
+                </div>
+
+                <button
+                    onClick={() => scrollTo(activeIdx + 1)}
+                    disabled={activeIdx === METRICS.length - 1}
+                    style={{
+                        width: 36, height: 36, borderRadius: 10, border: 'none',
+                        cursor: activeIdx === METRICS.length - 1 ? 'default' : 'pointer',
+                        background: activeIdx === METRICS.length - 1 ? 'rgba(255,255,255,0.03)' : 'rgba(125,135,210,0.15)',
+                        color: activeIdx === METRICS.length - 1 ? 'rgba(255,255,255,0.1)' : '#a78bfa',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}
+                >
+                    <ChevronRight size={18} />
+                </button>
+            </div>
+
+            {/* Avg readiness when all filled */}
+            {avgScore && (
+                <div style={{ textAlign: 'center', marginTop: 8, padding: '0 14px' }}>
+                    <span style={{ fontSize: 11, color: 'var(--secondary-foreground)' }}>Avg Readiness: </span>
+                    <span style={{ fontSize: 16, fontWeight: 800, color: avgColor }}>{avgScore}</span>
+                    <span style={{ fontSize: 11, color: avgColor }}> / 5</span>
+                </div>
+            )}
+        </div>
+    );
 }
 
 export default function ReadinessCheckin({ athleteId, sessionKey, programId }: Props) {
@@ -225,117 +438,19 @@ export default function ReadinessCheckin({ athleteId, sessionKey, programId }: P
                 </div>
             </button>
 
-            {/* Expanded form */}
+            {/* Expanded lateral scroll form */}
             {expanded && (
-                <div style={{ padding: '0 14px 14px' }}>
-                    {/* Scale legend */}
-                    <div style={{
-                        display: 'flex', justifyContent: 'space-between', marginBottom: 12,
-                        fontSize: 10, padding: '6px 10px', borderRadius: 6,
-                        background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)',
-                    }}>
-                        <span style={{ color: '#10b981', fontWeight: 600 }}>1 = Best</span>
-                        <span style={{ color: 'var(--secondary-foreground)' }}>Lower is better</span>
-                        <span style={{ color: '#ef4444', fontWeight: 600 }}>5 = Worst</span>
-                    </div>
-
-                    <div style={{ display: 'grid', gap: 12 }}>
-                        {METRICS.map(m => {
-                            const selectedVal = scores[m.id];
-                            const desc = selectedVal ? SCORE_DESCRIPTIONS[m.id]?.[selectedVal] : null;
-                            const descColor = selectedVal ? SCORE_COLORS[selectedVal] : 'var(--secondary-foreground)';
-
-                            return (
-                                <div key={m.id}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
-                                        <span style={{ fontSize: 14 }}>{m.emoji}</span>
-                                        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--foreground)' }}>{m.label}</span>
-                                    </div>
-                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4 }}>
-                                        {[1, 2, 3, 4, 5].map(val => {
-                                            const selected = selectedVal === val;
-                                            const color = SCORE_COLORS[val];
-                                            return (
-                                                <button
-                                                    key={val}
-                                                    onClick={() => !submitted && handleSelect(m.id, val)}
-                                                    style={{
-                                                        height: 34, borderRadius: 8, border: 'none', cursor: submitted ? 'default' : 'pointer',
-                                                        fontSize: 13, fontWeight: 700,
-                                                        background: selected ? color : 'rgba(255,255,255,0.04)',
-                                                        color: selected ? '#000' : 'rgba(255,255,255,0.3)',
-                                                        opacity: selectedVal && !selected ? 0.35 : 1,
-                                                        transition: 'all 0.15s',
-                                                        boxShadow: selected ? `0 0 12px ${color}44` : 'none',
-                                                    }}
-                                                >
-                                                    {val}
-                                                </button>
-                                            );
-                                        })}
-                                    </div>
-                                    {/* Dynamic description based on selected value */}
-                                    {desc && (
-                                        <div style={{
-                                            fontSize: 11, color: descColor, marginTop: 4,
-                                            padding: '4px 8px', borderRadius: 6,
-                                            background: `${descColor}10`,
-                                            border: `1px solid ${descColor}20`,
-                                            transition: 'all 0.2s',
-                                        }}>
-                                            {desc}
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
-
-                    {/* Average + Submit */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 14 }}>
-                        {avgScore && (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <span style={{ fontSize: 11, color: 'var(--secondary-foreground)' }}>Avg:</span>
-                                <span style={{ fontSize: 18, fontWeight: 800, color: avgColor }}>{avgScore}</span>
-                                <span style={{ fontSize: 11, color: avgColor }}>/ 5</span>
-                            </div>
-                        )}
-                        <div style={{ display: 'flex', gap: 8 }}>
-                            {submitted ? (
-                                <span style={{ fontSize: 12, color: '#10b981', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
-                                    ✓ Submitted
-                                </span>
-                            ) : (
-                                <button
-                                    onClick={handleSubmit}
-                                    disabled={!isComplete || saving}
-                                    style={{
-                                        padding: '8px 20px', borderRadius: 8, border: 'none',
-                                        fontSize: 13, fontWeight: 700, cursor: isComplete ? 'pointer' : 'not-allowed',
-                                        background: isComplete ? 'linear-gradient(135deg, #7d87d2, #a855f7)' : 'rgba(255,255,255,0.1)',
-                                        color: '#fff', opacity: isComplete ? 1 : 0.4,
-                                        transition: 'all 0.2s',
-                                    }}
-                                >
-                                    {saving ? 'Saving...' : 'Submit'}
-                                </button>
-                            )}
-                        </div>
-                    </div>
-
-                    {submitted && (
-                        <button
-                            onClick={() => setExpanded(false)}
-                            style={{
-                                width: '100%', marginTop: 8, padding: '6px', background: 'none',
-                                border: '1px solid rgba(255,255,255,0.06)', borderRadius: 6,
-                                color: 'var(--secondary-foreground)', fontSize: 11, cursor: 'pointer',
-                            }}
-                        >
-                            Collapse
-                        </button>
-                    )}
-                </div>
+                <ExpandedForm
+                    scores={scores}
+                    submitted={submitted}
+                    saving={saving}
+                    isComplete={isComplete}
+                    avgScore={avgScore}
+                    avgColor={avgColor}
+                    onSelect={handleSelect}
+                    onSubmit={handleSubmit}
+                    onCollapse={() => setExpanded(false)}
+                />
             )}
         </div>
     );
