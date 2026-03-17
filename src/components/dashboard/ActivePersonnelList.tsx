@@ -10,7 +10,8 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
     const [isAdding, setIsAdding] = useState(false);
     const [newName, setNewName] = useState('');
     const [newEmail, setNewEmail] = useState('');
-    const [sortBy, setSortBy] = useState<'name' | 'progress'>('name');
+    const [sortBy, setSortBy] = useState<'name' | 'progress' | 'meet'>('name');
+    const [filterMeet, setFilterMeet] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleAddAthlete = async (e: React.FormEvent) => {
@@ -89,20 +90,47 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
 
         const progressPercent = progress.totalSessions > 0 ? (progress.completedSessions / progress.totalSessions) * 100 : 0;
 
+        // Meet countdown
+        const meetDate = athlete.nextMeetDate ? new Date(athlete.nextMeetDate) : null;
+        let daysOut: number | null = null;
+        if (meetDate) {
+            const now = new Date();
+            now.setHours(0, 0, 0, 0);
+            meetDate.setHours(0, 0, 0, 0);
+            daysOut = Math.ceil((meetDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        }
+
         return {
             ...athlete,
             computedProgress: progress,
-            progressPercent
+            progressPercent,
+            daysOut,
+            hasMeet: !!athlete.nextMeetDate
         };
     });
 
     const displayAthletes = enrichedAthletes
-        .filter(athlete =>
-            athlete.name.toLowerCase().includes(searchQuery.toLowerCase())
-        )
+        .filter(athlete => {
+            const matchesSearch = athlete.name.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchesMeet = !filterMeet || athlete.hasMeet;
+            return matchesSearch && matchesMeet;
+        })
         .sort((a, b) => {
             if (sortBy === 'progress') {
                 return b.progressPercent - a.progressPercent;
+            }
+            if (sortBy === 'meet') {
+                // Athletes with meets first, sorted by soonest (upcoming first, then past)
+                if (a.hasMeet && !b.hasMeet) return -1;
+                if (!a.hasMeet && b.hasMeet) return 1;
+                if (!a.hasMeet && !b.hasMeet) return a.name.localeCompare(b.name);
+                // Both have meets: upcoming (positive daysOut) before past (negative)
+                const aUpcoming = (a.daysOut ?? 0) >= 0;
+                const bUpcoming = (b.daysOut ?? 0) >= 0;
+                if (aUpcoming && !bUpcoming) return -1;
+                if (!aUpcoming && bUpcoming) return 1;
+                // Both upcoming or both past: closest first
+                return (a.daysOut ?? 0) - (b.daysOut ?? 0);
             }
             return a.name.localeCompare(b.name);
         });
@@ -151,8 +179,27 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
                         >
                             <option value="name">Name</option>
                             <option value="progress">Progress (%)</option>
+                            <option value="meet">Meet (Soonest)</option>
                         </select>
                     </div>
+
+                    <button
+                        onClick={() => setFilterMeet(!filterMeet)}
+                        style={{
+                            padding: '0.4rem 0.8rem',
+                            borderRadius: '8px',
+                            border: `1px solid ${filterMeet ? 'var(--primary)' : 'var(--card-border)'}`,
+                            background: filterMeet ? 'rgba(6, 182, 212, 0.15)' : 'rgba(255, 255, 255, 0.03)',
+                            color: filterMeet ? 'var(--primary)' : 'var(--foreground)',
+                            fontSize: '0.8rem',
+                            fontWeight: 600,
+                            cursor: 'pointer',
+                            whiteSpace: 'nowrap',
+                            transition: 'all 0.2s'
+                        }}
+                    >
+                        Has Meet
+                    </button>
 
                     <input
                         type="text"

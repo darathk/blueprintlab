@@ -34,6 +34,21 @@ export default function AthleteStatusCard({ athlete, progress }) {
         ? Math.min(100, Math.round((progress.completedSessions / progress.totalSessions) * 100))
         : 0;
 
+    // Meet countdown
+    const meetDate = athlete.nextMeetDate ? new Date(athlete.nextMeetDate) : null;
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+    let daysOut = 0;
+    let weeksOut = 0;
+    let meetPassed = false;
+    if (meetDate) {
+        meetDate.setHours(0, 0, 0, 0);
+        const diffMs = meetDate.getTime() - now.getTime();
+        daysOut = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+        weeksOut = Math.floor(daysOut / 7);
+        meetPassed = daysOut < 0;
+    }
+
     return (
         <div
             className="glass-panel athlete-card-inner"
@@ -90,6 +105,62 @@ export default function AthleteStatusCard({ athlete, progress }) {
                     {percentage}%
                 </div>
             </div>
+
+            {/* Meet Info */}
+            {athlete.nextMeetDate && (
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.75rem',
+                    padding: '0.6rem 0.85rem',
+                    marginBottom: '1rem',
+                    borderRadius: '8px',
+                    background: meetPassed
+                        ? 'rgba(239, 68, 68, 0.08)'
+                        : daysOut <= 14
+                            ? 'rgba(245, 158, 11, 0.1)'
+                            : 'rgba(6, 182, 212, 0.08)',
+                    border: `1px solid ${meetPassed
+                        ? 'rgba(239, 68, 68, 0.2)'
+                        : daysOut <= 14
+                            ? 'rgba(245, 158, 11, 0.2)'
+                            : 'rgba(6, 182, 212, 0.15)'
+                        }`,
+                    fontSize: '0.8rem'
+                }}>
+                    <span style={{ fontSize: '1rem' }}>
+                        {meetPassed ? '' : daysOut <= 14 ? '' : ''}
+                    </span>
+                    <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 600, color: 'var(--foreground)' }}>
+                            {athlete.nextMeetName || 'Meet'}
+                        </div>
+                        <div style={{ color: 'var(--secondary-foreground)', fontSize: '0.75rem', marginTop: '1px' }}>
+                            {new Date(athlete.nextMeetDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        </div>
+                    </div>
+                    <div style={{
+                        textAlign: 'right',
+                        fontWeight: 700,
+                        color: meetPassed
+                            ? 'var(--destructive)'
+                            : daysOut <= 14
+                                ? '#F59E0B'
+                                : 'var(--primary)',
+                        fontSize: '0.85rem',
+                        whiteSpace: 'nowrap'
+                    }}>
+                        {meetPassed ? (
+                            <span>Completed</span>
+                        ) : (
+                            <>
+                                <div>{weeksOut}w {daysOut % 7}d out</div>
+                                <div style={{ fontSize: '0.7rem', fontWeight: 500, opacity: 0.8 }}>{daysOut} days</div>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
 
             <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', fontSize: '0.85rem' }}>

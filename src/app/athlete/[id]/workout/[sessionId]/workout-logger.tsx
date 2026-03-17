@@ -4,7 +4,6 @@ import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { calculateSimpleE1RM, calculateStress } from '@/lib/stress-index';
 import { getExerciseCategory } from '@/lib/exercise-db';
-import Link from 'next/link';
 import ExerciseFeedback from '@/components/athlete/ExerciseFeedback';
 
 // Category-based colors for exercise names
@@ -335,7 +334,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                         const maxE1RM = e1rms.length > 0 ? Math.max(...e1rms) : 0;
 
                         // Stats for this exercise
-                        let exStress = { total: 0, central: 0, peripheral: 0 };
+                        const exStress = { total: 0, central: 0, peripheral: 0 };
                         let tonnage = 0;
                         let totalNL = 0;
                         ex.sets.forEach(s => {
