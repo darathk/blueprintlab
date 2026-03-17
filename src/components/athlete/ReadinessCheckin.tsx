@@ -3,17 +3,72 @@
 import { useState, useEffect } from 'react';
 import { ChevronDown, ChevronUp, Activity } from 'lucide-react';
 
+// Per-level descriptions from the coach's chart
+// 1 = best, 5 = worst
+const SCORE_DESCRIPTIONS: Record<string, Record<number, string>> = {
+    leg_soreness: {
+        1: 'No soreness or tightness at all.',
+        2: 'Very light soreness. Barely noticeable.',
+        3: 'Some soreness. Noticeable, but not severe.',
+        4: 'Significant soreness. Clearly noticeable in daily activity.',
+        5: 'Severe soreness. Pain to use this muscle in full range of motion.',
+    },
+    push_soreness: {
+        1: 'No soreness or tightness at all.',
+        2: 'Very light soreness. Barely noticeable.',
+        3: 'Some soreness. Noticeable, but not severe.',
+        4: 'Significant soreness. Clearly noticeable in daily activity.',
+        5: 'Severe soreness. Pain to use this muscle in full range of motion.',
+    },
+    pull_soreness: {
+        1: 'No soreness or tightness at all.',
+        2: 'Very light soreness. Barely noticeable.',
+        3: 'Some soreness. Noticeable, but not severe.',
+        4: 'Significant soreness. Clearly noticeable in daily activity.',
+        5: 'Severe soreness. Pain to use this muscle in full range of motion.',
+    },
+    tiredness: {
+        1: 'I feel very fresh.',
+        2: 'I feel fresh.',
+        3: 'I feel normal — not especially tired or fresh.',
+        4: "I'm more tired than normal.",
+        5: "I'm always tired.",
+    },
+    recovery: {
+        1: 'Very well recovered. No fatigue.',
+        2: 'Well recovered. A little fatigue.',
+        3: 'Somewhat adequate / moderate recovery. Some fatigue.',
+        4: 'Not well recovered. Fatigued.',
+        5: 'Very poorly recovered. Highly fatigued.',
+    },
+    motivation: {
+        1: 'I want to train.',
+        2: 'I somewhat want to train.',
+        3: 'I am indifferent about training.',
+        4: 'I somewhat do not want to train.',
+        5: 'I do not want to train.',
+    },
+    training_load: {
+        1: 'No training / recovery training only.',
+        2: 'Low training load.',
+        3: 'Normal / moderate training load.',
+        4: 'High training load.',
+        5: 'Very high training load.',
+    },
+};
+
 const METRICS = [
-    { id: 'leg_soreness', label: 'Legs', desc: 'How sore are your legs?', emoji: '🦵' },
-    { id: 'push_soreness', label: 'Push', desc: 'Chest, shoulders & triceps soreness', emoji: '💪' },
-    { id: 'pull_soreness', label: 'Pull', desc: 'Back & biceps soreness', emoji: '🔙' },
-    { id: 'tiredness', label: 'Energy', desc: 'Overall energy & alertness level', emoji: '⚡' },
-    { id: 'recovery', label: 'Recovery', desc: 'How recovered do you feel?', emoji: '🔋' },
-    { id: 'motivation', label: 'Drive', desc: 'Motivation to train today', emoji: '🔥' },
-    { id: 'training_load', label: 'Load', desc: 'How heavy does training feel?', emoji: '🏋️' },
+    { id: 'leg_soreness', label: 'Leg Soreness', emoji: '🦵' },
+    { id: 'push_soreness', label: 'Push Soreness', emoji: '💪' },
+    { id: 'pull_soreness', label: 'Pull Soreness', emoji: '🔙' },
+    { id: 'tiredness', label: 'Tiredness', emoji: '⚡' },
+    { id: 'recovery', label: 'Perceived Recovery', emoji: '🔋' },
+    { id: 'motivation', label: 'Motivation to Train', emoji: '🔥' },
+    { id: 'training_load', label: 'Perceived Training Load', emoji: '🏋️' },
 ];
 
-const SCORE_COLORS = ['', '#ef4444', '#f87171', '#fbbf24', '#34d399', '#10b981'];
+// 1 = green (best), 5 = red (worst)
+const SCORE_COLORS = ['', '#10b981', '#34d399', '#fbbf24', '#f87171', '#ef4444'];
 
 interface Props {
     athleteId: string;
@@ -26,27 +81,26 @@ export default function ReadinessCheckin({ athleteId, sessionKey, programId }: P
     const [expanded, setExpanded] = useState(false);
     const [submitted, setSubmitted] = useState(false);
     const [saving, setSaving] = useState(false);
-    const [existingData, setExistingData] = useState<Record<string, number> | null>(null);
 
     const today = new Date().toISOString().split('T')[0];
 
-    // Check if readiness already submitted today
+    // Check if readiness already submitted for THIS session
     useEffect(() => {
         (async () => {
             try {
                 const res = await fetch(`/api/readiness?athleteId=${athleteId}`);
                 if (res.ok) {
                     const logs = await res.json();
-                    const todayLog = logs.find((l: any) => l.date?.startsWith(today));
-                    if (todayLog?.scores) {
-                        setExistingData(todayLog.scores);
-                        setScores(todayLog.scores);
+                    const sessionLog = logs.find((l: any) => l.scores?._sessionKey === sessionKey);
+                    if (sessionLog?.scores) {
+                        const { _sessionKey, ...restScores } = sessionLog.scores;
+                        setScores(restScores);
                         setSubmitted(true);
                     }
                 }
             } catch { /* ignore */ }
         })();
-    }, [athleteId, today]);
+    }, [athleteId, sessionKey]);
 
     const handleSelect = (id: string, value: number) => {
         setScores(prev => ({ ...prev, [id]: value }));
@@ -65,19 +119,24 @@ export default function ReadinessCheckin({ athleteId, sessionKey, programId }: P
             await fetch('/api/readiness', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ athleteId, programId, date: today, scores }),
+                body: JSON.stringify({
+                    athleteId,
+                    programId,
+                    date: today,
+                    scores: { ...scores, _sessionKey: sessionKey },
+                }),
             });
             setSubmitted(true);
-            setExistingData(scores);
         } catch (e) {
             console.error('Failed to save readiness:', e);
         }
         setSaving(false);
     };
 
+    // Lower avg = better (green), higher = worse (red)
     const avgColor = avgScore
-        ? parseFloat(avgScore) >= 4 ? '#10b981'
-            : parseFloat(avgScore) >= 3 ? '#fbbf24'
+        ? parseFloat(avgScore) <= 2 ? '#10b981'
+            : parseFloat(avgScore) <= 3 ? '#fbbf24'
                 : '#ef4444'
         : 'var(--secondary-foreground)';
 
@@ -169,57 +228,74 @@ export default function ReadinessCheckin({ athleteId, sessionKey, programId }: P
             {/* Expanded form */}
             {expanded && (
                 <div style={{ padding: '0 14px 14px' }}>
-                    <div style={{ display: 'grid', gap: 10 }}>
-                        {METRICS.map(m => (
-                            <div key={m.id}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-                                    <span style={{ fontSize: 14 }}>{m.emoji}</span>
-                                    <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--foreground)' }}>{m.label}</span>
-                                </div>
-                                <div style={{ fontSize: 10, color: 'var(--secondary-foreground)', marginBottom: 6, paddingLeft: 22, opacity: 0.7 }}>
-                                    {m.desc}
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4 }}>
-                                    {[1, 2, 3, 4, 5].map(val => {
-                                        const selected = scores[m.id] === val;
-                                        const color = SCORE_COLORS[val];
-                                        return (
-                                            <button
-                                                key={val}
-                                                onClick={() => !submitted && handleSelect(m.id, val)}
-                                                style={{
-                                                    height: 34, borderRadius: 8, border: 'none', cursor: submitted ? 'default' : 'pointer',
-                                                    fontSize: 13, fontWeight: 700,
-                                                    background: selected ? color : 'rgba(255,255,255,0.04)',
-                                                    color: selected ? '#000' : 'rgba(255,255,255,0.3)',
-                                                    opacity: scores[m.id] && !selected ? 0.35 : 1,
-                                                    transition: 'all 0.15s',
-                                                    boxShadow: selected ? `0 0 12px ${color}44` : 'none',
-                                                }}
-                                            >
-                                                {val}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        ))}
+                    {/* Scale legend */}
+                    <div style={{
+                        display: 'flex', justifyContent: 'space-between', marginBottom: 12,
+                        fontSize: 10, padding: '6px 10px', borderRadius: 6,
+                        background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)',
+                    }}>
+                        <span style={{ color: '#10b981', fontWeight: 600 }}>1 = Best</span>
+                        <span style={{ color: 'var(--secondary-foreground)' }}>Lower is better</span>
+                        <span style={{ color: '#ef4444', fontWeight: 600 }}>5 = Worst</span>
                     </div>
 
-                    {/* Score legend */}
-                    <div style={{
-                        display: 'flex', justifyContent: 'space-between', marginTop: 8,
-                        fontSize: 10, color: 'rgba(255,255,255,0.25)', padding: '0 2px',
-                    }}>
-                        <span>1 = Poor</span>
-                        <span>5 = Excellent</span>
+                    <div style={{ display: 'grid', gap: 12 }}>
+                        {METRICS.map(m => {
+                            const selectedVal = scores[m.id];
+                            const desc = selectedVal ? SCORE_DESCRIPTIONS[m.id]?.[selectedVal] : null;
+                            const descColor = selectedVal ? SCORE_COLORS[selectedVal] : 'var(--secondary-foreground)';
+
+                            return (
+                                <div key={m.id}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
+                                        <span style={{ fontSize: 14 }}>{m.emoji}</span>
+                                        <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--foreground)' }}>{m.label}</span>
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4 }}>
+                                        {[1, 2, 3, 4, 5].map(val => {
+                                            const selected = selectedVal === val;
+                                            const color = SCORE_COLORS[val];
+                                            return (
+                                                <button
+                                                    key={val}
+                                                    onClick={() => !submitted && handleSelect(m.id, val)}
+                                                    style={{
+                                                        height: 34, borderRadius: 8, border: 'none', cursor: submitted ? 'default' : 'pointer',
+                                                        fontSize: 13, fontWeight: 700,
+                                                        background: selected ? color : 'rgba(255,255,255,0.04)',
+                                                        color: selected ? '#000' : 'rgba(255,255,255,0.3)',
+                                                        opacity: selectedVal && !selected ? 0.35 : 1,
+                                                        transition: 'all 0.15s',
+                                                        boxShadow: selected ? `0 0 12px ${color}44` : 'none',
+                                                    }}
+                                                >
+                                                    {val}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                    {/* Dynamic description based on selected value */}
+                                    {desc && (
+                                        <div style={{
+                                            fontSize: 11, color: descColor, marginTop: 4,
+                                            padding: '4px 8px', borderRadius: 6,
+                                            background: `${descColor}10`,
+                                            border: `1px solid ${descColor}20`,
+                                            transition: 'all 0.2s',
+                                        }}>
+                                            {desc}
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
 
                     {/* Average + Submit */}
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 14 }}>
                         {avgScore && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                                <span style={{ fontSize: 11, color: 'var(--secondary-foreground)' }}>Avg Readiness:</span>
+                                <span style={{ fontSize: 11, color: 'var(--secondary-foreground)' }}>Avg:</span>
                                 <span style={{ fontSize: 18, fontWeight: 800, color: avgColor }}>{avgScore}</span>
                                 <span style={{ fontSize: 11, color: avgColor }}>/ 5</span>
                             </div>

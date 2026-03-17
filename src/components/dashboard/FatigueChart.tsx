@@ -64,12 +64,16 @@ export default function FatigueChart({ readinessLogs }: Props) {
             logs = logs.filter(l => new Date(l.date) >= cutoff);
         }
 
-        return logs.map(l => {
+        return logs.map((l, idx) => {
             const scores = l.scores || {};
+            const sessionKey = scores._sessionKey || '';
             const d = new Date(l.date);
+            // Build label: date + session indicator for multiple per day
+            const dateLabel = d.toLocaleDateString([], { month: 'short', day: 'numeric' });
             return {
-                date: d.toLocaleDateString([], { month: 'short', day: 'numeric' }),
+                date: dateLabel,
                 rawDate: l.date,
+                sessionKey,
                 ...Object.fromEntries(METRICS.map(m => [m.key, scores[m.key] || 0])),
                 avg: METRICS.reduce((sum, m) => sum + (scores[m.key] || 0), 0) / METRICS.length,
             };
@@ -120,19 +124,19 @@ export default function FatigueChart({ readinessLogs }: Props) {
                             label: 'Latest Readiness',
                             value: stats.latestAvg.toFixed(1),
                             sub: '/ 5',
-                            color: stats.latestAvg >= 4 ? '#10b981' : stats.latestAvg >= 3 ? '#fbbf24' : '#ef4444',
+                            color: stats.latestAvg <= 2 ? '#10b981' : stats.latestAvg <= 3 ? '#fbbf24' : '#ef4444',
                         },
                         {
                             label: `${timeline} Average`,
                             value: stats.periodAvg.toFixed(1),
                             sub: '/ 5',
-                            color: stats.periodAvg >= 4 ? '#10b981' : stats.periodAvg >= 3 ? '#fbbf24' : '#ef4444',
+                            color: stats.periodAvg <= 2 ? '#10b981' : stats.periodAvg <= 3 ? '#fbbf24' : '#ef4444',
                         },
                         {
                             label: 'Trend',
                             value: `${stats.trend >= 0 ? '+' : ''}${stats.trend.toFixed(1)}`,
                             sub: 'vs prev',
-                            color: stats.trend > 0 ? '#10b981' : stats.trend < 0 ? '#ef4444' : '#fbbf24',
+                            color: stats.trend < 0 ? '#10b981' : stats.trend > 0 ? '#ef4444' : '#fbbf24',
                         },
                         {
                             label: 'Check-Ins',
