@@ -10,8 +10,8 @@ export default function ProgramList({ athleteId }) {
         const loadPrograms = async () => {
             const res = await fetch(`/api/programs?athleteId=${athleteId}`);
             const data = await res.json();
-            // Fallback filter just in case, but server should now filter it
-            setPrograms(data.filter((p: any) => p.athleteId === athleteId));
+            // Fallback filter just in case, and exclude draft programs from display
+            setPrograms(data.filter((p: any) => p.athleteId === athleteId && p.status !== 'draft'));
         };
         loadPrograms();
     }, [athleteId]);

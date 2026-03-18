@@ -178,7 +178,7 @@ export const getAthleteById = cache(async (id) => {
 export const getProgramsByAthlete = cache(async (athleteId) => {
     try {
         return await prisma.program.findMany({
-            where: { athleteId },
+            where: { athleteId, status: { not: 'draft' } },
             orderBy: { createdAt: 'desc' },
             select: {
                 id: true,

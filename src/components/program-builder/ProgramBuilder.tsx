@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
@@ -356,6 +356,10 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
         }]
     }]);
     const [isSaving, setIsSaving] = useState(false);
+    const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+    const savedProgramIdRef = useRef<string | null>(initialData?.id || null);
+    const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const initialLoadRef = useRef(true);
 
     // Load initial data if provided (Edit Mode)
     useEffect(() => {
@@ -390,6 +394,8 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                 }));
                 setWeeks(sanitizedWeeks);
             }
+            // Reset initialLoadRef so the state changes from loading don't trigger auto-save
+            initialLoadRef.current = true;
         }
     }, [initialData]);
 
@@ -671,37 +677,95 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
         setWeeks(newWeeks);
     };
 
+    const buildPayload = useCallback(() => {
+        const start = new Date(startDate);
+        const durationDays = weeks.length * 7;
+        start.setDate(start.getDate() + durationDays);
+        const endDate = start.toISOString().split('T')[0];
+        return {
+            id: savedProgramIdRef.current || undefined,
+            name: programName || 'Untitled Program',
+            athleteId: selectedAthleteId,
+            startDate,
+            endDate,
+            weeks,
+            status: undefined as string | undefined
+        };
+    }, [programName, startDate, weeks, selectedAthleteId]);
+
+    const performAutoSave = useCallback(async () => {
+        if (!selectedAthleteId) return; // Can't save without an athlete
+        setAutoSaveStatus('saving');
+        try {
+            const payload = buildPayload();
+            // Auto-save as draft so it doesn't deactivate other programs
+            if (!savedProgramIdRef.current) {
+                payload.status = 'draft';
+            }
+            const method = savedProgramIdRef.current ? 'PUT' : 'POST';
+            const res = await fetch('/api/programs', {
+                method,
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (res.ok) {
+                const data = await res.json();
+                if (!savedProgramIdRef.current && data.id) {
+                    savedProgramIdRef.current = data.id;
+                }
+                setAutoSaveStatus('saved');
+                setTimeout(() => setAutoSaveStatus(prev => prev === 'saved' ? 'idle' : prev), 2000);
+            } else {
+                setAutoSaveStatus('error');
+            }
+        } catch (e) {
+            console.error('Auto-save failed:', e);
+            setAutoSaveStatus('error');
+        }
+    }, [buildPayload, selectedAthleteId]);
+
+    // Debounced auto-save: trigger 2s after any change
+    useEffect(() => {
+        // Skip auto-save on initial load
+        if (initialLoadRef.current) {
+            initialLoadRef.current = false;
+            return;
+        }
+        if (!selectedAthleteId) return;
+
+        if (autoSaveTimerRef.current) {
+            clearTimeout(autoSaveTimerRef.current);
+        }
+        setAutoSaveStatus('idle');
+        autoSaveTimerRef.current = setTimeout(() => {
+            performAutoSave();
+        }, 2000);
+
+        return () => {
+            if (autoSaveTimerRef.current) {
+                clearTimeout(autoSaveTimerRef.current);
+            }
+        };
+    }, [weeks, programName, startDate, selectedAthleteId, performAutoSave]);
+
     const handleSave = async () => {
+        // Cancel any pending auto-save
+        if (autoSaveTimerRef.current) {
+            clearTimeout(autoSaveTimerRef.current);
+        }
         setIsSaving(true);
         try {
-            // Calculate End Date
-            const start = new Date(startDate);
-            const durationDays = weeks.length * 7;
-            start.setDate(start.getDate() + durationDays);
-            const endDate = start.toISOString().split('T')[0];
-
-            // Use the selected athlete ID (either from prop or dropdown)
-            const finalAthleteId = selectedAthleteId;
-
-            const payload = {
-                id: initialData?.id, // Includes ID if editing
-                name: programName || 'Untitled Program',
-                athleteId: finalAthleteId,
-                startDate,
-                endDate,
-                weeks
-            };
-
-            const method = initialData?.id ? 'PUT' : 'POST';
+            const payload = { ...buildPayload(), status: 'active' };
+            const method = savedProgramIdRef.current ? 'PUT' : 'POST';
 
             const res = await fetch('/api/programs', {
-                method: method,
+                method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(payload)
             });
 
             if (res.ok) {
-                router.push(`/dashboard/athletes/${finalAthleteId}`);
+                router.push(`/dashboard/athletes/${selectedAthleteId}`);
                 router.refresh();
             } else {
                 alert('Failed to save');
@@ -1257,6 +1321,18 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                     Calendar View
                                 </button>
                             </div>
+
+                            {autoSaveStatus !== 'idle' && (
+                                <span style={{
+                                    fontSize: '0.8rem',
+                                    color: autoSaveStatus === 'error' ? '#ef4444' : autoSaveStatus === 'saved' ? '#22c55e' : 'var(--secondary-foreground)',
+                                    whiteSpace: 'nowrap'
+                                }}>
+                                    {autoSaveStatus === 'saving' && 'Saving...'}
+                                    {autoSaveStatus === 'saved' && 'Saved'}
+                                    {autoSaveStatus === 'error' && 'Save failed'}
+                                </span>
+                            )}
 
                             <button onClick={handleSave} className="btn btn-primary" disabled={isSaving}>
                                 {isSaving ? 'Saving...' : 'Save & Assign'}
