@@ -998,10 +998,11 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                         {/* ═══ Weeks ═══ */}
                         {blockOpen && weeks.map((week: any) => {
                             if (!week) return null;
+                            const sessions: any[] = Array.isArray(week.sessions) ? week.sessions : [];
+                            if (sessions.length === 0) return null;
                             const weekNum = week.weekNumber || 1;
                             const weekKey = `${program.id}-w${weekNum}`;
                             const weekOpen = openWeeks.has(weekKey);
-                            const sessions: any[] = Array.isArray(week.sessions) ? week.sessions : [];
 
                             return (
                                 <div key={weekKey} style={{ background: 'var(--card-bg)', color: 'var(--foreground)' }}> {/* Light grey background for RTS style */}
