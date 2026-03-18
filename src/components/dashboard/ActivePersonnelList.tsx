@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { Search, SlidersHorizontal, Plus, X } from 'lucide-react';
 import AthleteStatusCard from '@/app/dashboard/athlete-status-card';
 
 export default function ActivePersonnelList({ athletes, programs, logSummaries, coachId }) {
@@ -135,98 +136,163 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
             return a.name.localeCompare(b.name);
         });
 
+    const [showFilters, setShowFilters] = useState(false);
+    const filterRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!showFilters) return;
+        const handleClickOutside = (e: MouseEvent) => {
+            if (filterRef.current && !filterRef.current.contains(e.target as Node)) {
+                setShowFilters(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [showFilters]);
+
+    const hasActiveFilters = filterMeet || sortBy !== 'name';
+
     return (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '2rem' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+            {/* Search Bar */}
             <div style={{
                 display: 'flex',
-                justifyContent: 'space-between',
-                alignItems: 'flex-end',
-                borderBottom: '1px solid var(--card-border)',
-                paddingBottom: '0.5rem',
-                gap: '1rem',
-                flexWrap: 'wrap'
+                alignItems: 'center',
+                gap: '0.75rem',
+                padding: '0.7rem 1rem',
+                borderRadius: '12px',
+                border: '1px solid var(--card-border)',
+                background: 'rgba(255, 255, 255, 0.03)',
+                transition: 'border-color 0.2s',
             }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <h2 style={{ fontSize: '1.5rem', color: 'var(--foreground)', margin: 0 }}>
-                        <span className="neon-text">///</span> Active Personnel
-                    </h2>
+                <Search size={18} style={{ color: 'var(--secondary-foreground)', flexShrink: 0 }} />
+                <input
+                    type="text"
+                    placeholder="Filter athletes..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    style={{
+                        flex: 1,
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--foreground)',
+                        fontSize: '0.9rem',
+                        outline: 'none',
+                    }}
+                />
+                {searchQuery && (
                     <button
-                        onClick={() => setIsAdding(!isAdding)}
-                        className="btn btn-secondary"
-                        style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem' }}
+                        onClick={() => setSearchQuery('')}
+                        style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', display: 'flex', padding: 2 }}
                     >
-                        {isAdding ? 'Cancel' : '+ Add Athlete'}
+                        <X size={16} />
                     </button>
-                </div>
-
-                {/* Search & Sort UI */}
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap', width: '100%', maxWidth: '500px', justifyContent: 'flex-end' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <label style={{ fontSize: '0.75rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Sort:</label>
-                        <select
-                            value={sortBy}
-                            onChange={(e) => setSortBy(e.target.value as any)}
-                            style={{
-                                padding: '0.4rem 0.8rem',
-                                borderRadius: '8px',
-                                border: '1px solid var(--card-border)',
-                                background: 'rgba(255, 255, 255, 0.03)',
-                                color: 'var(--foreground)',
-                                fontSize: '0.85rem',
-                                outline: 'none',
-                                cursor: 'pointer'
-                            }}
-                        >
-                            <option value="name">Name</option>
-                            <option value="progress">Progress (%)</option>
-                            <option value="meet">Meet (Soonest)</option>
-                        </select>
-                    </div>
-
+                )}
+                <button
+                    onClick={() => setIsAdding(!isAdding)}
+                    style={{
+                        background: 'none',
+                        border: 'none',
+                        color: isAdding ? 'var(--primary)' : 'var(--secondary-foreground)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        alignItems: 'center',
+                        padding: 4,
+                        flexShrink: 0,
+                        transition: 'color 0.2s',
+                    }}
+                    title={isAdding ? 'Cancel' : 'Add Athlete'}
+                >
+                    {isAdding ? <X size={20} /> : <Plus size={20} />}
+                </button>
+                <div style={{ width: 1, height: 20, background: 'var(--card-border)', flexShrink: 0 }} />
+                <div ref={filterRef} style={{ position: 'relative' }}>
                     <button
-                        onClick={() => setFilterMeet(!filterMeet)}
+                        onClick={() => setShowFilters(!showFilters)}
                         style={{
-                            padding: '0.4rem 0.8rem',
-                            borderRadius: '8px',
-                            border: `1px solid ${filterMeet ? 'var(--primary)' : 'var(--card-border)'}`,
-                            background: filterMeet ? 'rgba(6, 182, 212, 0.15)' : 'rgba(255, 255, 255, 0.03)',
-                            color: filterMeet ? 'var(--primary)' : 'var(--foreground)',
-                            fontSize: '0.8rem',
-                            fontWeight: 600,
+                            background: 'none',
+                            border: 'none',
+                            color: hasActiveFilters ? 'var(--primary)' : 'var(--secondary-foreground)',
                             cursor: 'pointer',
-                            whiteSpace: 'nowrap',
-                            transition: 'all 0.2s'
+                            display: 'flex',
+                            alignItems: 'center',
+                            padding: 4,
+                            flexShrink: 0,
+                            transition: 'color 0.2s',
                         }}
+                        title="Sort & Filter"
                     >
-                        Has Meet
+                        <SlidersHorizontal size={18} />
                     </button>
 
-                    <input
-                        type="text"
-                        placeholder="Search athletes..."
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        style={{
-                            padding: '0.5rem 1rem',
-                            borderRadius: '9999px',
+                    {/* Filter Dropdown */}
+                    {showFilters && (
+                        <div style={{
+                            position: 'absolute',
+                            top: 'calc(100% + 8px)',
+                            right: 0,
+                            zIndex: 100,
+                            background: 'var(--card-bg)',
                             border: '1px solid var(--card-border)',
-                            background: 'rgba(255, 255, 255, 0.03)',
-                            color: 'var(--foreground)',
-                            fontSize: '0.9rem',
-                            width: '100%',
-                            maxWidth: '220px',
-                            outline: 'none',
-                            transition: 'border-color 0.2s, box-shadow 0.2s'
-                        }}
-                        onFocus={(e) => {
-                            e.target.style.borderColor = 'var(--primary)';
-                            e.target.style.boxShadow = '0 0 10px rgba(6,182,212,0.2)';
-                        }}
-                        onBlur={(e) => {
-                            e.target.style.borderColor = 'var(--card-border)';
-                            e.target.style.boxShadow = 'none';
-                        }}
-                    />
+                            borderRadius: '12px',
+                            padding: '0.75rem',
+                            minWidth: '200px',
+                            boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.6rem',
+                        }}>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Sort by</div>
+                            <div style={{ display: 'flex', gap: '0.4rem' }}>
+                                {[
+                                    { value: 'name', label: 'Name' },
+                                    { value: 'progress', label: 'Progress' },
+                                    { value: 'meet', label: 'Meet' },
+                                ].map(opt => (
+                                    <button
+                                        key={opt.value}
+                                        onClick={() => setSortBy(opt.value as any)}
+                                        style={{
+                                            flex: 1,
+                                            padding: '0.35rem 0.5rem',
+                                            borderRadius: '8px',
+                                            border: `1px solid ${sortBy === opt.value ? 'var(--primary)' : 'var(--card-border)'}`,
+                                            background: sortBy === opt.value ? 'rgba(6, 182, 212, 0.12)' : 'transparent',
+                                            color: sortBy === opt.value ? 'var(--primary)' : 'var(--foreground)',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 500,
+                                            cursor: 'pointer',
+                                            transition: 'all 0.15s',
+                                        }}
+                                    >
+                                        {opt.label}
+                                    </button>
+                                ))}
+                            </div>
+                            <div style={{ height: 1, background: 'var(--card-border)' }} />
+                            <button
+                                onClick={() => setFilterMeet(!filterMeet)}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    padding: '0.35rem 0.5rem',
+                                    borderRadius: '8px',
+                                    border: `1px solid ${filterMeet ? 'var(--primary)' : 'var(--card-border)'}`,
+                                    background: filterMeet ? 'rgba(6, 182, 212, 0.12)' : 'transparent',
+                                    color: filterMeet ? 'var(--primary)' : 'var(--foreground)',
+                                    fontSize: '0.8rem',
+                                    fontWeight: 500,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.15s',
+                                    width: '100%',
+                                }}
+                            >
+                                Has Meet
+                                <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>{filterMeet ? 'On' : 'Off'}</span>
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
 
