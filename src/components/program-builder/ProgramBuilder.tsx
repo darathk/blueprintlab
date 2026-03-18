@@ -1076,8 +1076,8 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                             <div style={{ padding: '0.5rem' }}>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 70px 70px 20px', gap: '4px', alignItems: 'center', marginBottom: '4px' }}>
                                     <div style={{ fontSize: '0.6rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Lift</div>
-                                    <div style={{ fontSize: '0.6rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>Peak (wks)</div>
-                                    <div style={{ fontSize: '0.6rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>Stress</div>
+                                    <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>Peak (wks)</div>
+                                    <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>Stress</div>
                                     <div></div>
                                 </div>
                                 {Object.entries(liftTargets).map(([lift, targets]) => (
