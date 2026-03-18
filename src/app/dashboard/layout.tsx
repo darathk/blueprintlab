@@ -85,7 +85,7 @@ export default async function DashboardLayout({
                 zIndex: 100,
                 background: '#1e293b'
             }}>
-                <div className="w-full flex items-center justify-between h-full px-6 md:px-10 lg:px-14">
+                <div className="w-full flex items-center justify-between h-full px-8 md:px-14 lg:px-20">
                     <div style={{ fontWeight: 800, fontSize: '1.5rem', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                         <span>Blueprint<span style={{ color: 'var(--primary)', textShadow: '0 0 10px rgba(125, 135, 210,0.5)' }}>Lab</span></span>
                     </div>
