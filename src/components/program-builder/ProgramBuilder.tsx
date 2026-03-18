@@ -915,7 +915,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
     };
 
     return (
-        <div className="program-builder-layout" style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '2rem', height: 'calc(100vh - 100px)', paddingTop: '1.5rem' }}>
+        <div className="program-builder-layout" style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 3fr', gap: '1.5rem', height: 'calc(100vh - 100px)', paddingTop: '1.5rem' }}>
 
             {/* LEFTSIDE BAR: Exercise Picker + Stress Index */}
             <div className="program-builder-sidebar" style={{ display: 'flex', flexDirection: 'column', gap: '0', height: '100%', overflow: 'hidden' }}>
@@ -1346,7 +1346,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
             {editingSession && (
                 <div style={{
                     position: 'fixed', top: 'var(--header-height, 56px)', right: 0, bottom: 0,
-                    width: '480px', maxWidth: '90vw',
+                    width: '40vw', minWidth: '480px', maxWidth: '90vw',
                     background: 'var(--background)', borderLeft: '1px solid var(--card-border)',
                     zIndex: 900, display: 'flex', flexDirection: 'column',
                     boxShadow: '-8px 0 30px rgba(0,0,0,0.5)',
