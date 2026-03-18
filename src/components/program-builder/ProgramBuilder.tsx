@@ -1368,30 +1368,6 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
 
                     {/* Editor body */}
                     <div style={{ flex: 1, overflowY: 'auto', padding: '1rem 1.25rem' }}>
-                        {/* Quick-add from exercise library */}
-                        <div style={{ marginBottom: '1rem', padding: '0.75rem', background: 'var(--card-bg)', borderRadius: 'var(--radius)', border: '1px solid var(--card-border)' }}>
-                            <ExercisePicker
-                                initialExercises={initialExercises}
-                                onAdd={(name) => {
-                                    const { w, s } = editingSession;
-                                    const newWeeks = [...weeks];
-                                    const sets = [
-                                        { id: generateId(), reps: '5', rpe: '6', weight: '' },
-                                        { id: generateId(), reps: '5', rpe: '7', weight: '' },
-                                        { id: generateId(), reps: '5', rpe: '8', weight: '' }
-                                    ];
-                                    newWeeks[w].sessions[s].exercises.push({
-                                        id: generateId(),
-                                        name: name,
-                                        sets: sets,
-                                        notes: ''
-                                    });
-                                    setWeeks(newWeeks);
-                                }}
-                                onDragStart={() => { }}
-                            />
-                        </div>
-
                         {/* Exercises */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                             {weeks[editingSession.w].sessions[editingSession.s].exercises.map((ex, exIndex) => (
