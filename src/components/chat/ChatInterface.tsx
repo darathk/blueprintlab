@@ -878,15 +878,13 @@ export default function ChatInterface({
         }}>
             {/* Header */}
             <div style={{
-                padding: '12px 16px',
-                paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))',
-                background: 'rgba(15, 23, 42, 0.95)',
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-                borderBottom: '1px solid rgba(255,255,255,0.08)',
+                padding: '14px 20px',
+                paddingTop: 'calc(14px + env(safe-area-inset-top, 0px))',
+                background: 'var(--background)',
+                borderBottom: '1px solid rgba(255,255,255,0.06)',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 12,
+                gap: 14,
                 flexShrink: 0,
                 height: 'calc(var(--header-height) + env(safe-area-inset-top, 0px))',
                 width: '100%',
@@ -896,45 +894,46 @@ export default function ChatInterface({
                     <>
                         <button onClick={() => setSelectedMessageIds(new Set())} style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><X size={20} /></button>
                         <div style={{ flex: 1, fontWeight: 600, color: 'var(--primary)', fontSize: 16 }}>{selectedMessageIds.size} Selected</div>
-                        <button onClick={handleCopyMultiple} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'none', border: 'none', color: '#fff', fontSize: 14, fontWeight: 500, cursor: 'pointer', marginRight: 8 }}><Copy size={16} color="#fff" /> Copy</button>
-                        <button onClick={async () => { if (!confirmBulkDelete) { setConfirmBulkDelete(true); return; } setConfirmBulkDelete(false); for (const id of selectedMessageIds) { setMessages(prev => prev.filter(m => m.id !== id)); await fetch(`/api/messages?id=${id}`, { method: 'DELETE' }); } setSelectedMessageIds(new Set()); }} style={{ display: 'flex', alignItems: 'center', gap: 6, background: confirmBulkDelete ? 'rgba(239,68,68,0.15)' : 'none', border: 'none', color: '#ef4444', fontSize: 14, fontWeight: 600, cursor: 'pointer', borderRadius: 6, padding: '4px 8px' }}><X size={16} color="#ef4444" /> {confirmBulkDelete ? 'Tap to confirm' : 'Delete'}</button>
+                        <button onClick={handleCopyMultiple} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 20, color: '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer', padding: '6px 14px' }}><Copy size={14} color="#fff" /> Copy</button>
+                        <button onClick={async () => { if (!confirmBulkDelete) { setConfirmBulkDelete(true); return; } setConfirmBulkDelete(false); for (const id of selectedMessageIds) { setMessages(prev => prev.filter(m => m.id !== id)); await fetch(`/api/messages?id=${id}`, { method: 'DELETE' }); } setSelectedMessageIds(new Set()); }} style={{ display: 'flex', alignItems: 'center', gap: 6, background: confirmBulkDelete ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.05)', border: confirmBulkDelete ? '1px solid rgba(239,68,68,0.3)' : '1px solid rgba(255,255,255,0.08)', color: '#ef4444', fontSize: 13, fontWeight: 600, cursor: 'pointer', borderRadius: 20, padding: '6px 14px' }}><X size={14} color="#ef4444" /> {confirmBulkDelete ? 'Tap to confirm' : 'Delete'}</button>
                     </>
                 ) : (
                     <>
                         {onBack ? (
-                            <button onClick={onBack} style={{ color: 'var(--primary)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 500 }}>← Back</button>
+                            <button onClick={onBack} style={{ color: 'var(--secondary-foreground)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, fontWeight: 300, display: 'flex', alignItems: 'center' }}>&#8249;</button>
                         ) : (
-                            <Link href={`/athlete/${athleteId}/dashboard`} style={{ color: 'var(--primary)', background: 'none', border: 'none', textDecoration: 'none', fontSize: 14, fontWeight: 500 }}>← Back</Link>
+                            <Link href={`/athlete/${athleteId}/dashboard`} style={{ color: 'var(--secondary-foreground)', background: 'none', border: 'none', textDecoration: 'none', fontSize: 20, fontWeight: 300, display: 'flex', alignItems: 'center' }}>&#8249;</Link>
                         )}
+
+                        <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, rgba(125,135,210,0.3), rgba(168,85,247,0.3))', border: '1px solid rgba(125,135,210,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, color: 'var(--primary)', fontSize: 14, flexShrink: 0 }}>
+                            {otherUserName.charAt(0).toUpperCase()}
+                        </div>
+
                         {isSearchOpen ? (
-                            <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.05)', borderRadius: 8, padding: '4px 10px', margin: '0 8px' }}>
-                                <Search size={14} style={{ color: 'rgba(255,255,255,0.3)', marginRight: 8 }} />
+                            <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.04)', borderRadius: 20, padding: '6px 14px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                                <Search size={14} style={{ color: 'rgba(255,255,255,0.25)', marginRight: 8 }} />
                                 <input
                                     autoFocus
                                     type="text"
                                     placeholder="Search messages..."
                                     value={searchText}
                                     onChange={(e) => setSearchText(e.target.value)}
-                                    style={{ background: 'none', border: 'none', color: '#fff', fontSize: 13, outline: 'none', flex: 1 }}
+                                    style={{ background: 'none', border: 'none', color: '#fff', fontSize: 14, outline: 'none', flex: 1 }}
                                 />
-                                <button onClick={() => { setIsSearchOpen(false); setSearchText(''); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: 2, display: 'flex' }}><X size={14} /></button>
+                                <button onClick={() => { setIsSearchOpen(false); setSearchText(''); }} style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', cursor: 'pointer', padding: 2, display: 'flex' }}><X size={14} /></button>
                             </div>
                         ) : (
                             <>
-                                <div style={{ flex: 1, textAlign: 'center', fontWeight: 600, color: 'var(--foreground)', fontSize: 15 }}>{otherUserName}</div>
+                                <div style={{ flex: 1, fontWeight: 600, color: 'var(--foreground)', fontSize: 16, letterSpacing: '-0.01em' }}>{otherUserName}</div>
                                 <button
                                     onClick={() => setIsSearchOpen(true)}
-                                    style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.6)', cursor: 'pointer', padding: 8, display: 'flex', alignItems: 'center' }}
+                                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '50%', width: 34, height: 34, color: 'rgba(255,255,255,0.4)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                 >
-                                    <Search size={18} />
+                                    <Search size={16} />
                                 </button>
                                 {headerActions}
                             </>
                         )}
-
-                        <div style={{ width: 34, height: 34, borderRadius: '50%', background: 'linear-gradient(135deg, #7d87d2, #a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 700, color: '#fff', fontSize: 13, flexShrink: 0 }}>
-                            {otherUserName.charAt(0).toUpperCase()}
-                        </div>
                     </>
                 )}
             </div>
@@ -953,21 +952,23 @@ export default function ChatInterface({
                 flex: 1,
                 overflowY: 'auto',
                 overflowX: 'hidden',
-                padding: '12px 16px',
+                padding: '16px 20px',
                 minHeight: 0,
                 paddingBottom: 0,
                 willChange: 'scroll-position',
                 transform: 'translateZ(0)',
                 WebkitOverflowScrolling: 'touch' as any,
                 overscrollBehavior: 'contain',
-                backgroundImage: 'radial-gradient(rgba(0,0,0,0.1) 1px, transparent 0)',
-                backgroundSize: '30px 30px',
-                backgroundPosition: '-19px -19px',
-                backgroundColor: '#0b141a' // WhatsApp Dark Mode background
+                background: 'var(--background)',
             }}>
                 {!loaded && <div style={{ textAlign: 'center', padding: 40, color: 'var(--secondary-foreground)' }}>Loading…</div>}
-                {loaded && messages.length === 0 && <div style={{ textAlign: 'center', padding: 60, color: 'var(--secondary-foreground)', fontSize: 14 }}>No messages yet. Start the conversation!</div>}
-                {loaded && searchText && filteredMessages.length === 0 && <div style={{ textAlign: 'center', padding: 60, color: 'var(--secondary-foreground)', fontSize: 14 }}>No messages found matching "{searchText}"</div>}
+                {loaded && messages.length === 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 12, padding: 40 }}>
+                        <div style={{ fontSize: 28, fontWeight: 300, color: 'var(--foreground)', letterSpacing: '-0.02em' }}>Start the conversation</div>
+                        <div style={{ fontSize: 14, color: 'var(--secondary-foreground)' }}>Send a message to {otherUserName}</div>
+                    </div>
+                )}
+                {loaded && searchText && filteredMessages.length === 0 && <div style={{ textAlign: 'center', padding: 60, color: 'var(--secondary-foreground)', fontSize: 14 }}>No messages found matching &ldquo;{searchText}&rdquo;</div>}
 
                 {filteredMessages.map((msg, i) => {
                     const mine = msg.senderId === currentUserId;
@@ -983,18 +984,18 @@ export default function ChatInterface({
                         <div key={msg.id} id={`msg-${msg.id}`} style={{ position: 'relative' }}>
                             {isSelected && <div style={{ position: 'absolute', inset: -4, background: 'rgba(6, 182, 212, 0.1)', zIndex: 0, borderRadius: 8, pointerEvents: 'none' }} />}
                             <div style={{ position: 'relative', zIndex: 1 }} onClick={() => isMultiSelecting && toggleSelection(msg.id)}>
-                                {dateSep && <div style={{ textAlign: 'center', margin: '16px 0 8px', fontSize: 11, color: 'rgba(255,255,255,0.3)', fontWeight: 500 }}>{fmtDate(msg.createdAt)}</div>}
-                                {timeSep && !dateSep && <div style={{ textAlign: 'center', margin: '10px 0 4px', fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>{fmtTime(msg.createdAt)}</div>}
+                                {dateSep && <div style={{ textAlign: 'center', margin: '20px 0 10px' }}><span style={{ fontSize: 11, color: 'var(--secondary-foreground)', fontWeight: 500, background: 'rgba(255,255,255,0.04)', padding: '4px 14px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.06)' }}>{fmtDate(msg.createdAt)}</span></div>}
+                                {timeSep && !dateSep && <div style={{ textAlign: 'center', margin: '12px 0 6px', fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>{fmtTime(msg.createdAt)}</div>}
 
                                 <div style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start', alignItems: 'center', marginTop: timeSep && i > 0 ? 8 : 2, gap: 4, position: 'relative' }}>
 
                                     {/* Action button — left side for own messages */}
                                     {mine ? (
                                         <button onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === msg.id ? null : msg.id); }}
-                                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ffffff', padding: '2px 4px', flexShrink: 0, display: 'flex', alignItems: 'center' }}
-                                            title="Actions"><MoreVertical size={16} color="#ffffff" /></button>
+                                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.2)', padding: '2px 4px', flexShrink: 0, display: 'flex', alignItems: 'center', opacity: 0.6, transition: 'opacity 0.2s' }}
+                                            title="Actions"><MoreVertical size={14} color="rgba(255,255,255,0.3)" /></button>
                                     ) : (
-                                        <div style={{ width: 16, flexShrink: 0 }} /> // Spacer for alignment
+                                        <div style={{ width: 14, flexShrink: 0 }} />
                                     )}
 
                                     <div style={{ position: 'relative', maxWidth: '75%', cursor: isMultiSelecting ? 'pointer' : 'default' }}>
@@ -1010,37 +1011,23 @@ export default function ChatInterface({
                                                 if (isMultiSelecting) { e.stopPropagation(); toggleSelection(msg.id); }
                                             }}
                                             style={{
-                                                padding: msg.mediaUrl ? '4px 4px 8px' : '8px 12px',
-                                                borderRadius: mine ? '10px 0px 10px 10px' : '0px 10px 10px 10px',
-                                                background: isSelected ? 'rgba(125,135,210,0.4)' : mine ? '#005c4b' : '#202c33',
-                                                border: isSelected ? '1px solid var(--primary)' : 'none',
-                                                boxShadow: '0 1px 2px rgba(0,0,0,0.3)',
+                                                padding: msg.mediaUrl ? '4px 4px 8px' : '10px 14px',
+                                                borderRadius: 16,
+                                                background: isSelected ? 'rgba(125,135,210,0.3)' : mine ? 'rgba(125,135,210,0.15)' : 'rgba(255,255,255,0.05)',
+                                                border: isSelected ? '1px solid rgba(125,135,210,0.4)' : '1px solid ' + (mine ? 'rgba(125,135,210,0.12)' : 'rgba(255,255,255,0.06)'),
                                                 wordBreak: 'break-word',
                                                 overflowWrap: 'break-word',
                                                 transition: 'background 0.15s ease',
                                                 position: 'relative'
                                             }}>
-                                            {/* WhatsApp Tail */}
-                                            <div style={{
-                                                position: 'absolute',
-                                                top: 0,
-                                                [mine ? 'right' : 'left']: -8,
-                                                width: 0,
-                                                height: 0,
-                                                borderStyle: 'solid',
-                                                borderWidth: mine ? '0 8px 10px 0' : '0 0 10px 8px',
-                                                borderColor: `transparent ${mine ? '#005c4b' : '#202c33'} transparent transparent`,
-                                                transform: mine ? 'none' : 'scaleX(-1)',
-                                                display: timeSep ? 'block' : 'none'
-                                            }} />
                                             {/* Reply */}
                                             {msg.replyTo && (
                                                 <div
                                                     onClick={(e) => { e.stopPropagation(); scrollToMessage(msg.replyTo!.id); }}
-                                                    style={{ margin: msg.mediaUrl ? '4px 8px 6px' : '0 0 6px', padding: '6px 8px', borderRadius: 10, background: 'rgba(0,0,0,0.15)', borderLeft: mine ? '2px solid rgba(255,255,255,0.7)' : '2px solid var(--primary)', fontSize: 11, cursor: 'pointer' }}
+                                                    style={{ margin: msg.mediaUrl ? '4px 8px 6px' : '0 0 6px', padding: '6px 10px', borderRadius: 10, background: 'rgba(255,255,255,0.04)', borderLeft: '2px solid var(--primary)', fontSize: 11, cursor: 'pointer' }}
                                                 >
-                                                    <div style={{ fontWeight: 600, color: mine ? '#fff' : 'var(--primary)', marginBottom: 2 }}>{msg.replyTo.sender.name}</div>
-                                                    <div style={{ color: mine ? 'rgba(255,255,255,0.8)' : 'rgba(255,255,255,0.4)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                    <div style={{ fontWeight: 600, color: 'var(--primary)', marginBottom: 2 }}>{msg.replyTo.sender.name}</div>
+                                                    <div style={{ color: 'rgba(255,255,255,0.4)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                                                         {msg.replyTo.mediaUrl ? (msg.replyTo.mediaType?.startsWith('image') ? 'Photo' : msg.replyTo.mediaType?.startsWith('audio') ? 'Voice' : 'Video') : msg.replyTo.content}
                                                     </div>
                                                 </div>
@@ -1069,7 +1056,7 @@ export default function ChatInterface({
                                                                 <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.2)', overflow: 'hidden' }}>
                                                                     <div style={{
                                                                         height: '100%',
-                                                                        background: '#00a884',
+                                                                        background: 'var(--primary)',
                                                                         borderRadius: 2,
                                                                         transition: 'width 150ms ease',
                                                                         width: `${Math.max(uploadProgress[msg.id], 2)}%`
@@ -1098,7 +1085,7 @@ export default function ChatInterface({
                                                                 {uploadProgress[msg.id] < 5 ? 'Processing…' : `Sending ${uploadProgress[msg.id]}%`}
                                                             </div>
                                                             <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.2)', overflow: 'hidden' }}>
-                                                                <div style={{ height: '100%', background: '#00a884', borderRadius: 2, transition: 'width 150ms ease', width: `${Math.max(uploadProgress[msg.id], 2)}%` }} />
+                                                                <div style={{ height: '100%', background: 'var(--primary)', borderRadius: 2, transition: 'width 150ms ease', width: `${Math.max(uploadProgress[msg.id], 2)}%` }} />
                                                             </div>
                                                         </div>
                                                     )}
@@ -1109,7 +1096,7 @@ export default function ChatInterface({
                                             {msg.mediaUrl && isAudio && (
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '4px 8px', minWidth: 240 }}>
                                                     {/* Profile Pic on left */}
-                                                    <div style={{ width: 45, height: 45, borderRadius: '50%', background: mine ? 'rgba(255,255,255,0.1)' : '#74bacd', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
+                                                    <div style={{ width: 45, height: 45, borderRadius: '50%', background: mine ? 'rgba(125,135,210,0.2)' : 'rgba(125,135,210,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
                                                         <span style={{ fontSize: 18, color: '#fff', fontWeight: 600 }}>{msg.sender.name[0]}</span>
                                                     </div>
 
@@ -1120,7 +1107,7 @@ export default function ChatInterface({
                                                             <audio
                                                                 controls
                                                                 preload="metadata"
-                                                                style={{ height: 35, width: '100%', filter: mine ? 'invert(100%) opacity(0.8)' : 'invert(20%) opacity(0.8)' }}
+                                                                style={{ height: 35, width: '100%', filter: 'brightness(0.8) contrast(1.1)', opacity: 0.8 }}
                                                             >
                                                                 <source src={msg.mediaUrl} type={msg.mediaType || 'audio/mpeg'} />
                                                             </audio>
@@ -1128,7 +1115,7 @@ export default function ChatInterface({
                                                         {/* Pseudo Waveform (static bars for aesthetic) */}
                                                         <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 16, paddingLeft: 8 }}>
                                                             {[3, 7, 5, 9, 4, 11, 6, 8, 5, 10, 4, 7, 3, 6, 9, 5].map((h, idx) => (
-                                                                <div key={idx} style={{ width: 2, height: `${(h / 12) * 100}%`, background: mine ? 'rgba(255,255,255,0.4)' : '#8696a0', borderRadius: 1 }} />
+                                                                <div key={idx} style={{ width: 2, height: `${(h / 12) * 100}%`, background: 'rgba(125,135,210,0.4)', borderRadius: 1 }} />
                                                             ))}
                                                         </div>
                                                     </div>
@@ -1148,15 +1135,15 @@ export default function ChatInterface({
                                                             if (e.key === 'Enter') handleEditMessage(msg.id, editText);
                                                             if (e.key === 'Escape') { setEditingMessageId(null); setEditText(''); }
                                                         }}
-                                                        style={{ flex: 1, background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(0,168,132,0.5)', borderRadius: 8, color: '#fff', fontSize: 14, padding: '6px 10px', outline: 'none', minWidth: 0 }}
+                                                        style={{ flex: 1, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(125,135,210,0.3)', borderRadius: 12, color: '#fff', fontSize: 14, padding: '6px 12px', outline: 'none', minWidth: 0 }}
                                                     />
                                                     <button onClick={() => handleEditMessage(msg.id, editText)}
-                                                        style={{ background: '#00a884', border: 'none', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                                                        style={{ background: 'var(--primary)', border: 'none', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
                                                         <Send size={14} color="#fff" />
                                                     </button>
                                                     <button onClick={() => { setEditingMessageId(null); setEditText(''); }}
-                                                        style={{ background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
-                                                        <X size={14} color="#8696a0" />
+                                                        style={{ background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                                                        <X size={14} color="var(--secondary-foreground)" />
                                                     </button>
                                                 </div>
                                             ) : (!msg.mediaUrl || (msg.content && !['Video', 'Photo'].includes(msg.content.trim()))) ? (
@@ -1176,7 +1163,7 @@ export default function ChatInterface({
                                                 padding: msg.mediaUrl ? '0 8px' : 0
                                             }}>
                                                 {fmtTime(msg.createdAt)}
-                                                {mine && <span style={{ color: msg.read ? '#53bdeb' : 'inherit', fontSize: 12 }}>✓✓</span>}
+                                                {mine && <span style={{ color: msg.read ? 'var(--primary)' : 'inherit', fontSize: 12 }}>✓✓</span>}
                                             </div>
                                         </div>
 
@@ -1226,10 +1213,10 @@ export default function ChatInterface({
                                                         bottom: 0,
                                                         [mine ? 'right' : 'left']: 0,
                                                         zIndex: 999,
-                                                        background: '#1f2c34',
-                                                        border: '1px solid rgba(255,255,255,0.1)',
-                                                        borderRadius: 12,
-                                                        boxShadow: '0 4px 16px rgba(0,0,0,0.5)',
+                                                        background: 'var(--card-bg)',
+                                                        border: '1px solid rgba(255,255,255,0.08)',
+                                                        borderRadius: 16,
+                                                        boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
                                                         padding: '8px 0',
                                                         width: 200,
                                                         animation: 'scaleIn 0.15s ease-out'
@@ -1255,20 +1242,20 @@ export default function ChatInterface({
                                                     </div>
 
                                                     <button onClick={() => { setReplyingTo(msg); setActiveMenu(null); setTimeout(() => inputRef.current?.focus(), 50); }}
-                                                        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: '#e9edef', cursor: 'pointer' }}><Reply size={16} color="#8696a0" /> Reply</button>
+                                                        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: 'var(--foreground)', cursor: 'pointer' }}><Reply size={16} color="var(--secondary-foreground)" /> Reply</button>
                                                     {mine && msg.content && !msg.mediaUrl && (
                                                         <button onClick={() => { setEditingMessageId(msg.id); setEditText(msg.content); setActiveMenu(null); }}
-                                                            style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: '#e9edef', cursor: 'pointer' }}><Pencil size={16} color="#8696a0" /> Edit</button>
+                                                            style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: 'var(--foreground)', cursor: 'pointer' }}><Pencil size={16} color="var(--secondary-foreground)" /> Edit</button>
                                                     )}
                                                     <button onClick={() => { navigator.clipboard.writeText(msg.content); setActiveMenu(null); }}
-                                                        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: '#e9edef', cursor: 'pointer' }}><Copy size={16} color="#8696a0" /> Copy</button>
+                                                        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: 'var(--foreground)', cursor: 'pointer' }}><Copy size={16} color="var(--secondary-foreground)" /> Copy</button>
                                                     <button onClick={() => { toggleSelection(msg.id); setActiveMenu(null); }}
-                                                        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: '#e9edef', cursor: 'pointer' }}><MoreVertical size={16} color="#8696a0" /> Select</button>
+                                                        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: 'var(--foreground)', cursor: 'pointer' }}><MoreVertical size={16} color="var(--secondary-foreground)" /> Select</button>
                                                     {msg.mediaUrl && <button onClick={() => { saveMedia(msg.mediaUrl!, msg.mediaType?.startsWith('image')); setActiveMenu(null); }}
-                                                        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: '#e9edef', cursor: 'pointer' }}><Download size={16} color="#8696a0" /> Save</button>}
-                                                    <div style={{ height: 1, background: 'rgba(255,255,255,0.08)', margin: '4px 0' }} />
+                                                        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: 'var(--foreground)', cursor: 'pointer' }}><Download size={16} color="var(--secondary-foreground)" /> Save</button>}
+                                                    <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '4px 0' }} />
                                                     <button onClick={() => handleDeleteMessage(msg.id)}
-                                                        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: confirmDeleteId === msg.id ? 'rgba(239,68,68,0.15)' : 'none', border: 'none', fontSize: 13, color: '#ef4444', cursor: 'pointer', fontWeight: 600 }}><X size={16} color="#ef4444" /> {confirmDeleteId === msg.id ? 'Tap again to delete' : 'Delete'}</button>
+                                                        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: confirmDeleteId === msg.id ? 'rgba(239,68,68,0.1)' : 'none', border: 'none', fontSize: 13, color: '#ef4444', cursor: 'pointer', fontWeight: 600 }}><X size={16} color="#ef4444" /> {confirmDeleteId === msg.id ? 'Tap again to delete' : 'Delete'}</button>
                                                 </div>
                                             </>
                                         )}
@@ -1277,8 +1264,8 @@ export default function ChatInterface({
                                     {/* Action button — right side for other's messages */}
                                     {!mine && (
                                         <button onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === msg.id ? null : msg.id); }}
-                                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#ffffff', padding: '2px 4px', flexShrink: 0, display: 'flex', alignItems: 'center' }}
-                                            title="Actions"><MoreVertical size={16} color="#ffffff" /></button>
+                                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.2)', padding: '2px 4px', flexShrink: 0, display: 'flex', alignItems: 'center', opacity: 0.6, transition: 'opacity 0.2s' }}
+                                            title="Actions"><MoreVertical size={14} color="rgba(255,255,255,0.3)" /></button>
                                     )}
                                 </div>
                             </div>
@@ -1319,18 +1306,19 @@ export default function ChatInterface({
 
             {/* Input */}
             <div style={{
-                padding: '8px 12px',
-                paddingBottom: 'calc(8px + env(safe-area-inset-bottom, 4px))',
-                background: 'rgba(15, 23, 42, 0.95)',
-                backdropFilter: 'blur(20px)',
-                WebkitBackdropFilter: 'blur(20px)',
-                borderTop: '1px solid rgba(255,255,255,0.08)',
+                padding: '12px 16px',
+                paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 4px))',
+                background: 'var(--background)',
                 flexShrink: 0,
                 zIndex: 40
             }}>
                 <input ref={fileRef} type="file" multiple accept="video/*,image/*" onChange={handleMedia} style={{ display: 'none' }} />
                 {isRecording ? (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flex: 1, padding: '0 8px' }}>
+                    <div style={{
+                        display: 'flex', alignItems: 'center', gap: 10, padding: '14px 18px',
+                        background: 'rgba(255,255,255,0.04)', borderRadius: 24,
+                        border: '1px solid rgba(239,68,68,0.2)',
+                    }}>
                         <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#ef4444', animation: 'pulse 1.5s infinite' }} />
                         <div style={{ color: '#ef4444', fontWeight: 600, fontSize: 14, flex: 1 }}>
                             {formatRecordingTime(recordingTime)}
@@ -1343,82 +1331,66 @@ export default function ChatInterface({
                         </button>
                     </div>
                 ) : (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        {/* Plus button outside */}
-                        <button onClick={() => fileRef.current?.click()} disabled={uploading}
+                    <div style={{
+                        background: 'rgba(255,255,255,0.04)',
+                        borderRadius: 24,
+                        border: '1px solid rgba(255,255,255,0.06)',
+                        padding: '6px 6px 6px 18px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                    }}>
+                        {/* Text input */}
+                        <textarea ref={inputRef} value={newMessage} onChange={e => setNewMessage(e.target.value)}
+                            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                            placeholder="Type a message..."
+                            rows={1}
+                            disabled={uploading}
+                            enterKeyHint="send"
                             style={{
-                                width: 36,
-                                height: 36,
-                                borderRadius: '50%',
-                                background: 'transparent',
-                                border: 'none',
-                                color: '#8696a0',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                flexShrink: 0
-                            }}>
-                            <Paperclip size={24} />
-                        </button>
+                                width: '100%', padding: '10px 0 8px', background: 'transparent', border: 'none',
+                                color: 'var(--foreground)', fontSize: 15, outline: 'none', opacity: uploading ? 0.5 : 1,
+                                resize: 'none', lineHeight: '1.5', maxHeight: 120, overflowY: 'auto', fontFamily: 'inherit'
+                            }}
+                        />
 
-                        {/* Input Pill */}
-                        <div style={{
-                            flex: 1, display: 'flex', alignItems: 'center',
-                            background: '#2a3942', // WhatsApp input background
-                            borderRadius: 24,
-                            padding: '4px 16px',
-                            minHeight: 48,
-                            boxShadow: '0 1px 1px rgba(0,0,0,0.2)'
-                        }}>
-                            <textarea ref={inputRef} value={newMessage} onChange={e => setNewMessage(e.target.value)}
-                                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                                placeholder="Type a message"
-                                rows={1}
-                                disabled={uploading}
-                                enterKeyHint="send"
-                                style={{ flex: 1, padding: '8px 0', background: 'transparent', border: 'none', color: '#e9edef', fontSize: 16, outline: 'none', minWidth: 0, opacity: uploading ? 0.5 : 1, resize: 'none', lineHeight: '1.4', maxHeight: 120, overflowY: 'auto', fontFamily: 'inherit' }} />
+                        {/* Bottom row: attachment + mic/send */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <button onClick={() => fileRef.current?.click()} disabled={uploading}
+                                    style={{
+                                        width: 34, height: 34, borderRadius: '50%',
+                                        background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.06)',
+                                        color: 'var(--secondary-foreground)', cursor: 'pointer',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                                    }}>
+                                    <Paperclip size={16} />
+                                </button>
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                {!newMessage.trim() && stagedFiles.length === 0 ? (
+                                    <button onClick={startRecording} disabled={uploading}
+                                        style={{
+                                            width: 36, height: 36, borderRadius: '50%',
+                                            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.06)',
+                                            cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            flexShrink: 0, color: 'var(--secondary-foreground)',
+                                        }}>
+                                        <Mic size={18} />
+                                    </button>
+                                ) : null}
+                                <button onClick={() => handleSend()} disabled={uploading || (!newMessage.trim() && stagedFiles.length === 0)}
+                                    style={{
+                                        width: 36, height: 36, borderRadius: '50%',
+                                        background: (newMessage.trim() || stagedFiles.length > 0) ? 'var(--primary)' : 'rgba(255,255,255,0.06)',
+                                        border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        flexShrink: 0, opacity: uploading ? 0.3 : 1,
+                                        color: (newMessage.trim() || stagedFiles.length > 0) ? '#fff' : 'var(--secondary-foreground)',
+                                        transition: 'all 0.2s ease',
+                                    }}>
+                                    <Send size={16} />
+                                </button>
+                            </div>
                         </div>
-
-                        {/* Mic/Send circular button */}
-                        {!newMessage.trim() && stagedFiles.length === 0 ? (
-                            <button onClick={startRecording} disabled={uploading}
-                                style={{
-                                    width: 48,
-                                    height: 48,
-                                    borderRadius: '50%',
-                                    background: '#00a884', // WhatsApp Green
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    flexShrink: 0,
-                                    color: '#fff',
-                                    boxShadow: '0 1px 2px rgba(0,0,0,0.3)'
-                                }}>
-                                <Mic size={24} />
-                            </button>
-                        ) : (
-                            <button onClick={() => handleSend()} disabled={uploading}
-                                style={{
-                                    width: 48,
-                                    height: 48,
-                                    borderRadius: '50%',
-                                    background: '#00a884',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    flexShrink: 0,
-                                    opacity: uploading ? 0.3 : 1,
-                                    color: '#fff',
-                                    boxShadow: '0 1px 2px rgba(0,0,0,0.3)'
-                                }}>
-                                <Send size={24} />
-                            </button>
-                        )}
                     </div>
                 )}
             </div>
@@ -1428,7 +1400,7 @@ export default function ChatInterface({
                     position: 'fixed',
                     inset: 0,
                     zIndex: 2000,
-                    background: '#0b141a',
+                    background: 'var(--background)',
                     display: 'flex',
                     flexDirection: 'column',
                     animation: 'fadeIn 0.2s ease'
@@ -1438,7 +1410,7 @@ export default function ChatInterface({
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                         padding: '12px 16px',
                         paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))',
-                        color: '#fff', background: '#1f2c34'
+                        color: '#fff', background: 'var(--card-bg)'
                     }}>
                         <button onClick={() => { setStagedFiles([]); setStagedFileUrls([]); setStagedPosters({}); setStagedPreviewIndex(0); }} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: 4 }}>
                             <X size={26} />
@@ -1454,11 +1426,11 @@ export default function ChatInterface({
                                     }}
                                 >
                                     <Scissors size={18} color="#00a884" />
-                                    <span style={{ fontSize: 13, color: '#00a884', fontWeight: 600 }}>Trim</span>
+                                    <span style={{ fontSize: 13, color: 'var(--primary)', fontWeight: 600 }}>Trim</span>
                                 </button>
                             )}
                             <div style={{ border: '1px solid rgba(255,255,255,0.4)', borderRadius: 4, padding: '1px 5px', fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.6)' }}>HD</div>
-                            <button onClick={() => fileRef.current?.click()} style={{ background: 'none', border: 'none', color: '#8696a0', cursor: 'pointer', padding: 4 }}>
+                            <button onClick={() => fileRef.current?.click()} style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', padding: 4 }}>
                                 <Paperclip size={22} />
                             </button>
                         </div>
@@ -1479,7 +1451,7 @@ export default function ChatInterface({
                             />
                         ) : stagedFiles[stagedPreviewIndex]?.type.startsWith('audio/') ? (
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: 40 }}>
-                                <div style={{ width: 100, height: 100, borderRadius: '50%', background: '#00a884', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <div style={{ width: 100, height: 100, borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                     <Mic size={48} color="#fff" />
                                 </div>
                                 <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14 }}>Voice Message</span>
@@ -1507,7 +1479,7 @@ export default function ChatInterface({
                     </div>
 
                     {/* Bottom Staging Area */}
-                    <div style={{ background: '#111b21', padding: '12px 12px', paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))' }}>
+                    <div style={{ background: 'var(--card-bg)', padding: '12px 12px', paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))' }}>
                         {/* Mini Thumbnails Row (only show if multiple files) */}
                         {stagedFiles.length > 1 && (
                             <div style={{ display: 'flex', gap: 8, paddingBottom: 12, overflowX: 'auto', paddingLeft: 4 }}>
@@ -1524,8 +1496,8 @@ export default function ChatInterface({
                                                 <video src={url} muted playsInline preload="auto" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: i === stagedPreviewIndex ? 1 : 0.5 }} />
                                             )
                                         ) : stagedFiles[i]?.type.startsWith('audio/') ? (
-                                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#2a3942', opacity: i === stagedPreviewIndex ? 1 : 0.5 }}>
-                                                <Mic size={18} color="#8696a0" />
+                                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.05)', opacity: i === stagedPreviewIndex ? 1 : 0.5 }}>
+                                                <Mic size={18} color="var(--secondary-foreground)" />
                                             </div>
                                         ) : (
                                             <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: i === stagedPreviewIndex ? 1 : 0.5 }} />
@@ -1536,7 +1508,7 @@ export default function ChatInterface({
                                         </button>
                                     </div>
                                 ))}
-                                <button onClick={() => fileRef.current?.click()} style={{ width: 54, height: 54, borderRadius: 8, border: '2px dashed rgba(134,150,160,0.4)', background: 'none', color: '#8696a0', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                                <button onClick={() => fileRef.current?.click()} style={{ width: 54, height: 54, borderRadius: 8, border: '2px dashed rgba(134,150,160,0.4)', background: 'none', color: 'var(--secondary-foreground)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
                                     <div style={{ fontSize: 26, fontWeight: 300 }}>+</div>
                                 </button>
                             </div>
@@ -1545,9 +1517,9 @@ export default function ChatInterface({
                         {/* Caption Input and Send */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                             <div style={{
-                                flex: 1, background: '#2a3942', borderRadius: 24, padding: '4px 16px',
+                                flex: 1, background: 'rgba(255,255,255,0.05)', borderRadius: 24, padding: '4px 16px',
                                 display: 'flex', alignItems: 'center', minHeight: 48,
-                                boxShadow: '0 1px 1px rgba(0,0,0,0.2)'
+                                border: '1px solid rgba(255,255,255,0.06)',
                             }}>
                                 <textarea
                                     value={newMessage}
@@ -1555,13 +1527,13 @@ export default function ChatInterface({
                                     placeholder="Add a caption..."
                                     rows={1}
                                     enterKeyHint="send"
-                                    style={{ flex: 1, background: 'transparent', border: 'none', color: '#e9edef', outline: 'none', fontSize: 16, padding: '8px 0', resize: 'none', lineHeight: '1.4', fontFamily: 'inherit' }}
+                                    style={{ flex: 1, background: 'transparent', border: 'none', color: 'var(--foreground)', outline: 'none', fontSize: 15, padding: '8px 0', resize: 'none', lineHeight: '1.4', fontFamily: 'inherit' }}
                                     onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
                                 />
                             </div>
                             <button onClick={() => handleSend()} disabled={uploading}
                                 style={{
-                                    width: 52, height: 52, borderRadius: '50%', background: '#00a884',
+                                    width: 52, height: 52, borderRadius: '50%', background: 'var(--primary)',
                                     border: 'none', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     cursor: 'pointer', opacity: uploading ? 0.3 : 1,
                                     boxShadow: '0 2px 4px rgba(0,0,0,0.3)', flexShrink: 0

@@ -1342,70 +1342,47 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                 </div>
             </div>
 
-            {/* Modal Editor for Calendar View */}
+            {/* Inline Side-Panel Editor for Calendar View */}
             {editingSession && (
-                <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0,0,0,0.85)', zIndex: 1000, display: 'flex', justifyContent: 'center', alignItems: 'center', backdropFilter: 'blur(4px)' }}>
-                    <div style={{ width: '90%', maxWidth: '1000px', height: '90vh', background: 'var(--background)', borderRadius: '8px', overflow: 'hidden', display: 'flex' }}>
+                <div style={{
+                    position: 'fixed', top: 'var(--header-height, 56px)', right: 0, bottom: 0,
+                    width: '480px', maxWidth: '90vw',
+                    background: 'var(--background)', borderLeft: '1px solid var(--card-border)',
+                    zIndex: 900, display: 'flex', flexDirection: 'column',
+                    boxShadow: '-8px 0 30px rgba(0,0,0,0.5)',
+                }}>
+                    {/* Editor header */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid var(--card-border)', background: 'var(--card-bg)', flexShrink: 0 }}>
+                        <input
+                            value={weeks[editingSession.w].sessions[editingSession.s].name}
+                            onChange={e => {
+                                const newWeeks = [...weeks];
+                                newWeeks[editingSession.w].sessions[editingSession.s].name = e.target.value;
+                                setWeeks(newWeeks);
+                            }}
+                            className="input"
+                            style={{ fontSize: '1.1rem', fontWeight: 600, flex: 1, marginRight: '1rem' }}
+                        />
+                        <button onClick={closeEditor} className="btn btn-primary" style={{ flexShrink: 0 }}>Done</button>
+                    </div>
 
-                        {/* Sidebar */}
-                        <div style={{ width: '300px', borderRight: '1px solid var(--card-border)', padding: '1rem', background: 'var(--card-bg)' }}>
-                            <ExercisePicker
-                                initialExercises={initialExercises}
-                                onAdd={(name) => {
-                                    // Add to currently editing session
-                                    const { w, s } = editingSession;
-                                    const newWeeks = [...weeks];
-                                    const sets = [
-                                        { id: generateId(), reps: '5', rpe: '6', weight: '' },
-                                        { id: generateId(), reps: '5', rpe: '7', weight: '' },
-                                        { id: generateId(), reps: '5', rpe: '8', weight: '' }
-                                    ];
-                                    newWeeks[w].sessions[s].exercises.push({
-                                        id: generateId(),
-                                        name: name,
-                                        sets: sets,
-                                        notes: ''
-                                    });
-                                    setWeeks(newWeeks);
-                                }}
-                                onDragStart={() => { }}
-                            />
-                        </div>
-
-                        {/* Editor */}
-                        <div style={{ flex: 1, padding: '2rem', overflowY: 'auto' }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2rem' }}>
-                                <div>
-
-                                    <input
-                                        value={weeks[editingSession.w].sessions[editingSession.s].name}
-                                        onChange={e => {
-                                            const newWeeks = [...weeks];
-                                            newWeeks[editingSession.w].sessions[editingSession.s].name = e.target.value;
-                                            setWeeks(newWeeks);
-                                        }}
-                                        className="input"
-                                        style={{ fontSize: '1.2rem', fontWeight: 600 }}
-                                    />
+                    {/* Editor body */}
+                    <div style={{ flex: 1, overflowY: 'auto', padding: '1rem 1.25rem' }}>
+                        {/* Exercises */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                            {weeks[editingSession.w].sessions[editingSession.s].exercises.map((ex, exIndex) => (
+                                <BuilderExerciseCard
+                                    key={ex.id}
+                                    exercise={ex}
+                                    onUpdate={(field, val) => updateExercise(editingSession.w, editingSession.s, exIndex, field, val)}
+                                    onRemove={() => removeExercise(editingSession.w, editingSession.s, exIndex)}
+                                />
+                            ))}
+                            {weeks[editingSession.w].sessions[editingSession.s].exercises.length === 0 && (
+                                <div style={{ padding: '2rem', textAlign: 'center', border: '2px dashed var(--card-border)', borderRadius: 'var(--radius)', color: 'var(--secondary-foreground)' }}>
+                                    Use the exercise library above to add exercises.
                                 </div>
-                                <button onClick={closeEditor} className="btn btn-primary">Done</button>
-                            </div>
-
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                {weeks[editingSession.w].sessions[editingSession.s].exercises.map((ex, exIndex) => (
-                                    <BuilderExerciseCard
-                                        key={ex.id}
-                                        exercise={ex}
-                                        onUpdate={(field, val) => updateExercise(editingSession.w, editingSession.s, exIndex, field, val)}
-                                        onRemove={() => removeExercise(editingSession.w, editingSession.s, exIndex)}
-                                    />
-                                ))}
-                                {weeks[editingSession.w].sessions[editingSession.s].exercises.length === 0 && (
-                                    <div style={{ padding: '3rem', textAlign: 'center', border: '2px dashed var(--card-border)', color: 'var(--secondary-foreground)' }}>
-                                        Use the library on the left to add exercises to this session.
-                                    </div>
-                                )}
-                            </div>
+                            )}
                         </div>
                     </div>
                 </div>
