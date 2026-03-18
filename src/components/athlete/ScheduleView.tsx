@@ -22,6 +22,12 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+const SHORT_DAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+function toDateStr(d: Date): string {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 
 function formatSetsSummary(sets: any[]) {
     if (!Array.isArray(sets) || sets.length === 0) return '';
@@ -309,6 +315,76 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
         triggerAutoSave(sKey, programId);
     };
 
+    // ─── Date strip state ───
+    const [selectedDate, setSelectedDate] = useState<string>(() => toDateStr(new Date()));
+    const [viewMode, setViewMode] = useState<'date' | 'blocks'>('date');
+    const dateStripRef = useRef<HTMLDivElement>(null);
+
+    // Build sessionsByDate map: dateStr -> [{ program, weekNum, session, sKey }]
+    const sessionsByDate = useMemo(() => {
+        const map: Record<string, { program: any; weekNum: number; session: any; sKey: string }[]> = {};
+        if (!Array.isArray(programs)) return map;
+
+        programs.forEach(program => {
+            if (!program.startDate) return;
+            const start = new Date(program.startDate);
+            start.setHours(0, 0, 0, 0);
+            // Week 1 starts on the Sunday on or before the program start
+            const startDow = start.getDay();
+            const week1Sunday = new Date(start);
+            week1Sunday.setDate(week1Sunday.getDate() - startDow);
+
+            const weeks: any[] = Array.isArray(program.weeks) ? program.weeks : [];
+            weeks.forEach((week: any) => {
+                const wn = week.weekNumber || 1;
+                const sessions: any[] = Array.isArray(week.sessions) ? week.sessions : [];
+                sessions.forEach((session: any) => {
+                    const day = session.day || 1;
+                    // Compute actual date: week1Sunday + (wn-1)*7 + (day-1)
+                    const d = new Date(week1Sunday);
+                    d.setDate(d.getDate() + (wn - 1) * 7 + (day - 1));
+                    const ds = toDateStr(d);
+                    const sKey = sessionKey(program.id, wn, day);
+                    if (!map[ds]) map[ds] = [];
+                    map[ds].push({ program, weekNum: wn, session, sKey });
+                });
+            });
+        });
+        return map;
+    }, [programs]);
+
+    // Generate date strip: 60 days centered on today (30 before, 30 after)
+    const dateStrip = useMemo(() => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const days: { date: Date; dateStr: string; isToday: boolean; hasSession: boolean }[] = [];
+        for (let i = -30; i <= 30; i++) {
+            const d = new Date(today);
+            d.setDate(d.getDate() + i);
+            const ds = toDateStr(d);
+            days.push({
+                date: d,
+                dateStr: ds,
+                isToday: i === 0,
+                hasSession: !!sessionsByDate[ds]?.length,
+            });
+        }
+        return days;
+    }, [sessionsByDate]);
+
+    // Scroll to today on mount
+    useEffect(() => {
+        if (dateStripRef.current) {
+            const todayEl = dateStripRef.current.querySelector('[data-today="true"]') as HTMLElement;
+            if (todayEl) {
+                todayEl.scrollIntoView({ inline: 'center', block: 'nearest' });
+            }
+        }
+    }, []);
+
+    // Sessions for the currently selected date
+    const selectedDateSessions = sessionsByDate[selectedDate] || [];
+
     if (!Array.isArray(programs) || !programs.length) {
         return (
             <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--secondary-foreground)' }}>
@@ -318,11 +394,464 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
         );
     }
 
+    // Format selected date for display
+    const selectedDateObj = new Date(selectedDate + 'T00:00:00');
+    const todayStr = toDateStr(new Date());
+    const isSelectedToday = selectedDate === todayStr;
+    const selectedDateLabel = isSelectedToday ? 'Today' :
+        selectedDateObj.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 0, paddingBottom: '3rem' }}>
-            {/* Toolbar: Search + Sort + Unit toggle */}
-            <div style={{ padding: '16px 16px 0', display: 'flex', flexDirection: 'column', gap: 10 }}>
-                {/* Search bar */}
+
+            {/* ═══ DATE HEADER ═══ */}
+            <div style={{ padding: '20px 16px 0' }}>
+                <h1 style={{
+                    fontSize: '1.75rem',
+                    fontWeight: 700,
+                    color: 'var(--foreground)',
+                    margin: 0,
+                    letterSpacing: '-0.02em',
+                }}>
+                    {selectedDateLabel}
+                </h1>
+                {!isSelectedToday && (
+                    <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginTop: 2 }}>
+                        {selectedDateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                    </div>
+                )}
+            </div>
+
+            {/* ═══ SCROLLABLE DATE STRIP ═══ */}
+            <div
+                ref={dateStripRef}
+                style={{
+                    display: 'flex',
+                    gap: 4,
+                    overflowX: 'auto',
+                    padding: '16px 16px 12px',
+                    scrollbarWidth: 'none',
+                    msOverflowStyle: 'none',
+                    WebkitOverflowScrolling: 'touch',
+                }}
+            >
+                {dateStrip.map(d => {
+                    const isSelected = d.dateStr === selectedDate;
+                    return (
+                        <div
+                            key={d.dateStr}
+                            data-today={d.isToday ? 'true' : undefined}
+                            onClick={() => setSelectedDate(d.dateStr)}
+                            style={{
+                                display: 'flex',
+                                flexDirection: 'column',
+                                alignItems: 'center',
+                                gap: 4,
+                                minWidth: 44,
+                                padding: '8px 6px 6px',
+                                borderRadius: 12,
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                background: isSelected
+                                    ? 'var(--primary)'
+                                    : d.isToday
+                                        ? 'rgba(125, 135, 210, 0.15)'
+                                        : 'transparent',
+                                border: isSelected
+                                    ? '1px solid var(--primary)'
+                                    : d.isToday
+                                        ? '1px solid rgba(125, 135, 210, 0.3)'
+                                        : '1px solid transparent',
+                            }}
+                        >
+                            <span style={{
+                                fontSize: '0.65rem',
+                                fontWeight: 600,
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.05em',
+                                color: isSelected ? 'white' : 'var(--secondary-foreground)',
+                            }}>
+                                {SHORT_DAYS[d.date.getDay()]}
+                            </span>
+                            <span style={{
+                                fontSize: '1.05rem',
+                                fontWeight: 700,
+                                color: isSelected ? 'white' : d.isToday ? 'var(--primary)' : 'var(--foreground)',
+                            }}>
+                                {d.date.getDate()}
+                            </span>
+                            {/* Session dot indicator */}
+                            <div style={{
+                                width: 5,
+                                height: 5,
+                                borderRadius: '50%',
+                                background: d.hasSession
+                                    ? isSelected ? 'white' : 'var(--accent)'
+                                    : 'transparent',
+                                transition: 'background 0.2s',
+                            }} />
+                        </div>
+                    );
+                })}
+            </div>
+            {/* Hide scrollbar via inline style tag */}
+            <style>{`
+                [data-today] { scroll-margin-inline: 50%; }
+                div::-webkit-scrollbar { display: none; }
+            `}</style>
+
+            {/* ═══ VIEW MODE TOGGLE ═══ */}
+            <div style={{ padding: '0 16px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{
+                    display: 'flex', background: 'var(--card-bg)', borderRadius: 10,
+                    padding: 3, border: '1px solid var(--card-border)',
+                }}>
+                    {([['date', 'Schedule'], ['blocks', 'All Blocks']] as const).map(([mode, label]) => (
+                        <button
+                            key={mode}
+                            onClick={() => setViewMode(mode as 'date' | 'blocks')}
+                            style={{
+                                padding: '6px 14px', border: 'none', cursor: 'pointer',
+                                fontSize: '0.75rem', fontWeight: 600, borderRadius: 8,
+                                transition: 'all 0.2s',
+                                background: viewMode === mode ? 'var(--primary)' : 'transparent',
+                                color: viewMode === mode ? 'white' : 'var(--secondary-foreground)',
+                            }}
+                        >
+                            {label}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Unit toggle */}
+                <div style={{
+                    display: 'flex', background: 'var(--card-bg)', borderRadius: 10,
+                    padding: 3, border: '1px solid var(--card-border)',
+                }}>
+                    {(['kg', 'lbs'] as const).map(u => (
+                        <button
+                            key={u}
+                            onClick={() => toggleUnit(u)}
+                            style={{
+                                padding: '6px 14px', border: 'none', cursor: 'pointer',
+                                fontSize: '0.75rem', fontWeight: 600, borderRadius: 8,
+                                transition: 'all 0.2s',
+                                background: unit === u ? 'var(--primary)' : 'transparent',
+                                color: unit === u ? 'white' : 'var(--secondary-foreground)',
+                                minWidth: 50,
+                            }}
+                        >
+                            {u.toUpperCase()}
+                        </button>
+                    ))}
+                </div>
+            </div>
+
+            {/* ═══ SCHEDULE VIEW (Date-based) ═══ */}
+            {viewMode === 'date' && (
+                <div style={{ padding: '0 16px' }}>
+                    {selectedDateSessions.length === 0 ? (
+                        <div style={{
+                            padding: '2.5rem 1.5rem',
+                            textAlign: 'center',
+                            background: 'var(--card-bg)',
+                            border: '1px solid var(--card-border)',
+                            borderRadius: 12,
+                        }}>
+                            <div style={{ fontSize: '2rem', marginBottom: 8, opacity: 0.4 }}>
+                                {isSelectedToday ? '---' : '---'}
+                            </div>
+                            <p style={{ fontSize: '0.95rem', color: 'var(--secondary-foreground)', margin: 0 }}>
+                                {isSelectedToday ? 'No sessions scheduled for today' : 'No sessions on this date'}
+                            </p>
+                            <p style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', margin: '6px 0 0', opacity: 0.7 }}>
+                                Rest day
+                            </p>
+                        </div>
+                    ) : (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                            {selectedDateSessions.map(({ program, weekNum, session, sKey }) => {
+                                const exercises: any[] = Array.isArray(session.exercises) ? session.exercises : [];
+                                const log = Array.isArray(logs) ? logs.find(l => l.sessionId === sKey && l.programId === program.id) : undefined;
+                                const progress = sessionProgress(exercises, log, editState[sKey]);
+                                const sessionOpen = openSessions.has(sKey);
+
+                                return (
+                                    <div key={sKey} id={`session-${sKey}`} style={{
+                                        background: 'var(--card-bg)',
+                                        border: sessionOpen ? '1px solid var(--primary)' : '1px solid var(--card-border)',
+                                        borderRadius: 12,
+                                        overflow: 'hidden',
+                                        transition: 'border-color 0.2s',
+                                    }}>
+                                        {/* Session Card Header */}
+                                        <div
+                                            onClick={() => {
+                                                toggle(openSessions, sKey, setOpenSessions);
+                                                if (!openSessions.has(sKey)) initEdit(sKey, exercises, log);
+                                            }}
+                                            style={{
+                                                padding: '14px 16px',
+                                                cursor: 'pointer',
+                                                background: sessionOpen ? 'rgba(125, 135, 210, 0.08)' : 'transparent',
+                                                transition: 'background 0.2s',
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                <div style={{ flex: 1 }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                        <span style={{
+                                                            color: sessionOpen ? 'var(--primary)' : 'var(--secondary-foreground)',
+                                                            fontSize: '0.75rem',
+                                                            transition: 'transform 0.2s',
+                                                            display: 'inline-block',
+                                                            transform: sessionOpen ? 'rotate(90deg)' : 'rotate(0deg)',
+                                                        }}>▶</span>
+                                                        <div>
+                                                            <div style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--foreground)' }}>
+                                                                {session.name || `Session ${session.day}`}
+                                                            </div>
+                                                            <div style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', marginTop: 2 }}>
+                                                                {program.name} — Week {weekNum}
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div style={{
+                                                    fontSize: '0.8rem',
+                                                    fontWeight: 600,
+                                                    color: progress === 100 ? 'var(--success)' : progress > 0 ? 'var(--primary)' : 'var(--secondary-foreground)',
+                                                }}>
+                                                    {progress}%
+                                                </div>
+                                            </div>
+                                            {/* Progress bar */}
+                                            <div style={{ marginTop: 10, height: 4, borderRadius: 2, background: 'var(--background)', overflow: 'hidden' }}>
+                                                <div style={{
+                                                    height: '100%', borderRadius: 2, transition: 'width 300ms',
+                                                    width: `${progress}%`,
+                                                    background: progress === 100 ? 'var(--success)' : 'var(--primary)',
+                                                }} />
+                                            </div>
+                                        </div>
+
+                                        {/* Expanded: Toggle All + Save Status */}
+                                        {sessionOpen && (
+                                            <div style={{
+                                                padding: '8px 16px',
+                                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                                borderTop: '1px solid var(--card-border)',
+                                                background: 'rgba(125, 135, 210, 0.04)',
+                                            }}>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        const anyOpen = exercises.some((_, idx) => openExercises.has(`${sKey}-ex${idx}`));
+                                                        toggleSessionExercises(sKey, exercises, !anyOpen);
+                                                    }}
+                                                    style={{
+                                                        padding: '2px 8px', height: '22px',
+                                                        background: 'rgba(125, 135, 210, 0.15)',
+                                                        border: '1px solid rgba(125, 135, 210, 0.3)',
+                                                        borderRadius: '4px', color: 'var(--primary)',
+                                                        fontSize: '0.6rem', fontWeight: 700, cursor: 'pointer',
+                                                        textTransform: 'uppercase', letterSpacing: '0.1em',
+                                                    }}
+                                                >
+                                                    {exercises.some((_, idx) => openExercises.has(`${sKey}-ex${idx}`)) ? 'Collapse All' : 'Expand All'}
+                                                </button>
+                                                <div style={{ fontSize: '0.75rem' }}>
+                                                    {saving.has(sKey) ? (
+                                                        <span style={{ color: 'var(--warning)' }}>Saving...</span>
+                                                    ) : savedKeys.has(sKey) ? (
+                                                        <span style={{ color: 'var(--success)' }}>Saved</span>
+                                                    ) : null}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Expanded: Readiness + Exercise Cards */}
+                                        {sessionOpen && (
+                                            <div style={{ background: 'var(--card-border)' }}>
+                                                <ReadinessCheckin athleteId={athleteId} sessionKey={sKey} programId={program.id} />
+
+                                                {(editState[sKey] || exercises).map((ex: any, exIdx: number) => {
+                                                    const isEdit = !!editState[sKey];
+                                                    const exerciseData = isEdit ? editState[sKey][exIdx] : ex;
+                                                    if (!exerciseData) return null;
+                                                    const sets = isEdit ? exerciseData.sets : (Array.isArray(ex.sets) ? ex.sets : []);
+                                                    const exKey = `${sKey}-ex${exIdx}`;
+                                                    const exOpen = openExercises.has(exKey);
+
+                                                    const validSets = sets.filter((s: any) => {
+                                                        const a = isEdit ? s.actual : { weight: '', reps: '', rpe: '' };
+                                                        return a.weight && a.reps && a.rpe;
+                                                    });
+                                                    const e1rms = validSets.map((s: any) => {
+                                                        const a = isEdit ? s.actual : { weight: '', reps: '', rpe: '' };
+                                                        return calculateSimpleE1RM(a.weight, a.reps, a.rpe);
+                                                    });
+                                                    const maxE1RM = e1rms.length > 0 ? Math.max(...e1rms) : 0;
+
+                                                    let exStress = { total: 0, central: 0, peripheral: 0 };
+                                                    let tonnage = 0;
+                                                    let totalNL = 0;
+                                                    sets.forEach((s: any) => {
+                                                        const a = isEdit ? s.actual : { weight: '', reps: '', rpe: '' };
+                                                        const w = parseFloat(a.weight) || 0;
+                                                        const r = parseFloat(a.reps) || 0;
+                                                        const rpe = parseFloat(a.rpe) || 0;
+                                                        tonnage += w * r;
+                                                        totalNL += r;
+                                                        if (r > 0 && rpe > 0) {
+                                                            const res = calculateStress(r, rpe);
+                                                            exStress.total += res.total;
+                                                            exStress.central += res.central;
+                                                            exStress.peripheral += res.peripheral;
+                                                        }
+                                                    });
+
+                                                    const category = getExerciseCategory(exerciseData.name || ex.name);
+                                                    const catColor = CATEGORY_COLORS[category] || '#94A3B8';
+
+                                                    return (
+                                                        <div key={exIdx} style={{ background: 'var(--background)', borderBottom: '1px solid var(--card-border)' }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--card-bg)', borderBottom: exOpen ? '1px solid var(--card-border)' : 'none' }}>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                                                    <div style={{ width: 3, height: 20, borderRadius: 2, background: catColor }} />
+                                                                    <div
+                                                                        onClick={() => {
+                                                                            toggle(openExercises, exKey, setOpenExercises);
+                                                                            if (!editState[sKey]) initEdit(sKey, exercises, log);
+                                                                        }}
+                                                                        style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
+                                                                    >
+                                                                        <span style={{
+                                                                            color: 'var(--secondary-foreground)', fontSize: '0.7rem',
+                                                                            transition: 'transform 0.2s', display: 'inline-block',
+                                                                            transform: exOpen ? 'rotate(90deg)' : 'rotate(0deg)',
+                                                                        }}>▶</span>
+                                                                        <span style={{ fontSize: '0.95rem', color: 'var(--foreground)', fontWeight: 500 }}>{exerciseData.name || ex.name}</span>
+                                                                    </div>
+                                                                </div>
+                                                                <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', fontWeight: 600 }}>
+                                                                    {sets.length} sets
+                                                                </div>
+                                                            </div>
+
+                                                            {exOpen && (
+                                                                <div style={{ padding: '0 8px 16px 8px' }}>
+                                                                    <div style={{ display: 'flex', borderBottom: '1px dashed var(--card-border)', marginBottom: 8 }}>
+                                                                        <div style={{ width: '130px', textAlign: 'center', fontWeight: 'bold', fontSize: '0.85rem', color: 'var(--primary)', padding: '4px 0' }}>Target</div>
+                                                                        <div style={{ flex: 1, position: 'relative' }}>
+                                                                            <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: 1, background: 'var(--card-border)' }} />
+                                                                            <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '0.85rem', color: 'var(--primary)', padding: '4px 0', background: 'var(--card-bg)' }}>Actual</div>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div style={{ display: 'flex', marginBottom: 8, fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)' }}>
+                                                                        <div style={{ display: 'flex', width: '130px', justifyContent: 'center', gap: 4 }}>
+                                                                            <span style={{ flex: 1, textAlign: 'center' }}>Weight</span>
+                                                                            <span style={{ flex: 1, textAlign: 'center' }}>Reps</span>
+                                                                            <span style={{ flex: 1, textAlign: 'center' }}>RPE</span>
+                                                                        </div>
+                                                                        <div style={{ position: 'relative', width: 1, background: 'var(--card-border)', margin: '0 8px' }} />
+                                                                        <div style={{ display: 'flex', flex: 1, justifyContent: 'center', gap: 4 }}>
+                                                                            <span style={{ flex: 1, textAlign: 'center' }}>Weight</span>
+                                                                            <span style={{ flex: 1, textAlign: 'center' }}>Reps</span>
+                                                                            <span style={{ flex: 1, textAlign: 'center' }}>RPE</span>
+                                                                        </div>
+                                                                    </div>
+                                                                    {sets.map((set: any, setIdx: number) => {
+                                                                        const target = isEdit ? set.target : set;
+                                                                        const actual = isEdit ? set.actual : { weight: '', reps: '', rpe: '' };
+                                                                        return (
+                                                                            <div key={setIdx} style={{ display: 'flex', alignItems: 'center', padding: '6px 0', borderBottom: '1px dashed var(--card-border)' }}>
+                                                                                <div style={{ display: 'flex', width: '130px', justifyContent: 'center', gap: 4 }}>
+                                                                                    {['weight', 'reps', 'rpe'].map(f => (
+                                                                                        <div key={f} style={{ flex: 1, padding: '6px 4px', border: '1px solid var(--card-border)', borderRadius: 4, background: 'var(--background)', textAlign: 'center', fontSize: '0.9rem', color: 'var(--secondary-foreground)' }}>
+                                                                                            {f === 'weight' ? toDisplay(target[f]) : target[f] || '\u00A0'}
+                                                                                        </div>
+                                                                                    ))}
+                                                                                </div>
+                                                                                <button
+                                                                                    onClick={() => setIdx > 0 ? copyPrevSet(sKey, exIdx, setIdx, program.id) : copyTargetToActual(sKey, exIdx, setIdx, program.id)}
+                                                                                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 8px', display: 'flex', alignItems: 'center' }}
+                                                                                >
+                                                                                    <ArrowRight size={18} color="var(--primary)" />
+                                                                                </button>
+                                                                                <div style={{ display: 'flex', flex: 1, alignItems: 'center', gap: 4 }}>
+                                                                                    {['weight', 'reps', 'rpe'].map(f => (
+                                                                                        <input key={f} type="number" inputMode="decimal"
+                                                                                            value={f === 'weight' ? toDisplay(actual[f]) : actual[f]}
+                                                                                            onChange={e => updateSet(sKey, exIdx, setIdx, f, e.target.value, program.id)}
+                                                                                            onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
+                                                                                            style={{
+                                                                                                flex: 1, padding: '6px 4px', border: '1px solid rgba(148,163,184,0.3)', borderRadius: 4,
+                                                                                                background: 'var(--background)', textAlign: 'center', fontSize: '0.9rem',
+                                                                                                color: 'var(--foreground)', width: '100%', outlineColor: 'var(--primary)',
+                                                                                            }}
+                                                                                        />
+                                                                                    ))}
+                                                                                </div>
+                                                                            </div>
+                                                                        );
+                                                                    })}
+                                                                    <div style={{ padding: '12px 0 8px 0', borderBottom: '1px dashed var(--card-border)', fontSize: '0.85rem', color: 'var(--foreground)' }}>
+                                                                        <div style={{ display: 'flex', gap: '16px', fontWeight: 600 }}>
+                                                                            <span>E1RM: {toDisplay(maxE1RM)} {unit}</span>
+                                                                            <span>NL: {totalNL}</span>
+                                                                            <span>Tonnage: {toDisplay(tonnage)} {unit}</span>
+                                                                        </div>
+                                                                        <div style={{ display: 'flex', gap: '16px', marginTop: 4 }}>
+                                                                            <span>Total: <span style={{ fontWeight: 'normal' }}>{exStress.total.toFixed(2)}</span></span>
+                                                                            <span>Peripheral: <span style={{ fontWeight: 'normal' }}>{exStress.peripheral.toFixed(2)}</span></span>
+                                                                            <span>Central: <span style={{ fontWeight: 'normal' }}>{exStress.central.toFixed(2)}</span></span>
+                                                                        </div>
+                                                                    </div>
+                                                                    <div style={{ display: 'flex', padding: '12px 0', alignItems: 'flex-start' }}>
+                                                                        <textarea
+                                                                            value={exerciseData.notes || ''}
+                                                                            onChange={e => updateNotes(sKey, exIdx, e.target.value, program.id)}
+                                                                            onBlur={() => triggerAutoSave(sKey, program.id)}
+                                                                            onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
+                                                                            placeholder="Coach's notes:"
+                                                                            style={{
+                                                                                flex: 1, minHeight: 60, padding: '8px 12px', border: '1px solid var(--card-border)',
+                                                                                borderRadius: 4, background: 'var(--background)', fontSize: '0.9rem',
+                                                                                color: 'var(--foreground)', resize: 'vertical', outlineColor: 'var(--primary)',
+                                                                            }}
+                                                                        />
+                                                                    </div>
+                                                                    <ExerciseFeedback
+                                                                        athleteId={athleteId}
+                                                                        coachId={coachId || ''}
+                                                                        exerciseName={exerciseData.name || ex.name}
+                                                                        weekNum={weekNum}
+                                                                        dayNum={session.day || 1}
+                                                                        blockName={program.name}
+                                                                        unit={unit}
+                                                                        sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any, i: number) => ({ setNumber: i + 1, actual: s.actual || { weight: '', reps: '', rpe: '' } }))}
+                                                                    />
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* ═══ BLOCKS VIEW (All Programs) ═══ */}
+            {viewMode === 'blocks' && (
+                <>
+            {/* Toolbar: Search + Sort */}
+            <div style={{ padding: '0 16px 10px', display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <div style={{
                     display: 'flex', alignItems: 'center', gap: 8,
                     background: 'var(--card-bg)', border: '1px solid var(--card-border)',
@@ -349,9 +878,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                     )}
                 </div>
 
-                {/* Sort + Unit row */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    {/* Sort filter */}
+                <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
                     <div style={{
                         display: 'flex', background: 'var(--card-bg)', borderRadius: 10,
                         padding: 3, border: '1px solid var(--card-border)',
@@ -372,40 +899,18 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                             </button>
                         ))}
                     </div>
-
-                    {/* Unit toggle */}
-                    <div style={{
-                        display: 'flex', background: 'var(--card-bg)', borderRadius: 10,
-                        padding: 3, border: '1px solid var(--card-border)',
-                    }}>
-                        {(['kg', 'lbs'] as const).map(u => (
-                            <button
-                                key={u}
-                                onClick={() => toggleUnit(u)}
-                                style={{
-                                    padding: '6px 14px', border: 'none', cursor: 'pointer',
-                                    fontSize: '0.75rem', fontWeight: 600, borderRadius: 8,
-                                    transition: 'all 0.2s',
-                                    background: unit === u ? 'var(--primary)' : 'transparent',
-                                    color: unit === u ? 'white' : 'var(--secondary-foreground)',
-                                    minWidth: 50,
-                                }}
-                            >
-                                {u.toUpperCase()}
-                            </button>
-                        ))}
-                    </div>
                 </div>
             </div>
 
-            {/* No results */}
             {filteredPrograms.length === 0 && searchQuery && (
                 <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--secondary-foreground)', fontSize: '0.85rem' }}>
-                    No blocks match "{searchQuery}"
+                    No blocks match &quot;{searchQuery}&quot;
                 </div>
             )}
+                </>
+            )}
 
-            {filteredPrograms.map(program => {
+            {viewMode === 'blocks' && filteredPrograms.map(program => {
                 const blockOpen = openBlocks.has(program.id);
                 const weeks: any[] = Array.isArray(program.weeks) ? program.weeks : [];
                 const totalWeeks = weeks.length;
