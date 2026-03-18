@@ -407,6 +407,18 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
         }]);
     };
 
+    const removeWeek = (weekIndex: number) => {
+        if (weeks.length <= 1) return; // Don't delete the last week
+        if (!confirm('Delete this entire week and all its sessions?')) return;
+        const newWeeks = weeks.filter((_, i) => i !== weekIndex).map((w, i) => ({
+            ...w,
+            weekNumber: i + 1
+        }));
+        setWeeks(newWeeks);
+        setActiveLocation({ w: 0, s: 0 });
+        setEditingSession(null);
+    };
+
     const addSession = (weekIndex) => {
         const newWeeks = [...weeks];
         // Count total sessions across all weeks for sequential naming
@@ -635,6 +647,23 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
         s.setDate(s.getDate() - s.getDay());
         s.setHours(0, 0, 0, 0);
         return s;
+    };
+
+    const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+    /** Compute the Sun–Sat date range label for a given program week */
+    const weekDateRange = (weekNumber: number): string => {
+        if (!startDate) return `Week ${weekNumber}`;
+        const [sy, sm, sd] = startDate.split('-').map(Number);
+        const start = new Date(sy, sm - 1, sd);
+        start.setHours(0, 0, 0, 0);
+        const week1Sunday = getSunday(start);
+        const weekSunday = new Date(week1Sunday);
+        weekSunday.setDate(weekSunday.getDate() + (weekNumber - 1) * 7);
+        const weekSaturday = new Date(weekSunday);
+        weekSaturday.setDate(weekSaturday.getDate() + 6);
+        const fmt = (d: Date) => `${SHORT_MONTHS[d.getMonth()]} ${d.getDate()}`;
+        return `${fmt(weekSunday)} – ${fmt(weekSaturday)}`;
     };
 
     const getShiftedWeeks = (newStartDateStr: string, currentWeeks: any[]) => {
@@ -1204,7 +1233,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                             }}>
                                                 ▼
                                             </span>
-                                            <h2 style={{ fontSize: '1.5rem', color: 'var(--primary)', margin: 0 }}>Week {week.weekNumber}</h2>
+                                            <h2 style={{ fontSize: '1.5rem', color: 'var(--primary)', margin: 0 }}>{weekDateRange(week.weekNumber)}</h2>
                                             {collapsedWeeks[week.id] && (
                                                 <span style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', marginLeft: '0.5rem' }}>
                                                     ({week.sessions.length} session{week.sessions.length !== 1 ? 's' : ''})
@@ -1226,6 +1255,16 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                             <button onClick={() => copyWeek(wIndex)} className="btn btn-secondary" style={{ fontSize: '0.8rem' }}>Copy</button>
                                             <button onClick={() => duplicateWeek(wIndex)} className="btn btn-secondary" style={{ fontSize: '0.8rem' }}>Duplicate</button>
                                             <button onClick={() => addSession(wIndex)} className="btn btn-secondary" style={{ fontSize: '0.8rem' }}>+ Session</button>
+                                            {weeks.length > 1 && (
+                                                <button
+                                                    onClick={() => removeWeek(wIndex)}
+                                                    className="btn btn-secondary"
+                                                    style={{ fontSize: '0.8rem', color: 'var(--danger)', borderColor: 'rgba(239, 68, 68, 0.3)' }}
+                                                    title="Delete this week"
+                                                >
+                                                    Delete
+                                                </button>
+                                            )}
                                         </div>
                                     </div>
                                     {!collapsedWeeks[week.id] && (

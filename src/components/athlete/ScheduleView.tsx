@@ -59,6 +59,24 @@ function sessionKey(programId: string, weekNum: number, day: number) {
     return `${programId}_w${weekNum}_d${day}`;
 }
 
+/** Compute the Sun–Sat date range label for a given program week */
+function weekDateRange(programStartDate: any, weekNumber: number): string {
+    if (!programStartDate) return `Week ${weekNumber}`;
+    const start = new Date(programStartDate);
+    start.setHours(0, 0, 0, 0);
+    // Week 1 Sunday = Sunday on or before the program start
+    const dow = start.getDay();
+    const week1Sunday = new Date(start);
+    week1Sunday.setDate(week1Sunday.getDate() - dow);
+    // This week's Sunday
+    const weekSunday = new Date(week1Sunday);
+    weekSunday.setDate(weekSunday.getDate() + (weekNumber - 1) * 7);
+    const weekSaturday = new Date(weekSunday);
+    weekSaturday.setDate(weekSaturday.getDate() + 6);
+    const fmt = (d: Date) => `${SHORT_MONTHS[d.getMonth()]} ${d.getDate()}`;
+    return `${fmt(weekSunday)} – ${fmt(weekSaturday)}`;
+}
+
 function sessionProgress(exercises: any[], log: any, editStateData?: any[]): number {
     const totalSets = exercises.reduce((s: number, ex: any) => s + (Array.isArray(ex.sets) ? ex.sets.length : 0), 0);
     if (!totalSets) return 0;
@@ -111,20 +129,15 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
     const [weekDrawer, setWeekDrawer] = useState<{ open: boolean; programId: string; programName: string; weekNum: number; sessions: any[]; startDate: string } | null>(null);
 
     const openWeekDrawer = (program: any, week: any) => {
-        const programStart = program.startDate ? new Date(program.startDate) : null;
-        let weekStartDate = '';
-        if (programStart) {
-            const start = new Date(programStart);
-            start.setDate(start.getDate() + ((week.weekNumber || 1) - 1) * 7);
-            weekStartDate = start.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' });
-        }
+        const wn = week.weekNumber || 1;
+        const dateRange = weekDateRange(program.startDate, wn);
         setWeekDrawer({
             open: true,
             programId: program.id,
             programName: program.name,
-            weekNum: week.weekNumber || 1,
+            weekNum: wn,
             sessions: Array.isArray(week.sessions) ? week.sessions : [],
-            startDate: weekStartDate
+            startDate: dateRange
         });
     };
 
@@ -612,7 +625,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                                                                 {session.name || `Session ${session.day}`}
                                                             </div>
                                                             <div style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', marginTop: 2 }}>
-                                                                {program.name} — Week {weekNum}
+                                                                {program.name} — {weekDateRange(program.startDate, weekNum)}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1006,7 +1019,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                                                 color: 'var(--foreground)', cursor: 'pointer', fontSize: '1rem', fontWeight: 600
                                             }}
                                         >
-                                            <span>Week {weekNum} <span style={{ fontWeight: 400, color: 'var(--secondary-foreground)', fontSize: '0.85rem' }}>• {sessions.length} session{sessions.length !== 1 ? 's' : ''}</span></span>
+                                            <span>{weekDateRange(program.startDate, weekNum)} <span style={{ fontWeight: 400, color: 'var(--secondary-foreground)', fontSize: '0.85rem' }}>• {sessions.length} session{sessions.length !== 1 ? 's' : ''}</span></span>
                                             <span style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', transition: 'transform 200ms', transform: weekOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
                                         </button>
                                         {/* Week Overview Button */}
@@ -1385,7 +1398,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                                 </svg>
                             </div>
                             <p style={{ fontSize: '0.9rem', color: 'var(--secondary-foreground)', margin: '4px 0 0 0' }}>
-                                {weekDrawer.startDate ? `Week of ${weekDrawer.startDate}` : `Week ${weekDrawer.weekNum}`}
+                                {weekDrawer.startDate || `Week ${weekDrawer.weekNum}`}
                             </p>
                         </div>
 
