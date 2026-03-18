@@ -101,9 +101,6 @@ export default function AthleteStatusCard({ athlete, progress }) {
                         {progress.programName}
                     </div>
                 </div>
-                <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--primary)', opacity: 0.8 }}>
-                    {percentage}%
-                </div>
             </div>
 
             {/* Meet Info */}
@@ -172,17 +169,19 @@ export default function AthleteStatusCard({ athlete, progress }) {
                     </div>
                 </div>
 
-                {/* Progress Bar Track */}
-                <div style={{ height: '6px', width: '100%', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
-                    {/* Progress Bar Fill */}
-                    <div style={{
-                        height: '100%',
-                        width: `${percentage}%`,
-                        background: 'linear-gradient(90deg, var(--primary), var(--accent))',
-                        borderRadius: '3px',
-                        transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)',
-                        boxShadow: '0 0 10px var(--primary)'
-                    }}></div>
+                {/* Progress Bar Track + Percentage */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                    <div style={{ flex: 1, height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
+                        <div style={{
+                            height: '100%',
+                            width: `${percentage}%`,
+                            background: 'linear-gradient(90deg, var(--primary), var(--accent))',
+                            borderRadius: '3px',
+                            transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)',
+                            boxShadow: '0 0 10px var(--primary)'
+                        }}></div>
+                    </div>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--primary)', minWidth: '2.5rem', textAlign: 'right' }}>{percentage}%</span>
                 </div>
             </div>
         </div>
