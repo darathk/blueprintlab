@@ -514,7 +514,8 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
     };
 
     const addExerciseToActiveSession = (exerciseName) => {
-        const { w, s } = activeLocation;
+        const loc = editingSession ?? activeLocation;
+        const { w, s } = loc;
         if (w >= weeks.length || s >= weeks[w].sessions.length) return;
 
         const newWeeks = [...weeks];
