@@ -37,8 +37,36 @@ export default function ProgramList({ athleteId }) {
     // Helper to render date safely across timezones
     const safeDate = (isoString) => {
         if (!isoString) return '';
-        // take the 'YYYY-MM-DD' part and set it to UTC noon to avoid timezone shift
-        return new Date(isoString.split('T')[0] + 'T12:00:00Z').toLocaleDateString();
+        const [y, m, d] = isoString.split('T')[0].split('-').map(Number);
+        return new Date(y, m - 1, d).toLocaleDateString();
+    };
+
+    // Count only weeks that have at least one session
+    const activeWeekCount = (weeks) => {
+        if (!Array.isArray(weeks)) return 0;
+        return weeks.filter(w => Array.isArray(w.sessions) && w.sessions.length > 0).length;
+    };
+
+    // Compute date range from only non-empty weeks
+    const activeDateRange = (startDate, weeks) => {
+        if (!startDate || !Array.isArray(weeks)) return '';
+        const nonEmpty = weeks.filter(w => Array.isArray(w.sessions) && w.sessions.length > 0);
+        if (nonEmpty.length === 0) return '';
+        const [sy, sm, sd] = startDate.split('T')[0].split('-').map(Number);
+        const start = new Date(sy, sm - 1, sd);
+        start.setHours(0, 0, 0, 0);
+        // Week 1 Sunday
+        const dow = start.getDay();
+        const week1Sunday = new Date(start);
+        week1Sunday.setDate(week1Sunday.getDate() - dow);
+        // First and last non-empty week numbers
+        const firstWn = Math.min(...nonEmpty.map(w => w.weekNumber || 1));
+        const lastWn = Math.max(...nonEmpty.map(w => w.weekNumber || 1));
+        const firstSunday = new Date(week1Sunday);
+        firstSunday.setDate(firstSunday.getDate() + (firstWn - 1) * 7);
+        const lastSaturday = new Date(week1Sunday);
+        lastSaturday.setDate(lastSaturday.getDate() + (lastWn - 1) * 7 + 6);
+        return `${firstSunday.toLocaleDateString()} — ${lastSaturday.toLocaleDateString()}`;
     };
 
     return (
@@ -64,11 +92,11 @@ export default function ProgramList({ athleteId }) {
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', paddingRight: '1rem' }}>
                             <h3 style={{ fontSize: '1.2rem', fontWeight: 600 }}>{p.name}</h3>
                             <span style={{ fontSize: '0.8rem', padding: '2px 8px', borderRadius: '4px', background: 'var(--accent)', color: 'black', fontWeight: 'bold' }}>
-                                {p.weeks?.length || 0} Weeks
+                                {activeWeekCount(p.weeks)} Weeks
                             </span>
                         </div>
                         <div style={{ fontSize: '0.9rem', color: 'var(--secondary-foreground)', marginBottom: '1rem' }}>
-                            {safeDate(p.startDate)} {p.endDate ? `— ${safeDate(p.endDate)}` : ''}
+                            {activeDateRange(p.startDate, p.weeks)}
                         </div>
 
                         <div style={{ display: 'flex', gap: '1rem', marginTop: 'auto' }}>
