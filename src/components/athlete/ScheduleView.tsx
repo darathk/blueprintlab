@@ -1001,6 +1001,22 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                             const sessions: any[] = Array.isArray(week.sessions) ? week.sessions : [];
                             if (sessions.length === 0) return null;
                             const weekNum = week.weekNumber || 1;
+
+                            // Skip weeks that fall outside the program's date range
+                            if (program.startDate) {
+                                const ps = new Date(program.startDate);
+                                ps.setHours(0, 0, 0, 0);
+                                const dow = ps.getDay();
+                                const w1Sun = new Date(ps);
+                                w1Sun.setDate(w1Sun.getDate() - dow);
+                                const wSun = new Date(w1Sun);
+                                wSun.setDate(wSun.getDate() + (weekNum - 1) * 7);
+                                if (program.endDate) {
+                                    const pe = new Date(program.endDate);
+                                    pe.setHours(23, 59, 59, 999);
+                                    if (wSun > pe) return null;
+                                }
+                            }
                             const weekKey = `${program.id}-w${weekNum}`;
                             const weekOpen = openWeeks.has(weekKey);
 
