@@ -17,7 +17,7 @@ const StressMatrix = dynamic(() => import('@/components/program-builder/StressMa
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
 // Exercise Component
-const BuilderExerciseCard = ({ exercise, onUpdate, onRemove }) => {
+const BuilderExerciseCard = ({ exercise, onUpdate, onRemove, onDragStart, onDragOver, onDrop, onDragEnd, isDragOver }) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
 
     const addSet = () => {
@@ -51,12 +51,20 @@ const BuilderExerciseCard = ({ exercise, onUpdate, onRemove }) => {
     };
 
     return (
-        <div style={{
-            background: 'var(--card-bg)',
-            border: '1px solid var(--card-border)',
-            borderRadius: 'var(--radius)',
-            overflow: 'hidden'
-        }}>
+        <div
+            draggable
+            onDragStart={onDragStart}
+            onDragOver={onDragOver}
+            onDrop={onDrop}
+            onDragEnd={onDragEnd}
+            style={{
+                background: 'var(--card-bg)',
+                border: isDragOver ? '2px solid var(--primary)' : '1px solid var(--card-border)',
+                borderRadius: 'var(--radius)',
+                overflow: 'hidden',
+                transition: 'border 0.15s, opacity 0.15s',
+            }}
+        >
             {/* Header */}
             <div
                 style={{
@@ -65,11 +73,17 @@ const BuilderExerciseCard = ({ exercise, onUpdate, onRemove }) => {
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
-                    cursor: 'pointer'
+                    cursor: 'grab'
                 }}
                 onClick={() => setIsCollapsed(!isCollapsed)}
             >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <div style={{
+                        width: '16px', height: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '0.75rem', color: 'var(--secondary-foreground)', cursor: 'grab', flexShrink: 0
+                    }} title="Drag to reorder">
+                        ⠿
+                    </div>
                     <div style={{
                         width: '16px', height: '16px', border: '1px solid var(--foreground)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem'
@@ -559,6 +573,70 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
         const newWeeks = [...weeks];
         newWeeks[weekIndex].sessions[sessionIndex].exercises.splice(exerciseIndex, 1);
         setWeeks(newWeeks);
+    };
+
+    // --- Exercise Drag & Drop ---
+    const [dragExercise, setDragExercise] = useState<{ w: number, s: number, e: number } | null>(null);
+    const [dropTarget, setDropTarget] = useState<{ w: number, s: number, e: number } | null>(null);
+
+    const handleExerciseDragStart = (w: number, s: number, e: number) => {
+        setDragExercise({ w, s, e });
+    };
+
+    const handleExerciseDragOver = (ev: React.DragEvent, w: number, s: number, e: number) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (!dragExercise) return;
+        setDropTarget({ w, s, e });
+    };
+
+    const handleExerciseDrop = (ev: React.DragEvent, targetW: number, targetS: number, targetE: number) => {
+        ev.preventDefault();
+        ev.stopPropagation();
+        if (!dragExercise) return;
+
+        const { w: srcW, s: srcS, e: srcE } = dragExercise;
+        if (srcW === targetW && srcS === targetS && srcE === targetE) {
+            setDragExercise(null);
+            setDropTarget(null);
+            return;
+        }
+
+        const newWeeks = [...weeks];
+        const srcExercises = newWeeks[srcW].sessions[srcS].exercises;
+        const [moved] = srcExercises.splice(srcE, 1);
+
+        if (srcW === targetW && srcS === targetS) {
+            // Reorder within same session
+            const adjustedTarget = targetE > srcE ? targetE : targetE;
+            srcExercises.splice(adjustedTarget, 0, moved);
+        } else {
+            // Move between sessions
+            newWeeks[targetW].sessions[targetS].exercises.splice(targetE, 0, moved);
+        }
+
+        setWeeks(newWeeks);
+        setDragExercise(null);
+        setDropTarget(null);
+    };
+
+    const handleExerciseDropOnEmpty = (ev: React.DragEvent, w: number, s: number) => {
+        ev.preventDefault();
+        if (!dragExercise) return;
+
+        const { w: srcW, s: srcS, e: srcE } = dragExercise;
+        const newWeeks = [...weeks];
+        const [moved] = newWeeks[srcW].sessions[srcS].exercises.splice(srcE, 1);
+        newWeeks[w].sessions[s].exercises.push(moved);
+
+        setWeeks(newWeeks);
+        setDragExercise(null);
+        setDropTarget(null);
+    };
+
+    const handleExerciseDragEnd = () => {
+        setDragExercise(null);
+        setDropTarget(null);
     };
 
     // --- Clipboard System ---
@@ -1356,8 +1434,12 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                                     {!collapsedSessions[session.id] && (
                                                     <>
                                                     {session.exercises.length === 0 ? (
-                                                        <div style={{ padding: '2rem', textAlign: 'center', border: '2px dashed var(--card-border)', borderRadius: '8px', color: 'var(--secondary-foreground)' }}>
-                                                            Select cards to "Active" then add exercises from sidebar
+                                                        <div
+                                                            onDragOver={e => { e.preventDefault(); }}
+                                                            onDrop={e => handleExerciseDropOnEmpty(e, wIndex, sIndex)}
+                                                            style={{ padding: '2rem', textAlign: 'center', border: dragExercise ? '2px dashed var(--primary)' : '2px dashed var(--card-border)', borderRadius: '8px', color: 'var(--secondary-foreground)', transition: 'border 0.15s' }}
+                                                        >
+                                                            {dragExercise ? 'Drop exercise here' : 'Select cards to "Active" then add exercises from sidebar'}
                                                         </div>
                                                     ) : (
                                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -1367,6 +1449,11 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                                                     exercise={ex}
                                                                     onUpdate={(field, val) => updateExercise(wIndex, sIndex, exIndex, field, val)}
                                                                     onRemove={() => removeExercise(wIndex, sIndex, exIndex)}
+                                                                    onDragStart={() => handleExerciseDragStart(wIndex, sIndex, exIndex)}
+                                                                    onDragOver={(e) => handleExerciseDragOver(e, wIndex, sIndex, exIndex)}
+                                                                    onDrop={(e) => handleExerciseDrop(e, wIndex, sIndex, exIndex)}
+                                                                    onDragEnd={handleExerciseDragEnd}
+                                                                    isDragOver={dropTarget?.w === wIndex && dropTarget?.s === sIndex && dropTarget?.e === exIndex}
                                                                 />
                                                             ))}
                                                         </div>
@@ -1426,11 +1513,20 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                     exercise={ex}
                                     onUpdate={(field, val) => updateExercise(editingSession.w, editingSession.s, exIndex, field, val)}
                                     onRemove={() => removeExercise(editingSession.w, editingSession.s, exIndex)}
+                                    onDragStart={() => handleExerciseDragStart(editingSession.w, editingSession.s, exIndex)}
+                                    onDragOver={(e) => handleExerciseDragOver(e, editingSession.w, editingSession.s, exIndex)}
+                                    onDrop={(e) => handleExerciseDrop(e, editingSession.w, editingSession.s, exIndex)}
+                                    onDragEnd={handleExerciseDragEnd}
+                                    isDragOver={dropTarget?.w === editingSession.w && dropTarget?.s === editingSession.s && dropTarget?.e === exIndex}
                                 />
                             ))}
                             {weeks[editingSession.w].sessions[editingSession.s].exercises.length === 0 && (
-                                <div style={{ padding: '2rem', textAlign: 'center', border: '2px dashed var(--card-border)', borderRadius: 'var(--radius)', color: 'var(--secondary-foreground)' }}>
-                                    Use the exercise library above to add exercises.
+                                <div
+                                    onDragOver={e => { e.preventDefault(); }}
+                                    onDrop={e => handleExerciseDropOnEmpty(e, editingSession.w, editingSession.s)}
+                                    style={{ padding: '2rem', textAlign: 'center', border: dragExercise ? '2px dashed var(--primary)' : '2px dashed var(--card-border)', borderRadius: 'var(--radius)', color: 'var(--secondary-foreground)', transition: 'border 0.15s' }}
+                                >
+                                    {dragExercise ? 'Drop exercise here' : 'Use the exercise library above to add exercises.'}
                                 </div>
                             )}
                         </div>
