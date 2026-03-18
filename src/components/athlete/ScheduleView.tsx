@@ -55,6 +55,15 @@ function formatSetsSummary(sets: any[]) {
 }
 
 /* ─────────── helpers ─────────── */
+/** Parse a date string as local time to avoid UTC timezone shift */
+function parseLocalDate(dateStr: any): Date {
+    const s = String(dateStr).split('T')[0];
+    const [y, m, d] = s.split('-').map(Number);
+    const date = new Date(y, m - 1, d);
+    date.setHours(0, 0, 0, 0);
+    return date;
+}
+
 function sessionKey(programId: string, weekNum: number, day: number) {
     return `${programId}_w${weekNum}_d${day}`;
 }
@@ -62,8 +71,7 @@ function sessionKey(programId: string, weekNum: number, day: number) {
 /** Compute the Sun–Sat date range label for a given program week */
 function weekDateRange(programStartDate: any, weekNumber: number): string {
     if (!programStartDate) return `Week ${weekNumber}`;
-    const start = new Date(programStartDate);
-    start.setHours(0, 0, 0, 0);
+    const start = parseLocalDate(programStartDate);
     // Week 1 Sunday = Sunday on or before the program start
     const dow = start.getDay();
     const week1Sunday = new Date(start);
@@ -340,8 +348,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
 
         programs.forEach(program => {
             if (!program.startDate) return;
-            const start = new Date(program.startDate);
-            start.setHours(0, 0, 0, 0);
+            const start = parseLocalDate(program.startDate);
             // Week 1 starts on the Sunday on or before the program start
             const startDow = start.getDay();
             const week1Sunday = new Date(start);
@@ -1004,15 +1011,14 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
 
                             // Skip weeks that fall outside the program's date range
                             if (program.startDate) {
-                                const ps = new Date(program.startDate);
-                                ps.setHours(0, 0, 0, 0);
+                                const ps = parseLocalDate(program.startDate);
                                 const dow = ps.getDay();
                                 const w1Sun = new Date(ps);
                                 w1Sun.setDate(w1Sun.getDate() - dow);
                                 const wSun = new Date(w1Sun);
                                 wSun.setDate(wSun.getDate() + (weekNum - 1) * 7);
                                 if (program.endDate) {
-                                    const pe = new Date(program.endDate);
+                                    const pe = parseLocalDate(program.endDate);
                                     pe.setHours(23, 59, 59, 999);
                                     if (wSun > pe) return null;
                                 }
