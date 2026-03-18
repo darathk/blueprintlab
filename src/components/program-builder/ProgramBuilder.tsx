@@ -252,10 +252,11 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
     };
 
     const saveLiftTargets = async () => {
-        if (!athleteId) return;
+        const targetAthleteId = selectedAthleteId || athleteId;
+        if (!targetAthleteId) return;
         setSavingTargets(true);
         try {
-            await fetch(`/api/athletes/${athleteId}`, {
+            await fetch(`/api/athletes/${targetAthleteId}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ liftTargets })

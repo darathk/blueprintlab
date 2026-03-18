@@ -225,6 +225,25 @@ function groupByCalendarWeek(weeks: any[], startDate: string) {
         }));
 }
 
+const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+function weekDateRange(weekNumber: number, startDate?: string): string {
+    if (!startDate) return `Week ${weekNumber}`;
+    const [sy, sm, sd] = startDate.split('-').map(Number);
+    const start = new Date(sy, sm - 1, sd);
+    start.setHours(0, 0, 0, 0);
+    // Find the Sunday at or before the start date
+    const anchor = new Date(start);
+    anchor.setDate(anchor.getDate() - anchor.getDay());
+    // Advance to the target week
+    const weekSunday = new Date(anchor);
+    weekSunday.setDate(weekSunday.getDate() + (weekNumber - 1) * 7);
+    const weekSaturday = new Date(weekSunday);
+    weekSaturday.setDate(weekSaturday.getDate() + 6);
+    const fmt = (d: Date) => `${SHORT_MONTHS[d.getMonth()]} ${d.getDate()}`;
+    return `${fmt(weekSunday)} – ${fmt(weekSaturday)}`;
+}
+
 /** Sidebar stress panel — shows stress index for each week */
 export default function StressMatrix({ weeks, startDate }: { weeks: any[]; startDate?: string }) {
     const [collapsedWeeks, setCollapsedWeeks] = useState<Record<number, boolean>>({});
@@ -255,7 +274,7 @@ export default function StressMatrix({ weeks, startDate }: { weeks: any[]; start
             {weekData.map(wd => (
                 <WeekStressTable
                     key={wd.weekNumber}
-                    label={`Week ${wd.weekNumber}`}
+                    label={weekDateRange(wd.weekNumber, startDate)}
                     stats={wd.stats}
                     totalStress={wd.totalStress}
                     totalCentral={wd.totalCentral}

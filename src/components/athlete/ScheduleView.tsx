@@ -977,7 +977,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                             <div style={{ flex: 1 }}>
                                 <div style={{ fontSize: '1.2rem', fontWeight: 600 }}>{program.name}</div>
                                 <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginTop: 2 }}>
-                                    {totalWeeks} week{totalWeeks !== 1 ? 's' : ''} • {totalSessions} session{totalSessions !== 1 ? 's' : ''}
+                                    {totalSessions} session{totalSessions !== 1 ? 's' : ''}
                                 </div>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, paddingRight: 24 }}>
                                     <div style={{ flex: 1, height: 6, borderRadius: 3, background: 'var(--background)', overflow: 'hidden' }}>
