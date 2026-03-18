@@ -1087,7 +1087,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                     }}>
                         Stress Index
                     </div>
-                    <StressMatrix weeks={weeks} />
+                    <StressMatrix weeks={weeks} startDate={startDate} />
                 </div>
             </div>
 
