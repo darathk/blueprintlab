@@ -1074,14 +1074,14 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                         </div>
                         {liftTargetsExpanded && (
                             <div style={{ padding: '0.5rem' }}>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 70px 70px 20px', gap: '4px', alignItems: 'center', marginBottom: '4px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 65px 20px', gap: '4px', alignItems: 'center', marginBottom: '4px' }}>
                                     <div style={{ fontSize: '0.6rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Lift</div>
-                                    <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>Peak (wks)</div>
-                                    <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em', textAlign: 'center' }}>Stress</div>
+                                    <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', textAlign: 'center', whiteSpace: 'nowrap' }}>Peak (wks)</div>
+                                    <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', textAlign: 'center' }}>Stress</div>
                                     <div></div>
                                 </div>
                                 {Object.entries(liftTargets).map(([lift, targets]) => (
-                                    <div key={lift} style={{ display: 'grid', gridTemplateColumns: '1fr 70px 70px 20px', gap: '4px', alignItems: 'center', marginBottom: '3px' }}>
+                                    <div key={lift} style={{ display: 'grid', gridTemplateColumns: '1fr 80px 65px 20px', gap: '4px', alignItems: 'center', marginBottom: '3px' }}>
                                         <div style={{
                                             fontSize: '0.75rem',
                                             fontWeight: 600,
@@ -1297,7 +1297,9 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                     {/* LIST VIEW (Legacy) */}
                     {viewMode === 'list' && (
                         <div>
-                            {weeks.map((week, wIndex) => (
+                            {weeks.filter(week => week.sessions.length > 0).map((week) => {
+                                const wIndex = weeks.indexOf(week);
+                                return (
                                 <div key={week.id} style={{ marginBottom: '3rem' }}>
                                     <div
                                         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: collapsedWeeks[week.id] ? '0' : '1rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '0.5rem', cursor: 'pointer' }}
@@ -1467,7 +1469,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                     </div>
                                     )}
                                 </div>
-                            ))}
+                            ); })}
 
                             <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '4rem' }}>
                                 <button onClick={addWeek} className="btn btn-secondary" style={{ padding: '1rem 3rem' }}>
