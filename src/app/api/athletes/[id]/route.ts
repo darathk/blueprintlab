@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { currentUser } from '@clerk/nextjs/server';
+import { requireAccessToAthlete, requireCoach } from '@/lib/api-auth';
 
 export async function PATCH(
     request: Request,
@@ -8,8 +9,21 @@ export async function PATCH(
 ) {
     try {
         const { id } = await params;
+
+        // User must be the athlete themselves or their coach
+        const auth = await requireAccessToAthlete(id);
+        if ('error' in auth) return auth.error;
+
         const body = await request.json();
         const { weightClass, gender, liftTargets } = body;
+
+        // Validate inputs
+        if (weightClass !== undefined && weightClass !== null && (typeof weightClass !== 'string' || isNaN(parseFloat(weightClass)))) {
+            return NextResponse.json({ error: 'Invalid weightClass' }, { status: 400 });
+        }
+        if (gender !== undefined && gender !== null && !['male', 'female', 'M', 'F', ''].includes(gender)) {
+            return NextResponse.json({ error: 'Invalid gender' }, { status: 400 });
+        }
 
         await prisma.athlete.update({
             where: { id },
@@ -22,7 +36,7 @@ export async function PATCH(
         return NextResponse.json({ success: true });
     } catch (error: any) {
         console.error('Error updating athlete dots profile:', error);
-        return NextResponse.json({ error: error.message }, { status: 500 });
+        return NextResponse.json({ error: 'Failed to update' }, { status: 500 });
     }
 }
 
@@ -32,19 +46,19 @@ export async function DELETE(
 ) {
     try {
         const { id } = await params;
-        const user = await currentUser();
-        if (!user) {
-            return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+        // Only coaches can delete athletes
+        const auth = await requireCoach();
+        if ('error' in auth) return auth.error;
+
+        // Verify the athlete belongs to this coach
+        const athlete = await prisma.athlete.findUnique({
+            where: { id },
+            select: { coachId: true }
+        });
+        if (!athlete || athlete.coachId !== auth.user.id) {
+            return NextResponse.json({ error: 'Not your athlete' }, { status: 403 });
         }
-
-        const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.ADMIN_EMAIL || '';
-        const userEmail = user.primaryEmailAddress?.emailAddress || '';
-
-        if (userEmail.toLowerCase() !== adminEmail.toLowerCase()) {
-            return NextResponse.json({ error: 'Forbidden. Admin access required.' }, { status: 403 });
-        }
-
-
 
         // Perform a safe deletion of the athlete and all related records inside a transaction
         await prisma.$transaction(async (tx) => {
@@ -98,7 +112,6 @@ export async function DELETE(
         console.error('Error deleting athlete:', error);
         return NextResponse.json({
             error: 'Failed to delete athlete',
-            details: error.message
         }, { status: 500 });
     }
 }

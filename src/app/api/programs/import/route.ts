@@ -1,16 +1,25 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { v4 as uuidv4 } from 'uuid';
+import { requireCoach } from '@/lib/api-auth';
 
 export const dynamic = 'force-dynamic';
 
 
 export async function POST(request: Request) {
+    const auth = await requireCoach();
+    if ('error' in auth) return auth.error;
+
     try {
         const { csvData, filename } = await request.json();
 
         if (!csvData || !Array.isArray(csvData)) {
             return NextResponse.json({ error: 'Invalid CSV data' }, { status: 400 });
+        }
+
+        // Limit import size
+        if (csvData.length > 1000) {
+            return NextResponse.json({ error: 'CSV too large (max 1000 rows)' }, { status: 400 });
         }
 
         const programId = uuidv4();
@@ -44,11 +53,11 @@ export async function POST(request: Request) {
             if (row.exercise) {
                 session.exercises.push({
                     id: uuidv4(),
-                    name: row.exercise,
+                    name: String(row.exercise).slice(0, 100),
                     sets: row.sets,
                     reps: row.reps,
                     rpeTarget: row.rpe,
-                    notes: row.notes || ''
+                    notes: row.notes ? String(row.notes).slice(0, 500) : ''
                 });
             }
         });
@@ -71,7 +80,7 @@ export async function POST(request: Request) {
         await prisma.program.create({
             data: {
                 id: programId,
-                name: filename || 'Imported Program',
+                name: filename ? String(filename).slice(0, 200) : 'Imported Program',
                 startDate: new Date().toISOString().split('T')[0],
                 weeks: weeks,
                 athleteId: defaultAthleteId

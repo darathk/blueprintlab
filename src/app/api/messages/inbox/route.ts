@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireAuth } from '@/lib/api-auth';
 
 export const dynamic = 'force-dynamic';
 
 // GET /api/messages/inbox?coachId=X — lightweight: returns conversation list with unread counts only
 export async function GET(request: Request) {
+    const auth = await requireAuth();
+    if ('error' in auth) return auth.error;
+
     try {
         const { searchParams } = new URL(request.url);
         const coachId = searchParams.get('coachId');
@@ -13,9 +17,14 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'coachId is required' }, { status: 400 });
         }
 
+        // Verify the requester is the coach
+        if (coachId !== auth.user.id) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        }
+
         // Use a raw Postgres query to natively compute latest message grouping & unread sums
         const sql = `
-            SELECT 
+            SELECT
                 a.id AS "athleteId",
                 a.name AS "athleteName",
                 latest_msg.content AS "lastMessage",
@@ -28,7 +37,7 @@ export async function GET(request: Request) {
                     content,
                     "createdAt"
                 FROM (
-                    SELECT 
+                    SELECT
                         "senderId", "receiverId", content, "createdAt",
                         CASE WHEN "senderId" = $1 THEN "receiverId" ELSE "senderId" END AS partner_id
                     FROM "Message"

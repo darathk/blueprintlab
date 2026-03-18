@@ -1,14 +1,27 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireAuth, requireAccessToAthlete, requireCoach } from '@/lib/api-auth';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request) {
+    const auth = await requireAuth();
+    if ('error' in auth) return auth.error;
+
     try {
         const { searchParams } = new URL(req.url);
         const athleteId = searchParams.get('athleteId');
 
-        const where = athleteId ? { athleteId } : {};
+        let where: any;
+        if (athleteId) {
+            const access = await requireAccessToAthlete(athleteId);
+            if ('error' in access) return access.error;
+            where = { athleteId };
+        } else if (auth.isCoach) {
+            where = { athlete: { coachId: auth.user.id } };
+        } else {
+            where = { athleteId: auth.user.id };
+        }
 
         const reports = await prisma.report.findMany({
             where,
@@ -35,6 +48,9 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
+    const auth = await requireCoach();
+    if ('error' in auth) return auth.error;
+
     try {
         const body = await req.json();
         const { athleteId, ...config } = body;
@@ -42,6 +58,10 @@ export async function POST(req: Request) {
         if (!athleteId || !config.name || !config.type) {
             return NextResponse.json({ error: 'Missing athleteId, name, or type' }, { status: 400 });
         }
+
+        // Verify coach owns this athlete
+        const access = await requireAccessToAthlete(athleteId);
+        if ('error' in access) return access.error;
 
         const newReport = await prisma.report.create({
             data: {
@@ -65,6 +85,9 @@ export async function POST(req: Request) {
 }
 
 export async function DELETE(req: Request) {
+    const auth = await requireCoach();
+    if ('error' in auth) return auth.error;
+
     try {
         const { searchParams } = new URL(req.url);
         const id = searchParams.get('id');
@@ -72,6 +95,17 @@ export async function DELETE(req: Request) {
         if (!id) {
             return NextResponse.json({ error: 'Missing report ID' }, { status: 400 });
         }
+
+        // Verify coach owns this report's athlete
+        const report = await prisma.report.findUnique({
+            where: { id },
+            select: { athleteId: true }
+        });
+        if (!report) {
+            return NextResponse.json({ error: 'Report not found' }, { status: 404 });
+        }
+        const access = await requireAccessToAthlete(report.athleteId);
+        if ('error' in access) return access.error;
 
         await prisma.report.delete({
             where: { id }

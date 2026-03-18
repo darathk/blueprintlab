@@ -1,13 +1,23 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { currentUser } from '@clerk/nextjs/server';
+import { requireAuth, requireCoach } from '@/lib/api-auth';
 
 export const dynamic = 'force-dynamic';
 
 
 export async function GET() {
+    const auth = await requireAuth();
+    if ('error' in auth) return auth.error;
+
     try {
+        // Coaches see only their athletes; athletes see nothing from this endpoint
+        const where = auth.isCoach
+            ? { coachId: auth.user.id }
+            : { id: auth.user.id };
+
         const athletes = await prisma.athlete.findMany({
+            where,
             select: {
                 id: true, name: true, email: true, role: true, coachId: true,
                 nextMeetName: true, nextMeetDate: true, weightClass: true, gender: true,
@@ -41,10 +51,20 @@ export async function POST(request: Request) {
         const body = await request.json();
         const { id, name, email, nextMeetName, nextMeetDate, periodization, meetAttempts, pastMeets } = body;
 
+        // Validate required fields
+        if (!name || typeof name !== 'string' || name.trim().length === 0) {
+            return NextResponse.json({ error: 'Name is required' }, { status: 400 });
+        }
+
         let athlete;
 
         // If an email is provided, check if that user already exists
         if (email) {
+            // Basic email format validation
+            if (typeof email !== 'string' || !email.includes('@')) {
+                return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
+            }
+
             const existingUser = await prisma.athlete.findUnique({
                 where: { email },
                 select: { id: true, role: true, name: true, nextMeetName: true, nextMeetDate: true, periodization: true, meetAttempts: true, pastMeets: true }

@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireCoach, requireAccessToAthlete } from '@/lib/api-auth';
 
 export const dynamic = 'force-dynamic';
 
 
 
 export async function POST(request: Request) {
+    const auth = await requireCoach();
+    if ('error' in auth) return auth.error;
+
     try {
         const body = await request.json();
         const { athleteId, programId } = body;
@@ -13,6 +17,10 @@ export async function POST(request: Request) {
         if (!athleteId || !programId) {
             return NextResponse.json({ error: 'Missing athleteId or programId' }, { status: 400 });
         }
+
+        // Verify coach owns this athlete
+        const access = await requireAccessToAthlete(athleteId);
+        if ('error' in access) return access.error;
 
         // First, check if athlete exists
         const athlete = await prisma.athlete.findUnique({

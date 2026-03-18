@@ -2,17 +2,26 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { supabase } from '@/lib/supabase';
 import webpush from 'web-push';
+import { requireAuth } from '@/lib/api-auth';
 
 export const dynamic = 'force-dynamic';
 
 // GET /api/messages?athleteId=X — fetch conversation messages (last 100)
 export async function GET(request: Request) {
+    const auth = await requireAuth();
+    if ('error' in auth) return auth.error;
+
     try {
         const { searchParams } = new URL(request.url);
         const athleteId = searchParams.get('athleteId');
 
         if (!athleteId) {
             return NextResponse.json({ error: 'athleteId is required' }, { status: 400 });
+        }
+
+        // User must be a participant in this conversation
+        if (auth.user.id !== athleteId && !auth.isCoach) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
         // Single query with OR — much faster than two queries + JS merge
@@ -43,12 +52,25 @@ export async function GET(request: Request) {
 
 // POST /api/messages — send a new message
 export async function POST(request: Request) {
+    const auth = await requireAuth();
+    if ('error' in auth) return auth.error;
+
     try {
         const body = await request.json();
         const { senderId, receiverId, content, mediaUrl, mediaType, replyToId } = body;
 
         if (!senderId || !receiverId || (content === undefined && !mediaUrl)) {
             return NextResponse.json({ error: 'senderId, receiverId, and content or mediaUrl are required' }, { status: 400 });
+        }
+
+        // Verify the sender is the authenticated user
+        if (senderId !== auth.user.id) {
+            return NextResponse.json({ error: 'Cannot send messages as another user' }, { status: 403 });
+        }
+
+        // Validate content length
+        if (content && typeof content === 'string' && content.length > 5000) {
+            return NextResponse.json({ error: 'Message too long' }, { status: 400 });
         }
 
         const message = await prisma.message.create({
@@ -143,12 +165,29 @@ export async function POST(request: Request) {
 
 // PATCH /api/messages — mark messages as read OR edit a message
 export async function PATCH(request: Request) {
+    const auth = await requireAuth();
+    if ('error' in auth) return auth.error;
+
     try {
         const body = await request.json();
 
         // Edit message content
         if (body.messageId && body.content !== undefined) {
             const { messageId, content } = body;
+
+            // Verify sender owns this message
+            const msg = await prisma.message.findUnique({
+                where: { id: messageId },
+                select: { senderId: true }
+            });
+            if (!msg || msg.senderId !== auth.user.id) {
+                return NextResponse.json({ error: 'Can only edit your own messages' }, { status: 403 });
+            }
+
+            if (typeof content === 'string' && content.length > 5000) {
+                return NextResponse.json({ error: 'Message too long' }, { status: 400 });
+            }
+
             const updated = await prisma.message.update({
                 where: { id: messageId },
                 data: { content },
@@ -170,6 +209,11 @@ export async function PATCH(request: Request) {
             return NextResponse.json({ error: 'athleteId and readerId are required' }, { status: 400 });
         }
 
+        // Only the receiver can mark messages as read
+        if (readerId !== auth.user.id) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        }
+
         await prisma.message.updateMany({
             where: { receiverId: readerId, senderId: athleteId, read: false },
             data: { read: true }
@@ -183,6 +227,9 @@ export async function PATCH(request: Request) {
 }
 // DELETE /api/messages — delete a message
 export async function DELETE(request: Request) {
+    const auth = await requireAuth();
+    if ('error' in auth) return auth.error;
+
     try {
         const { searchParams } = new URL(request.url);
         const id = searchParams.get('id');
@@ -191,14 +238,19 @@ export async function DELETE(request: Request) {
             return NextResponse.json({ error: 'Message ID is required' }, { status: 400 });
         }
 
-        // 1. Get message info to check for media
+        // 1. Get message info to check ownership and media
         const msg = await prisma.message.findUnique({
             where: { id },
-            select: { mediaUrl: true }
+            select: { mediaUrl: true, senderId: true }
         });
 
         if (!msg) {
             return NextResponse.json({ error: 'Message not found' }, { status: 404 });
+        }
+
+        // Only the sender can delete their own messages
+        if (msg.senderId !== auth.user.id) {
+            return NextResponse.json({ error: 'Can only delete your own messages' }, { status: 403 });
         }
 
         // 2. Delete media from Supabase if it exists

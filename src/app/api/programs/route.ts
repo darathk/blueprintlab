@@ -2,17 +2,38 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 import { prisma } from '@/lib/prisma';
 import { getProgramsByAthlete } from '@/lib/storage';
+import { requireAuth, requireAccessToAthlete, requireCoach } from '@/lib/api-auth';
 
 export async function GET(request: Request) {
+    const auth = await requireAuth();
+    if ('error' in auth) return auth.error;
+
     const { searchParams } = new URL(request.url);
     const athleteId = searchParams.get('athleteId');
 
     try {
         if (athleteId) {
+            // Verify access to this athlete
+            const access = await requireAccessToAthlete(athleteId);
+            if ('error' in access) return access.error;
+
             const programs = await getProgramsByAthlete(athleteId);
             return NextResponse.json(programs);
         }
+
+        // Coaches see all their athletes' programs; athletes see only their own
+        if (auth.isCoach) {
+            const programs = await prisma.program.findMany({
+                where: {
+                    athlete: { coachId: auth.user.id }
+                },
+                select: { id: true, athleteId: true, name: true, startDate: true, endDate: true, weeks: true, status: true }
+            });
+            return NextResponse.json(programs);
+        }
+
         const programs = await prisma.program.findMany({
+            where: { athleteId: auth.user.id },
             select: { id: true, athleteId: true, name: true, startDate: true, endDate: true, weeks: true, status: true }
         });
         return NextResponse.json(programs);
@@ -23,12 +44,24 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+    const auth = await requireCoach();
+    if ('error' in auth) return auth.error;
+
     try {
         const program = await request.json();
 
         if (!program.name || !program.weeks || !program.athleteId) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
+
+        // Validate name length
+        if (typeof program.name !== 'string' || program.name.length > 200) {
+            return NextResponse.json({ error: 'Invalid program name' }, { status: 400 });
+        }
+
+        // Verify coach owns this athlete
+        const access = await requireAccessToAthlete(program.athleteId);
+        if ('error' in access) return access.error;
 
         const newProgram = await prisma.program.create({
             data: {
@@ -62,12 +95,26 @@ export async function POST(request: Request) {
 }
 
 export async function PUT(request: Request) {
+    const auth = await requireCoach();
+    if ('error' in auth) return auth.error;
+
     try {
         const program = await request.json();
 
         if (!program.id) {
             return NextResponse.json({ error: 'Missing program ID' }, { status: 400 });
         }
+
+        // Verify coach owns the program's athlete
+        const existing = await prisma.program.findUnique({
+            where: { id: program.id },
+            select: { athleteId: true }
+        });
+        if (!existing) {
+            return NextResponse.json({ error: 'Program not found' }, { status: 404 });
+        }
+        const access = await requireAccessToAthlete(existing.athleteId);
+        if ('error' in access) return access.error;
 
         const updatedProgram = await prisma.program.update({
             where: { id: program.id },
@@ -88,6 +135,9 @@ export async function PUT(request: Request) {
 }
 
 export async function DELETE(request: Request) {
+    const auth = await requireCoach();
+    if ('error' in auth) return auth.error;
+
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
 
@@ -96,6 +146,17 @@ export async function DELETE(request: Request) {
     }
 
     try {
+        // Verify coach owns the program's athlete
+        const existing = await prisma.program.findUnique({
+            where: { id },
+            select: { athleteId: true }
+        });
+        if (!existing) {
+            return NextResponse.json({ error: 'Program not found' }, { status: 404 });
+        }
+        const access = await requireAccessToAthlete(existing.athleteId);
+        if ('error' in access) return access.error;
+
         // First delete associated logs due to foreign key constraints
         await prisma.log.deleteMany({ where: { programId: id } });
 

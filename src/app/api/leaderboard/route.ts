@@ -1,13 +1,25 @@
 import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 import { prisma } from '@/lib/prisma';
+import { requireAuth } from '@/lib/api-auth';
 
 export async function GET(request: Request) {
+    const auth = await requireAuth();
+    if ('error' in auth) return auth.error;
+
     const { searchParams } = new URL(request.url);
     const coachId = searchParams.get('coachId');
 
     if (!coachId) {
         return NextResponse.json({ error: 'coachId required' }, { status: 400 });
+    }
+
+    // User must be the coach or one of their athletes
+    if (auth.isCoach && auth.user.id !== coachId) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+    if (!auth.isCoach && auth.user.coachId !== coachId) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     try {

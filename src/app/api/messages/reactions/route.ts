@@ -1,16 +1,30 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireAuth } from '@/lib/api-auth';
 
 export const dynamic = 'force-dynamic';
 
 // POST /api/messages/reactions — Toggle a reaction on a message
 export async function POST(request: Request) {
+    const auth = await requireAuth();
+    if ('error' in auth) return auth.error;
+
     try {
         const body = await request.json();
         const { messageId, userId, emoji } = body;
 
         if (!messageId || !userId || !emoji) {
             return NextResponse.json({ error: 'messageId, userId, and emoji are required' }, { status: 400 });
+        }
+
+        // Verify the userId matches the authenticated user
+        if (userId !== auth.user.id) {
+            return NextResponse.json({ error: 'Cannot react as another user' }, { status: 403 });
+        }
+
+        // Validate emoji (basic check — single emoji or short string)
+        if (typeof emoji !== 'string' || emoji.length > 10) {
+            return NextResponse.json({ error: 'Invalid emoji' }, { status: 400 });
         }
 
         // Fetch current message reactions

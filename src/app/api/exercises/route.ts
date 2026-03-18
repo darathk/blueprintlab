@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { EXERCISE_DB } from '@/lib/exercise-db';
+import { requireAuth } from '@/lib/api-auth';
 
 export const dynamic = 'force-dynamic';
 
 // @ts-ignore - Prisma type schema discrepancy
 export async function GET() {
+    const auth = await requireAuth();
+    if ('error' in auth) return auth.error;
+
     try {
         const customExercisesRaw = await prisma.customExercise.findMany();
 
@@ -26,12 +30,23 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+    const auth = await requireAuth();
+    if ('error' in auth) return auth.error;
+
     try {
         const body = await req.json();
         const { name, category, parent } = body;
 
         if (!name || !category) {
             return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
+        }
+
+        // Validate input lengths
+        if (typeof name !== 'string' || name.length > 100) {
+            return NextResponse.json({ error: 'Invalid exercise name' }, { status: 400 });
+        }
+        if (typeof category !== 'string' || category.length > 50) {
+            return NextResponse.json({ error: 'Invalid category' }, { status: 400 });
         }
 
         // Check duplicates in static DB first
