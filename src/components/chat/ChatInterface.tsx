@@ -456,6 +456,7 @@ export default function ChatInterface({
                 if (res.ok) {
                     const real = await res.json();
                     setMessages(prev => prev.map(m => m.id === tempId ? real : m));
+                    window.dispatchEvent(new Event('inbox-refresh'));
                 } else {
                     console.error('[API] Text message failed:', res.status);
                     setMessages(prev => prev.filter(m => m.id !== tempId));
@@ -566,6 +567,7 @@ export default function ChatInterface({
                     if (res.ok) {
                         const real = await res.json();
                         setMessages(prev => prev.map(m => m.id === tempId ? real : m));
+                        window.dispatchEvent(new Event('inbox-refresh'));
                     } else {
                         const errBody = await res.text();
                         console.error('[API] Message create failed:', res.status, errBody);

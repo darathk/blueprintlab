@@ -68,12 +68,31 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
         if (r.ok) setConvos(await r.json());
     }, [coachId]);
 
-    // Refresh conversation list when messages are marked as read
+    // Refresh conversation list when messages are marked as read or sent
     useEffect(() => {
         const handleRefresh = () => fetchConvos();
         window.addEventListener('unread-refresh', handleRefresh);
-        return () => window.removeEventListener('unread-refresh', handleRefresh);
+        window.addEventListener('inbox-refresh', handleRefresh);
+        return () => {
+            window.removeEventListener('unread-refresh', handleRefresh);
+            window.removeEventListener('inbox-refresh', handleRefresh);
+        };
     }, [fetchConvos]);
+
+    // Realtime: subscribe to new messages so sidebar updates instantly
+    useEffect(() => {
+        const channel = supabase.channel('coach-inbox')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'Message' },
+                (payload: any) => {
+                    const msg = payload.new;
+                    // Only refresh if this coach is sender or receiver
+                    if (msg.senderId === coachId || msg.receiverId === coachId) {
+                        fetchConvos();
+                    }
+                }
+            ).subscribe();
+        return () => { supabase.removeChannel(channel); };
+    }, [coachId, fetchConvos]);
 
     // Sidebar Time format
     const fmtTime = (s: string) => {
