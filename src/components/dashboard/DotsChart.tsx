@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import {
-    LineChart, Line, XAxis, YAxis, CartesianGrid,
+    AreaChart, Area, XAxis, YAxis, CartesianGrid,
     Tooltip, ResponsiveContainer
 } from 'recharts';
 import { getCompetitionDataPoints, CompetitionDataPoint } from '@/lib/dots';
@@ -271,20 +271,28 @@ export default function DotsChart({ athleteId, logs, programs = [], initialGende
                     </div>
 
                     <ResponsiveContainer width="100%" height={300}>
-                        <LineChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                        <AreaChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+                            <defs>
+                                {Object.entries(CHART_COLORS).map(([key, color]) => (
+                                    <linearGradient key={key} id={`dots-grad-${key}`} x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor={color} stopOpacity={0.3} />
+                                        <stop offset="95%" stopColor={color} stopOpacity={0} />
+                                    </linearGradient>
+                                ))}
+                            </defs>
                             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
                             <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} label={{ value: 'Session Date', position: 'insideBottom', offset: -2, fill: '#64748b', fontSize: 10 }} height={40} />
                             <YAxis yAxisId="lbs" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={62} label={{ value: 'E1RM (lbs)', angle: -90, position: 'insideLeft', offset: 10, fill: '#94a3b8', fontSize: 10 }} />
                             <YAxis yAxisId="dots" orientation="right" tick={{ fill: CHART_COLORS.dots, fontSize: 11 }} axisLine={false} tickLine={false} width={58} label={{ value: 'DOTs Score', angle: 90, position: 'insideRight', offset: -4, fill: CHART_COLORS.dots, fontSize: 10 }} />
                             <Tooltip content={<CustomTooltip />} />
-                            {activeLines.squat && <Line yAxisId="lbs" type="monotone" dataKey="squat" name="Squat E1RM" stroke={CHART_COLORS.squat} strokeWidth={2} dot={{ r: 4, fill: CHART_COLORS.squat }} activeDot={{ r: 6 }} connectNulls />}
-                            {activeLines.bench && <Line yAxisId="lbs" type="monotone" dataKey="bench" name="Bench E1RM" stroke={CHART_COLORS.bench} strokeWidth={2} dot={{ r: 4, fill: CHART_COLORS.bench }} activeDot={{ r: 6 }} connectNulls />}
-                            {activeLines.deadlift && <Line yAxisId="lbs" type="monotone" dataKey="deadlift" name="Deadlift E1RM" stroke={CHART_COLORS.deadlift} strokeWidth={2} dot={{ r: 4, fill: CHART_COLORS.deadlift }} activeDot={{ r: 6 }} connectNulls />}
-                            {activeLines.totalLbs && <Line yAxisId="lbs" type="monotone" dataKey="totalLbs" name="Total E1RM" stroke={CHART_COLORS.totalLbs} strokeWidth={2.5} dot={{ r: 4, fill: CHART_COLORS.totalLbs }} activeDot={{ r: 6 }} connectNulls />}
+                            {activeLines.squat && <Area yAxisId="lbs" type="monotone" dataKey="squat" name="Squat E1RM" stroke={CHART_COLORS.squat} strokeWidth={2} fill={`url(#dots-grad-squat)`} dot={{ r: 4, fill: CHART_COLORS.squat }} activeDot={{ r: 6 }} connectNulls />}
+                            {activeLines.bench && <Area yAxisId="lbs" type="monotone" dataKey="bench" name="Bench E1RM" stroke={CHART_COLORS.bench} strokeWidth={2} fill={`url(#dots-grad-bench)`} dot={{ r: 4, fill: CHART_COLORS.bench }} activeDot={{ r: 6 }} connectNulls />}
+                            {activeLines.deadlift && <Area yAxisId="lbs" type="monotone" dataKey="deadlift" name="Deadlift E1RM" stroke={CHART_COLORS.deadlift} strokeWidth={2} fill={`url(#dots-grad-deadlift)`} dot={{ r: 4, fill: CHART_COLORS.deadlift }} activeDot={{ r: 6 }} connectNulls />}
+                            {activeLines.totalLbs && <Area yAxisId="lbs" type="monotone" dataKey="totalLbs" name="Total E1RM" stroke={CHART_COLORS.totalLbs} strokeWidth={2.5} fill={`url(#dots-grad-totalLbs)`} dot={{ r: 4, fill: CHART_COLORS.totalLbs }} activeDot={{ r: 6 }} connectNulls />}
                             {activeLines.dots && genderKey && wc > 0 && (
-                                <Line yAxisId="dots" type="monotone" dataKey="dots" name="DOTs Score" stroke={CHART_COLORS.dots} strokeWidth={2.5} dot={{ r: 4, fill: CHART_COLORS.dots }} activeDot={{ r: 6 }} connectNulls />
+                                <Area yAxisId="dots" type="monotone" dataKey="dots" name="DOTs Score" stroke={CHART_COLORS.dots} strokeWidth={2.5} fill={`url(#dots-grad-dots)`} dot={{ r: 4, fill: CHART_COLORS.dots }} activeDot={{ r: 6 }} connectNulls />
                             )}
-                        </LineChart>
+                        </AreaChart>
                     </ResponsiveContainer>
 
                     <div style={{ textAlign: 'center', fontSize: 10, color: 'rgba(148,163,184,0.5)', marginTop: 4 }}>

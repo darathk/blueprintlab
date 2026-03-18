@@ -182,16 +182,61 @@ function WeekStressTable({ label, stats, totalStress, totalCentral, isCollapsed,
     );
 }
 
+/**
+ * Group sessions by actual calendar week (Sun-Sat) so that sessions
+ * appearing in the same visual calendar row share the same stress bucket,
+ * even if they belong to different structural program weeks.
+ */
+function groupByCalendarWeek(weeks: any[], startDate: string) {
+    // Parse start date as local time
+    const [sy, sm, sd] = startDate.split('-').map(Number);
+    const start = new Date(sy, sm - 1, sd);
+    start.setHours(0, 0, 0, 0);
+
+    // Find the Sunday at or before the start date (calendar week anchor)
+    const startDow = start.getDay(); // 0=Sun
+    const calendarAnchor = new Date(start);
+    calendarAnchor.setDate(calendarAnchor.getDate() - startDow);
+
+    const buckets: Record<number, any[]> = {};
+
+    weeks.forEach(week => {
+        week.sessions.forEach((session: any) => {
+            // Compute actual date: start + (weekNumber-1)*7 + (day-1) days
+            const absDay = (week.weekNumber - 1) * 7 + ((session.day || 1) - 1);
+            const sessionDate = new Date(start);
+            sessionDate.setDate(sessionDate.getDate() + absDay);
+
+            // Calendar week number = how many 7-day intervals from the anchor Sunday
+            const diffMs = sessionDate.getTime() - calendarAnchor.getTime();
+            const calWeek = Math.floor(diffMs / (7 * 24 * 60 * 60 * 1000)) + 1;
+
+            if (!buckets[calWeek]) buckets[calWeek] = [];
+            buckets[calWeek].push(session);
+        });
+    });
+
+    // Convert buckets into week-like objects
+    return Object.entries(buckets)
+        .sort(([a], [b]) => Number(a) - Number(b))
+        .map(([weekNum, sessions]) => ({
+            weekNumber: Number(weekNum),
+            sessions,
+        }));
+}
+
 /** Sidebar stress panel — shows stress index for each week */
-export default function StressMatrix({ weeks }: { weeks: any[] }) {
+export default function StressMatrix({ weeks, startDate }: { weeks: any[]; startDate?: string }) {
     const [collapsedWeeks, setCollapsedWeeks] = useState<Record<number, boolean>>({});
 
     const weekData = useMemo(() => {
-        return weeks.map(week => {
+        // If startDate is available, group by actual calendar week
+        const effectiveWeeks = startDate ? groupByCalendarWeek(weeks, startDate) : weeks;
+        return effectiveWeeks.map(week => {
             const { stats, totalStress, totalCentral } = computeStress([week]);
             return { weekNumber: week.weekNumber, stats, totalStress, totalCentral };
         });
-    }, [weeks]);
+    }, [weeks, startDate]);
 
     const toggleWeek = (weekNumber: number) => {
         setCollapsedWeeks(prev => ({ ...prev, [weekNumber]: !prev[weekNumber] }));

@@ -35,9 +35,14 @@ export default function UnreadBadge({ userId, initialCount = 0 }: { userId: stri
         const handleFocus = () => fetchUnread();
         window.addEventListener('focus', handleFocus);
 
+        // Listen for custom event to immediately refresh unread count
+        const handleRefresh = () => fetchUnread();
+        window.addEventListener('unread-refresh', handleRefresh);
+
         return () => {
             clearInterval(interval);
             window.removeEventListener('focus', handleFocus);
+            window.removeEventListener('unread-refresh', handleRefresh);
         };
     }, [fetchUnread, userId]);
 

@@ -6,6 +6,7 @@ import { calculateSimpleE1RM, calculateStress } from '@/lib/stress-index';
 import { ArrowRight, Search, ChevronDown } from 'lucide-react';
 import ExerciseFeedback from '@/components/athlete/ExerciseFeedback';
 import { getExerciseCategory } from '@/lib/exercise-db';
+import ReadinessCheckin from '@/components/athlete/ReadinessCheckin';
 
 /* ─────────── constants ─────────── */
 const CATEGORY_COLORS: Record<string, string> = {
@@ -638,6 +639,9 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                                                             <div style={{ padding: '6px 16px', fontSize: '0.8rem', fontWeight: 600, color: 'var(--foreground)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--card-border)' }}>
                                                                 <span style={{ color: saving.has(sKey) ? 'var(--warning)' : 'var(--success)' }}>{saving.has(sKey) ? 'Saving changes...' : 'All Changes Saved.'}</span>
                                                             </div>
+
+                                                            {/* Readiness Check-In */}
+                                                            <ReadinessCheckin athleteId={athleteId} sessionKey={sKey} programId={program.id} />
 
                                                             {(editState[sKey] || exercises).map((ex: any, exIdx: number) => {
                                                                 const isEdit = !!editState[sKey];

@@ -68,6 +68,13 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
         if (r.ok) setConvos(await r.json());
     }, [coachId]);
 
+    // Refresh conversation list when messages are marked as read
+    useEffect(() => {
+        const handleRefresh = () => fetchConvos();
+        window.addEventListener('unread-refresh', handleRefresh);
+        return () => window.removeEventListener('unread-refresh', handleRefresh);
+    }, [fetchConvos]);
+
     // Sidebar Time format
     const fmtTime = (s: string) => {
         const d = new Date(s), n = new Date();
