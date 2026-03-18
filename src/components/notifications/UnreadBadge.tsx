@@ -1,11 +1,11 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/lib/supabase';
 
 /**
- * Client-side component that polls for unread message count
- * and renders a red dot badge. Pass the userId to check for.
- * Polls every 15 seconds for live updates.
+ * Client-side component that shows unread message count with a red badge.
+ * Uses Supabase Realtime for instant updates, with polling as fallback.
  */
 export default function UnreadBadge({ userId, initialCount = 0 }: { userId: string; initialCount?: number }) {
     const [count, setCount] = useState(initialCount);
@@ -28,8 +28,30 @@ export default function UnreadBadge({ userId, initialCount = 0 }: { userId: stri
         // Initial fetch
         fetchUnread();
 
-        // Poll every 15 seconds
-        const interval = setInterval(fetchUnread, 15000);
+        // Supabase Realtime: listen for new messages TO this user or read-status changes
+        const channel = supabase.channel(`unread-${userId}`)
+            .on('postgres_changes', {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'Message',
+                filter: `receiverId=eq.${userId}`,
+            }, () => {
+                // New message received — refetch count immediately
+                fetchUnread();
+            })
+            .on('postgres_changes', {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'Message',
+                filter: `receiverId=eq.${userId}`,
+            }, () => {
+                // Message marked as read — refetch count immediately
+                fetchUnread();
+            })
+            .subscribe();
+
+        // Fallback polling every 30s (longer interval since realtime handles most cases)
+        const interval = setInterval(fetchUnread, 30000);
 
         // Also refresh on window focus (user comes back to app)
         const handleFocus = () => fetchUnread();
@@ -40,6 +62,7 @@ export default function UnreadBadge({ userId, initialCount = 0 }: { userId: stri
         window.addEventListener('unread-refresh', handleRefresh);
 
         return () => {
+            supabase.removeChannel(channel);
             clearInterval(interval);
             window.removeEventListener('focus', handleFocus);
             window.removeEventListener('unread-refresh', handleRefresh);
@@ -71,7 +94,8 @@ export default function UnreadBadge({ userId, initialCount = 0 }: { userId: stri
 }
 
 /**
- * Hook version for components that need the count value
+ * Hook version for components that need the count value.
+ * Uses Supabase Realtime for instant updates.
  */
 export function useUnreadCount(userId: string, initialCount = 0) {
     const [count, setCount] = useState(initialCount);
@@ -92,15 +116,34 @@ export function useUnreadCount(userId: string, initialCount = 0) {
     useEffect(() => {
         if (!userId) return;
         fetchUnread();
-        const interval = setInterval(fetchUnread, 15000);
+
+        // Supabase Realtime for instant updates
+        const channel = supabase.channel(`unread-hook-${userId}`)
+            .on('postgres_changes', {
+                event: 'INSERT',
+                schema: 'public',
+                table: 'Message',
+                filter: `receiverId=eq.${userId}`,
+            }, () => fetchUnread())
+            .on('postgres_changes', {
+                event: 'UPDATE',
+                schema: 'public',
+                table: 'Message',
+                filter: `receiverId=eq.${userId}`,
+            }, () => fetchUnread())
+            .subscribe();
+
+        // Fallback polling every 30s
+        const interval = setInterval(fetchUnread, 30000);
+
         const handleFocus = () => fetchUnread();
         window.addEventListener('focus', handleFocus);
 
-        // Listen for custom event to immediately refresh unread count
         const handleRefresh = () => fetchUnread();
         window.addEventListener('unread-refresh', handleRefresh);
 
         return () => {
+            supabase.removeChannel(channel);
             clearInterval(interval);
             window.removeEventListener('focus', handleFocus);
             window.removeEventListener('unread-refresh', handleRefresh);
