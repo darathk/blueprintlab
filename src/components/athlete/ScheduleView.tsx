@@ -567,8 +567,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                                                                     <span style={{ color: 'var(--secondary-foreground)' }}>▶</span>
                                                                 )}
                                                                 <div style={{ fontSize: '1.1rem', fontWeight: 600 }}>
-                                                                    Session {day}
-                                                                    {session.name && <span style={{ fontWeight: 400, fontSize: '0.9rem', color: sessionOpen ? 'rgba(255,255,255,0.7)' : 'var(--secondary-foreground)', marginLeft: 8 }}>— {session.name}</span>}
+                                                                    {session.name || `Session ${day}`}
                                                                 </div>
                                                             </div>
                                                         </div>

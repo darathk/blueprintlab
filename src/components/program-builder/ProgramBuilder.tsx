@@ -409,10 +409,12 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
 
     const addSession = (weekIndex) => {
         const newWeeks = [...weeks];
+        // Count total sessions across all weeks for sequential naming
+        const totalSessions = newWeeks.reduce((sum, w) => sum + w.sessions.length, 0);
         newWeeks[weekIndex].sessions.push({
             id: generateId(),
             day: newWeeks[weekIndex].sessions.length + 1,
-            name: `Session ${newWeeks[weekIndex].sessions.length + 1}`,
+            name: `Session ${totalSessions + 1}`,
             exercises: [],
             scheduledDate: ''
         });
@@ -514,7 +516,8 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
     };
 
     const addExerciseToActiveSession = (exerciseName) => {
-        const { w, s } = activeLocation;
+        const loc = editingSession ?? activeLocation;
+        const { w, s } = loc;
         if (w >= weeks.length || s >= weeks[w].sessions.length) return;
 
         const newWeeks = [...weeks];
@@ -626,40 +629,47 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
 
     // ... (helpers)
 
+    // Helper: get the Sunday that starts the week containing a given date
+    const getSunday = (d: Date) => {
+        const s = new Date(d);
+        s.setDate(s.getDate() - s.getDay());
+        s.setHours(0, 0, 0, 0);
+        return s;
+    };
+
     const getShiftedWeeks = (newStartDateStr: string, currentWeeks: any[]) => {
         // Parse as LOCAL time to ensure consistency with Calendar Grid
         const [oldY, oldM, oldD] = startDate.split('-').map(Number);
         const oldStart = new Date(oldY, oldM - 1, oldD);
+        oldStart.setHours(0, 0, 0, 0);
 
         const [newY, newM, newD] = newStartDateStr.split('-').map(Number);
         const newStart = new Date(newY, newM - 1, newD);
-
-        // Normalize to midnight
-        oldStart.setHours(0, 0, 0, 0);
         newStart.setHours(0, 0, 0, 0);
 
-        const diffTime = newStart.getTime() - oldStart.getTime();
-        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+        // Week boundaries are Sunday-Saturday
+        const oldWeek1Sunday = getSunday(oldStart);
+        const newWeek1Sunday = getSunday(newStart);
 
-        const shiftAmount = -diffDays;
-
-        // Flatten and shift with normalization
-        const allSessions = [];
+        // Flatten sessions: convert each to an actual date, then re-bucket into Sun-Sat weeks
+        const allSessions: any[] = [];
         currentWeeks.forEach(w => {
             w.sessions.forEach(s => {
-                // Calculate absolute day (1-based from old start)
-                const absDay = (w.weekNumber - 1) * 7 + s.day;
-                const newAbsDay = absDay + shiftAmount;
+                // Compute actual date: week1Sunday + (weekNumber-1)*7 + (day-1)
+                const actualDate = new Date(oldWeek1Sunday);
+                actualDate.setDate(actualDate.getDate() + (w.weekNumber - 1) * 7 + (s.day - 1));
 
-                if (newAbsDay > 0) {
-                    const newWeekNum = Math.ceil(newAbsDay / 7);
-                    // Normalize to 1-7 relative to week
-                    let newRelDay = newAbsDay % 7;
-                    if (newRelDay === 0) newRelDay = 7;
+                // Compute new week/day relative to new start's Sunday
+                const diffTime = actualDate.getTime() - newWeek1Sunday.getTime();
+                const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+                if (diffDays >= 0) {
+                    const newWeekNum = Math.floor(diffDays / 7) + 1;
+                    const newDayNum = (diffDays % 7) + 1; // 1=Sun, 7=Sat
 
                     allSessions.push({
                         ...s,
-                        day: newRelDay,
+                        day: newDayNum,
                         _tempWeekNum: newWeekNum
                     });
                 }
@@ -667,7 +677,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
         });
 
         // Re-bucket
-        const reorganizedWeeks = [];
+        const reorganizedWeeks: any[][] = [];
         allSessions.forEach(s => {
             const wn = s._tempWeekNum;
             if (!reorganizedWeeks[wn]) reorganizedWeeks[wn] = [];
@@ -677,7 +687,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
             reorganizedWeeks[wn].push(cleanSession);
         });
 
-        const finalWeeks = [];
+        const finalWeeks: any[] = [];
         const maxWeek = allSessions.reduce((max, s) => s._tempWeekNum > max ? s._tempWeekNum : max, 0);
 
         for (let i = 1; i <= maxWeek; i++) {
@@ -752,10 +762,12 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
         const sessionIndex = newWeeks[weekIndex].sessions.findIndex(s => s.day === dayNum);
 
         if (sessionIndex === -1) {
+            // Count total sessions across all weeks for sequential naming
+            const totalSessions = newWeeks.reduce((sum, w) => sum + w.sessions.length, 0);
             newWeeks[weekIndex].sessions.push({
                 id: generateId(),
                 day: dayNum,
-                name: `Session ${dayNum}`,
+                name: `Session ${totalSessions + 1}`,
                 exercises: [],
                 scheduledDate: ''
             });
@@ -789,24 +801,23 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                 currentWeeks = getShiftedWeeks(toDateStr, weeks);
                 pendingStartDate = toDateStr;
 
-                // Recalculate pointers
+                // Recalculate pointers using Sunday-Saturday week boundaries
                 const oldStart = new Date(startDate);
                 const newStart = new Date(toDateStr);
-                oldStart.setUTCHours(0, 0, 0, 0);
-                newStart.setUTCHours(0, 0, 0, 0);
+                oldStart.setHours(0, 0, 0, 0);
+                newStart.setHours(0, 0, 0, 0);
 
-                const diffTime = newStart.getTime() - oldStart.getTime();
-                const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-                const shiftAmt = -diffDays;
+                const oldSunday = getSunday(oldStart);
+                const newSunday = getSunday(newStart);
 
-                // Convert FromD (relative 1-7) to Absolute, Shift, then back to Relative
-                // This matches getShiftedWeeks logic
-                const oldAbsDay = (fromW - 1) * 7 + fromD;
-                const newAbsDay = oldAbsDay + shiftAmt;
+                // Compute actual date of the source session
+                const sourceDate = new Date(oldSunday);
+                sourceDate.setDate(sourceDate.getDate() + (fromW - 1) * 7 + (fromD - 1));
 
-                const newFromW = Math.ceil(newAbsDay / 7);
-                let newFromD = newAbsDay % 7;
-                if (newFromD === 0) newFromD = 7;
+                // Re-derive week/day relative to new Sunday
+                const diffFromNew = Math.round((sourceDate.getTime() - newSunday.getTime()) / (1000 * 60 * 60 * 24));
+                const newFromW = Math.floor(diffFromNew / 7) + 1;
+                const newFromD = (diffFromNew % 7) + 1;
 
                 fromD = newFromD;
                 fromW = newFromW;
@@ -915,7 +926,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
     };
 
     return (
-        <div className="program-builder-layout" style={{ display: 'grid', gridTemplateColumns: '300px 1fr', gap: '2rem', height: 'calc(100vh - 100px)', paddingTop: '1.5rem' }}>
+        <div className="program-builder-layout" style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 3fr', gap: '1.5rem', height: 'calc(100vh - 100px)', paddingTop: '1.5rem' }}>
 
             {/* LEFTSIDE BAR: Exercise Picker + Stress Index */}
             <div className="program-builder-sidebar" style={{ display: 'flex', flexDirection: 'column', gap: '0', height: '100%', overflow: 'hidden' }}>
@@ -1346,7 +1357,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
             {editingSession && (
                 <div style={{
                     position: 'fixed', top: 'var(--header-height, 56px)', right: 0, bottom: 0,
-                    width: '480px', maxWidth: '90vw',
+                    width: '40vw', minWidth: '480px', maxWidth: '90vw',
                     background: 'var(--background)', borderLeft: '1px solid var(--card-border)',
                     zIndex: 900, display: 'flex', flexDirection: 'column',
                     boxShadow: '-8px 0 30px rgba(0,0,0,0.5)',
