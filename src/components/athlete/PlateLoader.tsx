@@ -102,7 +102,7 @@ export default function PlateLoader({
             height: inline ? 'auto' : '100%',
             minHeight: inline ? 'auto' : 'calc(100vh - 160px)',
             background: inline ? 'var(--card-bg)' : 'var(--background)',
-            borderRadius: inline ? 12 : 0,
+            borderRadius: inline ? 'var(--radius)' : 0,
             overflow: 'hidden',
             border: inline ? '1px solid var(--card-border)' : 'none'
         }}>
@@ -141,7 +141,9 @@ export default function PlateLoader({
                 {/* Visualizer Section */}
                 <div style={{
                     position: 'relative', height: 300, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: 'rgba(0,0,0,0.2)', borderRadius: 12, marginBottom: 12, overflow: 'hidden'
+                    background: 'var(--card-bg)', borderRadius: 'var(--radius)', marginBottom: 16, overflow: 'hidden',
+                    border: '1px solid var(--card-border)',
+                    boxShadow: '0 0 0 0.5px rgba(255, 255, 255, 0.06), 0 4px 24px rgba(0, 0, 0, 0.3)'
                 }}>
 
                     {/* The Bar */}
@@ -218,9 +220,9 @@ export default function PlateLoader({
                     {/* Clear Button (Reverse mode) */}
                     {mode === 'reverse' && manualPlates.length > 0 && (
                         <button onClick={clearManual} style={{
-                            position: 'absolute', top: 12, right: 12, background: '#ef4444', color: '#fff', border: 'none',
-                            padding: '6px 12px', borderRadius: 8, fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer',
-                            display: 'flex', alignItems: 'center', gap: 6
+                            position: 'absolute', top: 12, right: 12, background: 'rgba(239, 68, 68, 0.15)', color: 'var(--danger)', border: '1px solid rgba(239, 68, 68, 0.3)',
+                            padding: '6px 12px', borderRadius: 'var(--radius)', fontSize: '0.8rem', fontWeight: 600, cursor: 'pointer',
+                            display: 'flex', alignItems: 'center', gap: 6, backdropFilter: 'blur(8px)', transition: 'all 0.2s'
                         }}>
                             <RotateCcw size={14} /> Reset
                         </button>
@@ -228,7 +230,10 @@ export default function PlateLoader({
                 </div>
 
                 {/* Total Readout */}
-                <div style={{ textAlign: 'center', marginBottom: 12 }}>
+                <div style={{
+                    textAlign: 'center', marginBottom: 16, padding: '12px',
+                    background: 'var(--card-bg)', borderRadius: 'var(--radius)', border: '1px solid var(--card-border)'
+                }}>
                     <span style={{ fontSize: '1.8rem', fontWeight: 800 }}>{totalKg > 0 ? totalKg.toFixed(1).replace('.0', '') : '0'} <span style={{ fontSize: '0.9rem', color: 'var(--secondary-foreground)' }}>KG</span></span>
                     <span style={{ margin: '0 12px', color: 'var(--card-border)' }}>|</span>
                     <span style={{ fontSize: '1.4rem', fontWeight: 600, color: 'var(--secondary-foreground)' }}>{totalLb > 0 ? totalLb.toFixed(1).replace('.0', '') : '0'} <span style={{ fontSize: '0.8rem' }}>LB</span></span>
@@ -239,8 +244,8 @@ export default function PlateLoader({
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                         <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 0.8fr)', gap: 8, alignItems: 'end' }}>
                             <div>
-                                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--secondary-foreground)', marginBottom: 4, fontWeight: 600 }}>Target Weight</label>
-                                <div style={{ display: 'flex', background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 8, overflow: 'hidden', height: 46 }}>
+                                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--secondary-foreground)', marginBottom: 4, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Target Weight</label>
+                                <div style={{ display: 'flex', background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 'var(--radius)', overflow: 'hidden', height: 46 }}>
                                     <input
                                         type="number" inputMode="decimal"
                                         value={targetStr}
@@ -262,13 +267,13 @@ export default function PlateLoader({
                                 </div>
                             </div>
                             <div>
-                                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--secondary-foreground)', marginBottom: 4, fontWeight: 600 }}>Bar</label>
+                                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--secondary-foreground)', marginBottom: 4, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Bar</label>
                                 <select
                                     value={barWeight}
                                     onChange={e => setBarWeight(Number(e.target.value))}
                                     style={{
                                         width: '100%', height: 46, padding: '0 8px', background: 'var(--card-bg)', border: '1px solid var(--card-border)',
-                                        borderRadius: 8, color: 'var(--foreground)', fontSize: '0.9rem', outline: 'none', appearance: 'none'
+                                        borderRadius: 'var(--radius)', color: 'var(--foreground)', fontSize: '0.9rem', outline: 'none', appearance: 'none'
                                     }}
                                 >
                                     <option value={20}>20kg</option>
@@ -277,14 +282,16 @@ export default function PlateLoader({
                                 </select>
                             </div>
                             <div>
-                                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--secondary-foreground)', marginBottom: 4, fontWeight: 600 }}>Collars</label>
+                                <label style={{ display: 'block', fontSize: '0.75rem', color: 'var(--secondary-foreground)', marginBottom: 4, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Collars</label>
                                 <button
                                     onClick={() => setIncludeCollars(!includeCollars)}
                                     style={{
-                                        height: 46, padding: '0 12px', background: includeCollars ? 'var(--primary)' : 'var(--card-bg)',
+                                        width: '100%', height: 46, padding: '0 12px',
+                                        background: includeCollars ? 'rgba(125, 135, 210, 0.15)' : 'var(--card-bg)',
                                         border: includeCollars ? '1px solid var(--primary)' : '1px solid var(--card-border)',
-                                        color: includeCollars ? '#fff' : 'var(--foreground)', borderRadius: 8, fontSize: '0.8rem',
-                                        fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.2s'
+                                        color: includeCollars ? 'var(--primary)' : 'var(--foreground)', borderRadius: 'var(--radius)', fontSize: '0.8rem',
+                                        fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.2s',
+                                        boxShadow: includeCollars ? '0 0 10px rgba(125, 135, 210, 0.1)' : 'none'
                                     }}
                                 >
                                     {includeCollars ? 'ON' : 'OFF'}
@@ -294,8 +301,11 @@ export default function PlateLoader({
 
                         {/* Text Summary */}
                         {displayPlates.length > 0 && (
-                            <div style={{ background: 'var(--card-bg)', padding: '16px', borderRadius: 8, border: '1px solid var(--card-border)' }}>
-                                <div style={{ fontSize: '0.9rem', fontWeight: 600, marginBottom: 12, textAlign: 'center', color: 'var(--primary)' }}>Per Side Plates</div>
+                            <div style={{
+                                background: 'var(--card-bg)', padding: '16px', borderRadius: 'var(--radius)', border: '1px solid var(--card-border)',
+                                backdropFilter: 'blur(12px)', boxShadow: '0 0 0 0.5px rgba(255, 255, 255, 0.06), 0 4px 24px rgba(0, 0, 0, 0.3)'
+                            }}>
+                                <div style={{ fontSize: '0.75rem', fontWeight: 600, marginBottom: 12, textAlign: 'center', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Per Side Plates</div>
                                 <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 8, justifyContent: 'center' }}>
                                     {PLATES.map(pInfo => {
                                         const w = pInfo.weight;
@@ -328,7 +338,7 @@ export default function PlateLoader({
                                 onChange={e => setBarWeight(Number(e.target.value))}
                                 style={{
                                     height: 38, padding: '0 8px', background: 'var(--card-bg)', border: '1px solid var(--card-border)',
-                                    borderRadius: 8, color: 'var(--foreground)', fontSize: '0.85rem', outline: 'none'
+                                    borderRadius: 'var(--radius)', color: 'var(--foreground)', fontSize: '0.85rem', outline: 'none'
                                 }}
                             >
                                 <option value={20}>20 KG Bar</option>
@@ -338,10 +348,12 @@ export default function PlateLoader({
                             <button
                                 onClick={() => setIncludeCollars(!includeCollars)}
                                 style={{
-                                    height: 38, padding: '0 12px', background: includeCollars ? 'var(--primary)' : 'var(--card-bg)',
+                                    height: 38, padding: '0 12px',
+                                    background: includeCollars ? 'rgba(125, 135, 210, 0.15)' : 'var(--card-bg)',
                                     border: includeCollars ? '1px solid var(--primary)' : '1px solid var(--card-border)',
-                                    color: includeCollars ? '#fff' : 'var(--foreground)', borderRadius: 8, fontSize: '0.85rem',
-                                    fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap'
+                                    color: includeCollars ? 'var(--primary)' : 'var(--foreground)', borderRadius: 'var(--radius)', fontSize: '0.85rem',
+                                    fontWeight: 700, cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap',
+                                    boxShadow: includeCollars ? '0 0 10px rgba(125, 135, 210, 0.1)' : 'none'
                                 }}
                             >
                                 Collars: {includeCollars ? 'ON' : 'OFF'}
