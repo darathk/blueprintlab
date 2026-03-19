@@ -113,17 +113,23 @@ export default async function DashboardLayout({
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '4px',
-                    flex: 1
                 }}>
-                    <NotificationPermissionButton />
-                    <UserButton afterSignOutUrl="/" />
+                    <div style={{
+                        width: 44,
+                        height: 44,
+                        borderRadius: '50%',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                    }}>
+                        <UserButton afterSignOutUrl="/" />
+                    </div>
                     <span style={{
                         fontSize: '0.6rem',
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
+                        fontWeight: 500,
+                        letterSpacing: '0.01em',
                         color: 'var(--secondary-foreground)',
-                        opacity: 0.7
+                        opacity: 0.65,
                     }}>
                         Profile
                     </span>
