@@ -130,7 +130,7 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
             </div>
 
             {/* Header */}
-            <div className="calendar-grid-header" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
+            <div className="calendar-grid-header" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))' }}>
                 {weekDays.map(d => (
                     <div key={d} style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--secondary-foreground)', fontWeight: 600 }}>
                         {d}
@@ -139,7 +139,7 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
             </div>
 
             {/* Grid */}
-            <div className="calendar-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
+            <div className="calendar-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))' }}>
                 {calendarDays.map((day, i) => (
                     <div
                         key={day.dateStr}
@@ -211,6 +211,7 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
                     border-radius: 8px;
                     background: transparent;
                     opacity: 0.3;
+                    overflow: hidden;
                 }
                 .calendar-cell.current-month {
                     background: rgba(255,255,255,0.02);
