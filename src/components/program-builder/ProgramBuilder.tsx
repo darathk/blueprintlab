@@ -107,17 +107,6 @@ const BuilderExerciseCard = ({ exercise, onUpdate, onRemove, onDragStart, onDrag
             {/* Content */}
             {!isCollapsed && (
                 <div style={{ padding: '1rem' }}>
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.5rem' }}>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', cursor: 'pointer', color: 'var(--accent)' }}>
-                            <input
-                                type="checkbox"
-                                checked={exercise.isPrimary || false}
-                                onChange={(e) => onUpdate('isPrimary', e.target.checked)}
-                            />
-                            Track as Primary Lift
-                        </label>
-                    </div>
-
                     <div style={{ display: 'grid', gridTemplateColumns: '30px 1fr 70px 70px 1fr 70px 30px', gap: '0.5rem', marginBottom: '0.5rem', fontSize: '0.75rem', color: 'var(--secondary-foreground)', textAlign: 'center' }}>
                         <div>Set</div>
                         <div>Weight</div>
@@ -484,7 +473,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
             exercises: originalSession.exercises.map(e => ({
                 ...e,
                 id: generateId(),
-                sets: e.sets.map(s => ({ ...s, id: generateId() }))
+                sets: (e.sets || []).map(s => ({ ...s, id: generateId() }))
             }))
         };
 
@@ -539,10 +528,10 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                     ...s,
                     id: generateId(),
                     scheduledDate: newDate,
-                    exercises: s.exercises.map(e => ({
+                    exercises: (s.exercises || []).map(e => ({
                         ...e,
                         id: generateId(),
-                        sets: e.sets.map(set => ({ ...set, id: generateId() }))
+                        sets: (e.sets || []).map(set => ({ ...set, id: generateId() }))
                     }))
                 };
             })

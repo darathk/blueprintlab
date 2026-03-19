@@ -76,9 +76,13 @@ function getTableValue(table, rpe, reps) {
 export function calculateStress(reps, rpe) {
     if (!reps || !rpe) return { total: 0, central: 0, peripheral: 0 };
 
-    const total = getTableValue(TOTAL_STRESS_TABLE, rpe, reps);
-    const central = getTableValue(CENTRAL_STRESS_TABLE, rpe, reps);
-    const peripheral = getTableValue(PERIPHERAL_STRESS_TABLE, rpe, reps);
+    const parsedReps = parseFloat(reps);
+    const parsedRpe = parseFloat(rpe);
+    if (isNaN(parsedReps) || isNaN(parsedRpe)) return { total: 0, central: 0, peripheral: 0 };
+
+    const total = getTableValue(TOTAL_STRESS_TABLE, parsedRpe, parsedReps) || 0;
+    const central = getTableValue(CENTRAL_STRESS_TABLE, parsedRpe, parsedReps) || 0;
+    const peripheral = getTableValue(PERIPHERAL_STRESS_TABLE, parsedRpe, parsedReps) || 0;
 
     return { total, central, peripheral };
 }
