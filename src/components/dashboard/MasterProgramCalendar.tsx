@@ -3,40 +3,35 @@
 import { useState, useMemo } from 'react';
 
 // Parse "YYYY-MM-DD" as LOCAL date, not UTC.
-// new Date("2026-02-25") is parsed as UTC midnight, which in EST becomes Feb 24 7pm — shifting dates by 1 day.
-// This function avoids that trap entirely.
 function parseLocalDate(dateStr: string): Date {
     if (!dateStr) return new Date();
     const parts = dateStr.split('-');
     if (parts.length === 3) {
         return new Date(parseInt(parts[0]), parseInt(parts[1]) - 1, parseInt(parts[2]));
     }
-    // Fallback: if it's already a full ISO string with time, it's fine
     return new Date(dateStr);
 }
 
+function toDateStr(d: Date): string {
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
+
 export default function MasterProgramCalendar({ programs, athleteId, currentProgramId, onSelectSession, logs = [] }: { programs: any[], athleteId?: string, currentProgramId: string, onSelectSession: any, logs?: any[] }) {
-    // Default to current month
     const [currentMonth, setCurrentMonth] = useState(new Date());
 
     // Filter programs for this athlete if athleteId is provided
     const athletePrograms = useMemo(() => {
         if (!athleteId) return programs;
-        // Strict filtering: Only show programs assigned effectively to this athlete
         const filtered = programs.filter(p => p.athleteId === athleteId);
 
-        // Prioritize current program
-        if (currentProgramId) {
-            return filtered.sort((a, b) => {
-                if (a.id === currentProgramId) return -1;
-                if (b.id === currentProgramId) return 1;
-                return 0; // Keep original order for others (or sort by date?)
-            });
-        }
-
-        // If no current program, maybe sort by start date descending (newest on top)?
-        // This helps if there are overlaps, we probably want the newest assignment.
-        return filtered.sort((a, b) => parseLocalDate(b.startDate).getTime() - parseLocalDate(a.startDate).getTime());
+        // Prioritize current/active program first, then by start date descending
+        return filtered.sort((a, b) => {
+            if (a.id === currentProgramId) return -1;
+            if (b.id === currentProgramId) return 1;
+            if (a.status === 'active' && b.status !== 'active') return -1;
+            if (b.status === 'active' && a.status !== 'active') return 1;
+            return parseLocalDate(b.startDate).getTime() - parseLocalDate(a.startDate).getTime();
+        });
     }, [programs, athleteId, currentProgramId]);
 
     const nextMonth = () => {
@@ -52,44 +47,41 @@ export default function MasterProgramCalendar({ programs, athleteId, currentProg
     };
 
     // Helper to find program and session for a specific date
-    const getProgramDataForDate = (date) => {
-        // Iterate through all programs to find one that covers this date
-        // Reverse order to prioritize newer programs if overlap? Or just first found.
+    const getProgramDataForDate = (date: Date) => {
         for (const prog of athletePrograms) {
             if (!prog.startDate) continue;
 
             const start = parseLocalDate(prog.startDate);
-            // End date might be explicit or calculated
             let end;
             if (prog.endDate) {
                 end = parseLocalDate(prog.endDate);
             } else {
-                // Calculate from weeks
                 const totalWeeks = prog.weeks?.length || 0;
                 end = new Date(start);
                 end.setDate(end.getDate() + (totalWeeks * 7));
             }
 
-            // Normalize time for comparison
             const d = new Date(date); d.setHours(0, 0, 0, 0);
             const s = new Date(start); s.setHours(0, 0, 0, 0);
             const e = new Date(end); e.setHours(0, 0, 0, 0);
 
-            if (d >= s && d < e) { // End date is usually exclusive or inclusive? Let's say exclusive of the start of next program, but inclusive of training days.
-                // Calculate week and day
+            if (d >= s && d < e) {
                 const diffTime = d.getTime() - s.getTime();
                 const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
                 const weekNum = Math.floor(diffDays / 7) + 1;
                 const dayNum = (diffDays % 7) + 1;
 
-                const week = prog.weeks.find(w => w.weekNumber === weekNum);
-                const session = week?.sessions.find(s => s.day === dayNum);
+                const week = prog.weeks.find((w: any) => w.weekNumber === weekNum);
+                const session = week?.sessions.find((s: any) => s.day === dayNum);
+
+                const isActive = prog.status === 'active' || prog.id === currentProgramId;
 
                 return {
                     program: prog,
                     weekNum,
                     dayNum,
-                    session
+                    session,
+                    isActive
                 };
             }
         }
@@ -101,16 +93,16 @@ export default function MasterProgramCalendar({ programs, athleteId, currentProg
         const year = currentMonth.getFullYear();
         const month = currentMonth.getMonth();
         const firstDayOfMonth = new Date(year, month, 1);
-        const startDayOfWeek = firstDayOfMonth.getDay(); // 0Sun - 6Sat
-        const offset = startDayOfWeek; // Sunday start
+        const startDayOfWeek = firstDayOfMonth.getDay();
+        const offset = startDayOfWeek;
         const gridStart = new Date(firstDayOfMonth);
         gridStart.setDate(gridStart.getDate() - offset);
 
-        const days = [];
+        const days: any[] = [];
         for (let i = 0; i < 42; i++) {
             const date = new Date(gridStart);
             date.setDate(gridStart.getDate() + i);
-            const dateStr = date.toISOString().split('T')[0];
+            const dateStr = toDateStr(date);
 
             const data = getProgramDataForDate(date);
 
@@ -143,50 +135,61 @@ export default function MasterProgramCalendar({ programs, athleteId, currentProg
                     </div>
 
                     <div className="calendar-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridAutoRows: '1fr' }}>
-                        {calendarDays.map((day, i) => (
-                            <div
-                                key={day.dateStr}
-                                onClick={() => day.program && day.session && day.session.exercises?.length > 0 && onSelectSession && onSelectSession(day.program, day.weekNum, day.dayNum)}
-                                style={{
-                                    borderRight: (i + 1) % 7 === 0 ? 'none' : '1px solid var(--card-border)',
-                                    borderBottom: '1px solid var(--card-border)',
-                                    background: day.isCurrentMonth ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.3)',
-                                    cursor: (day.program && day.session && day.session.exercises?.length > 0) ? 'pointer' : 'default',
-                                    position: 'relative',
-                                    transition: 'background 0.2s',
-                                }}
-                                className={`calendar-cell ${day.program ? 'calendar-day-active has-session' : ''} ${day.isCurrentMonth ? 'current-month' : 'other-month'}`}
-                            >
-                                <div className="date-number">
-                                    {day.date.getDate()}
-                                </div>
+                        {calendarDays.map((day, i) => {
+                            const hasSession = day.program && day.session && day.session.exercises && day.session.exercises.length > 0;
+                            const isActive = day.isActive;
 
-                                {day.program && day.session && day.session.exercises && day.session.exercises.length > 0 && (
-                                    <div className="session-container" style={{
-                                        background: 'var(--secondary)',
-                                        borderLeft: '3px solid var(--primary)',
-                                        padding: '6px',
-                                        borderRadius: '0 6px 6px 0',
-                                        boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
-                                    }}>
-                                        <div className="session-text">
-                                            <div style={{ fontWeight: 600, color: 'var(--primary)', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
-                                                {day.program.name}
-                                            </div>
-                                            <div style={{ marginTop: '2px' }}>
-                                                <div style={{ color: 'var(--primary)', fontWeight: 500 }}>{day.session.name}</div>
-                                                <div style={{ opacity: 0.7, fontSize: '0.7rem' }}>{day.session.exercises.length} Exercises</div>
-                                            </div>
-                                        </div>
-                                        <div className="session-icon">
-                                            <div style={{ width: 20, height: 20, borderRadius: '50%', background: 'linear-gradient(135deg, #38bdf8, #34d399)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', fontSize: 10 }}>
-                                                📋
-                                            </div>
-                                        </div>
+                            return (
+                                <div
+                                    key={day.dateStr}
+                                    onClick={() => hasSession && onSelectSession && onSelectSession(day.program, day.weekNum, day.dayNum)}
+                                    style={{
+                                        borderRight: (i + 1) % 7 === 0 ? 'none' : '1px solid var(--card-border)',
+                                        borderBottom: '1px solid var(--card-border)',
+                                        background: day.isCurrentMonth ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.3)',
+                                        cursor: hasSession ? 'pointer' : 'default',
+                                        position: 'relative',
+                                        transition: 'background 0.2s',
+                                    }}
+                                    className={`calendar-cell ${hasSession ? 'calendar-day-active has-session' : ''} ${day.isCurrentMonth ? 'current-month' : 'other-month'}`}
+                                >
+                                    <div className="date-number">
+                                        {day.date.getDate()}
                                     </div>
-                                )}
-                            </div>
-                        ))}
+
+                                    {hasSession && (
+                                        <div className="session-container" style={{
+                                            background: isActive ? 'var(--secondary)' : 'rgba(255,255,255,0.015)',
+                                            borderLeft: isActive ? '3px solid var(--primary)' : '3px solid rgba(255,255,255,0.1)',
+                                            padding: '6px',
+                                            borderRadius: '0 6px 6px 0',
+                                            boxShadow: isActive ? '0 2px 4px rgba(0,0,0,0.2)' : 'none',
+                                            opacity: isActive ? 1 : 0.45,
+                                        }}>
+                                            <div className="session-text">
+                                                <div style={{ fontWeight: 600, color: isActive ? 'var(--primary)' : 'var(--secondary-foreground)', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                                                    {day.program.name}
+                                                </div>
+                                                <div style={{ marginTop: '2px' }}>
+                                                    <div style={{ color: isActive ? 'var(--primary)' : 'var(--secondary-foreground)', fontWeight: 500 }}>{day.session.name}</div>
+                                                    <div style={{ opacity: 0.7, fontSize: '0.7rem' }}>{day.session.exercises.length} Exercises</div>
+                                                </div>
+                                            </div>
+                                            <div className="session-icon">
+                                                <div style={{
+                                                    width: 20, height: 20, borderRadius: '50%',
+                                                    background: isActive ? 'linear-gradient(135deg, #38bdf8, #34d399)' : 'rgba(255,255,255,0.1)',
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                    color: isActive ? '#000' : 'var(--secondary-foreground)', fontSize: 10
+                                                }}>
+                                                    📋
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            );
+                        })}
                     </div>
                 </div>
             </div>
@@ -210,6 +213,9 @@ export default function MasterProgramCalendar({ programs, athleteId, currentProg
                 }
                 .calendar-day-active:hover {
                     background: rgba(255,255,255,0.03) !important;
+                }
+                .calendar-day-active:hover .session-container {
+                    opacity: 1 !important;
                 }
                 .date-number {
                     font-size: 0.85rem;

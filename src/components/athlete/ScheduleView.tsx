@@ -337,16 +337,17 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
     const [viewMode, setViewMode] = useState<'date' | 'blocks'>('date');
     const dateStripRef = useRef<HTMLDivElement>(null);
 
-    // Build sessionsByDate map: dateStr -> [{ program, weekNum, session, sKey }]
+    // Build sessionsByDate map: dateStr -> [{ program, weekNum, session, sKey, isActive }]
     // Uses same logic as MasterProgramCalendar: Day 1 = program startDate,
     // Day 2 = startDate+1, etc. Week boundaries every 7 days from startDate.
     const sessionsByDate = useMemo(() => {
-        const map: Record<string, { program: any; weekNum: number; session: any; sKey: string }[]> = {};
+        const map: Record<string, { program: any; weekNum: number; session: any; sKey: string; isActive: boolean }[]> = {};
         if (!Array.isArray(programs)) return map;
 
         programs.forEach(program => {
             if (!program.startDate) return;
             const start = parseLocalDate(program.startDate);
+            const isActive = program.status === 'active';
 
             const weeks: any[] = Array.isArray(program.weeks) ? program.weeks : [];
             weeks.forEach((week: any) => {
@@ -360,7 +361,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                     const ds = toDateStr(d);
                     const sKey = sessionKey(program.id, wn, day);
                     if (!map[ds]) map[ds] = [];
-                    map[ds].push({ program, weekNum: wn, session, sKey });
+                    map[ds].push({ program, weekNum: wn, session, sKey, isActive });
                 });
             });
         });
@@ -371,16 +372,18 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
     const dateStrip = useMemo(() => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const days: { date: Date; dateStr: string; isToday: boolean; hasSession: boolean }[] = [];
+        const days: { date: Date; dateStr: string; isToday: boolean; hasSession: boolean; hasActiveSession: boolean }[] = [];
         for (let i = -30; i <= 30; i++) {
             const d = new Date(today);
             d.setDate(d.getDate() + i);
             const ds = toDateStr(d);
+            const sessions = sessionsByDate[ds] || [];
             days.push({
                 date: d,
                 dateStr: ds,
                 isToday: i === 0,
-                hasSession: !!sessionsByDate[ds]?.length,
+                hasSession: sessions.length > 0,
+                hasActiveSession: sessions.some(s => s.isActive),
             });
         }
         return days;
@@ -500,7 +503,8 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                                 height: 5,
                                 borderRadius: '50%',
                                 background: d.hasSession
-                                    ? isSelected ? 'white' : 'var(--accent)'
+                                    ? isSelected ? 'white'
+                                        : d.hasActiveSession ? 'var(--accent)' : 'rgba(148, 163, 184, 0.4)'
                                     : 'transparent',
                                 transition: 'background 0.2s',
                             }} />
@@ -584,7 +588,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                         </div>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                            {selectedDateSessions.map(({ program, weekNum, session, sKey }) => {
+                            {selectedDateSessions.map(({ program, weekNum, session, sKey, isActive }) => {
                                 const exercises: any[] = Array.isArray(session.exercises) ? session.exercises : [];
                                 const log = Array.isArray(logs) ? logs.find(l => l.sessionId === sKey && l.programId === program.id) : undefined;
                                 const progress = sessionProgress(exercises, log, editState[sKey]);
@@ -596,8 +600,24 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                                         border: sessionOpen ? '1px solid var(--primary)' : '1px solid var(--card-border)',
                                         borderRadius: 12,
                                         overflow: 'hidden',
-                                        transition: 'border-color 0.2s',
+                                        transition: 'border-color 0.2s, opacity 0.2s',
+                                        opacity: isActive ? 1 : 0.5,
                                     }}>
+                                        {/* Past program label */}
+                                        {!isActive && (
+                                            <div style={{
+                                                padding: '4px 16px',
+                                                background: 'rgba(255,255,255,0.02)',
+                                                borderBottom: '1px solid var(--card-border)',
+                                                fontSize: '0.65rem',
+                                                fontWeight: 600,
+                                                color: 'var(--secondary-foreground)',
+                                                textTransform: 'uppercase',
+                                                letterSpacing: '0.08em',
+                                            }}>
+                                                Past Program
+                                            </div>
+                                        )}
                                         {/* Session Card Header */}
                                         <div
                                             onClick={() => {
@@ -607,7 +627,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                                             style={{
                                                 padding: '14px 16px',
                                                 cursor: 'pointer',
-                                                background: sessionOpen ? 'rgba(125, 135, 210, 0.08)' : 'transparent',
+                                                background: sessionOpen ? (isActive ? 'rgba(125, 135, 210, 0.08)' : 'rgba(255,255,255,0.02)') : 'transparent',
                                                 transition: 'background 0.2s',
                                             }}
                                         >
