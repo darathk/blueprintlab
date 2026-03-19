@@ -47,7 +47,7 @@ export default function ProgramList({ athleteId }) {
         return weeks.filter(w => Array.isArray(w.sessions) && w.sessions.length > 0).length;
     };
 
-    // Compute date range from only non-empty weeks
+    // Compute date range from only non-empty weeks, anchored to startDate
     const activeDateRange = (startDate, weeks) => {
         if (!startDate || !Array.isArray(weeks)) return '';
         const nonEmpty = weeks.filter(w => Array.isArray(w.sessions) && w.sessions.length > 0);
@@ -55,18 +55,14 @@ export default function ProgramList({ athleteId }) {
         const [sy, sm, sd] = startDate.split('T')[0].split('-').map(Number);
         const start = new Date(sy, sm - 1, sd);
         start.setHours(0, 0, 0, 0);
-        // Week 1 Sunday
-        const dow = start.getDay();
-        const week1Sunday = new Date(start);
-        week1Sunday.setDate(week1Sunday.getDate() - dow);
         // First and last non-empty week numbers
         const firstWn = Math.min(...nonEmpty.map(w => w.weekNumber || 1));
         const lastWn = Math.max(...nonEmpty.map(w => w.weekNumber || 1));
-        const firstSunday = new Date(week1Sunday);
-        firstSunday.setDate(firstSunday.getDate() + (firstWn - 1) * 7);
-        const lastSaturday = new Date(week1Sunday);
-        lastSaturday.setDate(lastSaturday.getDate() + (lastWn - 1) * 7 + 6);
-        return `${firstSunday.toLocaleDateString()} — ${lastSaturday.toLocaleDateString()}`;
+        const firstDay = new Date(start);
+        firstDay.setDate(firstDay.getDate() + (firstWn - 1) * 7);
+        const lastDay = new Date(start);
+        lastDay.setDate(lastDay.getDate() + (lastWn - 1) * 7 + 6);
+        return `${firstDay.toLocaleDateString()} — ${lastDay.toLocaleDateString()}`;
     };
 
     return (

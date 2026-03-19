@@ -794,19 +794,18 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
 
     const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-    /** Compute the Sun–Sat date range label for a given program week */
+    /** Compute the date range label for a given program week, anchored to startDate */
     const weekDateRange = (weekNumber: number): string => {
         if (!startDate) return `Week ${weekNumber}`;
         const [sy, sm, sd] = startDate.split('-').map(Number);
         const start = new Date(sy, sm - 1, sd);
         start.setHours(0, 0, 0, 0);
-        const week1Sunday = getSunday(start);
-        const weekSunday = new Date(week1Sunday);
-        weekSunday.setDate(weekSunday.getDate() + (weekNumber - 1) * 7);
-        const weekSaturday = new Date(weekSunday);
-        weekSaturday.setDate(weekSaturday.getDate() + 6);
+        const weekStart = new Date(start);
+        weekStart.setDate(weekStart.getDate() + (weekNumber - 1) * 7);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekEnd.getDate() + 6);
         const fmt = (d: Date) => `${SHORT_MONTHS[d.getMonth()]} ${d.getDate()}`;
-        return `${fmt(weekSunday)} – ${fmt(weekSaturday)}`;
+        return `${fmt(weekStart)} – ${fmt(weekEnd)}`;
     };
 
     const getShiftedWeeks = (newStartDateStr: string, currentWeeks: any[]) => {
@@ -819,25 +818,21 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
         const newStart = new Date(newY, newM - 1, newD);
         newStart.setHours(0, 0, 0, 0);
 
-        // Week boundaries are Sunday-Saturday
-        const oldWeek1Sunday = getSunday(oldStart);
-        const newWeek1Sunday = getSunday(newStart);
-
-        // Flatten sessions: convert each to an actual date, then re-bucket into Sun-Sat weeks
+        // Flatten sessions: convert each to an actual date, then re-bucket using startDate-anchored weeks
         const allSessions: any[] = [];
         currentWeeks.forEach(w => {
             w.sessions.forEach(s => {
-                // Compute actual date: week1Sunday + (weekNumber-1)*7 + (day-1)
-                const actualDate = new Date(oldWeek1Sunday);
+                // Compute actual date: oldStart + (weekNumber-1)*7 + (day-1)
+                const actualDate = new Date(oldStart);
                 actualDate.setDate(actualDate.getDate() + (w.weekNumber - 1) * 7 + (s.day - 1));
 
-                // Compute new week/day relative to new start's Sunday
-                const diffTime = actualDate.getTime() - newWeek1Sunday.getTime();
+                // Compute new week/day relative to new start date
+                const diffTime = actualDate.getTime() - newStart.getTime();
                 const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
                 if (diffDays >= 0) {
                     const newWeekNum = Math.floor(diffDays / 7) + 1;
-                    const newDayNum = (diffDays % 7) + 1; // 1=Sun, 7=Sat
+                    const newDayNum = (diffDays % 7) + 1;
 
                     allSessions.push({
                         ...s,
@@ -973,21 +968,20 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                 currentWeeks = getShiftedWeeks(toDateStr, weeks);
                 pendingStartDate = toDateStr;
 
-                // Recalculate pointers using Sunday-Saturday week boundaries
-                const oldStart = new Date(startDate);
-                const newStart = new Date(toDateStr);
+                // Recalculate pointers using startDate-anchored week boundaries
+                const [oY, oM, oD] = startDate.split('-').map(Number);
+                const oldStart = new Date(oY, oM - 1, oD);
                 oldStart.setHours(0, 0, 0, 0);
+                const [nY, nM, nD] = toDateStr.split('-').map(Number);
+                const newStart = new Date(nY, nM - 1, nD);
                 newStart.setHours(0, 0, 0, 0);
 
-                const oldSunday = getSunday(oldStart);
-                const newSunday = getSunday(newStart);
-
                 // Compute actual date of the source session
-                const sourceDate = new Date(oldSunday);
+                const sourceDate = new Date(oldStart);
                 sourceDate.setDate(sourceDate.getDate() + (fromW - 1) * 7 + (fromD - 1));
 
-                // Re-derive week/day relative to new Sunday
-                const diffFromNew = Math.round((sourceDate.getTime() - newSunday.getTime()) / (1000 * 60 * 60 * 24));
+                // Re-derive week/day relative to new start date
+                const diffFromNew = Math.round((sourceDate.getTime() - newStart.getTime()) / (1000 * 60 * 60 * 24));
                 const newFromW = Math.floor(diffFromNew / 7) + 1;
                 const newFromD = (diffFromNew % 7) + 1;
 

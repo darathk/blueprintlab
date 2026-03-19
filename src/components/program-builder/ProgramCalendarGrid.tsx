@@ -48,7 +48,7 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
             const dateStr = `${y}-${m}-${dStr}`;
 
             // Calculate Program Week/Day relative to Program Start Date
-            // Weeks are Sunday-Saturday. Week 1 starts on the Sunday of the start date's week.
+            // Day 1 = startDate, Day 2 = startDate+1, etc. Same logic as MasterProgramCalendar.
             const [startY, startM, startD] = startDate.split('-').map(Number);
             const progStart = new Date(startY, startM - 1, startD);
 
@@ -56,16 +56,11 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
             date.setHours(0, 0, 0, 0);
             progStart.setHours(0, 0, 0, 0);
 
-            // Find the Sunday that begins Week 1 (the Sunday on or before the program start)
-            const progStartDow = progStart.getDay(); // 0=Sun
-            const week1Sunday = new Date(progStart);
-            week1Sunday.setDate(week1Sunday.getDate() - progStartDow);
-
-            const diffTime = date.getTime() - week1Sunday.getTime();
+            const diffTime = date.getTime() - progStart.getTime();
             const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
             let weekNum = Math.floor(diffDays / 7) + 1;
-            let dayNum = (diffDays % 7) + 1; // 1=Sun, 7=Sat
+            let dayNum = (diffDays % 7) + 1; // 1=startDate weekday, 7=day before next week
 
             const isBeforeProgram = date.getTime() < progStart.getTime();
 

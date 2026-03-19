@@ -193,11 +193,7 @@ function groupByCalendarWeek(weeks: any[], startDate: string) {
     const start = new Date(sy, sm - 1, sd);
     start.setHours(0, 0, 0, 0);
 
-    // Find the Sunday at or before the start date (calendar week anchor)
-    const startDow = start.getDay(); // 0=Sun
-    const calendarAnchor = new Date(start);
-    calendarAnchor.setDate(calendarAnchor.getDate() - startDow);
-
+    // Anchor to startDate directly (consistent with calendar grid)
     const buckets: Record<number, any[]> = {};
 
     weeks.forEach(week => {
@@ -207,8 +203,8 @@ function groupByCalendarWeek(weeks: any[], startDate: string) {
             const sessionDate = new Date(start);
             sessionDate.setDate(sessionDate.getDate() + absDay);
 
-            // Calendar week number = how many 7-day intervals from the anchor Sunday
-            const diffMs = sessionDate.getTime() - calendarAnchor.getTime();
+            // Week number = how many 7-day intervals from startDate
+            const diffMs = sessionDate.getTime() - start.getTime();
             const calWeek = Math.floor(diffMs / (7 * 24 * 60 * 60 * 1000)) + 1;
 
             if (!buckets[calWeek]) buckets[calWeek] = [];
@@ -232,16 +228,13 @@ function weekDateRange(weekNumber: number, startDate?: string): string {
     const [sy, sm, sd] = startDate.split('-').map(Number);
     const start = new Date(sy, sm - 1, sd);
     start.setHours(0, 0, 0, 0);
-    // Find the Sunday at or before the start date
-    const anchor = new Date(start);
-    anchor.setDate(anchor.getDate() - anchor.getDay());
-    // Advance to the target week
-    const weekSunday = new Date(anchor);
-    weekSunday.setDate(weekSunday.getDate() + (weekNumber - 1) * 7);
-    const weekSaturday = new Date(weekSunday);
-    weekSaturday.setDate(weekSaturday.getDate() + 6);
+    // Anchor to startDate directly
+    const weekStart = new Date(start);
+    weekStart.setDate(weekStart.getDate() + (weekNumber - 1) * 7);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
     const fmt = (d: Date) => `${SHORT_MONTHS[d.getMonth()]} ${d.getDate()}`;
-    return `${fmt(weekSunday)} – ${fmt(weekSaturday)}`;
+    return `${fmt(weekStart)} – ${fmt(weekEnd)}`;
 }
 
 /** Sidebar stress panel — shows stress index for each week */

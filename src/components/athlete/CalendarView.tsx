@@ -66,11 +66,15 @@ export default function CalendarView({ program, athleteId }) {
         // For now, let's keep it simple: If valid startDate exists, map Week/Day to calendar.
 
         if (program.startDate) {
-            const start = new Date(program.startDate);
+            // Parse as local date to avoid UTC timezone shift
+            const parts = String(program.startDate).split('T')[0].split('-').map(Number);
+            const start = new Date(parts[0], parts[1] - 1, parts[2]);
+            start.setHours(0, 0, 0, 0);
             // Calculate day difference
             const current = new Date(year, month, day);
+            current.setHours(0, 0, 0, 0);
             const diffTime = current.getTime() - start.getTime();
-            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
             // Logic: Week 1 Day 1 = diffDay 0
             // Week 1 Day 2 = diffDay 1? Or do we assume rest days?

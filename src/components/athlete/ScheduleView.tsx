@@ -68,21 +68,17 @@ function sessionKey(programId: string, weekNum: number, day: number) {
     return `${programId}_w${weekNum}_d${day}`;
 }
 
-/** Compute the Sun–Sat date range label for a given program week */
+/** Compute the date range label for a given program week, anchored to startDate */
 function weekDateRange(programStartDate: any, weekNumber: number): string {
     if (!programStartDate) return `Week ${weekNumber}`;
     const start = parseLocalDate(programStartDate);
-    // Week 1 Sunday = Sunday on or before the program start
-    const dow = start.getDay();
-    const week1Sunday = new Date(start);
-    week1Sunday.setDate(week1Sunday.getDate() - dow);
-    // This week's Sunday
-    const weekSunday = new Date(week1Sunday);
-    weekSunday.setDate(weekSunday.getDate() + (weekNumber - 1) * 7);
-    const weekSaturday = new Date(weekSunday);
-    weekSaturday.setDate(weekSaturday.getDate() + 6);
+    // Week starts at startDate + (weekNumber-1)*7
+    const weekStart = new Date(start);
+    weekStart.setDate(weekStart.getDate() + (weekNumber - 1) * 7);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
     const fmt = (d: Date) => `${SHORT_MONTHS[d.getMonth()]} ${d.getDate()}`;
-    return `${fmt(weekSunday)} – ${fmt(weekSaturday)}`;
+    return `${fmt(weekStart)} – ${fmt(weekEnd)}`;
 }
 
 function sessionProgress(exercises: any[], log: any, editStateData?: any[]): number {
@@ -342,6 +338,8 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
     const dateStripRef = useRef<HTMLDivElement>(null);
 
     // Build sessionsByDate map: dateStr -> [{ program, weekNum, session, sKey }]
+    // Uses same logic as MasterProgramCalendar: Day 1 = program startDate,
+    // Day 2 = startDate+1, etc. Week boundaries every 7 days from startDate.
     const sessionsByDate = useMemo(() => {
         const map: Record<string, { program: any; weekNum: number; session: any; sKey: string }[]> = {};
         if (!Array.isArray(programs)) return map;
@@ -349,10 +347,6 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
         programs.forEach(program => {
             if (!program.startDate) return;
             const start = parseLocalDate(program.startDate);
-            // Week 1 starts on the Sunday on or before the program start
-            const startDow = start.getDay();
-            const week1Sunday = new Date(start);
-            week1Sunday.setDate(week1Sunday.getDate() - startDow);
 
             const weeks: any[] = Array.isArray(program.weeks) ? program.weeks : [];
             weeks.forEach((week: any) => {
@@ -360,8 +354,8 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                 const sessions: any[] = Array.isArray(week.sessions) ? week.sessions : [];
                 sessions.forEach((session: any) => {
                     const day = session.day || 1;
-                    // Compute actual date: week1Sunday + (wn-1)*7 + (day-1)
-                    const d = new Date(week1Sunday);
+                    // Compute actual date: startDate + (wn-1)*7 + (day-1)
+                    const d = new Date(start);
                     d.setDate(d.getDate() + (wn - 1) * 7 + (day - 1));
                     const ds = toDateStr(d);
                     const sKey = sessionKey(program.id, wn, day);
