@@ -104,7 +104,7 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
     return (
         <div className={isMobile && selectedId ? 'chat-full-screen' : 'glass-panel'} style={{ display: 'flex', height: isMobile && selectedId ? undefined : (isMobile ? 'calc(100dvh - 120px)' : 700), overflow: 'hidden', borderRadius: isMobile && selectedId ? 0 : 12 }}>
             {/* Sidebar */}
-            <div style={{ width: isMobile ? '100%' : 260, flexShrink: 0, borderRight: isMobile ? 'none' : '1px solid rgba(255,255,255,0.08)', display: isMobile && selectedId ? 'none' : 'flex', flexDirection: 'column', background: 'rgba(15, 23, 42, 0.5)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
+            <div style={{ width: isMobile ? '100%' : 260, flexShrink: 0, borderRight: isMobile ? 'none' : '1px solid rgba(255,255,255,0.08)', display: isMobile && selectedId ? 'none' : 'flex', flexDirection: 'column', background: 'rgba(18, 18, 18, 0.5)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
                 <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ fontWeight: 600, fontSize: 14, color: 'var(--foreground)' }}>Messages</span>
                     {totalUnread > 0 && <span style={{ background: 'var(--primary)', boxShadow: '0 0 10px rgba(125,135,210,0.5)', color: '#fff', fontSize: 10, fontWeight: 800, borderRadius: 10, padding: '1px 7px', minWidth: 18, textAlign: 'center' as const }}>{totalUnread}</span>}

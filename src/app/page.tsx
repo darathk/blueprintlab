@@ -25,11 +25,11 @@ export default async function Home() {
   }
 
   return (
-    <div className={styles.page} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'radial-gradient(circle at center, #1e293b 0%, #020617 100%)' }}>
+    <div className={styles.page} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--background)' }}>
       <main className={styles.main} style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
         <div style={{
           position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-          width: '600px', height: '600px', background: 'radial-gradient(circle, rgba(6, 182, 212, 0.15) 0%, transparent 70%)',
+          width: '600px', height: '600px', background: 'radial-gradient(circle, rgba(125, 135, 210, 0.1) 0%, transparent 70%)',
           pointerEvents: 'none', zIndex: -1
         }}></div>
 

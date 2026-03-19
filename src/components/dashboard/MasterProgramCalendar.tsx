@@ -138,7 +138,7 @@ export default function MasterProgramCalendar({ programs, athleteId, currentProg
 
             <div style={{ overflowX: 'hidden', boxSizing: 'border-box' }}>
                 <div style={{ minWidth: '100%', width: '100%', boxSizing: 'border-box' }}>
-                    <div className="calendar-grid-header" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', background: 'rgba(15, 23, 42, 0.5)', padding: '0.5rem 0', borderBottom: '1px solid var(--card-border)', boxSizing: 'border-box' }}>
+                    <div className="calendar-grid-header" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', background: 'rgba(18, 18, 18, 0.5)', padding: '0.5rem 0', borderBottom: '1px solid var(--card-border)', boxSizing: 'border-box' }}>
                         {weekDays.map(d => <div key={d} style={{ textAlign: 'center', fontSize: 'clamp(0.6rem, 2vw, 0.75rem)', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase' }}>{d}</div>)}
                     </div>
 

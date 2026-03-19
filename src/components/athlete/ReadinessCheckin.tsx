@@ -398,7 +398,7 @@ export default function ReadinessCheckin({ athleteId, sessionKey, programId }: P
 
     return (
         <div style={{
-            background: expanded ? 'rgba(15, 23, 42, 0.5)' : 'linear-gradient(135deg, rgba(125,135,210,0.15), rgba(168,85,247,0.12))',
+            background: expanded ? 'rgba(18, 18, 18, 0.5)' : 'linear-gradient(135deg, rgba(125,135,210,0.15), rgba(168,85,247,0.12))',
             border: expanded ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(125,135,210,0.35)',
             borderRadius: 12, marginBottom: 12, overflow: 'hidden',
             boxShadow: expanded ? 'none' : '0 0 20px rgba(125,135,210,0.15), inset 0 1px 0 rgba(255,255,255,0.08)',

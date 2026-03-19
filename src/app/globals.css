@@ -1,37 +1,29 @@
 @import "tailwindcss";
 
 :root {
-  /* Deep Space / Neon Lab Theme */
-  --background: #313133;
-  /* Deepest Navy/Black */
+  /* Dark Black Gradient Theme */
+  --background: #111111;
   --foreground: #f8fafc;
-  /* White/Slate-50 */
 
-  --card-bg: rgba(30, 41, 59, 0.4);
-  /* Glassy Slate-800 */
-  --card-border: rgba(148, 163, 184, 0.1);
-  /* Subtle border */
+  --card-bg: rgba(255, 255, 255, 0.03);
+  --card-border: rgba(255, 255, 255, 0.08);
 
   --primary: #7d87d2;
-  /* Cyan-500 Neon */
   --primary-hover: #6b75c0;
   --primary-foreground: #ffffff;
 
-  --secondary: rgba(15, 23, 42, 0.6);
-  /* Darker glass for inputs/secondary */
-  --secondary-hover: rgba(30, 41, 59, 0.8);
+  --secondary: rgba(255, 255, 255, 0.04);
+  --secondary-hover: rgba(255, 255, 255, 0.07);
   --secondary-foreground: #94a3b8;
-  /* Slate-400 */
 
   --accent: #a855f7;
-  /* Purple-500 Neon */
   --danger: #ef4444;
   --success: #10b981;
   --warning: #f59e0b;
 
   --font-sans: 'Inter', system-ui, sans-serif;
 
-  --radius: 12px;
+  --radius: 14px;
   --header-height: 64px;
 }
 
@@ -50,11 +42,10 @@ body {
 
 body {
   color: var(--foreground);
-  background: var(--background);
-  /* Subtle mesh gradient background */
+  background: #0a0a0a;
   background-image:
-    radial-gradient(circle at 15% 50%, rgba(125, 135, 210, 0.08), transparent 25%),
-    radial-gradient(circle at 85% 30%, rgba(168, 85, 247, 0.08), transparent 25%);
+    radial-gradient(ellipse at 50% 0%, #1a1a2e 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 100%, #111111 0%, #0a0a0a 100%);
   background-attachment: fixed;
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -79,7 +70,7 @@ a {
   -webkit-backdrop-filter: blur(12px);
   border: 1px solid var(--card-border);
   border-radius: var(--radius);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.06), 0 4px 24px rgba(0, 0, 0, 0.3);
 }
 
 .neon-text {
@@ -137,10 +128,11 @@ a {
   border: 1px solid var(--card-border);
   border-radius: var(--radius);
   padding: 1.5rem;
+  box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.06), 0 4px 24px rgba(0, 0, 0, 0.3);
 }
 
 .input {
-  background: rgba(15, 23, 42, 0.6);
+  background: rgba(255, 255, 255, 0.03);
   border: 1px solid var(--card-border);
   color: var(--foreground);
   padding: 0.6rem 1rem;

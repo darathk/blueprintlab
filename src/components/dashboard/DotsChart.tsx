@@ -219,7 +219,7 @@ export default function DotsChart({ athleteId, logs, programs = [], initialGende
                         </div>
 
                         {/* Timeline */}
-                        <div style={{ display: 'flex', background: 'rgba(15, 23, 42, 0.6)', borderRadius: '8px', padding: '4px', border: '1px solid var(--card-border)' }}>
+                        <div style={{ display: 'flex', background: 'rgba(18, 18, 18, 0.6)', borderRadius: '8px', padding: '4px', border: '1px solid var(--card-border)' }}>
                             {Object.keys(TIMELINES).map(tl => (
                                 <button
                                     key={tl}

@@ -364,7 +364,7 @@ export default function ExerciseFeedback({
                                         stagedPosters[i] ? (
                                             <img src={stagedPosters[i]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                         ) : (
-                                            <div style={{ width: '100%', height: '100%', background: '#1e293b', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            <div style={{ width: '100%', height: '100%', background: '#141414', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                                 <Video size={20} color="#818cf8" />
                                             </div>
                                         )

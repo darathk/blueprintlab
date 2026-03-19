@@ -175,7 +175,7 @@ export default function BlockImprovements({ logs, dateRange, programs }) {
                                 return label;
                             }}
                             contentStyle={{
-                                background: 'rgba(15, 23, 42, 0.95)',
+                                background: 'rgba(18, 18, 18, 0.95)',
                                 border: '1px solid var(--primary)',
                                 borderRadius: '8px',
                                 boxShadow: '0 4px 20px rgba(0,0,0,0.5)',

@@ -269,7 +269,7 @@ export default function AssistForceGraph({ assistData, primaryLift }) {
                     position: 'fixed',
                     left: hoverPos.x + 15,
                     top: hoverPos.y + 15,
-                    background: 'rgba(15, 23, 42, 0.95)',
+                    background: 'rgba(18, 18, 18, 0.95)',
                     backdropFilter: 'blur(8px)',
                     border: '1px solid var(--card-border)',
                     boxShadow: '0 8px 30px rgba(0,0,0,0.5)',

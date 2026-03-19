@@ -1165,7 +1165,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                             value={targets.timeToPeak}
                                             onChange={e => updateLiftTarget(lift, 'timeToPeak', e.target.value)}
                                             style={{
-                                                background: 'rgba(15, 23, 42, 0.6)',
+                                                background: 'rgba(18, 18, 18, 0.6)',
                                                 border: '1px solid var(--card-border)',
                                                 borderRadius: '4px',
                                                 color: 'var(--foreground)',
@@ -1183,7 +1183,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                             value={targets.stressTarget}
                                             onChange={e => updateLiftTarget(lift, 'stressTarget', e.target.value)}
                                             style={{
-                                                background: 'rgba(15, 23, 42, 0.6)',
+                                                background: 'rgba(18, 18, 18, 0.6)',
                                                 border: '1px solid var(--card-border)',
                                                 borderRadius: '4px',
                                                 color: 'var(--foreground)',
@@ -1287,7 +1287,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                 onChange={e => setProgramName(e.target.value)}
                                 placeholder="Program Name"
                                 style={{
-                                    background: 'rgba(15, 23, 42, 0.4)',
+                                    background: 'rgba(18, 18, 18, 0.4)',
                                     border: '1px solid var(--card-border)',
                                     borderRadius: 'var(--radius)',
                                     color: 'var(--foreground)',

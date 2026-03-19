@@ -131,7 +131,7 @@ export default function CompetitionTracker({ athlete }) {
                                     Launch: <span style={{ color: 'var(--foreground)', fontWeight: 500 }}>{new Date(athlete.nextMeetDate).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</span>
                                 </div>
 
-                                <div style={{ position: 'relative', height: '16px', background: 'rgba(15, 23, 42, 0.6)', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--card-border)' }}>
+                                <div style={{ position: 'relative', height: '16px', background: 'rgba(18, 18, 18, 0.6)', borderRadius: '8px', overflow: 'hidden', border: '1px solid var(--card-border)' }}>
                                     {/* Grid Lines in Bar */}
                                     <div style={{ position: 'absolute', inset: 0, backgroundImage: 'linear-gradient(90deg, transparent 95%, rgba(255,255,255,0.05) 95%)', backgroundSize: '5% 100%' }}></div>
 

@@ -442,9 +442,9 @@ export default function PeriodizationPlanner({ athlete }) {
                                             fontWeight: 600
                                         }}
                                     >
-                                        <option value="Development" style={{ color: '#38bdf8', background: '#0f172a' }}>Development</option>
-                                        <option value="Pivot/Deload" style={{ color: '#a855f7', background: '#0f172a' }}>Pivot/Deload</option>
-                                        <option value="Taper" style={{ color: '#fb7185', background: '#0f172a' }}>Taper</option>
+                                        <option value="Development" style={{ color: '#38bdf8', background: '#141414' }}>Development</option>
+                                        <option value="Pivot/Deload" style={{ color: '#a855f7', background: '#141414' }}>Pivot/Deload</option>
+                                        <option value="Taper" style={{ color: '#fb7185', background: '#141414' }}>Taper</option>
                                     </select>
                                     <input
                                         value={block.name}

@@ -279,7 +279,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
             {/* Header Bar */}
             <div style={{
                 background: 'var(--background)',
-                borderBottom: '1px solid #cbd5e1',
+                borderBottom: '1px solid var(--card-border)',
                 padding: '1rem',
                 position: 'sticky',
                 top: 0,
@@ -326,7 +326,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                 </div>
 
                 {/* Exercise Cards */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0', background: 'var(--background)', border: '1px solid #cbd5e1', borderRadius: '4px', overflow: 'hidden' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0', background: 'var(--background)', border: '1px solid var(--card-border)', borderRadius: '4px', overflow: 'hidden' }}>
                     {exerciseLogs.map((ex, exIndex) => {
                         // Max E1RM calc
                         const validSets = ex.sets.filter(s => s.actual.weight && s.actual.reps && s.actual.rpe);
@@ -352,7 +352,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                         });
 
                         return (
-                            <div key={ex.exerciseId} style={{ borderBottom: exIndex < exerciseLogs.length - 1 ? '1px solid #cbd5e1' : 'none' }}>
+                            <div key={ex.exerciseId} style={{ borderBottom: exIndex < exerciseLogs.length - 1 ? '1px solid var(--card-border)' : 'none' }}>
                                 {/* Exercise Header */}
                                 <div style={{
                                     background: 'var(--card-bg)',
@@ -367,7 +367,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                             onClick={() => toggleCollapse(exIndex)}
                                             style={{
                                                 width: 24, height: 24, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                border: '2px solid #64748b', background: 'var(--background)', color: 'var(--foreground)', fontWeight: 'bold', cursor: 'pointer', padding: 0
+                                                border: '2px solid var(--card-border)', background: 'var(--background)', color: 'var(--foreground)', fontWeight: 'bold', cursor: 'pointer', padding: 0
                                             }}
                                         >
                                             {ex.isCollapsed ? '+' : '−'}
@@ -380,7 +380,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                             type="number"
                                             value={ex.sets.length}
                                             onChange={(e) => updateSetsCount(exIndex, e.target.value)}
-                                            style={{ width: '40px', padding: '4px', textAlign: 'center', background: 'var(--background)', color: 'var(--foreground)', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                                            style={{ width: '40px', padding: '4px', textAlign: 'center', background: 'var(--background)', color: 'var(--foreground)', border: '1px solid var(--card-border)', borderRadius: '4px' }}
                                         />
                                         <span style={{ fontSize: '1.2rem', color: 'var(--secondary-foreground)', marginLeft: 4 }}>...</span>
                                     </div>
@@ -389,7 +389,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                 {!ex.isCollapsed && (
                                     <div style={{ padding: '0 8px 16px 8px' }}>
                                         {/* Target / Actual Header */}
-                                        <div style={{ display: 'flex', borderBottom: '1px dashed #cbd5e1', marginBottom: 8 }}>
+                                        <div style={{ display: 'flex', borderBottom: '1px dashed var(--card-border)', marginBottom: 8 }}>
                                             <div style={{ width: '130px', textAlign: 'center', fontWeight: 'bold', fontSize: '0.85rem', color: 'rgba(6, 182, 212, 0.1)', padding: '8px 0 4px 0' }}>Target</div>
                                             <div style={{ flex: 1, position: 'relative' }}>
                                                 <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: 1, background: 'var(--card-border)' }}></div>
@@ -421,13 +421,13 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                                 <div key={sIndex} style={{ display: 'flex', alignItems: 'center', padding: '6px 0', borderBottom: '1px dashed #e2e8f0' }}>
                                                     {/* Target Side */}
                                                     <div style={{ display: 'flex', width: '130px', justifyContent: 'center', gap: 4 }}>
-                                                        <div style={{ flex: 1, padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: 4, background: 'var(--background)', textAlign: 'center', fontSize: '0.9rem', color: 'var(--secondary-foreground)' }}>
+                                                        <div style={{ flex: 1, padding: '6px 4px', border: '1px solid var(--card-border)', borderRadius: 4, background: 'var(--background)', textAlign: 'center', fontSize: '0.9rem', color: 'var(--secondary-foreground)' }}>
                                                             {set.target.weight || '\u00A0'}
                                                         </div>
-                                                        <div style={{ flex: 1, padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: 4, background: 'var(--background)', textAlign: 'center', fontSize: '0.9rem', color: 'var(--secondary-foreground)' }}>
+                                                        <div style={{ flex: 1, padding: '6px 4px', border: '1px solid var(--card-border)', borderRadius: 4, background: 'var(--background)', textAlign: 'center', fontSize: '0.9rem', color: 'var(--secondary-foreground)' }}>
                                                             {cleanReps || '\u00A0'}
                                                         </div>
-                                                        <div style={{ flex: 1, padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: 4, background: 'var(--background)', textAlign: 'center', fontSize: '0.9rem', color: 'var(--secondary-foreground)' }}>
+                                                        <div style={{ flex: 1, padding: '6px 4px', border: '1px solid var(--card-border)', borderRadius: 4, background: 'var(--background)', textAlign: 'center', fontSize: '0.9rem', color: 'var(--secondary-foreground)' }}>
                                                             {set.target.rpe || '\u00A0'}
                                                         </div>
                                                     </div>
@@ -471,7 +471,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                         })}
 
                                         {/* Stats row */}
-                                        <div style={{ padding: '12px 0 8px 0', borderBottom: '1px dashed #cbd5e1', fontSize: '0.85rem', color: 'var(--foreground)' }}>
+                                        <div style={{ padding: '12px 0 8px 0', borderBottom: '1px dashed var(--card-border)', fontSize: '0.85rem', color: 'var(--foreground)' }}>
                                             <div style={{ display: 'flex', gap: '16px', fontWeight: 600 }}>
                                                 <span>E1RM: {maxE1RM} lbs</span>
                                                 <span>NL: {totalNL}</span>
@@ -499,7 +499,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                                     width: '100%',
                                                     minHeight: '60px',
                                                     padding: '8px',
-                                                    border: '1px solid #cbd5e1',
+                                                    border: '1px solid var(--card-border)',
                                                     borderRadius: '4px',
                                                     fontSize: '0.9rem',
                                                     color: 'var(--foreground)',
@@ -700,7 +700,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                 left: 0,
                 width: '100%',
                 background: 'var(--background)',
-                borderTop: '1px solid #cbd5e1',
+                borderTop: '1px solid var(--card-border)',
                 padding: '1rem',
                 zIndex: 100,
                 display: 'flex',
