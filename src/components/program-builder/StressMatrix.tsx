@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { calculateStress } from '@/lib/stress-index';
-import { EXERCISE_DB } from '@/lib/exercise-db';
+import { getExerciseCategory, getParentLift } from '@/lib/exercise-db';
 
 function computeStress(weeks: any[]) {
     const categories = ['Knee', 'Hip', 'Horizontal Push', 'Vertical Push'];
@@ -14,6 +14,9 @@ function computeStress(weeks: any[]) {
             session.exercises.forEach(ex => {
                 const setsList = Array.isArray(ex.sets) ? ex.sets : [];
                 const simpleSets = !Array.isArray(ex.sets) ? (parseFloat(ex.sets) || 0) : 0;
+
+                // Use the robust getExerciseCategory() for consistent categorization
+                const category = ex.category || getExerciseCategory(ex.name || '');
 
                 const processSet = (repsVal: any, rpeVal: any, multiplier = 1) => {
                     let reps = 0;
@@ -27,16 +30,6 @@ function computeStress(weeks: any[]) {
 
                     if (reps > 0 && rpe > 0) {
                         const { total, central } = calculateStress(reps, rpe);
-
-                        let category = 'Misc';
-                        if (ex.category) category = ex.category;
-                        else if (EXERCISE_DB[ex.name]) category = EXERCISE_DB[ex.name].category;
-                        else {
-                            if (ex.name.includes('Squat')) category = 'Knee';
-                            else if (ex.name.includes('Deadlift')) category = 'Hip';
-                            else if (ex.name.includes('Bench')) category = 'Horizontal Push';
-                            else if (ex.name.includes('Press')) category = 'Vertical Push';
-                        }
 
                         if (stats[category]) {
                             stats[category].total += total * multiplier;
@@ -68,15 +61,32 @@ const CAT_SHORT: Record<string, string> = {
     'Vertical Push': 'Push-V',
 };
 
-function WeekStressTable({ label, stats, totalStress, totalCentral, isCollapsed, onToggle }: {
+// Map lift target names (e.g. "Squat", "Bench", "Deadlift") to stress categories
+function liftTargetsByCategory(liftTargets?: Record<string, { timeToPeak: string; stressTarget: string }>): Record<string, number> {
+    if (!liftTargets) return {};
+    const result: Record<string, number> = {};
+    Object.entries(liftTargets).forEach(([lift, { stressTarget }]) => {
+        const target = parseFloat(stressTarget);
+        if (!target || isNaN(target)) return;
+        const category = getExerciseCategory(lift);
+        if (category && CATEGORIES.includes(category)) {
+            result[category] = (result[category] || 0) + target;
+        }
+    });
+    return result;
+}
+
+function WeekStressTable({ label, stats, totalStress, totalCentral, isCollapsed, onToggle, categoryTargets }: {
     label: string;
     stats: Record<string, { central: number; total: number }>;
     totalStress: number;
     totalCentral: number;
     isCollapsed: boolean;
     onToggle: () => void;
+    categoryTargets?: Record<string, number>;
 }) {
     const csBalance = totalStress > 0 ? (totalCentral / totalStress) : 0;
+    const totalTarget = categoryTargets ? Object.values(categoryTargets).reduce((s, v) => s + v, 0) : 0;
 
     return (
         <div style={{ marginBottom: '0.25rem' }}>
@@ -143,13 +153,20 @@ function WeekStressTable({ label, stats, totalStress, totalCentral, isCollapsed,
                         <tbody>
                             <tr>
                                 <td style={{ padding: '3px 3px', fontWeight: 600, borderBottom: '1px solid rgba(255,255,255,0.04)', whiteSpace: 'nowrap' }}>
-                                    Total <span style={{ color: 'var(--secondary-foreground)', fontWeight: 400, fontSize: '0.6rem' }}>{totalStress.toFixed(1)}</span>
+                                    Total <span style={{ color: 'var(--secondary-foreground)', fontWeight: 400, fontSize: '0.6rem' }}>{totalStress.toFixed(1)}{totalTarget > 0 && <span style={{ color: 'var(--accent)', opacity: 0.6 }}>/{totalTarget}</span>}</span>
                                 </td>
-                                {CATEGORIES.map(c => (
-                                    <td key={c} style={{ textAlign: 'center', padding: '3px 1px', borderBottom: '1px solid rgba(255,255,255,0.04)', fontWeight: 600, color: stats[c].total > 0 ? 'var(--foreground)' : undefined }}>
-                                        {stats[c].total > 0 ? stats[c].total.toFixed(1) : <span style={{ opacity: 0.2 }}>-</span>}
-                                    </td>
-                                ))}
+                                {CATEGORIES.map(c => {
+                                    const target = categoryTargets?.[c];
+                                    const val = stats[c].total;
+                                    const overTarget = target && val > target;
+                                    const atTarget = target && val >= target * 0.9 && val <= target;
+                                    return (
+                                        <td key={c} style={{ textAlign: 'center', padding: '3px 1px', borderBottom: '1px solid rgba(255,255,255,0.04)', fontWeight: 600, color: overTarget ? '#f87171' : atTarget ? '#34d399' : val > 0 ? 'var(--foreground)' : undefined }}>
+                                            {val > 0 ? val.toFixed(1) : <span style={{ opacity: 0.2 }}>{target ? '0' : '-'}</span>}
+                                            {target ? <span style={{ fontWeight: 400, fontSize: '0.55rem', color: 'var(--secondary-foreground)', opacity: 0.5 }}>/{target}</span> : null}
+                                        </td>
+                                    );
+                                })}
                             </tr>
                             <tr>
                                 <td style={{ padding: '3px 3px', fontWeight: 600, borderBottom: '1px solid rgba(255,255,255,0.04)', whiteSpace: 'nowrap' }}>
@@ -238,8 +255,10 @@ function weekDateRange(weekNumber: number, startDate?: string): string {
 }
 
 /** Sidebar stress panel — shows stress index for each week */
-export default function StressMatrix({ weeks, startDate }: { weeks: any[]; startDate?: string }) {
+export default function StressMatrix({ weeks, startDate, liftTargets }: { weeks: any[]; startDate?: string; liftTargets?: Record<string, { timeToPeak: string; stressTarget: string }> }) {
     const [collapsedWeeks, setCollapsedWeeks] = useState<Record<number, boolean>>({});
+
+    const categoryTargets = useMemo(() => liftTargetsByCategory(liftTargets), [liftTargets]);
 
     const weekData = useMemo(() => {
         // If startDate is available, group by actual calendar week
@@ -273,6 +292,7 @@ export default function StressMatrix({ weeks, startDate }: { weeks: any[]; start
                     totalCentral={wd.totalCentral}
                     isCollapsed={!!collapsedWeeks[wd.weekNumber]}
                     onToggle={() => toggleWeek(wd.weekNumber)}
+                    categoryTargets={categoryTargets}
                 />
             ))}
         </div>

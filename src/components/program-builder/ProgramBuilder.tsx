@@ -8,6 +8,7 @@ import ExercisePicker from '@/components/program-builder/ExercisePicker';
 import ImportProgram from '@/components/programs/ImportProgram';
 import ProgramCalendarGrid from './ProgramCalendarGrid';
 import { calculateStress } from '@/lib/stress-index';
+import { getExerciseCategory } from '@/lib/exercise-db';
 
 const StressMatrix = dynamic(() => import('@/components/program-builder/StressMatrix'), {
     loading: () => <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="pulse">Loading stress charts...</div>
@@ -564,6 +565,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
         newWeeks[w].sessions[s].exercises.push({
             id: generateId(),
             name: exerciseName,
+            category: getExerciseCategory(exerciseName),
             sets: sets,
             notes: ''
         });
@@ -1264,7 +1266,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                     }}>
                         Stress Index
                     </div>
-                    <StressMatrix weeks={weeks} startDate={startDate} />
+                    <StressMatrix weeks={weeks} startDate={startDate} liftTargets={liftTargets} />
                 </div>
             </div>
 
