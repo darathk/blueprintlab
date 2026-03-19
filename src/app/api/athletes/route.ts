@@ -56,31 +56,30 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Name is required' }, { status: 400 });
         }
 
+        // Email is required to prevent orphan duplicate records
+        if (!email || typeof email !== 'string' || !email.includes('@')) {
+            return NextResponse.json({ error: 'A valid email is required' }, { status: 400 });
+        }
+
         let athlete;
 
-        // If an email is provided, check if that user already exists
-        if (email) {
-            // Basic email format validation
-            if (typeof email !== 'string' || !email.includes('@')) {
-                return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
+        // Check if that user already exists by email
+        const existingUser = await prisma.athlete.findUnique({
+            where: { email },
+            select: { id: true, role: true, name: true, coachId: true, nextMeetName: true, nextMeetDate: true, periodization: true, meetAttempts: true, pastMeets: true }
+        });
+
+        if (existingUser) {
+            // If they exist and are a coach, don't let them be added as an athlete
+            if (existingUser.role === 'coach') {
+                return NextResponse.json({ error: 'Cannot add another coach as an athlete' }, { status: 400 });
             }
 
-            const existingUser = await prisma.athlete.findUnique({
-                where: { email },
-                select: { id: true, role: true, name: true, nextMeetName: true, nextMeetDate: true, periodization: true, meetAttempts: true, pastMeets: true }
-            });
-
-            if (existingUser) {
-                // If they exist and are a coach, don't let them be added as an athlete
-                if (existingUser.role === 'coach') {
-                    return NextResponse.json({ error: 'Cannot add another coach as an athlete' }, { status: 400 });
-                }
-
-                // If they exist, just update their coachId to link them to the current coach
+            // If already linked to this coach, just update their info
+            if (existingUser.coachId === coach.id) {
                 athlete = await prisma.athlete.update({
                     where: { email },
                     data: {
-                        coachId: coach.id,
                         name: name !== undefined ? name : existingUser.name,
                         nextMeetName: nextMeetName !== undefined ? nextMeetName : existingUser.nextMeetName,
                         nextMeetDate: nextMeetDate !== undefined ? nextMeetDate : existingUser.nextMeetDate,
@@ -91,32 +90,37 @@ export async function POST(request: Request) {
                 });
                 return NextResponse.json(athlete);
             }
+
+            // If they exist but belong to a different coach (or no coach), link them
+            athlete = await prisma.athlete.update({
+                where: { email },
+                data: {
+                    coachId: coach.id,
+                    name: name !== undefined ? name : existingUser.name,
+                    nextMeetName: nextMeetName !== undefined ? nextMeetName : existingUser.nextMeetName,
+                    nextMeetDate: nextMeetDate !== undefined ? nextMeetDate : existingUser.nextMeetDate,
+                    periodization: periodization !== undefined ? periodization : existingUser.periodization,
+                    meetAttempts: meetAttempts !== undefined ? meetAttempts : existingUser.meetAttempts,
+                    pastMeets: pastMeets !== undefined ? pastMeets : existingUser.pastMeets,
+                }
+            });
+            return NextResponse.json(athlete);
         }
 
-        // Otherwise, it's a brand new athlete.
+        // Brand new athlete — create with the provided email
         const athleteId = id || Math.random().toString(36).substring(7);
 
-        athlete = await prisma.athlete.upsert({
-            where: { id: athleteId },
-            update: {
-                name: name !== undefined ? name : undefined,
-                email: email !== undefined ? email : undefined,
-                nextMeetName: nextMeetName !== undefined ? nextMeetName : undefined,
-                nextMeetDate: nextMeetDate !== undefined ? nextMeetDate : undefined,
-                periodization: periodization !== undefined ? periodization : undefined,
-                meetAttempts: meetAttempts !== undefined ? meetAttempts : undefined,
-                pastMeets: pastMeets !== undefined ? pastMeets : undefined,
-            },
-            create: {
+        athlete = await prisma.athlete.create({
+            data: {
                 id: athleteId,
                 name: name || 'New Athlete',
-                email: email || `${Date.now()}@example.com`,
+                email,
                 nextMeetName: nextMeetName || null,
                 nextMeetDate: nextMeetDate || null,
                 periodization: periodization || null,
                 meetAttempts: meetAttempts || null,
                 pastMeets: pastMeets || null,
-                coachId: coach.id, // Forcefully link to the logged-in coach
+                coachId: coach.id,
                 role: 'athlete'
             }
         });
