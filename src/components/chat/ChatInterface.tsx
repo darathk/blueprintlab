@@ -267,32 +267,52 @@ export default function ChatInterface({
         }
     }, [loaded, scrollToBottom]);
 
-    // Realtime — append only, no re-fetch
+    // Track whether Supabase realtime is connected
+    const realtimeConnected = useRef(false);
+
+    // Realtime — fetch only the single new message, not all 100
     useEffect(() => {
         const ch = supabase.channel(`chat-${athleteId}`)
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'Message', filter: `senderId=eq.${otherUserId}` },
                 (payload) => {
-                    fetch(`/api/messages?athleteId=${athleteId}`)
-                        .then(r => r.ok ? r.json() : null)
-                        .then(data => { if (data) setMessages(data); });
+                    // Fetch only the new message by ID to avoid re-fetching all 100
+                    const newMsgId = payload.new?.id;
+                    if (newMsgId) {
+                        fetch(`/api/messages/single?id=${newMsgId}`)
+                            .then(r => r.ok ? r.json() : null)
+                            .then(msg => {
+                                if (msg) {
+                                    setMessages(prev => {
+                                        // Avoid duplicates (polling may have already added it)
+                                        if (prev.some(m => m.id === msg.id)) return prev;
+                                        return [...prev, msg];
+                                    });
+                                }
+                            });
+                    }
+                    // Mark as read
                     fetch('/api/messages', {
                         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ athleteId: otherUserId, readerId: currentUserId })
                     }).then(() => window.dispatchEvent(new Event('unread-refresh')));
                 }
-            ).subscribe();
-        return () => { supabase.removeChannel(ch); };
+            ).subscribe((status) => {
+                realtimeConnected.current = status === 'SUBSCRIBED';
+            });
+        return () => { supabase.removeChannel(ch); realtimeConnected.current = false; };
     }, [athleteId, currentUserId, otherUserId]);
 
-    // Optimized Polling Fallback (Runs safely if Supabase keys are missing)
+    // Polling fallback — only runs when realtime is disconnected, at a slower interval
     useEffect(() => {
         const poll = setInterval(() => {
+            // Skip polling when realtime is actively handling delivery
+            if (realtimeConnected.current) return;
+
             fetch(`/api/messages?athleteId=${athleteId}`)
                 .then(r => r.ok ? r.json() : null)
                 .then(data => {
                     if (data && data.length > 0) {
                         setMessages(prev => {
-                            // Only trigger re-render if new messages arrived
                             if (prev.length !== data.length || prev[prev.length - 1]?.id !== data[data.length - 1]?.id) {
                                 const hasUnread = data.some((m: any) => m.receiverId === currentUserId && !m.read);
                                 if (hasUnread) {
@@ -307,7 +327,7 @@ export default function ChatInterface({
                         });
                     }
                 });
-        }, 10000); // Increased from 3s to 10s — Supabase realtime handles instant delivery
+        }, 15000); // 15s fallback — realtime handles instant delivery when connected
         return () => clearInterval(poll);
     }, [athleteId, currentUserId, otherUserId]);
 

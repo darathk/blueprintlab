@@ -24,14 +24,22 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
-        // Single query with OR — much faster than two queries + JS merge
+        // Optional: only fetch messages newer than a timestamp (for incremental polling)
+        const since = searchParams.get('since');
+
+        const whereClause: any = {
+            OR: [
+                { senderId: athleteId },
+                { receiverId: athleteId }
+            ]
+        };
+
+        if (since) {
+            whereClause.createdAt = { gt: new Date(since) };
+        }
+
         const all = await prisma.message.findMany({
-            where: {
-                OR: [
-                    { senderId: athleteId },
-                    { receiverId: athleteId }
-                ]
-            },
+            where: whereClause,
             select: {
                 id: true, senderId: true, receiverId: true, content: true,
                 mediaUrl: true, mediaType: true, createdAt: true, read: true, replyToId: true, reactions: true,
@@ -40,7 +48,7 @@ export async function GET(request: Request) {
                 replyTo: { select: { id: true, content: true, mediaUrl: true, mediaType: true, sender: { select: { name: true } } } }
             },
             orderBy: { createdAt: 'desc' },
-            take: 100
+            take: since ? 50 : 100
         });
 
         return NextResponse.json(all.reverse());

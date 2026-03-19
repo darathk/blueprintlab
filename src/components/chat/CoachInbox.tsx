@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { MessageSquare, Calendar as CalendarIcon, Search, X, MailOpen } from 'lucide-react';
 import ChatInterface from './ChatInterface';
@@ -68,16 +68,24 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
         if (r.ok) setConvos(await r.json());
     }, [coachId]);
 
+    // Debounced fetch — coalesces rapid events (realtime + mark-read + send) into a single API call
+    const debounceTimer = useRef<NodeJS.Timeout | null>(null);
+    const debouncedFetchConvos = useCallback(() => {
+        if (debounceTimer.current) clearTimeout(debounceTimer.current);
+        debounceTimer.current = setTimeout(() => fetchConvos(), 500);
+    }, [fetchConvos]);
+
     // Refresh conversation list when messages are marked as read or sent
     useEffect(() => {
-        const handleRefresh = () => fetchConvos();
+        const handleRefresh = () => debouncedFetchConvos();
         window.addEventListener('unread-refresh', handleRefresh);
         window.addEventListener('inbox-refresh', handleRefresh);
         return () => {
             window.removeEventListener('unread-refresh', handleRefresh);
             window.removeEventListener('inbox-refresh', handleRefresh);
+            if (debounceTimer.current) clearTimeout(debounceTimer.current);
         };
-    }, [fetchConvos]);
+    }, [debouncedFetchConvos]);
 
     // Realtime: subscribe to new messages so sidebar updates instantly
     useEffect(() => {
@@ -87,12 +95,12 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                     const msg = payload.new;
                     // Only refresh if this coach is sender or receiver
                     if (msg.senderId === coachId || msg.receiverId === coachId) {
-                        fetchConvos();
+                        debouncedFetchConvos();
                     }
                 }
             ).subscribe();
         return () => { supabase.removeChannel(channel); };
-    }, [coachId, fetchConvos]);
+    }, [coachId, debouncedFetchConvos]);
 
     // Sidebar Time format
     const fmtTime = (s: string) => {
