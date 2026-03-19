@@ -1143,14 +1143,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                     // Auto-remove empty session to prevent "ghost" sessions from accidental clicks
                     const newWeeks = [...weeks];
                     newWeeks[w].sessions.splice(s, 1);
-
-                    // Filter out empty weeks and re-index
-                    const cleanedWeeks = newWeeks.filter(week => week.sessions.length > 0).map((week, i) => ({
-                        ...week,
-                        weekNumber: i + 1
-                    }));
-
-                    setWeeks(cleanedWeeks);
+                    setWeeks(newWeeks);
                 }
             }
         }
