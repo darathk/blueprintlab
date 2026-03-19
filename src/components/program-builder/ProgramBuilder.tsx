@@ -389,7 +389,10 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                     weight: ''
                                 }));
                             }
-                            return { ...e, id: e.id || generateId(), sets };
+                            // Correct category from exercise DB (custom exercises override heuristic)
+                            const dbEntry = initialExercises?.[e.name];
+                            const category = dbEntry?.category || e.category || getExerciseCategory(e.name || '');
+                            return { ...e, id: e.id || generateId(), sets, category };
                         })
                     }))
                 }));
@@ -549,10 +552,16 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
         setWeeks(newWeeks);
     };
 
-    const addExerciseToActiveSession = (exerciseName) => {
+    const addExerciseToActiveSession = (exerciseOrName) => {
         const loc = editingSession ?? activeLocation;
         const { w, s } = loc;
         if (w >= weeks.length || s >= weeks[w].sessions.length) return;
+
+        // Accept either an object { name, category, ... } or a plain string
+        const exerciseName = typeof exerciseOrName === 'string' ? exerciseOrName : exerciseOrName.name;
+        const exerciseCategory = (typeof exerciseOrName === 'object' && exerciseOrName.category)
+            ? exerciseOrName.category
+            : getExerciseCategory(exerciseName);
 
         const newWeeks = [...weeks];
         // Default: 3 sets
@@ -565,7 +574,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
         newWeeks[w].sessions[s].exercises.push({
             id: generateId(),
             name: exerciseName,
-            category: getExerciseCategory(exerciseName),
+            category: exerciseCategory,
             sets: sets,
             notes: ''
         });
@@ -1266,7 +1275,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                     }}>
                         Stress Index
                     </div>
-                    <StressMatrix weeks={weeks} startDate={startDate} liftTargets={liftTargets} />
+                    <StressMatrix weeks={weeks} startDate={startDate} liftTargets={liftTargets} exerciseDB={initialExercises} />
                 </div>
             </div>
 

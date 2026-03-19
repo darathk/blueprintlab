@@ -207,7 +207,7 @@ export default function ExercisePicker({ onDragStart, onAdd, initialExercises = 
                                             key={exName}
                                             draggable
                                             onDragStart={(e) => handleDragStartInternal(e, exName)}
-                                            onClick={() => onAdd(exName)}
+                                            onClick={() => onAdd(exerciseDB[exName] || { name: exName })}
                                             style={{
                                                 padding: '0.5rem',
                                                 marginBottom: '4px',

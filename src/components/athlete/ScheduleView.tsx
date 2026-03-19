@@ -764,7 +764,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                                                         }
                                                     });
 
-                                                    const category = getExerciseCategory(exerciseData.name || ex.name);
+                                                    const category = exerciseData.category || ex.category || getExerciseCategory(exerciseData.name || ex.name);
                                                     const catColor = CATEGORY_COLORS[category] || '#94A3B8';
 
                                                     return (
@@ -1484,7 +1484,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                                             {/* Exercise Cards */}
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                                                 {(sess.exercises || []).map((ex: any, exIdx: number) => {
-                                                    const category = getExerciseCategory(ex.name);
+                                                    const category = ex.category || getExerciseCategory(ex.name);
                                                     const color = CATEGORY_COLORS[category] || '#94A3B8';
                                                     const setsSummary = formatSetsSummary(ex.sets);
                                                     const targetSessionId = `${weekDrawer.programId}_w${weekDrawer.weekNum}_d${sess.day}`;

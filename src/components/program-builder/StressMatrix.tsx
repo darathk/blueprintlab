@@ -4,7 +4,18 @@ import { useState, useMemo } from 'react';
 import { calculateStress } from '@/lib/stress-index';
 import { getExerciseCategory, getParentLift } from '@/lib/exercise-db';
 
-function computeStress(weeks: any[]) {
+function resolveCategory(ex: any, exerciseDB?: Record<string, any>): string {
+    // 1. Check the exercise DB (includes custom exercises with user-chosen categories)
+    if (exerciseDB && ex.name && exerciseDB[ex.name]?.category) {
+        return exerciseDB[ex.name].category;
+    }
+    // 2. Fall back to stored category on the exercise object
+    if (ex.category) return ex.category;
+    // 3. Last resort: heuristic
+    return getExerciseCategory(ex.name || '');
+}
+
+function computeStress(weeks: any[], exerciseDB?: Record<string, any>) {
     const categories = ['Knee', 'Hip', 'Horizontal Push', 'Vertical Push'];
     const stats: Record<string, { central: number; total: number }> = {};
     categories.forEach(c => stats[c] = { central: 0, total: 0 });
@@ -15,8 +26,7 @@ function computeStress(weeks: any[]) {
                 const setsList = Array.isArray(ex.sets) ? ex.sets : [];
                 const simpleSets = !Array.isArray(ex.sets) ? (parseFloat(ex.sets) || 0) : 0;
 
-                // Use the robust getExerciseCategory() for consistent categorization
-                const category = ex.category || getExerciseCategory(ex.name || '');
+                const category = resolveCategory(ex, exerciseDB);
 
                 const processSet = (repsVal: any, rpeVal: any, multiplier = 1) => {
                     let reps = 0;
@@ -269,7 +279,7 @@ function weekDateRange(weekNumber: number, startDate?: string): string {
 }
 
 /** Sidebar stress panel — shows stress index for each week */
-export default function StressMatrix({ weeks, startDate, liftTargets }: { weeks: any[]; startDate?: string; liftTargets?: Record<string, { timeToPeak: string; stressTarget: string }> }) {
+export default function StressMatrix({ weeks, startDate, liftTargets, exerciseDB }: { weeks: any[]; startDate?: string; liftTargets?: Record<string, { timeToPeak: string; stressTarget: string }>; exerciseDB?: Record<string, any> }) {
     const [collapsedWeeks, setCollapsedWeeks] = useState<Record<number, boolean>>({});
 
     const categoryTargets = useMemo(() => liftTargetsByCategory(liftTargets), [liftTargets]);
@@ -278,10 +288,10 @@ export default function StressMatrix({ weeks, startDate, liftTargets }: { weeks:
         // If startDate is available, group by actual calendar week
         const effectiveWeeks = startDate ? groupByCalendarWeek(weeks, startDate) : weeks;
         return effectiveWeeks.map(week => {
-            const { stats, totalStress, totalCentral } = computeStress([week]);
+            const { stats, totalStress, totalCentral } = computeStress([week], exerciseDB);
             return { weekNumber: week.weekNumber, stats, totalStress, totalCentral };
         });
-    }, [weeks, startDate]);
+    }, [weeks, startDate, exerciseDB]);
 
     const toggleWeek = (weekNumber: number) => {
         setCollapsedWeeks(prev => ({ ...prev, [weekNumber]: !prev[weekNumber] }));

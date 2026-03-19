@@ -168,7 +168,7 @@ export default function MetaBlockReview({ programs, logs, reportParams }) {
                 s.exercises.forEach(e => {
                     if (!isPrimary(e, primaryLift)) {
                         // Check Category
-                        const cat = getExerciseCategory(e.name);
+                        const cat = e.category || getExerciseCategory(e.name);
                         // If category is allowed, OR fallbacks for simple logic?
                         // Strict filtering based on user request "dont include knee for bench"
                         if (allowedCategories.includes(cat)) {

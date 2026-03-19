@@ -109,7 +109,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
             return {
                 exerciseId: ex.id,
                 name: ex.name,
-                category: getExerciseCategory(ex.name),
+                category: ex.category || getExerciseCategory(ex.name),
                 sets: mappedSets,
                 notes: savedEx?.notes || ex.notes || '',
                 isCollapsed: false
@@ -631,7 +631,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                     {/* Exercise Cards */}
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                                         {(sess.exercises || []).map((ex, exIdx) => {
-                                            const category = getExerciseCategory(ex.name);
+                                            const category = ex.category || getExerciseCategory(ex.name);
                                             const color = CATEGORY_COLORS[category] || '#94A3B8';
                                             const setsSummary = formatSetsSummary(ex.sets);
                                             const targetSessionId = `${programId}_w${weekNum}_d${sess.day}`;

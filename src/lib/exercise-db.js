@@ -85,7 +85,7 @@ export function getExerciseCategory(name) {
     if (lowerName.includes("squat") || lowerName.includes("lunge") || lowerName.includes("leg press")) return EXERCISE_CATEGORIES.KNEE;
     if (lowerName.includes("deadlift") || lowerName.includes("hinge") || lowerName.includes("good morning")) return EXERCISE_CATEGORIES.HIP;
     if (lowerName.includes("bench") || lowerName.includes("push up")) return EXERCISE_CATEGORIES.PUSH_HORIZONTAL;
-    if (lowerName.includes("overhead") || lowerName.includes("press") || lowerName.includes("dip")) return EXERCISE_CATEGORIES.PUSH_VERTICAL;
+    if (lowerName.includes("overhead") || lowerName.includes("shoulder press") || lowerName.includes("military")) return EXERCISE_CATEGORIES.PUSH_VERTICAL;
     if (lowerName.includes("row")) return EXERCISE_CATEGORIES.PULL_HORIZONTAL;
     if (lowerName.includes("pull up") || lowerName.includes("pulldown") || lowerName.includes("chin up")) return EXERCISE_CATEGORIES.PULL_VERTICAL;
 
