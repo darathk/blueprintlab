@@ -51,7 +51,35 @@ export async function POST(request: Request) {
         const body = await request.json();
         const { id, name, email, nextMeetName, nextMeetDate, periodization, meetAttempts, pastMeets } = body;
 
-        // Validate required fields
+        let athlete;
+
+        // If an ID is provided, check if this is an update to an existing athlete
+        if (id) {
+            const existingById = await prisma.athlete.findUnique({
+                where: { id },
+                select: { id: true, coachId: true }
+            });
+
+            if (existingById && existingById.coachId === coach.id) {
+                // This is an update to an existing athlete (e.g. meet planner, block organizer)
+                athlete = await prisma.athlete.update({
+                    where: { id },
+                    data: {
+                        ...(name !== undefined && { name }),
+                        ...(nextMeetName !== undefined && { nextMeetName }),
+                        ...(nextMeetDate !== undefined && { nextMeetDate }),
+                        ...(periodization !== undefined && { periodization }),
+                        ...(meetAttempts !== undefined && { meetAttempts }),
+                        ...(pastMeets !== undefined && { pastMeets }),
+                    }
+                });
+                return NextResponse.json(athlete);
+            }
+        }
+
+        // --- New athlete creation flow below ---
+
+        // Validate required fields for creation
         if (!name || typeof name !== 'string' || name.trim().length === 0) {
             return NextResponse.json({ error: 'Name is required' }, { status: 400 });
         }
@@ -60,8 +88,6 @@ export async function POST(request: Request) {
         if (!email || typeof email !== 'string' || !email.includes('@')) {
             return NextResponse.json({ error: 'A valid email is required' }, { status: 400 });
         }
-
-        let athlete;
 
         // Check if that user already exists by email
         const existingUser = await prisma.athlete.findUnique({
