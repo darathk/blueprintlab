@@ -7,6 +7,7 @@ import { ArrowRight, Search, ChevronDown } from 'lucide-react';
 import ExerciseFeedback from '@/components/athlete/ExerciseFeedback';
 import { getExerciseCategory } from '@/lib/exercise-db';
 import ReadinessCheckin from '@/components/athlete/ReadinessCheckin';
+import CelebrationScreen from '@/components/athlete/CelebrationScreen';
 
 /* ─────────── constants ─────────── */
 const CATEGORY_COLORS: Record<string, string> = {
@@ -128,6 +129,11 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
     const [unit, setUnit] = useState<'kg' | 'lbs'>('lbs');
     const [sortOrder, setSortOrder] = useState<'latest' | 'oldest'>('latest');
     const [searchQuery, setSearchQuery] = useState('');
+
+    // Celebration screen state
+    const [celebration, setCelebration] = useState<{ sessionName: string } | null>(null);
+    const celebratedSessionsRef = useRef<Set<string>>(new Set());
+    const sessionMetaRef = useRef<Record<string, { exercises: any[]; sessionName: string }>>({});
 
     // Week overview drawer state
     const [weekDrawer, setWeekDrawer] = useState<{ open: boolean; programId: string; programName: string; weekNum: number; sessions: any[]; startDate: string } | null>(null);
@@ -260,6 +266,16 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
             if (res.ok) {
                 setSavedKeys(prev => new Set(prev).add(sKey));
                 setTimeout(() => setSavedKeys(prev => { const n = new Set(prev); n.delete(sKey); return n; }), 2000);
+
+                // Check if session just reached 100% — trigger celebration
+                const meta = sessionMetaRef.current[sKey];
+                if (meta && !celebratedSessionsRef.current.has(sKey)) {
+                    const progress = sessionProgress(meta.exercises, null, state);
+                    if (progress === 100) {
+                        celebratedSessionsRef.current.add(sKey);
+                        setCelebration({ sessionName: meta.sessionName });
+                    }
+                }
             }
         } catch (e) {
             console.error(e);
@@ -593,6 +609,9 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                                 const log = Array.isArray(logs) ? logs.find(l => l.sessionId === sKey && l.programId === program.id) : undefined;
                                 const progress = sessionProgress(exercises, log, editState[sKey]);
                                 const sessionOpen = openSessions.has(sKey);
+
+                                // Register session metadata for celebration detection
+                                sessionMetaRef.current[sKey] = { exercises, sessionName: session.name || `Session ${session.day}` };
 
                                 return (
                                     <div key={sKey} id={`session-${sKey}`} style={{
@@ -1098,6 +1117,9 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                                         const log = Array.isArray(logs) ? logs.find(l => l.sessionId === sKey && l.programId === program.id) : undefined;
                                         const progress = sessionProgress(exercises, log, editState[sKey]);
 
+                                        // Register session metadata for celebration detection
+                                        sessionMetaRef.current[sKey] = { exercises, sessionName: session.name || `Session ${day}` };
+
                                         return (
                                             <div key={sKey} id={`session-${sKey}`} style={{ borderBottom: '1px solid var(--card-border)', borderLeft: '1px solid var(--card-border)', borderRight: '1px solid var(--card-border)' }}>
                                                 {/* Session header */}
@@ -1530,6 +1552,15 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                         </div>
                     </div>
                 </>
+            )}
+            {/* ═══ CELEBRATION SCREEN ═══ */}
+            {celebration && (
+                <CelebrationScreen
+                    onClose={() => setCelebration(null)}
+                    coachId={coachId}
+                    athleteId={athleteId}
+                    sessionName={celebration.sessionName}
+                />
             )}
         </div >
     );
