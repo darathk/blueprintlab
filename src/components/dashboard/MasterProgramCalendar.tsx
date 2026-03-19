@@ -47,6 +47,10 @@ export default function MasterProgramCalendar({ programs, athleteId, currentProg
     };
 
     // Helper to find program and session for a specific date
+    // Iterates all programs; only returns a match when the date falls within
+    // the program range AND a session with exercises exists on that day.
+    // This prevents an overlapping program (with no session on that day)
+    // from blocking a newer program that does have a session.
     const getProgramDataForDate = (date: Date) => {
         for (const prog of athletePrograms) {
             if (!prog.startDate) continue;
@@ -74,15 +78,19 @@ export default function MasterProgramCalendar({ programs, athleteId, currentProg
                 const week = prog.weeks.find((w: any) => w.weekNumber === weekNum);
                 const session = week?.sessions.find((s: any) => s.day === dayNum);
 
-                const isActive = prog.status === 'active' || prog.id === currentProgramId;
-
-                return {
-                    program: prog,
-                    weekNum,
-                    dayNum,
-                    session,
-                    isActive
-                };
+                // Only return if there's an actual session with exercises on this day.
+                // Otherwise, continue checking other programs so overlapping ranges
+                // don't block sessions from other programs.
+                if (session && session.exercises && session.exercises.length > 0) {
+                    const isActive = prog.status === 'active' || prog.id === currentProgramId;
+                    return {
+                        program: prog,
+                        weekNum,
+                        dayNum,
+                        session,
+                        isActive
+                    };
+                }
             }
         }
         return null;
