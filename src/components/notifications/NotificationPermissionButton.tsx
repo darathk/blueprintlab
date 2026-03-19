@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { Bell, BellOff } from 'lucide-react';
+import { urlBase64ToUint8Array } from '@/lib/vapid';
 
 export default function NotificationPermissionButton() {
     const [permission, setPermission] = useState<NotificationPermission>('default');
@@ -35,15 +36,9 @@ export default function NotificationPermissionButton() {
                     if (!subscription) {
                         const publicVapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
                         if (publicVapidKey) {
-                            const padding = '='.repeat((4 - (publicVapidKey.length % 4)) % 4);
-                            const base64 = (publicVapidKey + padding).replace(/-/g, '+').replace(/_/g, '/');
-                            const rawData = window.atob(base64);
-                            const key = new Uint8Array(rawData.length);
-                            for (let i = 0; i < rawData.length; ++i) key[i] = rawData.charCodeAt(i);
-
                             subscription = await registration.pushManager.subscribe({
                                 userVisibleOnly: true,
-                                applicationServerKey: key
+                                applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
                             });
                         }
                     }
