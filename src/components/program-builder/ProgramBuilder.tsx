@@ -17,6 +17,15 @@ const StressMatrix = dynamic(() => import('@/components/program-builder/StressMa
 // Helper to generate IDs
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
+// Snap a date string to the preceding Sunday (or same day if already Sunday)
+// This ensures program weeks align with the calendar's Sun-Sat grid.
+const snapToSunday = (dateStr: string): string => {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const date = new Date(y, m - 1, d);
+    date.setDate(date.getDate() - date.getDay());
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+};
+
 // Exercise Component
 const BuilderExerciseCard = ({ exercise, onUpdate, onRemove, onDragStart, onDragOver, onDrop, onDragEnd, isDragOver }) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
@@ -199,7 +208,7 @@ const BuilderExerciseCard = ({ exercise, onUpdate, onRemove, onDragStart, onDrag
 export default function ProgramBuilder({ athleteId, initialData = null, athletes = [], initialExercises = null, athleteLiftTargets = null, athleteName = '' }: { athleteId?: string, initialData?: any, athletes?: any[], initialExercises?: any, athleteLiftTargets?: any, athleteName?: string }) {
     const router = useRouter();
     const [programName, setProgramName] = useState('');
-    const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
+    const [startDate, setStartDate] = useState(() => snapToSunday(new Date().toISOString().split('T')[0]));
     // State for selected athlete in assigning mode
     const [selectedAthleteId, setSelectedAthleteId] = useState(athleteId || '');
 
@@ -355,7 +364,9 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
     useEffect(() => {
         if (initialData) {
             setProgramName(initialData.name || '');
-            setStartDate(initialData.startDate || new Date().toISOString().split('T')[0]);
+            const rawStartDate = initialData.startDate || new Date().toISOString().split('T')[0];
+            const snappedStartDate = snapToSunday(rawStartDate);
+            setStartDate(snappedStartDate);
             if (initialData.weeks && initialData.weeks.length > 0) {
                 // Sanitize weeks to ensure IDs and structure exist (handles legacy data)
                 const sanitizedWeeks = initialData.weeks.map(w => ({
@@ -385,7 +396,48 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                         })
                     }))
                 }));
-                setWeeks(sanitizedWeeks);
+
+                // If startDate was snapped to Sunday, rebucket sessions to align with calendar weeks
+                if (rawStartDate !== snappedStartDate) {
+                    const [oldY, oldM, oldD] = rawStartDate.split('-').map(Number);
+                    const oldStart = new Date(oldY, oldM - 1, oldD);
+                    oldStart.setHours(0, 0, 0, 0);
+                    const [newY, newM, newD] = snappedStartDate.split('-').map(Number);
+                    const newStart = new Date(newY, newM - 1, newD);
+                    newStart.setHours(0, 0, 0, 0);
+
+                    const allSessions: any[] = [];
+                    sanitizedWeeks.forEach(w => {
+                        w.sessions.forEach(s => {
+                            const actualDate = new Date(oldStart);
+                            actualDate.setDate(actualDate.getDate() + (w.weekNumber - 1) * 7 + ((s.day || 1) - 1));
+                            const diffTime = actualDate.getTime() - newStart.getTime();
+                            const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+                            if (diffDays >= 0) {
+                                allSessions.push({ ...s, day: (diffDays % 7) + 1, _tempWeekNum: Math.floor(diffDays / 7) + 1 });
+                            }
+                        });
+                    });
+
+                    const reorganizedWeeks: any[][] = [];
+                    allSessions.forEach(s => {
+                        const wn = s._tempWeekNum;
+                        if (!reorganizedWeeks[wn]) reorganizedWeeks[wn] = [];
+                        const { _tempWeekNum, ...cleanSession } = s;
+                        reorganizedWeeks[wn].push(cleanSession);
+                    });
+                    const maxWeek = allSessions.reduce((max, s) => s._tempWeekNum > max ? s._tempWeekNum : max, 0);
+                    const finalWeeks: any[] = [];
+                    for (let i = 1; i <= maxWeek; i++) {
+                        finalWeeks.push({ id: generateId(), weekNumber: i, sessions: reorganizedWeeks[i] || [] });
+                    }
+                    if (finalWeeks.length === 0) {
+                        finalWeeks.push({ id: generateId(), weekNumber: 1, sessions: [] });
+                    }
+                    setWeeks(finalWeeks);
+                } else {
+                    setWeeks(sanitizedWeeks);
+                }
             }
             // Reset initialLoadRef so the state changes from loading don't trigger auto-save
             initialLoadRef.current = true;
@@ -814,7 +866,9 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
         const oldStart = new Date(oldY, oldM - 1, oldD);
         oldStart.setHours(0, 0, 0, 0);
 
-        const [newY, newM, newD] = newStartDateStr.split('-').map(Number);
+        // Snap new start date to Sunday to keep weeks aligned with calendar
+        const snappedNewStart = snapToSunday(newStartDateStr);
+        const [newY, newM, newD] = snappedNewStart.split('-').map(Number);
         const newStart = new Date(newY, newM - 1, newD);
         newStart.setHours(0, 0, 0, 0);
 
@@ -875,7 +929,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
     // Kept for backward compatibility if used by click handler, but updated to use atomic logic
     const shiftProgramDates = (newStartDateStr: string) => {
         const finalWeeks = getShiftedWeeks(newStartDateStr, weeks);
-        setStartDate(newStartDateStr);
+        setStartDate(snapToSunday(newStartDateStr));
         // We must usually set weeks too if we use this standalone
         // But the previous implementation returned finalWeeks and expected caller to handle?
         // No, previous implementation returned finalWeeks but didn't setWeeks explicitly?
@@ -892,11 +946,18 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
 
         // Check if date is before start date
         if (new Date(dateStr) < new Date(startDate)) {
-            if (confirm(`This date is before the current program start date (${startDate}). Do you want to move the start date to ${dateStr}?`)) {
+            const snapped = snapToSunday(dateStr);
+            if (confirm(`This date is before the current program start date (${startDate}). Do you want to move the start date to ${snapped}?`)) {
                 currentWeeks = getShiftedWeeks(dateStr, weeks);
-                setStartDate(dateStr);
-                dayNum = 1;
-                weekNum = 1;
+                setStartDate(snapped);
+                // Recalculate weekNum/dayNum relative to snapped Sunday start
+                const [dy, dm, dd] = dateStr.split('-').map(Number);
+                const clickedDate = new Date(dy, dm - 1, dd);
+                const [sy, sm, sd] = snapped.split('-').map(Number);
+                const snappedDate = new Date(sy, sm - 1, sd);
+                const diff = Math.round((clickedDate.getTime() - snappedDate.getTime()) / (1000 * 60 * 60 * 24));
+                weekNum = Math.floor(diff / 7) + 1;
+                dayNum = (diff % 7) + 1;
             } else {
                 return;
             }
@@ -963,16 +1024,17 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
 
         // Check for date shifting
         if (toDateStr && new Date(toDateStr) < new Date(startDate)) {
-            if (confirm(`Move program start to ${toDateStr}?`)) {
+            const snapped = snapToSunday(toDateStr);
+            if (confirm(`Move program start to ${snapped}?`)) {
                 // Calculate shifted structure BUT DO NOT SET STATE YET
                 currentWeeks = getShiftedWeeks(toDateStr, weeks);
-                pendingStartDate = toDateStr;
+                pendingStartDate = snapped;
 
-                // Recalculate pointers using startDate-anchored week boundaries
+                // Recalculate pointers using snapped start date
                 const [oY, oM, oD] = startDate.split('-').map(Number);
                 const oldStart = new Date(oY, oM - 1, oD);
                 oldStart.setHours(0, 0, 0, 0);
-                const [nY, nM, nD] = toDateStr.split('-').map(Number);
+                const [nY, nM, nD] = snapped.split('-').map(Number);
                 const newStart = new Date(nY, nM - 1, nD);
                 newStart.setHours(0, 0, 0, 0);
 
@@ -988,8 +1050,12 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                 fromD = newFromD;
                 fromW = newFromW;
 
-                targetD = 1;
-                targetW = 1;
+                // Recalculate target relative to snapped start
+                const [tY, tM, tD] = toDateStr.split('-').map(Number);
+                const targetDate = new Date(tY, tM - 1, tD);
+                const targetDiff = Math.round((targetDate.getTime() - newStart.getTime()) / (1000 * 60 * 60 * 24));
+                targetW = Math.floor(targetDiff / 7) + 1;
+                targetD = (targetDiff % 7) + 1;
 
             } else {
                 return;
