@@ -74,6 +74,7 @@ interface Props {
     athleteId: string;
     sessionKey: string;
     programId: string;
+    onReadinessSubmit?: () => void;
 }
 
 /* ── Lateral-scroll card form ── */
@@ -289,7 +290,7 @@ function ExpandedForm({
     );
 }
 
-export default function ReadinessCheckin({ athleteId, sessionKey, programId }: Props) {
+export default function ReadinessCheckin({ athleteId, sessionKey, programId, onReadinessSubmit }: Props) {
     const [scores, setScores] = useState<Record<string, number>>({});
     const [expanded, setExpanded] = useState(false);
     const [submitted, setSubmitted] = useState(false);
@@ -309,6 +310,7 @@ export default function ReadinessCheckin({ athleteId, sessionKey, programId }: P
                         const { _sessionKey, ...restScores } = sessionLog.scores;
                         setScores(restScores);
                         setSubmitted(true);
+                        onReadinessSubmit?.();
                     }
                 }
             } catch { /* ignore */ }
@@ -340,6 +342,7 @@ export default function ReadinessCheckin({ athleteId, sessionKey, programId }: P
                 }),
             });
             setSubmitted(true);
+            onReadinessSubmit?.();
         } catch (e) {
             console.error('Failed to save readiness:', e);
         }

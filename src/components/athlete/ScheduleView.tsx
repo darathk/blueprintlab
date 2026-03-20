@@ -135,6 +135,26 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
     const celebratedSessionsRef = useRef<Set<string>>(new Set());
     const sessionMetaRef = useRef<Record<string, { exercises: any[]; sessionName: string }>>({});
 
+    // Readiness gating: track which sessions have completed readiness
+    const [readySessions, setReadySessions] = useState<Set<string>>(new Set());
+    const [readinessPopup, setReadinessPopup] = useState<string | null>(null); // session key of popup
+    const [shakeKey, setShakeKey] = useState<string | null>(null); // exercise key to shake
+
+    const markSessionReady = useCallback((sKey: string) => {
+        setReadySessions(prev => {
+            const next = new Set(prev);
+            next.add(sKey);
+            return next;
+        });
+    }, []);
+
+    const handleLockedExerciseClick = useCallback((sKey: string, exKey: string) => {
+        setShakeKey(exKey);
+        setReadinessPopup(sKey);
+        setTimeout(() => setShakeKey(null), 500);
+        setTimeout(() => setReadinessPopup(null), 3000);
+    }, []);
+
     // Week overview drawer state
     const [weekDrawer, setWeekDrawer] = useState<{ open: boolean; programId: string; programName: string; weekNum: number; sessions: any[]; startDate: string } | null>(null);
 
@@ -437,6 +457,16 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 0, paddingBottom: '3rem' }}>
 
+            {/* Shake animation for locked exercises */}
+            <style>{`
+                @keyframes readiness-shake {
+                    0%, 100% { transform: translateX(0); }
+                    10%, 50%, 90% { transform: translateX(-4px); }
+                    30%, 70% { transform: translateX(4px); }
+                }
+                .readiness-shake { animation: readiness-shake 0.4s ease-in-out; }
+            `}</style>
+
             {/* ═══ DATE HEADER ═══ */}
             <div style={{ padding: '20px 16px 0' }}>
                 <h1 style={{
@@ -699,6 +729,10 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
+                                                        if (!readySessions.has(sKey)) {
+                                                            handleLockedExerciseClick(sKey, `${sKey}-expand-all`);
+                                                            return;
+                                                        }
                                                         const anyOpen = exercises.some((_, idx) => openExercises.has(`${sKey}-ex${idx}`));
                                                         toggleSessionExercises(sKey, exercises, !anyOpen);
                                                     }}
@@ -725,8 +759,28 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
 
                                         {/* Expanded: Readiness + Exercise Cards */}
                                         {sessionOpen && (
-                                            <div style={{ background: 'var(--card-border)' }}>
-                                                <ReadinessCheckin athleteId={athleteId} sessionKey={sKey} programId={program.id} />
+                                            <div style={{ background: 'var(--card-border)', position: 'relative' }}>
+                                                <ReadinessCheckin athleteId={athleteId} sessionKey={sKey} programId={program.id} onReadinessSubmit={() => markSessionReady(sKey)} />
+
+                                                {/* Readiness gate popup */}
+                                                {readinessPopup === sKey && (
+                                                    <div style={{
+                                                        position: 'sticky', top: 0, zIndex: 50,
+                                                        display: 'flex', justifyContent: 'center', padding: '0 16px',
+                                                        animation: 'readiness-shake 0.4s ease-in-out',
+                                                    }}>
+                                                        <div style={{
+                                                            background: 'linear-gradient(135deg, #7d87d2, #a855f7)',
+                                                            color: '#fff', padding: '10px 18px', borderRadius: 10,
+                                                            fontSize: 13, fontWeight: 700, textAlign: 'center',
+                                                            boxShadow: '0 4px 20px rgba(125,135,210,0.5)',
+                                                            display: 'flex', alignItems: 'center', gap: 8,
+                                                        }}>
+                                                            <span style={{ fontSize: 18 }}>📋</span>
+                                                            Complete your Pre-Session Readiness check-in first!
+                                                        </div>
+                                                    </div>
+                                                )}
 
                                                 {(editState[sKey] || exercises).map((ex: any, exIdx: number) => {
                                                     const isEdit = !!editState[sKey];
@@ -767,18 +821,25 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                                                     const category = exerciseData.category || ex.category || getExerciseCategory(exerciseData.name || ex.name);
                                                     const catColor = CATEGORY_COLORS[category] || '#94A3B8';
 
+                                                    const isLocked = !readySessions.has(sKey);
+
                                                     return (
-                                                        <div key={exIdx} style={{ background: 'var(--background)', borderBottom: '1px solid var(--card-border)' }}>
+                                                        <div key={exIdx} className={shakeKey === exKey ? 'readiness-shake' : ''} style={{ background: 'var(--background)', borderBottom: '1px solid var(--card-border)', opacity: isLocked ? 0.5 : 1, transition: 'opacity 0.3s' }}>
                                                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--card-bg)', borderBottom: exOpen ? '1px solid var(--card-border)' : 'none' }}>
                                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                                                                     <div style={{ width: 3, height: 20, borderRadius: 2, background: catColor }} />
                                                                     <div
                                                                         onClick={() => {
+                                                                            if (isLocked) {
+                                                                                handleLockedExerciseClick(sKey, exKey);
+                                                                                return;
+                                                                            }
                                                                             toggle(openExercises, exKey, setOpenExercises);
                                                                             if (!editState[sKey]) initEdit(sKey, exercises, log);
                                                                         }}
                                                                         style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
                                                                     >
+                                                                        {isLocked && <span style={{ fontSize: '0.8rem' }}>🔒</span>}
                                                                         <span style={{
                                                                             color: 'var(--secondary-foreground)', fontSize: '0.7rem',
                                                                             transition: 'transform 0.2s', display: 'inline-block',
@@ -1155,6 +1216,10 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                                                                 <button
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
+                                                                        if (!readySessions.has(sKey)) {
+                                                                            handleLockedExerciseClick(sKey, `${sKey}-expand-all`);
+                                                                            return;
+                                                                        }
                                                                         const anyOpen = exercises.some((_, idx) => openExercises.has(`${sKey}-ex${idx}`));
                                                                         toggleSessionExercises(sKey, exercises, !anyOpen);
                                                                     }}
@@ -1217,7 +1282,27 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                                                             </div>
 
                                                             {/* Readiness Check-In */}
-                                                            <ReadinessCheckin athleteId={athleteId} sessionKey={sKey} programId={program.id} />
+                                                            <ReadinessCheckin athleteId={athleteId} sessionKey={sKey} programId={program.id} onReadinessSubmit={() => markSessionReady(sKey)} />
+
+                                                            {/* Readiness gate popup */}
+                                                            {readinessPopup === sKey && (
+                                                                <div style={{
+                                                                    position: 'sticky', top: 0, zIndex: 50,
+                                                                    display: 'flex', justifyContent: 'center', padding: '0 16px',
+                                                                    animation: 'readiness-shake 0.4s ease-in-out',
+                                                                }}>
+                                                                    <div style={{
+                                                                        background: 'linear-gradient(135deg, #7d87d2, #a855f7)',
+                                                                        color: '#fff', padding: '10px 18px', borderRadius: 10,
+                                                                        fontSize: 13, fontWeight: 700, textAlign: 'center',
+                                                                        boxShadow: '0 4px 20px rgba(125,135,210,0.5)',
+                                                                        display: 'flex', alignItems: 'center', gap: 8,
+                                                                    }}>
+                                                                        <span style={{ fontSize: 18 }}>📋</span>
+                                                                        Complete your Pre-Session Readiness check-in first!
+                                                                    </div>
+                                                                </div>
+                                                            )}
 
                                                             {(editState[sKey] || exercises).map((ex: any, exIdx: number) => {
                                                                 const isEdit = !!editState[sKey];
@@ -1256,13 +1341,19 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                                                                     }
                                                                 });
 
+                                                                const isLocked = !readySessions.has(sKey);
+
                                                                 return (
-                                                                    <div key={exIdx} style={{ background: 'var(--background)', borderBottom: '1px solid #cbd5e1' }}>
+                                                                    <div key={exIdx} className={shakeKey === exKey ? 'readiness-shake' : ''} style={{ background: 'var(--background)', borderBottom: '1px solid #cbd5e1', opacity: isLocked ? 0.5 : 1, transition: 'opacity 0.3s' }}>
                                                                         {/* Exercise header */}
                                                                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--card-bg)', borderBottom: '1px solid #e2e8f0' }}>
                                                                             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                                                                                 <div
                                                                                     onClick={() => {
+                                                                                        if (isLocked) {
+                                                                                            handleLockedExerciseClick(sKey, exKey);
+                                                                                            return;
+                                                                                        }
                                                                                         toggle(openExercises, exKey, setOpenExercises);
                                                                                         if (!editState[sKey]) initEdit(sKey, exercises, log);
                                                                                     }}
