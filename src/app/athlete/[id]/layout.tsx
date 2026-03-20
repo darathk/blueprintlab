@@ -5,8 +5,7 @@ import { UserButton } from '@clerk/nextjs';
 import Link from 'next/link';
 import AthleteNav from '@/components/athlete/AthleteNav';
 import MobileBottomNav, { NavItem } from '@/components/navigation/MobileBottomNav';
-import { LayoutDashboard, MessageSquare, Dumbbell, Calculator, Trophy } from 'lucide-react';
-import NotificationPermissionButton from '@/components/notifications/NotificationPermissionButton';
+import { LayoutDashboard, MessageSquare, Dumbbell, Trophy, Settings } from 'lucide-react';
 
 export default async function AthletePortalLayout({
     children,
@@ -102,35 +101,7 @@ export default async function AthletePortalLayout({
             <main className="athlete-main" style={{ flex: 1 }}>
                 {children}
             </main>
-            <MobileBottomNav items={athleteNavItems} className="mobile-bottom-nav" userId={id}>
-                <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '4px',
-                }}>
-                    <div style={{
-                        width: 44,
-                        height: 44,
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                    }}>
-                        <UserButton afterSignOutUrl="/sign-in" />
-                    </div>
-                    <span style={{
-                        fontSize: '0.6rem',
-                        fontWeight: 500,
-                        letterSpacing: '0.01em',
-                        color: 'var(--secondary-foreground)',
-                        opacity: 0.65,
-                    }}>
-                        Profile
-                    </span>
-                </div>
-            </MobileBottomNav>
+            <MobileBottomNav items={[...athleteNavItems, { label: 'Settings', href: `/athlete/${id}/settings`, icon: <Settings size={20} /> }]} className="mobile-bottom-nav" userId={id} />
         </div>
     );
 }
