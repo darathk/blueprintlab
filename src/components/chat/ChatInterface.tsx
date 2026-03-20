@@ -1235,10 +1235,10 @@ export default function ChatInterface({
                                                         bottom: 0,
                                                         [mine ? 'right' : 'left']: 0,
                                                         zIndex: 999,
-                                                        background: 'var(--card-bg)',
-                                                        border: '1px solid rgba(255,255,255,0.08)',
+                                                        background: '#1a1a24',
+                                                        border: '1px solid rgba(255,255,255,0.1)',
                                                         borderRadius: 16,
-                                                        boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                                                        boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
                                                         padding: '8px 0',
                                                         width: 200,
                                                         animation: 'scaleIn 0.15s ease-out'
