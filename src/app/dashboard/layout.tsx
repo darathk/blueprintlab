@@ -5,9 +5,8 @@ import { prisma } from '@/lib/prisma';
 import { cache } from 'react';
 import TopNavigation from '@/components/dashboard/TopNavigation';
 import MobileBottomNav, { NavItem } from '@/components/navigation/MobileBottomNav';
-import { Home, MessageSquare, Hammer, Dumbbell, Calculator, Trophy } from 'lucide-react';
+import { Home, MessageSquare, Hammer, Dumbbell, Trophy, Settings } from 'lucide-react';
 import { UserButton } from '@clerk/nextjs';
-import NotificationPermissionButton from '@/components/notifications/NotificationPermissionButton';
 
 // Cache the auth check so it only runs once per request lifecycle
 const getAuthState = cache(async () => {
@@ -108,35 +107,7 @@ export default async function DashboardLayout({
                 </div>
             </main>
 
-            <MobileBottomNav items={coachNavItems} className="mobile-bottom-nav" userId={athleteId || undefined}>
-                <div style={{
-                    display: 'flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '4px',
-                }}>
-                    <div style={{
-                        width: 44,
-                        height: 44,
-                        borderRadius: '50%',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                    }}>
-                        <UserButton afterSignOutUrl="/" />
-                    </div>
-                    <span style={{
-                        fontSize: '0.6rem',
-                        fontWeight: 500,
-                        letterSpacing: '0.01em',
-                        color: 'var(--secondary-foreground)',
-                        opacity: 0.65,
-                    }}>
-                        Profile
-                    </span>
-                </div>
-            </MobileBottomNav>
+            <MobileBottomNav items={[...coachNavItems, { label: 'Settings', href: '/dashboard/settings', icon: <Settings size={20} /> }]} className="mobile-bottom-nav" userId={athleteId || undefined} />
         </div>
     );
 }
