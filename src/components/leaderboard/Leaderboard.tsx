@@ -365,7 +365,29 @@ export function LeaderboardRankWidget({
     }, [fetchRank]);
 
     if (loading || !data) {
-        return null;
+        return (
+            <div style={{
+                borderRadius: 16,
+                border: '1px solid rgba(255,255,255,0.08)',
+                background: 'linear-gradient(135deg, rgba(255,255,255,0.02), rgba(0,0,0,0.2))',
+                padding: '1rem',
+                animation: 'pulse 1.5s ease-in-out infinite',
+            }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(255,255,255,0.06)' }} />
+                        <div>
+                            <div style={{ width: 80, height: 10, borderRadius: 4, background: 'rgba(255,255,255,0.06)', marginBottom: 6 }} />
+                            <div style={{ width: 120, height: 18, borderRadius: 4, background: 'rgba(255,255,255,0.06)' }} />
+                        </div>
+                    </div>
+                    <div style={{ textAlign: 'right' }}>
+                        <div style={{ width: 50, height: 18, borderRadius: 4, background: 'rgba(255,255,255,0.06)', marginLeft: 'auto', marginBottom: 4 }} />
+                        <div style={{ width: 60, height: 10, borderRadius: 4, background: 'rgba(255,255,255,0.06)', marginLeft: 'auto' }} />
+                    </div>
+                </div>
+            </div>
+        );
     }
 
     const tierCfg = TIER_CONFIG[data.tier] || TIER_CONFIG.iron;

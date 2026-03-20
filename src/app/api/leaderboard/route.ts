@@ -23,100 +23,121 @@ export async function GET(request: Request) {
     }
 
     try {
-        // Get all athletes under this coach with their log counts
+        // Lightweight query: only get log counts per athlete (no weeks JSON, no log dates)
         const athletes = await prisma.athlete.findMany({
             where: { coachId, role: 'athlete' },
             select: {
                 id: true,
                 name: true,
                 programs: {
-                    select: {
-                        id: true,
-                        weeks: true,
-                        logs: {
-                            select: { id: true, date: true }
-                        }
-                    }
-                }
+                    select: { _count: { select: { logs: true } } }
+                },
             }
         });
 
-        // Calculate total sessions available and completed for each athlete
-        const leaderboard = athletes.map(athlete => {
-            let totalLogs = 0;
-            let totalSessions = 0;
-            let currentStreak = 0;
-            let longestStreak = 0;
+        // Build initial leaderboard from counts only
+        const leaderboard = athletes.map(a => ({
+            id: a.id,
+            name: a.name,
+            totalLogs: a.programs.reduce((sum, p) => sum + p._count.logs, 0),
+            totalSessions: 0,
+            completionRate: 0,
+            currentStreak: 0,
+            longestStreak: 0,
+        }));
 
-            // Collect all log dates for streak calculation
-            const allLogDates: string[] = [];
+        // Sort by total logs (primary)
+        leaderboard.sort((a, b) => b.totalLogs - a.totalLogs);
 
-            athlete.programs.forEach(program => {
-                totalLogs += program.logs.length;
-                program.logs.forEach(log => allLogDates.push(log.date));
+        // Fetch detailed data (streaks, completion) only for athletes that have logs
+        // This avoids pulling massive weeks JSON for inactive athletes
+        const activeIds = leaderboard.filter(a => a.totalLogs > 0).map(a => a.id);
 
-                // Count total sessions from program weeks JSON
-                const weeks = program.weeks as any;
-                if (Array.isArray(weeks)) {
-                    weeks.forEach((week: any) => {
-                        if (week.sessions && Array.isArray(week.sessions)) {
-                            totalSessions += week.sessions.length;
-                        } else if (week.days && Array.isArray(week.days)) {
-                            totalSessions += week.days.length;
+        if (activeIds.length > 0) {
+            const activeAthletes = await prisma.athlete.findMany({
+                where: { id: { in: activeIds } },
+                select: {
+                    id: true,
+                    programs: {
+                        select: {
+                            weeks: true,
+                            logs: { select: { date: true } }
                         }
-                    });
+                    }
                 }
             });
 
-            // Calculate streaks based on log dates (consecutive days with logs)
-            if (allLogDates.length > 0) {
-                const sortedDates = [...new Set(allLogDates)]
-                    .map(d => new Date(d).toISOString().split('T')[0])
-                    .filter((d, i, arr) => arr.indexOf(d) === i)
-                    .sort();
+            const detailMap = new Map<string, { totalSessions: number; currentStreak: number; longestStreak: number }>();
 
-                let streak = 1;
-                for (let i = 1; i < sortedDates.length; i++) {
-                    const prev = new Date(sortedDates[i - 1]);
-                    const curr = new Date(sortedDates[i]);
-                    const diffDays = (curr.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24);
-                    if (diffDays <= 7) { // Within a week counts as maintaining streak (training programs aren't daily)
-                        streak++;
-                    } else {
-                        longestStreak = Math.max(longestStreak, streak);
-                        streak = 1;
+            for (const athlete of activeAthletes) {
+                let totalSessions = 0;
+                const allLogDates: string[] = [];
+
+                for (const program of athlete.programs) {
+                    program.logs.forEach(log => allLogDates.push(log.date));
+
+                    const weeks = program.weeks as any;
+                    if (Array.isArray(weeks)) {
+                        for (const week of weeks) {
+                            if (week.sessions && Array.isArray(week.sessions)) {
+                                totalSessions += week.sessions.length;
+                            } else if (week.days && Array.isArray(week.days)) {
+                                totalSessions += week.days.length;
+                            }
+                        }
                     }
                 }
-                longestStreak = Math.max(longestStreak, streak);
 
-                // Current streak: check if most recent log is within last 7 days
-                const lastLogDate = new Date(sortedDates[sortedDates.length - 1]);
-                const daysSinceLast = (Date.now() - lastLogDate.getTime()) / (1000 * 60 * 60 * 24);
-                if (daysSinceLast <= 7) {
-                    currentStreak = streak;
+                let currentStreak = 0;
+                let longestStreak = 0;
+
+                if (allLogDates.length > 0) {
+                    const sortedDates = [...new Set(
+                        allLogDates.map(d => new Date(d).toISOString().split('T')[0])
+                    )].sort();
+
+                    let streak = 1;
+                    for (let i = 1; i < sortedDates.length; i++) {
+                        const prev = new Date(sortedDates[i - 1]);
+                        const curr = new Date(sortedDates[i]);
+                        const diffDays = (curr.getTime() - prev.getTime()) / (1000 * 60 * 60 * 24);
+                        if (diffDays <= 7) {
+                            streak++;
+                        } else {
+                            longestStreak = Math.max(longestStreak, streak);
+                            streak = 1;
+                        }
+                    }
+                    longestStreak = Math.max(longestStreak, streak);
+
+                    const lastLogDate = new Date(sortedDates[sortedDates.length - 1]);
+                    const daysSinceLast = (Date.now() - lastLogDate.getTime()) / (1000 * 60 * 60 * 24);
+                    if (daysSinceLast <= 7) {
+                        currentStreak = streak;
+                    }
+                }
+
+                detailMap.set(athlete.id, { totalSessions, currentStreak, longestStreak });
+            }
+
+            for (const entry of leaderboard) {
+                const detail = detailMap.get(entry.id);
+                if (detail) {
+                    entry.totalSessions = detail.totalSessions;
+                    entry.currentStreak = detail.currentStreak;
+                    entry.longestStreak = detail.longestStreak;
+                    entry.completionRate = detail.totalSessions > 0
+                        ? Math.min(Math.round((entry.totalLogs / detail.totalSessions) * 100), 100)
+                        : 0;
                 }
             }
 
-            const completionRate = totalSessions > 0
-                ? Math.round((totalLogs / totalSessions) * 100)
-                : 0;
-
-            return {
-                id: athlete.id,
-                name: athlete.name,
-                totalLogs,
-                totalSessions,
-                completionRate: Math.min(completionRate, 100),
-                currentStreak,
-                longestStreak,
-            };
-        });
-
-        // Sort by total logs (primary), then completion rate (secondary)
-        leaderboard.sort((a, b) => {
-            if (b.totalLogs !== a.totalLogs) return b.totalLogs - a.totalLogs;
-            return b.completionRate - a.completionRate;
-        });
+            // Re-sort with completion rate as tiebreaker
+            leaderboard.sort((a, b) => {
+                if (b.totalLogs !== a.totalLogs) return b.totalLogs - a.totalLogs;
+                return b.completionRate - a.completionRate;
+            });
+        }
 
         // Add rank and tier
         const ranked = leaderboard.map((entry, index) => ({
