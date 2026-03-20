@@ -5,6 +5,7 @@ import { UserButton } from '@clerk/nextjs';
 import Link from 'next/link';
 import AthleteNav from '@/components/athlete/AthleteNav';
 import MobileBottomNav, { NavItem } from '@/components/navigation/MobileBottomNav';
+import AppSetupBubble from '@/components/notifications/AppSetupBubble';
 import { LayoutDashboard, MessageSquare, Dumbbell, Trophy, Settings } from 'lucide-react';
 
 export default async function AthletePortalLayout({
@@ -101,6 +102,7 @@ export default async function AthletePortalLayout({
             <main className="athlete-main" style={{ flex: 1 }}>
                 {children}
             </main>
+            <AppSetupBubble />
             <MobileBottomNav items={[...athleteNavItems, { label: 'Settings', href: `/athlete/${id}/settings`, icon: <Settings size={20} /> }]} className="mobile-bottom-nav" userId={id} />
         </div>
     );
