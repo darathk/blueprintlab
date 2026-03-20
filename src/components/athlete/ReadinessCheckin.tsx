@@ -134,148 +134,154 @@ function ExpandedForm({
                 </span>
             </div>
 
-            {/* Horizontal scroll container */}
-            <div
-                ref={scrollRef}
-                onScroll={handleScroll}
-                className="readiness-scroll"
-                style={{
-                    display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory',
-                    WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none',
-                    gap: 0, padding: '0 14px',
-                }}
-            >
-                {METRICS.map((met, i) => {
-                    const val = scores[met.id];
-                    const desc = val ? SCORE_DESCRIPTIONS[met.id]?.[val] : null;
-                    const descColor = val ? SCORE_COLORS[val] : 'var(--secondary-foreground)';
-
-                    return (
-                        <div key={met.id} style={{
-                            flex: '0 0 100%', scrollSnapAlign: 'center',
-                            padding: '0 4px', boxSizing: 'border-box',
-                        }}>
-                            <div style={{
-                                background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
-                                borderRadius: 12, padding: 16,
-                            }}>
-                                {/* Metric header */}
-                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 6 }}>
-                                    <span style={{ fontSize: 22 }}>{met.emoji}</span>
-                                    <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--foreground)' }}>{met.label}</span>
-                                </div>
-
-                                {/* Scale hint */}
-                                <div style={{
-                                    display: 'flex', justifyContent: 'space-between', marginBottom: 10,
-                                    fontSize: 9, padding: '0 2px',
-                                }}>
-                                    <span style={{ color: '#10b981', fontWeight: 600 }}>1 Best</span>
-                                    <span style={{ color: '#ef4444', fontWeight: 600 }}>5 Worst</span>
-                                </div>
-
-                                {/* Score buttons */}
-                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6 }}>
-                                    {[1, 2, 3, 4, 5].map(v => {
-                                        const selected = val === v;
-                                        const color = SCORE_COLORS[v];
-                                        return (
-                                            <button
-                                                key={v}
-                                                onClick={() => !submitted && onSelect(met.id, v)}
-                                                style={{
-                                                    height: 42, borderRadius: 10, border: 'none',
-                                                    cursor: submitted ? 'default' : 'pointer',
-                                                    fontSize: 16, fontWeight: 800,
-                                                    background: selected ? color : 'rgba(255,255,255,0.05)',
-                                                    color: selected ? '#000' : 'rgba(255,255,255,0.3)',
-                                                    opacity: val && !selected ? 0.3 : 1,
-                                                    transition: 'all 0.15s',
-                                                    boxShadow: selected ? `0 0 16px ${color}55` : 'none',
-                                                }}
-                                            >
-                                                {v}
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-
-                                {/* Dynamic description */}
-                                <div style={{
-                                    minHeight: 36, marginTop: 10, fontSize: 12, textAlign: 'center',
-                                    padding: '6px 10px', borderRadius: 8, transition: 'all 0.2s',
-                                    color: desc ? descColor : 'rgba(255,255,255,0.2)',
-                                    background: desc ? `${descColor}10` : 'transparent',
-                                    border: desc ? `1px solid ${descColor}25` : '1px solid transparent',
-                                }}>
-                                    {desc || 'Select a score'}
-                                </div>
-                            </div>
-                        </div>
-                    );
-                })}
-            </div>
-
-            {/* Navigation arrows */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 14px 0' }}>
+            {/* Card row: arrow – card – arrow */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 0, padding: '0 4px' }}>
+                {/* Left arrow */}
                 <button
                     onClick={() => scrollTo(activeIdx - 1)}
                     disabled={activeIdx === 0}
                     style={{
-                        width: 36, height: 36, borderRadius: 10, border: 'none', cursor: activeIdx === 0 ? 'default' : 'pointer',
-                        background: activeIdx === 0 ? 'rgba(255,255,255,0.03)' : 'rgba(125,135,210,0.15)',
-                        color: activeIdx === 0 ? 'rgba(255,255,255,0.1)' : '#a78bfa',
+                        width: 32, minWidth: 32, height: 32, borderRadius: 8, border: 'none', flexShrink: 0,
+                        cursor: activeIdx === 0 ? 'default' : 'pointer',
+                        background: activeIdx === 0 ? 'transparent' : 'rgba(125,135,210,0.15)',
+                        color: activeIdx === 0 ? 'rgba(255,255,255,0.08)' : '#a78bfa',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        transition: 'all 0.2s',
                     }}
                 >
                     <ChevronLeft size={18} />
                 </button>
 
-                {/* Center: avg or submit */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    {isComplete && !submitted && (
-                        <button
-                            onClick={onSubmit}
-                            disabled={saving}
-                            style={{
-                                padding: '9px 24px', borderRadius: 10, border: 'none', cursor: 'pointer',
-                                fontSize: 14, fontWeight: 700,
-                                background: 'linear-gradient(135deg, #7d87d2, #a855f7)',
-                                color: '#fff', boxShadow: '0 0 16px rgba(125,135,210,0.4)',
-                            }}
-                        >
-                            {saving ? 'Saving...' : 'Submit'}
-                        </button>
-                    )}
-                    {submitted && (
-                        <button onClick={onCollapse} style={{
-                            padding: '8px 20px', borderRadius: 8, border: '1px solid rgba(16,185,129,0.3)',
-                            background: 'rgba(16,185,129,0.1)', color: '#10b981', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                        }}>
-                            ✓ Submitted — Collapse
-                        </button>
-                    )}
-                    {!isComplete && !submitted && avgScore && (
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                            <span style={{ fontSize: 11, color: 'var(--secondary-foreground)' }}>Avg:</span>
-                            <span style={{ fontSize: 16, fontWeight: 800, color: avgColor }}>{avgScore}</span>
-                        </div>
-                    )}
+                {/* Horizontal scroll container */}
+                <div
+                    ref={scrollRef}
+                    onScroll={handleScroll}
+                    className="readiness-scroll"
+                    style={{
+                        flex: 1, minWidth: 0,
+                        display: 'flex', overflowX: 'auto', scrollSnapType: 'x mandatory',
+                        WebkitOverflowScrolling: 'touch', scrollbarWidth: 'none',
+                        gap: 0,
+                    }}
+                >
+                    {METRICS.map((met, i) => {
+                        const val = scores[met.id];
+                        const desc = val ? SCORE_DESCRIPTIONS[met.id]?.[val] : null;
+                        const descColor = val ? SCORE_COLORS[val] : 'var(--secondary-foreground)';
+
+                        return (
+                            <div key={met.id} style={{
+                                flex: '0 0 100%', scrollSnapAlign: 'center',
+                                padding: '0 4px', boxSizing: 'border-box',
+                            }}>
+                                <div style={{
+                                    background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
+                                    borderRadius: 12, padding: 16,
+                                }}>
+                                    {/* Metric header */}
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8, marginBottom: 6 }}>
+                                        <span style={{ fontSize: 22 }}>{met.emoji}</span>
+                                        <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--foreground)' }}>{met.label}</span>
+                                    </div>
+
+                                    {/* Scale hint */}
+                                    <div style={{
+                                        display: 'flex', justifyContent: 'space-between', marginBottom: 10,
+                                        fontSize: 9, padding: '0 2px',
+                                    }}>
+                                        <span style={{ color: '#10b981', fontWeight: 600 }}>1 Best</span>
+                                        <span style={{ color: '#ef4444', fontWeight: 600 }}>5 Worst</span>
+                                    </div>
+
+                                    {/* Score buttons */}
+                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 6 }}>
+                                        {[1, 2, 3, 4, 5].map(v => {
+                                            const selected = val === v;
+                                            const color = SCORE_COLORS[v];
+                                            return (
+                                                <button
+                                                    key={v}
+                                                    onClick={() => !submitted && onSelect(met.id, v)}
+                                                    style={{
+                                                        height: 42, borderRadius: 10, border: 'none',
+                                                        cursor: submitted ? 'default' : 'pointer',
+                                                        fontSize: 16, fontWeight: 800,
+                                                        background: selected ? color : 'rgba(255,255,255,0.05)',
+                                                        color: selected ? '#000' : 'rgba(255,255,255,0.3)',
+                                                        opacity: val && !selected ? 0.3 : 1,
+                                                        transition: 'all 0.15s',
+                                                        boxShadow: selected ? `0 0 16px ${color}55` : 'none',
+                                                    }}
+                                                >
+                                                    {v}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+
+                                    {/* Dynamic description */}
+                                    <div style={{
+                                        minHeight: 36, marginTop: 10, fontSize: 12, textAlign: 'center',
+                                        padding: '6px 10px', borderRadius: 8, transition: 'all 0.2s',
+                                        color: desc ? descColor : 'rgba(255,255,255,0.2)',
+                                        background: desc ? `${descColor}10` : 'transparent',
+                                        border: desc ? `1px solid ${descColor}25` : '1px solid transparent',
+                                    }}>
+                                        {desc || 'Select a score'}
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
                 </div>
 
+                {/* Right arrow */}
                 <button
                     onClick={() => scrollTo(activeIdx + 1)}
                     disabled={activeIdx === METRICS.length - 1}
                     style={{
-                        width: 36, height: 36, borderRadius: 10, border: 'none',
+                        width: 32, minWidth: 32, height: 32, borderRadius: 8, border: 'none', flexShrink: 0,
                         cursor: activeIdx === METRICS.length - 1 ? 'default' : 'pointer',
-                        background: activeIdx === METRICS.length - 1 ? 'rgba(255,255,255,0.03)' : 'rgba(125,135,210,0.15)',
-                        color: activeIdx === METRICS.length - 1 ? 'rgba(255,255,255,0.1)' : '#a78bfa',
+                        background: activeIdx === METRICS.length - 1 ? 'transparent' : 'rgba(125,135,210,0.15)',
+                        color: activeIdx === METRICS.length - 1 ? 'rgba(255,255,255,0.08)' : '#a78bfa',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        transition: 'all 0.2s',
                     }}
                 >
                     <ChevronRight size={18} />
                 </button>
+            </div>
+
+            {/* Bottom: submit / avg / status */}
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '10px 14px 0', gap: 8 }}>
+                {isComplete && !submitted && (
+                    <button
+                        onClick={onSubmit}
+                        disabled={saving}
+                        style={{
+                            padding: '9px 24px', borderRadius: 10, border: 'none', cursor: 'pointer',
+                            fontSize: 14, fontWeight: 700,
+                            background: 'linear-gradient(135deg, #7d87d2, #a855f7)',
+                            color: '#fff', boxShadow: '0 0 16px rgba(125,135,210,0.4)',
+                        }}
+                    >
+                        {saving ? 'Saving...' : 'Submit'}
+                    </button>
+                )}
+                {submitted && (
+                    <button onClick={onCollapse} style={{
+                        padding: '8px 20px', borderRadius: 8, border: '1px solid rgba(16,185,129,0.3)',
+                        background: 'rgba(16,185,129,0.1)', color: '#10b981', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                    }}>
+                        ✓ Submitted — Collapse
+                    </button>
+                )}
+                {!isComplete && !submitted && avgScore && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <span style={{ fontSize: 11, color: 'var(--secondary-foreground)' }}>Avg:</span>
+                        <span style={{ fontSize: 16, fontWeight: 800, color: avgColor }}>{avgScore}</span>
+                    </div>
+                )}
             </div>
 
             {/* Avg readiness when all filled */}
