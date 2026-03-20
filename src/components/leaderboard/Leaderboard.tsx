@@ -83,8 +83,8 @@ export default function Leaderboard({
             )
             .subscribe();
 
-        // Polling fallback every 30 seconds
-        const interval = setInterval(fetchLeaderboard, 30000);
+        // Polling fallback every 60 seconds (realtime handles instant updates)
+        const interval = setInterval(fetchLeaderboard, 60000);
 
         return () => {
             supabase.removeChannel(channel);
@@ -356,7 +356,7 @@ export function LeaderboardRankWidget({
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'Log' }, () => fetchRank())
             .subscribe();
 
-        const interval = setInterval(fetchRank, 30000);
+        const interval = setInterval(fetchRank, 60000);
 
         return () => {
             supabase.removeChannel(channel);

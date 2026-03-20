@@ -327,7 +327,7 @@ export default function ChatInterface({
                         });
                     }
                 });
-        }, 15000); // 15s fallback — realtime handles instant delivery when connected
+        }, 30000); // 30s fallback — realtime handles instant delivery when connected
         return () => clearInterval(poll);
     }, [athleteId, currentUserId, otherUserId]);
 

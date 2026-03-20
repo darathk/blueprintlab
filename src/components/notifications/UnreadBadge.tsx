@@ -50,8 +50,8 @@ export default function UnreadBadge({ userId, initialCount = 0 }: { userId: stri
             })
             .subscribe();
 
-        // Fallback polling every 30s (longer interval since realtime handles most cases)
-        const interval = setInterval(fetchUnread, 30000);
+        // Fallback polling every 60s (realtime handles instant updates)
+        const interval = setInterval(fetchUnread, 60000);
 
         // Also refresh on window focus (user comes back to app)
         const handleFocus = () => fetchUnread();
@@ -133,8 +133,8 @@ export function useUnreadCount(userId: string, initialCount = 0) {
             }, () => fetchUnread())
             .subscribe();
 
-        // Fallback polling every 30s
-        const interval = setInterval(fetchUnread, 30000);
+        // Fallback polling every 60s
+        const interval = setInterval(fetchUnread, 60000);
 
         const handleFocus = () => fetchUnread();
         window.addEventListener('focus', handleFocus);
