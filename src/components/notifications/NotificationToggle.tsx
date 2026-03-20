@@ -9,6 +9,7 @@ type Status = 'loading' | 'unsupported' | 'denied' | 'enabled' | 'disabled';
 export default function NotificationToggle({ role = 'athlete' }: { role?: 'coach' | 'athlete' }) {
     const [status, setStatus] = useState<Status>('loading');
     const [busy, setBusy] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const checkStatus = useCallback(async () => {
         if (!('Notification' in window) || !('serviceWorker' in navigator) || !('PushManager' in window)) {
@@ -28,9 +29,13 @@ export default function NotificationToggle({ role = 'athlete' }: { role?: 'coach
                 return;
             }
             try {
-                const reg = await navigator.serviceWorker.ready;
-                const sub = await reg.pushManager.getSubscription();
-                setStatus(sub ? 'enabled' : 'disabled');
+                const reg = await navigator.serviceWorker.getRegistration();
+                if (reg) {
+                    const sub = await reg.pushManager.getSubscription();
+                    setStatus(sub ? 'enabled' : 'disabled');
+                } else {
+                    setStatus('disabled');
+                }
             } catch {
                 setStatus('disabled');
             }
@@ -70,6 +75,7 @@ export default function NotificationToggle({ role = 'athlete' }: { role?: 'coach
 
     const enable = async () => {
         setBusy(true);
+        setError(null);
         try {
             const perm = await Notification.requestPermission();
             console.log('[Push] Permission result:', perm);
@@ -79,6 +85,7 @@ export default function NotificationToggle({ role = 'athlete' }: { role?: 'coach
                 return;
             }
             if (perm !== 'granted') {
+                setError('Permission not granted. Please allow notifications when prompted.');
                 setBusy(false);
                 return;
             }
@@ -86,6 +93,7 @@ export default function NotificationToggle({ role = 'athlete' }: { role?: 'coach
             const publicVapidKey = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
             if (!publicVapidKey) {
                 console.error('[Push] VAPID public key not set');
+                setError('Push notifications are not configured. Contact support.');
                 setBusy(false);
                 return;
             }
@@ -117,9 +125,12 @@ export default function NotificationToggle({ role = 'athlete' }: { role?: 'coach
             if (!res.ok) {
                 const errText = await res.text();
                 console.error('[Push] Subscribe API failed:', res.status, errText);
-            } else {
-                console.log('[Push] Subscription saved to server');
+                setError('Failed to save subscription. Try again.');
+                setBusy(false);
+                return;
             }
+
+            console.log('[Push] Subscription saved to server');
 
             // Clear the opt-out flag so PushNotificationManager can auto-sync
             localStorage.removeItem('push-notifications-opted-out');
@@ -127,26 +138,30 @@ export default function NotificationToggle({ role = 'athlete' }: { role?: 'coach
             setStatus('enabled');
         } catch (err) {
             console.error('[Push] Enable error:', err);
+            setError('Something went wrong. Please try again.');
         }
         setBusy(false);
     };
 
     const disable = async () => {
         setBusy(true);
+        setError(null);
         try {
-            const reg = await navigator.serviceWorker.ready;
-            const subscription = await reg.pushManager.getSubscription();
+            const reg = await navigator.serviceWorker.getRegistration();
+            if (reg) {
+                const subscription = await reg.pushManager.getSubscription();
 
-            if (subscription) {
-                // Remove from server first
-                await fetch('/api/notifications/unsubscribe', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ endpoint: subscription.endpoint }),
-                });
+                if (subscription) {
+                    // Remove from server first
+                    await fetch('/api/notifications/unsubscribe', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ endpoint: subscription.endpoint }),
+                    });
 
-                // Then unsubscribe locally
-                await subscription.unsubscribe();
+                    // Then unsubscribe locally
+                    await subscription.unsubscribe();
+                }
             }
 
             // Persist opt-out so PushNotificationManager doesn't auto-resubscribe
@@ -155,6 +170,7 @@ export default function NotificationToggle({ role = 'athlete' }: { role?: 'coach
             setStatus('disabled');
         } catch (err) {
             console.error('[Push] Disable error:', err);
+            setError('Failed to disable. Please try again.');
         }
         setBusy(false);
     };
@@ -221,11 +237,13 @@ export default function NotificationToggle({ role = 'athlete' }: { role?: 'coach
             <div style={{ flex: 1 }}>
                 <div style={labelStyle}>Push Notifications</div>
                 <div style={descStyle}>
-                    {isEnabled
-                        ? 'You will receive alerts for new messages.'
-                        : role === 'coach'
-                            ? 'Get notified when an athlete sends a message.'
-                            : 'Get notified when your coach sends a message.'}
+                    {error
+                        ? <span style={{ color: '#ef4444', opacity: 1 }}>{error}</span>
+                        : isEnabled
+                            ? 'You will receive alerts for new messages.'
+                            : role === 'coach'
+                                ? 'Get notified when an athlete sends a message.'
+                                : 'Get notified when your coach sends a message.'}
                 </div>
             </div>
             <button
