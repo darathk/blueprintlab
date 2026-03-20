@@ -22,6 +22,11 @@ export default function NotificationToggle({ role = 'athlete' }: { role?: 'coach
         }
 
         if (Notification.permission === 'granted') {
+            // If user explicitly opted out, show as disabled regardless of subscription
+            if (localStorage.getItem('push-notifications-opted-out')) {
+                setStatus('disabled');
+                return;
+            }
             try {
                 const reg = await navigator.serviceWorker.ready;
                 const sub = await reg.pushManager.getSubscription();
@@ -116,6 +121,9 @@ export default function NotificationToggle({ role = 'athlete' }: { role?: 'coach
                 console.log('[Push] Subscription saved to server');
             }
 
+            // Clear the opt-out flag so PushNotificationManager can auto-sync
+            localStorage.removeItem('push-notifications-opted-out');
+
             setStatus('enabled');
         } catch (err) {
             console.error('[Push] Enable error:', err);
@@ -140,6 +148,9 @@ export default function NotificationToggle({ role = 'athlete' }: { role?: 'coach
                 // Then unsubscribe locally
                 await subscription.unsubscribe();
             }
+
+            // Persist opt-out so PushNotificationManager doesn't auto-resubscribe
+            localStorage.setItem('push-notifications-opted-out', 'true');
 
             setStatus('disabled');
         } catch (err) {

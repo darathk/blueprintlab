@@ -108,8 +108,8 @@ export default function PushNotificationManager() {
                 });
             }
 
-            // Auto-subscribe if permission already granted
-            if (Notification.permission === 'granted') {
+            // Auto-subscribe if permission already granted and user hasn't opted out
+            if (Notification.permission === 'granted' && !localStorage.getItem('push-notifications-opted-out')) {
                 await subscribeAndSync();
             }
         }).catch(err => {
