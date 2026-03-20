@@ -11,6 +11,8 @@ export default function AppSetupBubble() {
     const [isAndroid, setIsAndroid] = useState(false);
     const [isStandalone, setIsStandalone] = useState(false);
     const [notifGranted, setNotifGranted] = useState(false);
+    const [notifDenied, setNotifDenied] = useState(false);
+    const [notifSupported, setNotifSupported] = useState(false);
     const [step, setStep] = useState<'main' | 'notif-instructions' | 'bookmark-instructions'>('main');
 
     useEffect(() => {
@@ -21,12 +23,16 @@ export default function AppSetupBubble() {
         const android = /Android/.test(navigator.userAgent);
         const standalone = window.matchMedia('(display-mode: standalone)').matches
             || (navigator as any).standalone === true;
-        const notifOk = 'Notification' in window && Notification.permission === 'granted';
+        const hasNotif = 'Notification' in window;
+        const notifOk = hasNotif && Notification.permission === 'granted';
+        const notifBlocked = hasNotif && Notification.permission === 'denied';
 
         setIsIOS(ios);
         setIsAndroid(android);
         setIsStandalone(standalone);
         setNotifGranted(notifOk);
+        setNotifDenied(notifBlocked);
+        setNotifSupported(hasNotif && 'serviceWorker' in navigator);
 
         // If both are already done, never show
         if (standalone && notifOk) return;
@@ -42,28 +48,32 @@ export default function AppSetupBubble() {
     };
 
     const handleEnableNotifications = async () => {
-        if (!('Notification' in window) || !('serviceWorker' in navigator)) {
+        if (!notifSupported) {
             setStep('notif-instructions');
             return;
         }
 
         // If already denied by browser, show instructions to fix
-        if (Notification.permission === 'denied') {
+        if (notifDenied) {
             setStep('notif-instructions');
             return;
         }
 
-        // Request permission
+        // Request permission via PushNotificationManager
         window.dispatchEvent(new Event('app:request-push'));
 
-        // Wait a moment then check
+        // Wait a moment then check result
         setTimeout(() => {
-            if (Notification.permission === 'granted') {
+            const granted = 'Notification' in window && Notification.permission === 'granted';
+            if (granted) {
                 setNotifGranted(true);
-                // If both done now, auto-dismiss
+                setNotifDenied(false);
                 if (isStandalone) dismiss();
                 else setStep('main');
             } else {
+                if ('Notification' in window && Notification.permission === 'denied') {
+                    setNotifDenied(true);
+                }
                 setStep('notif-instructions');
             }
         }, 1000);
@@ -174,7 +184,7 @@ export default function AppSetupBubble() {
                 {step === 'notif-instructions' && (
                     <div style={{ padding: '12px 16px 16px' }}>
                         <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', margin: '0 0 12px', lineHeight: 1.5 }}>
-                            {Notification.permission === 'denied'
+                            {notifDenied
                                 ? 'Notifications were blocked. To fix this:'
                                 : 'To enable notifications:'}
                         </p>
@@ -183,13 +193,13 @@ export default function AppSetupBubble() {
                                 <li>First <strong>add to home screen</strong> (see other step)</li>
                                 <li>Open the app from your home screen</li>
                                 <li>The notification prompt will appear automatically</li>
-                                {Notification.permission === 'denied' && (
+                                {notifDenied && (
                                     <li>If blocked: <strong>Settings → BlueprintLab → Notifications → Allow</strong></li>
                                 )}
                             </ol>
                         ) : (
                             <ol style={{ margin: 0, paddingLeft: 18, fontSize: 12, color: 'rgba(255,255,255,0.8)', lineHeight: 1.8 }}>
-                                {Notification.permission === 'denied' ? (
+                                {notifDenied ? (
                                     <>
                                         <li>Tap the <strong>lock icon</strong> in the address bar</li>
                                         <li>Tap <strong>Site settings</strong> (or Permissions)</li>
