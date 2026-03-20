@@ -89,7 +89,7 @@ export default function CoachSettingsPage() {
             {/* Notifications Section */}
             <div style={{ marginBottom: '28px' }}>
                 <div style={sectionLabelStyle}>Notifications</div>
-                <NotificationToggle />
+                <NotificationToggle role="coach" />
             </div>
         </div>
     );

@@ -6,7 +6,7 @@ import { urlBase64ToUint8Array } from '@/lib/vapid';
 
 type Status = 'loading' | 'unsupported' | 'denied' | 'enabled' | 'disabled';
 
-export default function NotificationToggle() {
+export default function NotificationToggle({ role = 'athlete' }: { role?: 'coach' | 'athlete' }) {
     const [status, setStatus] = useState<Status>('loading');
     const [busy, setBusy] = useState(false);
 
@@ -40,10 +40,34 @@ export default function NotificationToggle() {
         checkStatus();
     }, [checkStatus]);
 
+    const ensureServiceWorker = async (): Promise<ServiceWorkerRegistration> => {
+        // Register if not already registered
+        let reg = await navigator.serviceWorker.getRegistration('/sw.js');
+        if (!reg) {
+            reg = await navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' });
+        }
+        // Wait for it to be active
+        if (reg.installing || reg.waiting) {
+            const sw = reg.installing || reg.waiting;
+            await new Promise<void>((resolve) => {
+                if (sw!.state === 'activated') { resolve(); return; }
+                sw!.addEventListener('statechange', function handler() {
+                    if (sw!.state === 'activated') {
+                        sw!.removeEventListener('statechange', handler);
+                        resolve();
+                    }
+                });
+                setTimeout(resolve, 5000);
+            });
+        }
+        return navigator.serviceWorker.ready;
+    };
+
     const enable = async () => {
         setBusy(true);
         try {
             const perm = await Notification.requestPermission();
+            console.log('[Push] Permission result:', perm);
             if (perm === 'denied') {
                 setStatus('denied');
                 setBusy(false);
@@ -61,18 +85,20 @@ export default function NotificationToggle() {
                 return;
             }
 
-            const reg = await navigator.serviceWorker.ready;
+            const reg = await ensureServiceWorker();
             let subscription = await reg.pushManager.getSubscription();
+            console.log('[Push] Existing subscription:', !!subscription);
 
             if (!subscription) {
                 subscription = await reg.pushManager.subscribe({
                     userVisibleOnly: true,
                     applicationServerKey: urlBase64ToUint8Array(publicVapidKey),
                 });
+                console.log('[Push] New subscription created');
             }
 
             const subJSON = subscription.toJSON();
-            await fetch('/api/notifications/subscribe', {
+            const res = await fetch('/api/notifications/subscribe', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -82,6 +108,13 @@ export default function NotificationToggle() {
                     },
                 }),
             });
+
+            if (!res.ok) {
+                const errText = await res.text();
+                console.error('[Push] Subscribe API failed:', res.status, errText);
+            } else {
+                console.log('[Push] Subscription saved to server');
+            }
 
             setStatus('enabled');
         } catch (err) {
@@ -179,7 +212,9 @@ export default function NotificationToggle() {
                 <div style={descStyle}>
                     {isEnabled
                         ? 'You will receive alerts for new messages.'
-                        : 'Get notified when your coach sends a message.'}
+                        : role === 'coach'
+                            ? 'Get notified when an athlete sends a message.'
+                            : 'Get notified when your coach sends a message.'}
                 </div>
             </div>
             <button
