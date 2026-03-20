@@ -12,7 +12,9 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
         select: { id: true, name: true, email: true, role: true }
     });
     if (!coach) {
-        coach = await prisma.athlete.create({ data: { name: 'Coach', email: adminEmail }, select: { id: true, name: true, email: true, role: true } });
+        coach = await prisma.athlete.create({ data: { name: 'Coach', email: adminEmail, role: 'coach' }, select: { id: true, name: true, email: true, role: true } });
+    } else if (coach.role !== 'coach') {
+        coach = await prisma.athlete.update({ where: { email: adminEmail }, data: { role: 'coach' }, select: { id: true, name: true, email: true, role: true } });
     }
 
     const initialConvos = (await getCoachInbox(coach.id)) as any[];

@@ -22,7 +22,9 @@ export async function requireAuth() {
         return { error: NextResponse.json({ error: 'User not found' }, { status: 401 }) };
     }
 
-    return { user: dbUser, isCoach: dbUser.role === 'coach' };
+    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.ADMIN_EMAIL || '';
+    const isCoach = dbUser.role === 'coach' || (adminEmail && email.toLowerCase() === adminEmail.toLowerCase());
+    return { user: dbUser, isCoach };
 }
 
 /**
