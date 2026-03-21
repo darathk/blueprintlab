@@ -1,11 +1,32 @@
 'use client';
 
+import { useState } from 'react';
 import { UserButton } from '@clerk/nextjs';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import NotificationToggle from '@/components/notifications/NotificationToggle';
 
 export default function CoachSettingsPage() {
+    const [normalizeStatus, setNormalizeStatus] = useState<string | null>(null);
+    const [normalizeLoading, setNormalizeLoading] = useState(false);
+
+    const handleNormalizeEmails = async () => {
+        setNormalizeLoading(true);
+        setNormalizeStatus(null);
+        try {
+            const res = await fetch('/api/athletes/normalize-emails', { method: 'POST' });
+            const data = await res.json();
+            if (res.ok) {
+                setNormalizeStatus(data.message);
+            } else {
+                setNormalizeStatus(data.error || 'Failed to normalize emails');
+            }
+        } catch {
+            setNormalizeStatus('Network error');
+        }
+        setNormalizeLoading(false);
+    };
+
     return (
         <div style={{
             maxWidth: 480,
@@ -90,6 +111,64 @@ export default function CoachSettingsPage() {
             <div style={{ marginBottom: '28px' }}>
                 <div style={sectionLabelStyle}>Notifications</div>
                 <NotificationToggle role="coach" />
+            </div>
+
+            {/* Data Cleanup Section */}
+            <div style={{ marginBottom: '28px' }}>
+                <div style={sectionLabelStyle}>Data Cleanup</div>
+                <div style={{
+                    padding: '16px',
+                    borderRadius: '12px',
+                    background: 'rgba(255, 255, 255, 0.04)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                }}>
+                    <div style={{
+                        fontSize: '0.95rem',
+                        fontWeight: 600,
+                        color: 'var(--foreground)',
+                        marginBottom: '4px',
+                    }}>
+                        Fix Duplicate Athletes
+                    </div>
+                    <div style={{
+                        fontSize: '0.8rem',
+                        color: 'var(--secondary-foreground)',
+                        marginBottom: '12px',
+                        lineHeight: 1.4,
+                    }}>
+                        If the same athlete appears twice due to email casing differences (e.g. &quot;John@Email.com&quot; vs &quot;john@email.com&quot;), this will merge them into one record and transfer all programs and data.
+                    </div>
+                    <button
+                        onClick={handleNormalizeEmails}
+                        disabled={normalizeLoading}
+                        style={{
+                            padding: '10px 20px',
+                            borderRadius: '10px',
+                            border: '1px solid rgba(255, 255, 255, 0.12)',
+                            background: 'rgba(255, 255, 255, 0.06)',
+                            color: 'var(--foreground)',
+                            fontSize: '0.85rem',
+                            fontWeight: 600,
+                            cursor: normalizeLoading ? 'wait' : 'pointer',
+                            opacity: normalizeLoading ? 0.5 : 1,
+                            transition: 'all 0.2s',
+                        }}
+                    >
+                        {normalizeLoading ? 'Fixing...' : 'Fix Email Duplicates'}
+                    </button>
+                    {normalizeStatus && (
+                        <div style={{
+                            marginTop: '10px',
+                            fontSize: '0.8rem',
+                            color: normalizeStatus.startsWith('Failed') || normalizeStatus === 'Network error'
+                                ? 'var(--destructive)'
+                                : 'var(--primary)',
+                            lineHeight: 1.4,
+                        }}>
+                            {normalizeStatus}
+                        </div>
+                    )}
+                </div>
             </div>
         </div>
     );
