@@ -1,9 +1,52 @@
 'use client';
 
+import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
 export default function AthleteStatusCard({ athlete, progress }) {
     const router = useRouter();
+    const [editingEmail, setEditingEmail] = useState(false);
+    const [emailValue, setEmailValue] = useState(athlete.email || '');
+    const [emailSaving, setEmailSaving] = useState(false);
+    const [emailError, setEmailError] = useState('');
+    const emailInputRef = useRef<HTMLInputElement>(null);
+
+    useEffect(() => {
+        if (editingEmail) emailInputRef.current?.focus();
+    }, [editingEmail]);
+
+    const handleEmailSave = async () => {
+        const trimmed = emailValue.trim();
+        if (!trimmed || !trimmed.includes('@')) {
+            setEmailError('Enter a valid email');
+            return;
+        }
+        if (trimmed === athlete.email) {
+            setEditingEmail(false);
+            return;
+        }
+        setEmailSaving(true);
+        setEmailError('');
+        try {
+            const res = await fetch(`/api/athletes/${athlete.id}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: trimmed }),
+            });
+            if (!res.ok) {
+                const data = await res.json();
+                setEmailError(data.error || 'Failed to update');
+                setEmailSaving(false);
+                return;
+            }
+            athlete.email = trimmed;
+            setEditingEmail(false);
+            router.refresh();
+        } catch {
+            setEmailError('Network error');
+        }
+        setEmailSaving(false);
+    };
 
     const handleDelete = async (e: React.MouseEvent) => {
         e.stopPropagation(); // Prevent navigating to the athlete page
@@ -100,6 +143,75 @@ export default function AthleteStatusCard({ athlete, progress }) {
                         <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--success)' }}></span>
                         {progress.programName}
                     </div>
+
+                    {/* Email – inline edit */}
+                    {editingEmail ? (
+                        <div
+                            onClick={(e) => e.stopPropagation()}
+                            style={{ marginTop: '0.4rem', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}
+                        >
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                                <input
+                                    ref={emailInputRef}
+                                    type="email"
+                                    value={emailValue}
+                                    onChange={(e) => { setEmailValue(e.target.value); setEmailError(''); }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') handleEmailSave();
+                                        if (e.key === 'Escape') { setEditingEmail(false); setEmailValue(athlete.email || ''); setEmailError(''); }
+                                    }}
+                                    style={{
+                                        flex: 1, fontSize: '0.8rem', padding: '4px 8px',
+                                        background: 'rgba(0,0,0,0.4)', border: '1px solid var(--primary)',
+                                        borderRadius: 6, color: 'var(--foreground)', outline: 'none',
+                                        minWidth: 0,
+                                    }}
+                                    placeholder="athlete@email.com"
+                                />
+                                <button
+                                    onClick={handleEmailSave}
+                                    disabled={emailSaving}
+                                    style={{
+                                        fontSize: '0.75rem', padding: '4px 10px', borderRadius: 6,
+                                        border: 'none', cursor: 'pointer', fontWeight: 600,
+                                        background: 'var(--primary)', color: '#000',
+                                    }}
+                                >
+                                    {emailSaving ? '...' : 'Save'}
+                                </button>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); setEditingEmail(false); setEmailValue(athlete.email || ''); setEmailError(''); }}
+                                    style={{
+                                        fontSize: '0.75rem', padding: '4px 8px', borderRadius: 6,
+                                        border: '1px solid rgba(255,255,255,0.15)', cursor: 'pointer',
+                                        background: 'transparent', color: 'var(--secondary-foreground)',
+                                    }}
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                            {emailError && (
+                                <span style={{ fontSize: '0.7rem', color: 'var(--destructive)' }}>{emailError}</span>
+                            )}
+                        </div>
+                    ) : (
+                        <div
+                            onClick={(e) => { e.stopPropagation(); setEditingEmail(true); }}
+                            style={{
+                                marginTop: '0.3rem', fontSize: '0.8rem', color: 'var(--secondary-foreground)',
+                                display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer',
+                                transition: 'color 0.2s',
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary)'}
+                            onMouseLeave={(e) => e.currentTarget.style.color = 'var(--secondary-foreground)'}
+                            title="Click to edit email"
+                        >
+                            <span style={{ fontSize: '0.75rem' }}>✉</span>
+                            <span style={{ textDecoration: 'underline', textDecorationStyle: 'dotted', textUnderlineOffset: '2px' }}>
+                                {athlete.email || 'Add email'}
+                            </span>
+                        </div>
+                    )}
                 </div>
             </div>
 

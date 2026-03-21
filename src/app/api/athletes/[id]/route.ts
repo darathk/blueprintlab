@@ -15,7 +15,7 @@ export async function PATCH(
         if ('error' in auth) return auth.error;
 
         const body = await request.json();
-        const { weightClass, gender, liftTargets } = body;
+        const { weightClass, gender, liftTargets, email } = body;
 
         // Validate inputs
         if (weightClass !== undefined && weightClass !== null && (typeof weightClass !== 'string' || isNaN(parseFloat(weightClass)))) {
@@ -24,6 +24,16 @@ export async function PATCH(
         if (gender !== undefined && gender !== null && !['male', 'female', 'M', 'F', ''].includes(gender)) {
             return NextResponse.json({ error: 'Invalid gender' }, { status: 400 });
         }
+        if (email !== undefined) {
+            if (typeof email !== 'string' || !email.includes('@')) {
+                return NextResponse.json({ error: 'Invalid email address' }, { status: 400 });
+            }
+            // Check uniqueness
+            const existing = await prisma.athlete.findUnique({ where: { email } });
+            if (existing && existing.id !== id) {
+                return NextResponse.json({ error: 'Email already in use by another athlete' }, { status: 409 });
+            }
+        }
 
         await prisma.athlete.update({
             where: { id },
@@ -31,6 +41,7 @@ export async function PATCH(
                 ...(weightClass !== undefined && { weightClass: weightClass === null ? null : parseFloat(weightClass) }),
                 ...(gender !== undefined && { gender }),
                 ...(liftTargets !== undefined && { liftTargets }),
+                ...(email !== undefined && { email }),
             },
         });
         return NextResponse.json({ success: true });
