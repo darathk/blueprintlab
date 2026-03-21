@@ -7,7 +7,7 @@ export async function POST(req: NextRequest) {
         const user = await currentUser();
         if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-        const email = user.primaryEmailAddress?.emailAddress;
+        const email = user.primaryEmailAddress?.emailAddress?.toLowerCase();
         if (!email) return NextResponse.json({ error: 'Email not found' }, { status: 400 });
 
         // Find the athlete/coach record by email

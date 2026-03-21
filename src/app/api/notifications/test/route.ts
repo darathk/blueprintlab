@@ -11,7 +11,7 @@ export async function GET() {
         const user = await currentUser();
         if (!user) return NextResponse.json({ error: 'Not logged in' }, { status: 401 });
 
-        const email = user.primaryEmailAddress?.emailAddress;
+        const email = user.primaryEmailAddress?.emailAddress?.toLowerCase();
         if (!email) return NextResponse.json({ error: 'No email' }, { status: 400 });
 
         const athlete = await prisma.athlete.findUnique({ where: { email }, select: { id: true, name: true } });

@@ -6,7 +6,7 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
     const params = await searchParams;
     const initialAthleteId = params?.athleteId;
     // Look up coach's Athlete record for the inbox
-    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.ADMIN_EMAIL || '';
+    const adminEmail = (process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.ADMIN_EMAIL || '').toLowerCase();
     let coach = await prisma.athlete.findUnique({
         where: { email: adminEmail },
         select: { id: true, name: true, email: true, role: true }

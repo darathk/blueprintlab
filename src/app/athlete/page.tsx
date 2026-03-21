@@ -13,7 +13,7 @@ export default async function AthleteLoginPage() {
         redirect('/sign-in');
     }
 
-    const email = user.primaryEmailAddress?.emailAddress || '';
+    const email = (user.primaryEmailAddress?.emailAddress || '').toLowerCase();
     const athlete = await prisma.athlete.findUnique({
         where: { email },
         select: { id: true, role: true }
@@ -32,7 +32,7 @@ export default async function AthleteLoginPage() {
         const registeringUser = await currentUser();
         if (!registeringUser) return;
 
-        const uEmail = registeringUser.primaryEmailAddress?.emailAddress || '';
+        const uEmail = (registeringUser.primaryEmailAddress?.emailAddress || '').toLowerCase();
         const uName = registeringUser.firstName && registeringUser.lastName
             ? `${registeringUser.firstName} ${registeringUser.lastName}`
             : (registeringUser.firstName || 'New Athlete');
@@ -62,7 +62,7 @@ export default async function AthleteLoginPage() {
         const registeringUser = await currentUser();
         if (!registeringUser) return;
 
-        const uEmail = registeringUser.primaryEmailAddress?.emailAddress || '';
+        const uEmail = (registeringUser.primaryEmailAddress?.emailAddress || '').toLowerCase();
         const uName = registeringUser.firstName && registeringUser.lastName
             ? `${registeringUser.firstName} ${registeringUser.lastName}`
             : (registeringUser.firstName || 'New Coach');

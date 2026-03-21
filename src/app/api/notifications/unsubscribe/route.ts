@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Missing endpoint' }, { status: 400 });
         }
 
-        const email = user.primaryEmailAddress?.emailAddress;
+        const email = user.primaryEmailAddress?.emailAddress?.toLowerCase();
         if (!email) return NextResponse.json({ error: 'Email not found' }, { status: 400 });
 
         const athlete = await prisma.athlete.findUnique({

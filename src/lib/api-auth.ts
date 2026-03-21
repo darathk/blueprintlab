@@ -12,7 +12,7 @@ export async function requireAuth() {
         return { error: NextResponse.json({ error: 'Unauthorized' }, { status: 401 }) };
     }
 
-    const email = user.primaryEmailAddress?.emailAddress || '';
+    const email = (user.primaryEmailAddress?.emailAddress || '').toLowerCase();
     const dbUser = await prisma.athlete.findUnique({
         where: { email },
         select: { id: true, role: true, coachId: true, email: true }

@@ -38,7 +38,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
         }
 
-        const coachEmail = user.primaryEmailAddress?.emailAddress || '';
+        const coachEmail = (user.primaryEmailAddress?.emailAddress || '').toLowerCase();
         const coach = await prisma.athlete.findUnique({
             where: { email: coachEmail },
             select: { id: true, role: true }
@@ -49,7 +49,8 @@ export async function POST(request: Request) {
         }
 
         const body = await request.json();
-        const { id, name, email, nextMeetName, nextMeetDate, periodization, meetAttempts, pastMeets } = body;
+        const { id, name, email: rawEmail, nextMeetName, nextMeetDate, periodization, meetAttempts, pastMeets } = body;
+        const email = rawEmail ? rawEmail.toLowerCase() : rawEmail;
 
         let athlete;
 

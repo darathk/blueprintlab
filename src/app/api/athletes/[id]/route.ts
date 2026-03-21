@@ -15,7 +15,8 @@ export async function PATCH(
         if ('error' in auth) return auth.error;
 
         const body = await request.json();
-        const { weightClass, gender, liftTargets, email } = body;
+        const { weightClass, gender, liftTargets, email: rawEmail } = body;
+        const email = rawEmail !== undefined ? (typeof rawEmail === 'string' ? rawEmail.toLowerCase() : rawEmail) : undefined;
 
         // Validate inputs
         if (weightClass !== undefined && weightClass !== null && (typeof weightClass !== 'string' || isNaN(parseFloat(weightClass)))) {

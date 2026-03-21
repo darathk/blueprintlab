@@ -13,7 +13,7 @@ const getAuthState = cache(async () => {
     const user = await currentUser();
     if (!user) return { isCoach: false, user: null, athleteId: null, unreadCount: 0 };
 
-    const email = user.primaryEmailAddress?.emailAddress || '';
+    const email = (user.primaryEmailAddress?.emailAddress || '').toLowerCase();
 
     // Check if they exist in the DB — only select what we need
     const athlete = await prisma.athlete.findUnique({

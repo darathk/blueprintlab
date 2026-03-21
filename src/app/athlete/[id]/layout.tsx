@@ -18,7 +18,7 @@ export default async function AthletePortalLayout({
     const user = await currentUser();
     if (!user) redirect('/sign-in');
 
-    const email = user.primaryEmailAddress?.emailAddress || '';
+    const email = (user.primaryEmailAddress?.emailAddress || '').toLowerCase();
     const { id } = await params;
 
     // Fetch athlete and unread count in parallel
