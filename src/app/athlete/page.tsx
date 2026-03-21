@@ -14,12 +14,16 @@ export default async function AthleteLoginPage() {
     }
 
     const email = (user.primaryEmailAddress?.emailAddress || '').toLowerCase();
-    const athlete = await prisma.athlete.findUnique({
-        where: { email },
-        select: { id: true, role: true }
+    const athlete = await prisma.athlete.findFirst({
+        where: { email: { equals: email, mode: 'insensitive' } },
+        select: { id: true, role: true, email: true }
     });
 
     if (athlete) {
+        // Auto-normalize stored email to lowercase
+        if (athlete.email !== email) {
+            await prisma.athlete.update({ where: { id: athlete.id }, data: { email } });
+        }
         redirect(`/athlete/${athlete.id}/dashboard`);
     }
 
@@ -38,8 +42,8 @@ export default async function AthleteLoginPage() {
             : (registeringUser.firstName || 'New Athlete');
 
         // Verify they don't already exist (race condition protection)
-        const existingAthlete = await prisma.athlete.findUnique({
-            where: { email: uEmail }
+        const existingAthlete = await prisma.athlete.findFirst({
+            where: { email: { equals: uEmail, mode: 'insensitive' } }
         });
 
         if (!existingAthlete) {
@@ -52,6 +56,10 @@ export default async function AthleteLoginPage() {
             });
             redirect(`/athlete/${newAthlete.id}/dashboard`);
         } else {
+            // Normalize email while we're here
+            if (existingAthlete.email !== uEmail) {
+                await prisma.athlete.update({ where: { id: existingAthlete.id }, data: { email: uEmail } });
+            }
             redirect(`/athlete/${existingAthlete.id}/dashboard`);
         }
     }
@@ -68,8 +76,8 @@ export default async function AthleteLoginPage() {
             : (registeringUser.firstName || 'New Coach');
 
         // Verify they don't already exist
-        const existingAthlete = await prisma.athlete.findUnique({
-            where: { email: uEmail }
+        const existingAthlete = await prisma.athlete.findFirst({
+            where: { email: { equals: uEmail, mode: 'insensitive' } }
         });
 
         if (!existingAthlete) {
@@ -82,13 +90,16 @@ export default async function AthleteLoginPage() {
             });
             redirect('/dashboard');
         } else if (existingAthlete.role === 'coach') {
+            // Normalize email while we're here
+            if (existingAthlete.email !== uEmail) {
+                await prisma.athlete.update({ where: { id: existingAthlete.id }, data: { email: uEmail } });
+            }
             redirect('/dashboard');
         } else {
-            // They exist but are an athlete, upgrade them to coach? Or block?
-            // For now, upgrade them so they have dashboard access.
+            // They exist but are an athlete, upgrade them to coach
             await prisma.athlete.update({
-                where: { email: uEmail },
-                data: { role: 'coach' }
+                where: { id: existingAthlete.id },
+                data: { role: 'coach', email: uEmail }
             });
             redirect('/dashboard');
         }

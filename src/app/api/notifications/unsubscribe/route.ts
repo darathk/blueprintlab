@@ -15,8 +15,8 @@ export async function POST(req: NextRequest) {
         const email = user.primaryEmailAddress?.emailAddress?.toLowerCase();
         if (!email) return NextResponse.json({ error: 'Email not found' }, { status: 400 });
 
-        const athlete = await prisma.athlete.findUnique({
-            where: { email },
+        const athlete = await prisma.athlete.findFirst({
+            where: { email: { equals: email, mode: 'insensitive' } },
             select: { id: true }
         });
 

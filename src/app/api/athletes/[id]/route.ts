@@ -29,8 +29,8 @@ export async function PATCH(
             if (typeof email !== 'string' || !email.includes('@')) {
                 return NextResponse.json({ error: 'Invalid email address' }, { status: 400 });
             }
-            // Check uniqueness
-            const existing = await prisma.athlete.findUnique({ where: { email } });
+            // Check uniqueness (case-insensitive)
+            const existing = await prisma.athlete.findFirst({ where: { email: { equals: email, mode: 'insensitive' } } });
             if (existing && existing.id !== id) {
                 return NextResponse.json({ error: 'Email already in use by another athlete' }, { status: 409 });
             }

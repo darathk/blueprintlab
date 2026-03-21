@@ -14,8 +14,8 @@ export default async function AthleteChatPage({ params }: { params: Promise<{ id
 
     // Find coach's record
     const adminEmail = (process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.ADMIN_EMAIL || '').toLowerCase();
-    const coach = await prisma.athlete.findUnique({
-        where: { email: adminEmail },
+    const coach = await prisma.athlete.findFirst({
+        where: { email: { equals: adminEmail, mode: 'insensitive' } },
         select: { id: true, name: true, email: true }
     });
 

@@ -15,11 +15,16 @@ const getAuthState = cache(async () => {
 
     const email = (user.primaryEmailAddress?.emailAddress || '').toLowerCase();
 
-    // Check if they exist in the DB — only select what we need
-    const athlete = await prisma.athlete.findUnique({
-        where: { email },
+    // Check if they exist in the DB — case-insensitive to handle legacy mixed-case emails
+    const athlete = await prisma.athlete.findFirst({
+        where: { email: { equals: email, mode: 'insensitive' } },
         select: { id: true, role: true, email: true }
     });
+
+    // Auto-normalize stored email to lowercase
+    if (athlete && athlete.email !== email) {
+        await prisma.athlete.update({ where: { id: athlete.id }, data: { email } });
+    }
 
     // In multi-coach system, coaches are just Athlete records with role === 'coach'
     const isCoach = athlete?.role === 'coach';
@@ -30,7 +35,7 @@ const getAuthState = cache(async () => {
     if (!isCoach && adminEmail && email.toLowerCase() === adminEmail.toLowerCase()) {
         let adminAthleteId = athlete?.id;
         if (athlete) {
-            await prisma.athlete.update({ where: { email }, data: { role: 'coach' } });
+            await prisma.athlete.update({ where: { id: athlete.id }, data: { role: 'coach', email } });
         } else {
             const newAdmin = await prisma.athlete.create({ data: { name: 'Admin Coach', email, role: 'coach' } });
             adminAthleteId = newAdmin.id;

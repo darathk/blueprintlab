@@ -8,7 +8,7 @@ export default async function CoachLeaderboardPage() {
     if (!user) redirect('/sign-in');
 
     const email = (user.primaryEmailAddress?.emailAddress || '').toLowerCase();
-    const coach = await prisma.athlete.findUnique({ where: { email }, select: { id: true, role: true } });
+    const coach = await prisma.athlete.findFirst({ where: { email: { equals: email, mode: 'insensitive' } }, select: { id: true, role: true } });
 
     if (!coach || coach.role !== 'coach') {
         redirect('/');

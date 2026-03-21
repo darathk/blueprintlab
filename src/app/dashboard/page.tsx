@@ -31,8 +31,8 @@ export default async function DashboardPage() {
     if (!user) return null;
 
     const email = (user.primaryEmailAddress?.emailAddress || '').toLowerCase();
-    const coach = await prisma.athlete.findUnique({
-        where: { email },
+    const coach = await prisma.athlete.findFirst({
+        where: { email: { equals: email, mode: 'insensitive' } },
         select: { id: true, role: true }
     });
 

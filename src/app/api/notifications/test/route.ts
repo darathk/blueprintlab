@@ -14,7 +14,7 @@ export async function GET() {
         const email = user.primaryEmailAddress?.emailAddress?.toLowerCase();
         if (!email) return NextResponse.json({ error: 'No email' }, { status: 400 });
 
-        const athlete = await prisma.athlete.findUnique({ where: { email }, select: { id: true, name: true } });
+        const athlete = await prisma.athlete.findFirst({ where: { email: { equals: email, mode: 'insensitive' } }, select: { id: true, name: true } });
         if (!athlete) return NextResponse.json({ error: 'User not in DB', email }, { status: 404 });
 
         const subscriptions = await prisma.pushSubscription.findMany({ where: { athleteId: athlete.id } });

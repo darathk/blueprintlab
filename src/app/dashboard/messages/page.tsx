@@ -7,14 +7,14 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
     const initialAthleteId = params?.athleteId;
     // Look up coach's Athlete record for the inbox
     const adminEmail = (process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.ADMIN_EMAIL || '').toLowerCase();
-    let coach = await prisma.athlete.findUnique({
-        where: { email: adminEmail },
+    let coach = await prisma.athlete.findFirst({
+        where: { email: { equals: adminEmail, mode: 'insensitive' } },
         select: { id: true, name: true, email: true, role: true }
     });
     if (!coach) {
         coach = await prisma.athlete.create({ data: { name: 'Coach', email: adminEmail, role: 'coach' }, select: { id: true, name: true, email: true, role: true } });
     } else if (coach.role !== 'coach') {
-        coach = await prisma.athlete.update({ where: { email: adminEmail }, data: { role: 'coach' }, select: { id: true, name: true, email: true, role: true } });
+        coach = await prisma.athlete.update({ where: { id: coach.id }, data: { role: 'coach', email: adminEmail }, select: { id: true, name: true, email: true, role: true } });
     }
 
     const initialConvos = (await getCoachInbox(coach.id)) as any[];

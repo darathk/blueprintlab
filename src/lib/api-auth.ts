@@ -13,13 +13,19 @@ export async function requireAuth() {
     }
 
     const email = (user.primaryEmailAddress?.emailAddress || '').toLowerCase();
-    const dbUser = await prisma.athlete.findUnique({
-        where: { email },
+    let dbUser = await prisma.athlete.findFirst({
+        where: { email: { equals: email, mode: 'insensitive' } },
         select: { id: true, role: true, coachId: true, email: true }
     });
 
     if (!dbUser) {
         return { error: NextResponse.json({ error: 'User not found' }, { status: 401 }) };
+    }
+
+    // Auto-normalize stored email to lowercase
+    if (dbUser.email !== email) {
+        await prisma.athlete.update({ where: { id: dbUser.id }, data: { email } });
+        dbUser = { ...dbUser, email };
     }
 
     const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.ADMIN_EMAIL || '';

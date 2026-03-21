@@ -35,10 +35,10 @@ export default async function AthletePortalLayout({
     }
 
     // Is the logged in user actually THIS athlete?
-    if (requestedAthlete.email !== email) {
+    if (requestedAthlete.email.toLowerCase() !== email) {
         // If not this athlete, check if they are the coach (i.e. not an athlete at all)
-        const loggedInUser = await prisma.athlete.findUnique({
-            where: { email },
+        const loggedInUser = await prisma.athlete.findFirst({
+            where: { email: { equals: email, mode: 'insensitive' } },
             select: { id: true, role: true }
         });
 

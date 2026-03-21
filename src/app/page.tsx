@@ -10,7 +10,12 @@ export default async function Home() {
   // If the user is logged in, redirect them immediately to their proper portal
   if (user) {
     const email = (user.primaryEmailAddress?.emailAddress || '').toLowerCase();
-    const athlete = await prisma.athlete.findUnique({ where: { email }, select: { id: true, role: true } });
+    const athlete = await prisma.athlete.findFirst({ where: { email: { equals: email, mode: 'insensitive' } }, select: { id: true, role: true, email: true } });
+
+    // Auto-normalize stored email to lowercase
+    if (athlete && athlete.email !== email) {
+      await prisma.athlete.update({ where: { id: athlete.id }, data: { email } });
+    }
 
     // If they are a coach, redirect to coach dashboard
     if (athlete?.role === 'coach') {

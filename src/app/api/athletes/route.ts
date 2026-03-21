@@ -39,8 +39,8 @@ export async function POST(request: Request) {
         }
 
         const coachEmail = (user.primaryEmailAddress?.emailAddress || '').toLowerCase();
-        const coach = await prisma.athlete.findUnique({
-            where: { email: coachEmail },
+        const coach = await prisma.athlete.findFirst({
+            where: { email: { equals: coachEmail, mode: 'insensitive' } },
             select: { id: true, role: true }
         });
 
@@ -90,10 +90,10 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'A valid email is required' }, { status: 400 });
         }
 
-        // Check if that user already exists by email
-        const existingUser = await prisma.athlete.findUnique({
-            where: { email },
-            select: { id: true, role: true, name: true, coachId: true, nextMeetName: true, nextMeetDate: true, periodization: true, meetAttempts: true, pastMeets: true }
+        // Check if that user already exists by email (case-insensitive)
+        const existingUser = await prisma.athlete.findFirst({
+            where: { email: { equals: email, mode: 'insensitive' } },
+            select: { id: true, role: true, name: true, coachId: true, email: true, nextMeetName: true, nextMeetDate: true, periodization: true, meetAttempts: true, pastMeets: true }
         });
 
         if (existingUser) {
@@ -105,8 +105,9 @@ export async function POST(request: Request) {
             // If already linked to this coach, just update their info
             if (existingUser.coachId === coach.id) {
                 athlete = await prisma.athlete.update({
-                    where: { email },
+                    where: { id: existingUser.id },
                     data: {
+                        email, // normalize to lowercase
                         name: name !== undefined ? name : existingUser.name,
                         nextMeetName: nextMeetName !== undefined ? nextMeetName : existingUser.nextMeetName,
                         nextMeetDate: nextMeetDate !== undefined ? nextMeetDate : existingUser.nextMeetDate,
@@ -120,8 +121,9 @@ export async function POST(request: Request) {
 
             // If they exist but belong to a different coach (or no coach), link them
             athlete = await prisma.athlete.update({
-                where: { email },
+                where: { id: existingUser.id },
                 data: {
+                    email, // normalize to lowercase
                     coachId: coach.id,
                     name: name !== undefined ? name : existingUser.name,
                     nextMeetName: nextMeetName !== undefined ? nextMeetName : existingUser.nextMeetName,
