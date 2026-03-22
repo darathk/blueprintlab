@@ -3,6 +3,10 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 
+const LEVELS = ['conservative', 'planned', 'reach'] as const;
+const LEVEL_LABELS = { conservative: 'Cons', planned: 'Planned', reach: 'Reach' };
+const LEVEL_COLORS = { conservative: '#94a3b8', planned: '#38bdf8', reach: '#a855f7' };
+
 export default function MeetAttempts({ athlete, isReadOnly = false }) {
     const router = useRouter();
 
@@ -69,10 +73,26 @@ export default function MeetAttempts({ athlete, isReadOnly = false }) {
         }));
     };
 
+    const updateStrategy = (lift, field, val) => {
+        setData(prev => ({
+            ...prev,
+            [lift]: { ...prev[lift], [field]: val }
+        }));
+    };
+
+    // Get the weight for a specific attempt and level
+    const getAttemptWeight = (liftData, attempt, level) => {
+        const target = liftData[level];
+        if (!target) return 0;
+        if (attempt === 3) return target;
+        if (attempt === 2) return target - liftData.jump2to3;
+        return target - liftData.jump2to3 - liftData.jump1to2;
+    };
+
     const renderLiftRow = (liftName, liftKey) => {
         const liftData = data[liftKey];
 
-        // Calculate 2nds and 1sts
+        // Calculate 2nds and 1sts (existing per-column logic)
         const cons2nd = liftData.conservative - liftData.jump2to3;
         const cons1st = cons2nd - liftData.jump1to2;
 
@@ -81,6 +101,35 @@ export default function MeetAttempts({ athlete, isReadOnly = false }) {
 
         const reach2nd = liftData.reach - liftData.jump2to3;
         const reach1st = reach2nd - liftData.jump1to2;
+
+        // Meet day strategy: which level for each attempt
+        const strat1st = liftData.strategy1st || 'conservative';
+        const strat2nd = liftData.strategy2nd || 'planned';
+        const strat3rd = liftData.strategy3rd || 'reach';
+
+        // Calculate strategy path weights
+        const stratWeight1st = getAttemptWeight(liftData, 1, strat1st);
+        const stratWeight2nd = getAttemptWeight(liftData, 2, strat2nd);
+        const stratWeight3rd = getAttemptWeight(liftData, 3, strat3rd);
+
+        const stratJump1to2 = round25(stratWeight2nd - stratWeight1st);
+        const stratJump2to3 = round25(stratWeight3rd - stratWeight2nd);
+
+        // Helper to check if a cell is on the strategy path
+        const isOnPath = (attempt, level) => {
+            return (attempt === 1 && level === strat1st) ||
+                   (attempt === 2 && level === strat2nd) ||
+                   (attempt === 3 && level === strat3rd);
+        };
+
+        const cellHighlight = (attempt, level) => {
+            if (!isOnPath(attempt, level)) return {};
+            return {
+                outline: `2px solid ${LEVEL_COLORS[level]}`,
+                outlineOffset: '-2px',
+                borderRadius: '6px',
+            };
+        };
 
         return (
             <div key={liftKey} style={{ marginBottom: '2rem', background: 'var(--card-bg)', padding: '1rem', borderRadius: '1rem', border: '1px solid var(--card-border)' }}>
@@ -112,41 +161,178 @@ export default function MeetAttempts({ athlete, isReadOnly = false }) {
                         <tbody>
                             <tr>
                                 <td style={{ padding: isReadOnly ? '0.75rem 0.25rem' : '1rem 0.5rem', fontWeight: 600, fontSize: isReadOnly ? '0.85rem' : '1rem' }}>1st<span className="hidden md:inline"> (Opener)</span></td>
-                                <td style={{ padding: isReadOnly ? '0.75rem 0.25rem' : '1rem 0.5rem' }}>{renderValue(cons1st)}</td>
-                                <td style={{ padding: isReadOnly ? '0.75rem 0.25rem' : '1rem 0.5rem', background: 'rgba(56, 189, 248, 0.05)' }}>{renderValue(plan1st)}</td>
-                                <td style={{ padding: isReadOnly ? '0.75rem 0.25rem' : '1rem 0.5rem' }}>{renderValue(reach1st)}</td>
+                                <td style={{ padding: isReadOnly ? '0.75rem 0.25rem' : '1rem 0.5rem', ...cellHighlight(1, 'conservative') }}>{renderValue(cons1st)}</td>
+                                <td style={{ padding: isReadOnly ? '0.75rem 0.25rem' : '1rem 0.5rem', background: 'rgba(56, 189, 248, 0.05)', ...cellHighlight(1, 'planned') }}>{renderValue(plan1st)}</td>
+                                <td style={{ padding: isReadOnly ? '0.75rem 0.25rem' : '1rem 0.5rem', ...cellHighlight(1, 'reach') }}>{renderValue(reach1st)}</td>
                             </tr>
                             <tr style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                                 <td style={{ padding: isReadOnly ? '0.75rem 0.25rem' : '1rem 0.5rem', fontWeight: 600, fontSize: isReadOnly ? '0.85rem' : '1rem' }}>2nd</td>
-                                <td style={{ padding: isReadOnly ? '0.75rem 0.25rem' : '1rem 0.5rem' }}>{renderValue(cons2nd)}</td>
-                                <td style={{ padding: isReadOnly ? '0.75rem 0.25rem' : '1rem 0.5rem', background: 'rgba(56, 189, 248, 0.05)' }}>{renderValue(plan2nd)}</td>
-                                <td style={{ padding: isReadOnly ? '0.75rem 0.25rem' : '1rem 0.5rem' }}>{renderValue(reach2nd)}</td>
+                                <td style={{ padding: isReadOnly ? '0.75rem 0.25rem' : '1rem 0.5rem', ...cellHighlight(2, 'conservative') }}>{renderValue(cons2nd)}</td>
+                                <td style={{ padding: isReadOnly ? '0.75rem 0.25rem' : '1rem 0.5rem', background: 'rgba(56, 189, 248, 0.05)', ...cellHighlight(2, 'planned') }}>{renderValue(plan2nd)}</td>
+                                <td style={{ padding: isReadOnly ? '0.75rem 0.25rem' : '1rem 0.5rem', ...cellHighlight(2, 'reach') }}>{renderValue(reach2nd)}</td>
                             </tr>
                             <tr style={{ borderTop: '1px solid rgba(255,255,255,0.05)' }}>
                                 <td style={{ padding: isReadOnly ? '0.75rem 0.25rem' : '1rem 0.5rem', fontWeight: 600, fontSize: isReadOnly ? '0.85rem' : '1rem' }}>3rd<span className="hidden md:inline"> (Target)</span></td>
 
                                 {isEditing && !isReadOnly ? (
                                     <>
-                                        <td style={{ padding: '1rem 0.5rem' }}>
+                                        <td style={{ padding: '1rem 0.5rem', ...cellHighlight(3, 'conservative') }}>
                                             <input type="number" className="input" value={liftData.conservative || ''} onChange={(e) => updateLift(liftKey, 'conservative', e.target.value)} style={{ width: '80px', textAlign: 'center' }} />
                                         </td>
-                                        <td style={{ padding: '1rem 0.5rem', background: 'rgba(56, 189, 248, 0.05)' }}>
+                                        <td style={{ padding: '1rem 0.5rem', background: 'rgba(56, 189, 248, 0.05)', ...cellHighlight(3, 'planned') }}>
                                             <input type="number" className="input" value={liftData.planned || ''} onChange={(e) => updateLift(liftKey, 'planned', e.target.value)} style={{ width: '80px', textAlign: 'center', borderColor: '#38bdf8' }} />
                                         </td>
-                                        <td style={{ padding: '1rem 0.5rem' }}>
+                                        <td style={{ padding: '1rem 0.5rem', ...cellHighlight(3, 'reach') }}>
                                             <input type="number" className="input" value={liftData.reach || ''} onChange={(e) => updateLift(liftKey, 'reach', e.target.value)} style={{ width: '80px', textAlign: 'center', borderColor: '#a855f7' }} />
                                         </td>
                                     </>
                                 ) : (
                                     <>
-                                        <td style={{ padding: '1rem 0.5rem' }}>{renderValue(liftData.conservative)}</td>
-                                        <td style={{ padding: '1rem 0.5rem', background: 'rgba(56, 189, 248, 0.05)' }}>{renderValue(liftData.planned)}</td>
-                                        <td style={{ padding: '1rem 0.5rem' }}>{renderValue(liftData.reach)}</td>
+                                        <td style={{ padding: '1rem 0.5rem', ...cellHighlight(3, 'conservative') }}>{renderValue(liftData.conservative)}</td>
+                                        <td style={{ padding: '1rem 0.5rem', background: 'rgba(56, 189, 248, 0.05)', ...cellHighlight(3, 'planned') }}>{renderValue(liftData.planned)}</td>
+                                        <td style={{ padding: '1rem 0.5rem', ...cellHighlight(3, 'reach') }}>{renderValue(liftData.reach)}</td>
                                     </>
                                 )}
                             </tr>
                         </tbody>
                     </table>
+                </div>
+
+                {/* Meet Day Strategy Path */}
+                <div style={{
+                    marginTop: '1rem',
+                    padding: '0.75rem 1rem',
+                    background: 'rgba(255,255,255,0.03)',
+                    borderRadius: '0.75rem',
+                    border: '1px solid rgba(255,255,255,0.06)',
+                }}>
+                    <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: '0.6rem', opacity: 0.6 }}>
+                        Meet Day Strategy
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                        {/* 1st Attempt */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.15rem' }}>
+                            <span style={{ fontSize: '0.65rem', color: 'var(--secondary-foreground)', fontWeight: 600 }}>1st</span>
+                            {isEditing && !isReadOnly ? (
+                                <select
+                                    className="input"
+                                    value={strat1st}
+                                    onChange={(e) => updateStrategy(liftKey, 'strategy1st', e.target.value)}
+                                    style={{
+                                        fontSize: '0.75rem', padding: '0.3rem 0.4rem', minWidth: 0, width: 'auto',
+                                        color: LEVEL_COLORS[strat1st], borderColor: LEVEL_COLORS[strat1st],
+                                        background: 'rgba(0,0,0,0.3)',
+                                    }}
+                                >
+                                    {LEVELS.map(l => <option key={l} value={l}>{LEVEL_LABELS[l]}</option>)}
+                                </select>
+                            ) : (
+                                <span style={{
+                                    fontSize: '0.75rem', fontWeight: 700, color: LEVEL_COLORS[strat1st],
+                                    padding: '0.2rem 0.5rem', borderRadius: '6px',
+                                    background: `${LEVEL_COLORS[strat1st]}15`,
+                                    border: `1px solid ${LEVEL_COLORS[strat1st]}30`,
+                                }}>
+                                    {LEVEL_LABELS[strat1st]}
+                                </span>
+                            )}
+                            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--foreground)' }}>
+                                {stratWeight1st ? `${round25(stratWeight1st)}` : '-'}
+                            </span>
+                        </div>
+
+                        {/* Arrow 1→2 with jump */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.1rem', padding: '0 0.2rem' }}>
+                            <span style={{ fontSize: '0.7rem', color: stratJump1to2 > 0 ? 'var(--primary)' : 'var(--secondary-foreground)', fontWeight: 600 }}>
+                                +{stratJump1to2}{data.unit}
+                            </span>
+                            <span style={{ color: 'var(--secondary-foreground)', fontSize: '0.9rem' }}>→</span>
+                        </div>
+
+                        {/* 2nd Attempt */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.15rem' }}>
+                            <span style={{ fontSize: '0.65rem', color: 'var(--secondary-foreground)', fontWeight: 600 }}>2nd</span>
+                            {isEditing && !isReadOnly ? (
+                                <select
+                                    className="input"
+                                    value={strat2nd}
+                                    onChange={(e) => updateStrategy(liftKey, 'strategy2nd', e.target.value)}
+                                    style={{
+                                        fontSize: '0.75rem', padding: '0.3rem 0.4rem', minWidth: 0, width: 'auto',
+                                        color: LEVEL_COLORS[strat2nd], borderColor: LEVEL_COLORS[strat2nd],
+                                        background: 'rgba(0,0,0,0.3)',
+                                    }}
+                                >
+                                    {LEVELS.map(l => <option key={l} value={l}>{LEVEL_LABELS[l]}</option>)}
+                                </select>
+                            ) : (
+                                <span style={{
+                                    fontSize: '0.75rem', fontWeight: 700, color: LEVEL_COLORS[strat2nd],
+                                    padding: '0.2rem 0.5rem', borderRadius: '6px',
+                                    background: `${LEVEL_COLORS[strat2nd]}15`,
+                                    border: `1px solid ${LEVEL_COLORS[strat2nd]}30`,
+                                }}>
+                                    {LEVEL_LABELS[strat2nd]}
+                                </span>
+                            )}
+                            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--foreground)' }}>
+                                {stratWeight2nd ? `${round25(stratWeight2nd)}` : '-'}
+                            </span>
+                        </div>
+
+                        {/* Arrow 2→3 with jump */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.1rem', padding: '0 0.2rem' }}>
+                            <span style={{ fontSize: '0.7rem', color: stratJump2to3 > 0 ? 'var(--primary)' : 'var(--secondary-foreground)', fontWeight: 600 }}>
+                                +{stratJump2to3}{data.unit}
+                            </span>
+                            <span style={{ color: 'var(--secondary-foreground)', fontSize: '0.9rem' }}>→</span>
+                        </div>
+
+                        {/* 3rd Attempt */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.15rem' }}>
+                            <span style={{ fontSize: '0.65rem', color: 'var(--secondary-foreground)', fontWeight: 600 }}>3rd</span>
+                            {isEditing && !isReadOnly ? (
+                                <select
+                                    className="input"
+                                    value={strat3rd}
+                                    onChange={(e) => updateStrategy(liftKey, 'strategy3rd', e.target.value)}
+                                    style={{
+                                        fontSize: '0.75rem', padding: '0.3rem 0.4rem', minWidth: 0, width: 'auto',
+                                        color: LEVEL_COLORS[strat3rd], borderColor: LEVEL_COLORS[strat3rd],
+                                        background: 'rgba(0,0,0,0.3)',
+                                    }}
+                                >
+                                    {LEVELS.map(l => <option key={l} value={l}>{LEVEL_LABELS[l]}</option>)}
+                                </select>
+                            ) : (
+                                <span style={{
+                                    fontSize: '0.75rem', fontWeight: 700, color: LEVEL_COLORS[strat3rd],
+                                    padding: '0.2rem 0.5rem', borderRadius: '6px',
+                                    background: `${LEVEL_COLORS[strat3rd]}15`,
+                                    border: `1px solid ${LEVEL_COLORS[strat3rd]}30`,
+                                }}>
+                                    {LEVEL_LABELS[strat3rd]}
+                                </span>
+                            )}
+                            <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--foreground)' }}>
+                                {stratWeight3rd ? `${round25(stratWeight3rd)}` : '-'}
+                            </span>
+                        </div>
+
+                        {/* Total jump */}
+                        <div style={{
+                            marginLeft: 'auto',
+                            fontSize: '0.75rem',
+                            color: 'var(--secondary-foreground)',
+                            textAlign: 'right',
+                        }}>
+                            <span style={{ opacity: 0.6 }}>Total</span>
+                            <div style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '0.9rem' }}>
+                                +{round25(stratWeight3rd - stratWeight1st)}{data.unit}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         );
@@ -193,4 +379,3 @@ export default function MeetAttempts({ athlete, isReadOnly = false }) {
         </div>
     );
 }
-
