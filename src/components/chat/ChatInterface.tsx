@@ -721,6 +721,28 @@ export default function ChatInterface({
         };
     };
 
+    // Handle pasting images from clipboard
+    const handlePaste = useCallback((e: React.ClipboardEvent) => {
+        const items = e.clipboardData?.items;
+        if (!items) return;
+        const pastedFiles: File[] = [];
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            if (item.kind === 'file' && (item.type.startsWith('image/') || item.type.startsWith('video/'))) {
+                const file = item.getAsFile();
+                if (file && file.size <= 200 * 1024 * 1024) pastedFiles.push(file);
+            }
+        }
+        if (pastedFiles.length === 0) return;
+        e.preventDefault();
+        const startIndex = stagedFiles.length;
+        setStagedFiles(prev => [...prev, ...pastedFiles]);
+        setStagedFileUrls(prev => [...prev, ...pastedFiles.map(f => URL.createObjectURL(f))]);
+        pastedFiles.forEach((f, i) => {
+            if (f.type.startsWith('video/')) generateVideoPoster(f, startIndex + i);
+        });
+    }, [stagedFiles.length]);
+
     const handleCropComplete = (file: File, trimStart?: number, trimEnd?: number) => {
         // Check if we're re-trimming an already staged file
         const existingIndex = stagedFiles.findIndex(f => f === cropFile);
@@ -1364,6 +1386,7 @@ export default function ChatInterface({
                         {/* Text input */}
                         <textarea ref={inputRef} value={newMessage} onChange={e => setNewMessage(e.target.value)}
                             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                            onPaste={handlePaste}
                             placeholder="Type a message..."
                             rows={1}
                             disabled={uploading}
@@ -1550,6 +1573,7 @@ export default function ChatInterface({
                                     rows={1}
                                     enterKeyHint="send"
                                     style={{ flex: 1, background: 'transparent', border: 'none', color: 'var(--foreground)', outline: 'none', fontSize: 15, padding: '8px 0', resize: 'none', lineHeight: '1.4', fontFamily: 'inherit' }}
+                                    onPaste={handlePaste}
                                     onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
                                 />
                             </div>
