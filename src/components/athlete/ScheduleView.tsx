@@ -1169,7 +1169,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                                     </div>
 
                                     {/* ═══ Sessions (Days) ═══ */}
-                                    {weekOpen && sessions.map((session: any) => {
+                                    {weekOpen && [...sessions].sort((a: any, b: any) => (a?.day || 1) - (b?.day || 1)).map((session: any) => {
                                         if (!session) return null;
                                         const day = session.day || 1;
                                         const sKey = sessionKey(program.id, weekNum, day);
