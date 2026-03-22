@@ -118,19 +118,18 @@ function ExpandedForm({
             {/* Hide scrollbar */}
             <style>{`.readiness-scroll::-webkit-scrollbar { display: none; }`}</style>
 
-            {/* Progress dots + counter */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, marginBottom: 10, padding: '0 14px' }}>
-                {METRICS.map((met, i) => (
-                    <button key={met.id} onClick={() => scrollTo(i)} style={{
-                        width: i === activeIdx ? 18 : 8, height: 8, borderRadius: 4, border: 'none', cursor: 'pointer', padding: 0,
-                        background: scores[met.id]
-                            ? SCORE_COLORS[scores[met.id]]
-                            : i === activeIdx ? 'var(--primary)' : 'rgba(255,255,255,0.15)',
-                        transition: 'all 0.2s',
+            {/* Progress bar + percentage */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10, padding: '0 14px' }}>
+                <div style={{ flex: 1, height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.08)', overflow: 'hidden', position: 'relative' }}>
+                    <div style={{
+                        height: '100%', borderRadius: 3,
+                        width: `${METRICS.length > 0 ? (filledCount / METRICS.length) * 100 : 0}%`,
+                        background: filledCount === METRICS.length ? '#10b981' : 'var(--primary)',
+                        transition: 'width 0.3s ease',
                     }} />
-                ))}
-                <span style={{ fontSize: 10, color: 'var(--secondary-foreground)', marginLeft: 4 }}>
-                    {filledCount}/{METRICS.length}
+                </div>
+                <span style={{ fontSize: 11, color: filledCount === METRICS.length ? '#10b981' : 'var(--secondary-foreground)', fontWeight: 600, minWidth: 32, textAlign: 'right' }}>
+                    {METRICS.length > 0 ? Math.round((filledCount / METRICS.length) * 100) : 0}%
                 </span>
             </div>
 
