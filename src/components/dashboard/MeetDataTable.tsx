@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Papa from 'papaparse';
-import { Upload, Plus, X, Trash2 } from 'lucide-react';
+import { Upload, Plus, X, Trash2, Pencil, Check } from 'lucide-react';
 import { calculateGL, calculateDots } from '@/lib/calculators';
 
 interface MeetEntry {
@@ -22,6 +22,8 @@ interface MeetEntry {
     deadlift: [number, number, number];
     deadliftResults: [boolean, boolean, boolean];
     gender: string;
+    csvDotsPoints?: number;
+    csvIpfPoints?: number;
 }
 
 interface Props {
@@ -52,6 +54,8 @@ export default function MeetDataTable({ athletes, coachId }: Props) {
     const [importing, setImporting] = useState(false);
     const [importError, setImportError] = useState('');
     const [importResult, setImportResult] = useState('');
+    const [editingId, setEditingId] = useState<string | null>(null);
+    const [editDraft, setEditDraft] = useState<MeetEntry | null>(null);
 
     // New entry form
     const [newEntry, setNewEntry] = useState({
@@ -209,6 +213,25 @@ export default function MeetDataTable({ athletes, coachId }: Props) {
         saveEntriesToBackend(updated);
     };
 
+    const startEdit = (entry: MeetEntry) => {
+        setEditingId(entry.id);
+        setEditDraft({ ...entry, squat: [...entry.squat] as [number, number, number], squatResults: [...entry.squatResults] as [boolean, boolean, boolean], bench: [...entry.bench] as [number, number, number], benchResults: [...entry.benchResults] as [boolean, boolean, boolean], deadlift: [...entry.deadlift] as [number, number, number], deadliftResults: [...entry.deadliftResults] as [boolean, boolean, boolean] });
+    };
+
+    const saveEdit = () => {
+        if (!editDraft || !editingId) return;
+        const updated = entries.map(e => e.id === editingId ? editDraft : e).sort((a, b) => (a.meetDate || '').localeCompare(b.meetDate || ''));
+        setEntries(updated);
+        saveEntriesToBackend(updated);
+        setEditingId(null);
+        setEditDraft(null);
+    };
+
+    const cancelEdit = () => {
+        setEditingId(null);
+        setEditDraft(null);
+    };
+
     // LiftingCast CSV Import
     const handleLiftingCastImport = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -274,19 +297,24 @@ export default function MeetDataTable({ athletes, coachId }: Props) {
                         // Negative values mean missed lifts in LiftingCast
                         const isGood = (v: number) => v > 0;
 
-                        const sex = (row['Sex'] || row['sex'] || row['Gender'] || row['gender'] || '').toLowerCase();
-                        const division = row['Division'] || row['Div'] || row['division'] || row['Category'] || row['category'] || '';
-                        const bw = parseFloat(row['Bodyweight'] || row['BodyweightKg'] || row['Body Weight'] || row['BW'] || row['bw'] || 0);
-                        const wc = parseFloat(row['WeightClass'] || row['Weight Class'] || row['WeightClassKg'] || row['Class'] || 0);
+                        const sex = (row['Gender'] || row['gender'] || row['Sex'] || row['sex'] || '').toLowerCase();
+                        const division = row['Awards Division'] || row['Division'] || row['Div'] || row['division'] || row['Category'] || row['category'] || '';
+                        const bw = parseFloat(row['Body Weight (kg)'] || row['Body Weight'] || row['Bodyweight'] || row['BodyweightKg'] || row['BW'] || row['bw'] || 0);
+                        const wc = row['Weight Class'] || row['WeightClass'] || row['WeightClassKg'] || row['Class'] || '';
+                        const wcNum = parseFloat(wc) || 0;
                         const meetName = row['Competition'] || row['Meet'] || row['MeetName'] || row['Meet Name'] || file.name.replace('.csv', '') || '';
                         const meetDate = row['Date'] || row['date'] || row['Meet Date'] || '';
+
+                        // Pick up scoring directly from CSV
+                        const csvDots = parseFloat(row['Dots Points'] || row['DOTS'] || row['Dots'] || 0);
+                        const csvIpf = parseFloat(row['IPF Points'] || row['IPF Pts'] || row['IPF GL Points'] || 0);
 
                         newEntries.push({
                             id: Math.random().toString(36).substring(7),
                             athleteId: matchedAthlete.id,
                             athleteName: matchedAthlete.name,
                             category: division,
-                            weightClass: wc || matchedAthlete.weightClass || 0,
+                            weightClass: wcNum || matchedAthlete.weightClass || 0,
                             bodyweight: bw || 0,
                             meetDate,
                             meetName,
@@ -297,6 +325,8 @@ export default function MeetDataTable({ athletes, coachId }: Props) {
                             benchResults: [isGood(bp1), isGood(bp2), isGood(bp3)],
                             deadlift: [Math.abs(dl1), Math.abs(dl2), Math.abs(dl3)],
                             deadliftResults: [isGood(dl1), isGood(dl2), isGood(dl3)],
+                            csvDotsPoints: csvDots > 0 ? csvDots : undefined,
+                            csvIpfPoints: csvIpf > 0 ? csvIpf : undefined,
                         });
                     }
 
@@ -492,16 +522,73 @@ export default function MeetDataTable({ athletes, coachId }: Props) {
                                 </td>
                             </tr>
                         ) : entries.map((e, idx) => {
-                            const total = calcTotal(e);
-                            const successful = calcSuccessful(e);
-                            const totalAttempts = calcTotalAttempts(e);
+                            const isEditing = editingId === e.id;
+                            const d = isEditing && editDraft ? editDraft : e;
+                            const total = calcTotal(d);
+                            const successful = calcSuccessful(d);
+                            const totalAttempts = calcTotalAttempts(d);
                             const pct = totalAttempts > 0 ? (successful / totalAttempts * 100) : 0;
-                            const bw = e.bodyweight || e.weightClass;
-                            const isMale = e.gender !== 'female';
-                            const dots = total > 0 && bw > 0 ? calculateDots(total, bw, isMale) : 0;
-                            const ipf = total > 0 && bw > 0 ? calculateGL(total, bw, isMale, false, false) : 0;
+                            const bw = d.bodyweight || d.weightClass;
+                            const isMale = d.gender !== 'female';
+                            const dots = d.csvDotsPoints || (total > 0 && bw > 0 ? calculateDots(total, bw, isMale) : 0);
+                            const ipf = d.csvIpfPoints || (total > 0 && bw > 0 ? calculateGL(total, bw, isMale, false, false) : 0);
                             const pr = (e as any)._totalPR;
                             const isFirst = (e as any)._isFirstMeet;
+
+                            if (isEditing && editDraft) {
+                                const inputStyle: React.CSSProperties = { width: '100%', textAlign: 'center', padding: '0.2rem', fontSize: '0.8rem', background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 4, color: 'inherit' };
+                                const updateDraft = (patch: Partial<MeetEntry>) => setEditDraft({ ...editDraft, ...patch } as MeetEntry);
+                                const updateAttempt = (lift: 'squat' | 'bench' | 'deadlift', idx: number, val: string) => {
+                                    const arr = [...editDraft[lift]] as [number, number, number];
+                                    arr[idx] = parseFloat(val) || 0;
+                                    updateDraft({ [lift]: arr });
+                                };
+                                const toggleResult = (lift: 'squatResults' | 'benchResults' | 'deadliftResults', idx: number) => {
+                                    const arr = [...editDraft[lift]] as [boolean, boolean, boolean];
+                                    arr[idx] = !arr[idx];
+                                    updateDraft({ [lift]: arr });
+                                };
+                                return (
+                                    <tr key={e.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(6,182,212,0.05)' }}>
+                                        <td style={{ ...cellStyle, textAlign: 'left', fontWeight: 600 }}>
+                                            {editDraft.athleteName}
+                                            <div style={{ display: 'flex', gap: '0.3rem', marginTop: '0.2rem' }}>
+                                                <select style={{ ...inputStyle, width: 55, fontSize: '0.65rem' }} value={editDraft.gender} onChange={ev => updateDraft({ gender: ev.target.value })}>
+                                                    <option value="male">M</option>
+                                                    <option value="female">F</option>
+                                                </select>
+                                                <input type="number" step="0.1" placeholder="BW" title="Bodyweight (kg)" style={{ ...inputStyle, width: 55, fontSize: '0.65rem' }} value={editDraft.bodyweight || ''} onChange={ev => updateDraft({ bodyweight: parseFloat(ev.target.value) || 0 })} />
+                                            </div>
+                                        </td>
+                                        <td style={cellStyle}><input style={inputStyle} value={editDraft.category} onChange={ev => updateDraft({ category: ev.target.value })} /></td>
+                                        <td style={cellStyle}><input type="number" style={inputStyle} value={editDraft.weightClass || ''} onChange={ev => updateDraft({ weightClass: parseFloat(ev.target.value) || 0 })} /></td>
+                                        <td style={cellStyle}><input type="date" style={{ ...inputStyle, width: 120 }} value={editDraft.meetDate} onChange={ev => updateDraft({ meetDate: ev.target.value })} /></td>
+                                        <td style={{ ...cellStyle, textAlign: 'left' }}><input style={{ ...inputStyle, textAlign: 'left' }} value={editDraft.meetName} onChange={ev => updateDraft({ meetName: ev.target.value })} /></td>
+                                        {(['squat', 'bench', 'deadlift'] as const).map(lift => {
+                                            const resKey = `${lift}Results` as 'squatResults' | 'benchResults' | 'deadliftResults';
+                                            return [0, 1, 2].map(i => (
+                                                <td key={`${lift}${i}`} style={{ ...cellStyle, padding: '0.2rem', background: editDraft[resKey][i] ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.15)' }}>
+                                                    <input type="number" step="0.5" style={{ ...inputStyle, width: 55, color: editDraft[resKey][i] ? '#4ade80' : '#f87171' }} value={editDraft[lift][i] || ''} onChange={ev => updateAttempt(lift, i, ev.target.value)} />
+                                                    <button onClick={() => toggleResult(resKey, i)} style={{ fontSize: '0.6rem', cursor: 'pointer', background: 'none', border: 'none', color: editDraft[resKey][i] ? '#4ade80' : '#f87171', display: 'block', margin: '0 auto' }}>
+                                                        {editDraft[resKey][i] ? 'good' : 'miss'}
+                                                    </button>
+                                                </td>
+                                            ));
+                                        })}
+                                        <td style={cellStyle}>{successful}</td>
+                                        <td style={cellStyle}>{totalAttempts}</td>
+                                        <td style={{ ...cellStyle, color: pct >= 88 ? '#4ade80' : pct >= 66 ? '#fbbf24' : '#f87171' }}>{pct.toFixed(1)}%</td>
+                                        <td style={{ ...cellStyle, fontWeight: 700, color: total > 0 ? 'var(--primary)' : 'var(--secondary-foreground)' }}>{total > 0 ? total : '-'}</td>
+                                        <td style={cellStyle}>-</td>
+                                        <td style={{ ...cellStyle, color: '#f59e0b' }}>{dots > 0 ? dots.toFixed(2) : '-'}</td>
+                                        <td style={{ ...cellStyle, color: '#38bdf8' }}>{ipf > 0 ? ipf.toFixed(2) : '-'}</td>
+                                        <td style={{ ...cellStyle, display: 'flex', gap: '0.3rem' }}>
+                                            <button onClick={saveEdit} style={{ color: '#4ade80', cursor: 'pointer', background: 'none', border: 'none' }} title="Save"><Check size={14} /></button>
+                                            <button onClick={cancelEdit} style={{ color: '#ef4444', cursor: 'pointer', background: 'none', border: 'none' }} title="Cancel"><X size={14} /></button>
+                                        </td>
+                                    </tr>
+                                );
+                            }
 
                             return (
                                 <tr key={e.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
@@ -536,7 +623,10 @@ export default function MeetDataTable({ athletes, coachId }: Props) {
                                     </td>
                                     <td style={{ ...cellStyle, color: '#f59e0b' }}>{dots > 0 ? dots.toFixed(2) : '-'}</td>
                                     <td style={{ ...cellStyle, color: '#38bdf8' }}>{ipf > 0 ? ipf.toFixed(2) : '-'}</td>
-                                    <td style={cellStyle}>
+                                    <td style={{ ...cellStyle, display: 'flex', gap: '0.3rem' }}>
+                                        <button onClick={() => startEdit(e)} style={{ color: 'var(--primary)', opacity: 0.5, cursor: 'pointer', background: 'none', border: 'none' }} title="Edit">
+                                            <Pencil size={14} />
+                                        </button>
                                         <button onClick={() => handleDelete(e.id)} style={{ color: '#ef4444', opacity: 0.5, cursor: 'pointer', background: 'none', border: 'none' }} title="Delete">
                                             <Trash2 size={14} />
                                         </button>
