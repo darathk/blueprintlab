@@ -788,9 +788,28 @@ export default function ChatInterface({
 
     const saveMedia = async (url: string, isImg?: boolean) => {
         try {
-            const r = await fetch(url); const b = await r.blob(); const a = document.createElement('a');
+            const r = await fetch(url);
+            const b = await r.blob();
             const ext = isImg ? '.jpg' : url.includes('.webm') ? '.webm' : '.mp4';
-            a.href = URL.createObjectURL(b); a.download = `lift_${Date.now()}${ext}`; a.click(); URL.revokeObjectURL(a.href);
+            const filename = `lift_${Date.now()}${ext}`;
+
+            // On mobile, use Web Share API so the OS offers "Save to Photos"
+            if (navigator.share && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+                const file = new File([b], filename, { type: b.type });
+                try {
+                    await navigator.share({ files: [file] });
+                    return;
+                } catch (shareErr: any) {
+                    // User cancelled or share failed — fall through to download
+                    if (shareErr?.name === 'AbortError') return;
+                }
+            }
+
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(b);
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(a.href);
         } catch { window.open(url, '_blank'); }
     };
 
