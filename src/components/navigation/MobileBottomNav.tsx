@@ -52,16 +52,16 @@ export default function MobileBottomNav({ items, children, className, userId }: 
                 alignItems: 'center',
                 justifyContent: 'space-around',
                 gap: '0px',
-                margin: '0 16px 14px',
-                padding: '6px 8px',
-                borderRadius: 40,
-                background: 'rgba(30, 30, 30, 0.92)',
+                margin: '0 12px 20px',
+                padding: '4px 6px',
+                borderRadius: 50,
+                background: 'rgba(28, 28, 28, 0.94)',
                 backdropFilter: 'blur(28px)',
                 WebkitBackdropFilter: 'blur(28px)',
                 border: '1px solid rgba(255, 255, 255, 0.06)',
                 boxShadow: '0 4px 24px rgba(0, 0, 0, 0.5)',
                 width: '100%',
-                maxWidth: 380,
+                maxWidth: 480,
                 pointerEvents: 'auto',
             }}>
                 {enrichedItems.map((item) => {
@@ -85,7 +85,7 @@ export default function MobileBottomNav({ items, children, className, userId }: 
                                 position: 'relative',
                                 flex: 1,
                                 minWidth: 0,
-                                padding: '10px 0',
+                                padding: '14px 0',
                             }}
                         >
                             <div style={{
@@ -133,7 +133,7 @@ export default function MobileBottomNav({ items, children, className, userId }: 
                         justifyContent: 'center',
                         flex: 1,
                         minWidth: 0,
-                        padding: '10px 0',
+                        padding: '14px 0',
                     }}>
                         {children}
                     </div>

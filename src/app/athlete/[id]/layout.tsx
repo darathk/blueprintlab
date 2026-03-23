@@ -61,15 +61,15 @@ export default async function AthletePortalLayout({
     }
 
     const athleteNavItems: NavItem[] = [
-        { label: 'Dashboard', href: `/athlete/${id}/dashboard`, icon: <LayoutDashboard size={20} /> },
-        { label: 'Messages', href: `/athlete/${id}/chat`, icon: <MessageSquare size={20} />, unreadCount },
-        { label: 'Board', href: `/athlete/${id}/leaderboard`, icon: <Trophy size={20} /> },
-        { label: 'Loader', href: `/athlete/${id}/plate-loader`, icon: <Dumbbell size={20} /> }
+        { label: 'Dashboard', href: `/athlete/${id}/dashboard`, icon: <LayoutDashboard size={26} /> },
+        { label: 'Messages', href: `/athlete/${id}/chat`, icon: <MessageSquare size={26} />, unreadCount },
+        { label: 'Board', href: `/athlete/${id}/leaderboard`, icon: <Trophy size={26} /> },
+        { label: 'Loader', href: `/athlete/${id}/plate-loader`, icon: <Dumbbell size={26} /> }
     ];
 
     if (requestedAthlete.meetAttempts) {
         // Insert right after Messages
-        athleteNavItems.splice(2, 0, { label: 'Meet', href: `/athlete/${id}/meet`, icon: <Trophy size={20} /> });
+        athleteNavItems.splice(2, 0, { label: 'Meet', href: `/athlete/${id}/meet`, icon: <Trophy size={26} /> });
     }
 
     return (
@@ -103,7 +103,7 @@ export default async function AthletePortalLayout({
                 {children}
             </main>
             <AppSetupBubble />
-            <MobileBottomNav items={[...athleteNavItems, { label: 'Settings', href: `/athlete/${id}/settings`, icon: <Settings size={20} /> }]} className="mobile-bottom-nav" userId={id} />
+            <MobileBottomNav items={[...athleteNavItems, { label: 'Settings', href: `/athlete/${id}/settings`, icon: <Settings size={26} /> }]} className="mobile-bottom-nav" userId={id} />
         </div>
     );
 }

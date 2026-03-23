@@ -67,11 +67,11 @@ export default async function DashboardLayout({
     }
 
     const coachNavItems: NavItem[] = [
-        { label: 'Home', href: '/dashboard', icon: <Home size={20} /> },
-        { label: 'Messages', href: '/dashboard/messages', icon: <MessageSquare size={20} />, unreadCount },
-        { label: 'Board', href: '/dashboard/leaderboard', icon: <Trophy size={20} /> },
-        { label: 'Builder', href: '/dashboard/programs/new', icon: <Hammer size={20} /> },
-        { label: 'Loader', href: '/dashboard/plate-loader', icon: <Dumbbell size={20} /> }
+        { label: 'Home', href: '/dashboard', icon: <Home size={26} /> },
+        { label: 'Messages', href: '/dashboard/messages', icon: <MessageSquare size={26} />, unreadCount },
+        { label: 'Board', href: '/dashboard/leaderboard', icon: <Trophy size={26} /> },
+        { label: 'Builder', href: '/dashboard/programs/new', icon: <Hammer size={26} /> },
+        { label: 'Loader', href: '/dashboard/plate-loader', icon: <Dumbbell size={26} /> }
     ];
 
     return (
@@ -112,7 +112,7 @@ export default async function DashboardLayout({
                 </div>
             </main>
 
-            <MobileBottomNav items={[...coachNavItems, { label: 'Settings', href: '/dashboard/settings', icon: <Settings size={20} /> }]} className="mobile-bottom-nav" userId={athleteId || undefined} />
+            <MobileBottomNav items={[...coachNavItems, { label: 'Settings', href: '/dashboard/settings', icon: <Settings size={26} /> }]} className="mobile-bottom-nav" userId={athleteId || undefined} />
         </div>
     );
 }
