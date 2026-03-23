@@ -6,7 +6,7 @@ import Link from 'next/link';
 import AthleteNav from '@/components/athlete/AthleteNav';
 import MobileBottomNav, { NavItem } from '@/components/navigation/MobileBottomNav';
 import AppSetupBubble from '@/components/notifications/AppSetupBubble';
-import { LayoutDashboard, MessageSquare, Dumbbell, Trophy, Settings } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, Dumbbell, Medal, Target, Settings } from 'lucide-react';
 
 export default async function AthletePortalLayout({
     children,
@@ -63,13 +63,13 @@ export default async function AthletePortalLayout({
     const athleteNavItems: NavItem[] = [
         { label: 'Dashboard', href: `/athlete/${id}/dashboard`, icon: <LayoutDashboard size={26} /> },
         { label: 'Messages', href: `/athlete/${id}/chat`, icon: <MessageSquare size={26} />, unreadCount },
-        { label: 'Board', href: `/athlete/${id}/leaderboard`, icon: <Trophy size={26} /> },
+        { label: 'Board', href: `/athlete/${id}/leaderboard`, icon: <Medal size={26} /> },
         { label: 'Loader', href: `/athlete/${id}/plate-loader`, icon: <Dumbbell size={26} /> }
     ];
 
     if (requestedAthlete.meetAttempts) {
         // Insert right after Messages
-        athleteNavItems.splice(2, 0, { label: 'Meet', href: `/athlete/${id}/meet`, icon: <Trophy size={26} /> });
+        athleteNavItems.splice(2, 0, { label: 'Meet', href: `/athlete/${id}/meet`, icon: <Target size={26} /> });
     }
 
     return (
@@ -81,9 +81,9 @@ export default async function AthletePortalLayout({
                 WebkitBackdropFilter: 'blur(16px)',
             }}>
                 <div className="max-w-7xl mx-auto w-full flex items-center justify-between px-4 py-3 md:px-8 h-full">
-                    <div style={{ fontWeight: 800, fontSize: '1.5rem', letterSpacing: '-0.02em', display: 'flex', alignItems: 'center', gap: '0.75rem', overflow: 'hidden' }}>
-                        <Link href={`/athlete/${id}/dashboard`} style={{ color: 'inherit' }}>
-                            Blueprint<span style={{ color: 'var(--primary)', textShadow: '0 0 10px rgba(125, 135, 210,0.5)' }}>Lab</span>
+                    <div style={{ fontWeight: 800, fontSize: '1.25rem', letterSpacing: '-0.03em', display: 'flex', alignItems: 'center', gap: '0.75rem', overflow: 'hidden' }}>
+                        <Link href={`/athlete/${id}/dashboard`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                            Blueprint<span style={{ color: 'var(--primary)' }}>Lab</span>
                         </Link>
                         <span className="hidden md:inline whitespace-nowrap" style={{ marginLeft: '1.5rem', fontWeight: 400, color: 'var(--secondary-foreground)', fontSize: '1rem', borderLeft: '1px solid var(--card-border)', paddingLeft: '1.5rem' }}>{requestedAthlete.name}'s Portal</span>
                     </div>
