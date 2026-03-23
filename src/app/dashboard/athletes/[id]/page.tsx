@@ -21,141 +21,90 @@ const FatigueChart = dynamic(() => import('@/components/dashboard/FatigueChart')
     loading: () => <div style={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="pulse">Loading fatigue chart...</div>
 });
 
-// Extracted Async Components for Granular Streaming
+// Single data fetch — all child components receive pre-fetched data as props
 
-async function AthleteHeader({ id }) {
-    const athlete = await getAthleteById(id);
-    return (
-        <div style={{ marginBottom: '2rem', paddingTop: '1.5rem' }}>
-            <Link href="/dashboard" style={{ color: 'var(--secondary-foreground)', fontSize: '0.9rem' }}>← Back to Command Center</Link>
-            <div className="athlete-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
-                <h1 style={{ fontSize: '1.875rem', fontWeight: 700, whiteSpace: 'nowrap' }}>{athlete?.name || 'Athlete'} Analytics</h1>
-                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                    <Link href={`/dashboard/messages?athleteId=${id}`} className="btn btn-secondary" style={{ fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <MessageSquare size={16} /> Chat
-                    </Link>
-                    <Link href={`/dashboard/athletes/${id}/reports`} className="btn btn-secondary" style={{ fontSize: '0.9rem' }}>
-                        View Meta-Analytics Reports
-                    </Link>
-                    <Link href={`/dashboard/athletes/${id}/new-program`} className="btn btn-primary" style={{ fontSize: '0.9rem' }}>
-                        + New Program (Builder)
-                    </Link>
-                </div>
-            </div>
-        </div>
-    );
-}
-
-async function AsyncBlockOrganizer({ id }) {
-    const athlete = await getAthleteById(id);
-    return <BlockOrganizer athlete={athlete} />;
-}
-
-async function AsyncMeetAttempts({ id }) {
-    const athlete = await getAthleteById(id);
-    return <MeetAttempts athlete={athlete} isReadOnly={false} />;
-}
-
-async function AsyncHistoricalPerformance({ id }) {
-    const athlete = await getAthleteById(id);
-    return <HistoricalPerformance athlete={athlete} />;
-}
-
-async function AsyncCalendar({ id }) {
-    const athlete = await getAthleteById(id);
-    const programs = await getProgramsByAthlete(id);
-    const athleteLogs = await getLogsByAthlete(id);
-    return (
-        <AthleteCalendarContainer
-            programs={programs}
-            athleteId={id}
-            currentProgramId={athlete?.currentProgramId}
-            logs={athleteLogs}
-        />
-    );
-}
-
-
-
-async function AsyncDotsChart({ id }) {
-    const [athlete, logs, programs] = await Promise.all([
+async function AthleteData({ id }: { id: string }) {
+    const [athlete, logs, programs, readiness] = await Promise.all([
         getAthleteById(id),
         getLogsByAthlete(id),
-        getProgramsByAthlete(id)
+        getProgramsByAthlete(id),
+        getReadinessByAthlete(id),
     ]);
-    return (
-        <DotsChart
-            athleteId={id}
-            logs={logs}
-            programs={programs}
-            initialGender={athlete?.gender ?? null}
-            initialWeightClass={athlete?.weightClass ?? null}
-        />
-    );
-}
-
-async function AsyncFatigueChart({ id }) {
-    const readinessLogs = await getReadinessByAthlete(id);
-    return <FatigueChart readinessLogs={readinessLogs} />;
-}
-
-// Main Page Skeleton Layout (Renders Instantly)
-export default async function AthleteAnalyticsPage({ params }) {
-    const { id } = await params;
-
-    const Loader = () => <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--secondary-foreground)' }} className="pulse">Loading data...</div>;
 
     return (
-        <div>
-            <Suspense fallback={<div style={{ height: '100px' }} className="pulse">Loading Header...</div>}>
-                <AthleteHeader id={id} />
-            </Suspense>
+        <>
+            {/* Header */}
+            <div style={{ marginBottom: '2rem', paddingTop: '1.5rem' }}>
+                <Link href="/dashboard" style={{ color: 'var(--secondary-foreground)', fontSize: '0.9rem' }}>← Back to Command Center</Link>
+                <div className="athlete-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+                    <h1 style={{ fontSize: '1.875rem', fontWeight: 700, whiteSpace: 'nowrap' }}>{athlete?.name || 'Athlete'} Analytics</h1>
+                    <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                        <Link href={`/dashboard/messages?athleteId=${id}`} className="btn btn-secondary" style={{ fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <MessageSquare size={16} /> Chat
+                        </Link>
+                        <Link href={`/dashboard/athletes/${id}/reports`} className="btn btn-secondary" style={{ fontSize: '0.9rem' }}>
+                            View Meta-Analytics Reports
+                        </Link>
+                        <Link href={`/dashboard/athletes/${id}/new-program`} className="btn btn-primary" style={{ fontSize: '0.9rem' }}>
+                            + New Program (Builder)
+                        </Link>
+                    </div>
+                </div>
+            </div>
 
+            {/* Charts */}
             <CollapsibleSection title="Athlete's Progress" defaultOpen={true}>
-                <Suspense fallback={<Loader />}>
-                    <AsyncDotsChart id={id} />
-                </Suspense>
+                <DotsChart
+                    athleteId={id}
+                    logs={logs}
+                    programs={programs}
+                    initialGender={athlete?.gender ?? null}
+                    initialWeightClass={athlete?.weightClass ?? null}
+                />
             </CollapsibleSection>
 
             <CollapsibleSection title="Fatigue & Readiness Metrics" defaultOpen={true}>
-                <Suspense fallback={<Loader />}>
-                    <AsyncFatigueChart id={id} />
-                </Suspense>
+                <FatigueChart readinessLogs={readiness} />
             </CollapsibleSection>
 
-
-
             <CollapsibleSection title="Training Calendar" defaultOpen={false}>
-                <Suspense fallback={<Loader />}>
-                    <AsyncCalendar id={id} />
-                </Suspense>
+                <AthleteCalendarContainer
+                    programs={programs}
+                    athleteId={id}
+                    currentProgramId={athlete?.currentProgramId}
+                    logs={logs}
+                />
             </CollapsibleSection>
 
             <CollapsibleSection title="Meet Planner" defaultOpen={false}>
                 <CollapsibleSection title="Periodization Planner" defaultOpen={true}>
-                    <Suspense fallback={<Loader />}>
-                        <AsyncBlockOrganizer id={id} />
-                    </Suspense>
+                    <BlockOrganizer athlete={athlete} />
                 </CollapsibleSection>
-
                 <CollapsibleSection title="Attempt Selection" defaultOpen={false}>
-                    <Suspense fallback={<Loader />}>
-                        <AsyncMeetAttempts id={id} />
-                    </Suspense>
+                    <MeetAttempts athlete={athlete} isReadOnly={false} />
                 </CollapsibleSection>
             </CollapsibleSection>
 
             <CollapsibleSection title="Historical Performance" defaultOpen={false}>
-                <Suspense fallback={<Loader />}>
-                    <AsyncHistoricalPerformance id={id} />
-                </Suspense>
+                <HistoricalPerformance athlete={athlete} />
             </CollapsibleSection>
 
             <CollapsibleSection title="Program History" defaultOpen={false}>
-                <Suspense fallback={<Loader />}>
-                    <ProgramList athleteId={id} />
-                </Suspense>
+                <ProgramList athleteId={id} />
             </CollapsibleSection>
+        </>
+    );
+}
+
+// Main Page — single Suspense boundary around one parallel data fetch
+export default async function AthleteAnalyticsPage({ params }) {
+    const { id } = await params;
+
+    return (
+        <div>
+            <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center', color: 'var(--secondary-foreground)' }} className="pulse">Loading athlete data...</div>}>
+                <AthleteData id={id} />
+            </Suspense>
         </div>
     );
 }

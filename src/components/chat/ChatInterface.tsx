@@ -3,8 +3,9 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { Mic, MoreVertical, Reply, Copy, Download, Paperclip, X, Send, Search, Scissors, Pencil, Play, Maximize } from 'lucide-react';
-import VideoCropper from './VideoCropper';
+const VideoCropper = dynamic(() => import('./VideoCropper'), { ssr: false });
 
 // Lazy-loading video component for iOS reliability
 function LazyVideo({ src, onLoadedData, style }: { src: string; onLoadedData?: () => void; style?: React.CSSProperties }) {

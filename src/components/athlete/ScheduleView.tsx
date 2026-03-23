@@ -2,12 +2,14 @@
 
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { calculateSimpleE1RM, calculateStress } from '@/lib/stress-index';
 import { ArrowRight, Search, ChevronDown } from 'lucide-react';
-import ExerciseFeedback from '@/components/athlete/ExerciseFeedback';
 import { getExerciseCategory } from '@/lib/exercise-db';
-import ReadinessCheckin from '@/components/athlete/ReadinessCheckin';
-import CelebrationScreen from '@/components/athlete/CelebrationScreen';
+
+const ExerciseFeedback = dynamic(() => import('@/components/athlete/ExerciseFeedback'), { ssr: false });
+const ReadinessCheckin = dynamic(() => import('@/components/athlete/ReadinessCheckin'), { ssr: false });
+const CelebrationScreen = dynamic(() => import('@/components/athlete/CelebrationScreen'), { ssr: false });
 
 /* ─────────── constants ─────────── */
 const CATEGORY_COLORS: Record<string, string> = {

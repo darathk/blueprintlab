@@ -102,9 +102,7 @@ export default function ReportsPage({ params }: { params: Promise<{ id: string }
         loadData();
     }, [id]);
 
-    const handleView = async (report) => {
-        // ALWAYS fetch fresh data before viewing a report to ensure edits are reflected
-        await loadData();
+    const handleView = (report) => {
         setSelectedReport(report);
     };
 

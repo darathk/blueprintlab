@@ -7,6 +7,9 @@ const nextConfig: any = {
   typescript: {
     ignoreBuildErrors: true,
   },
+  experimental: {
+    optimizePackageImports: ['lucide-react', 'recharts', 'papaparse', '@clerk/nextjs'],
+  },
 };
 
 export default nextConfig;

@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation';
 import { getAthleteById } from '@/lib/storage';
-import Leaderboard from '@/components/leaderboard/Leaderboard';
+import dynamic from 'next/dynamic';
+const Leaderboard = dynamic(() => import('@/components/leaderboard/Leaderboard'));
 
 export default async function AthleteLeaderboardPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;

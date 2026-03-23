@@ -5,20 +5,20 @@ import { getMessagesByAthlete } from '@/lib/storage';
 export default async function AthleteChatPage({ params }: { params: Promise<{ id: string }> }) {
     const { id: athleteId } = await params;
 
-    // Look up athlete
-    const athlete = await prisma.athlete.findUnique({
-        where: { id: athleteId },
-        select: { id: true, name: true, email: true, coachId: true }
-    });
-    if (!athlete) return <div>Athlete not found</div>;
-
-    // Find coach's record
+    // Parallel fetch: athlete, coach, and messages
     const adminEmail = (process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.ADMIN_EMAIL || '').toLowerCase();
-    const coach = await prisma.athlete.findFirst({
-        where: { email: { equals: adminEmail, mode: 'insensitive' } },
-        select: { id: true, name: true, email: true }
-    });
-
+    const [athlete, coach, initialMessages] = await Promise.all([
+        prisma.athlete.findUnique({
+            where: { id: athleteId },
+            select: { id: true, name: true, email: true, coachId: true }
+        }),
+        prisma.athlete.findFirst({
+            where: { email: { equals: adminEmail, mode: 'insensitive' } },
+            select: { id: true, name: true, email: true }
+        }),
+        getMessagesByAthlete(athleteId),
+    ]);
+    if (!athlete) return <div>Athlete not found</div>;
     if (!coach) {
         return (
             <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--secondary-foreground)' }}>
@@ -26,8 +26,6 @@ export default async function AthleteChatPage({ params }: { params: Promise<{ id
             </div>
         );
     }
-
-    const initialMessages = await getMessagesByAthlete(athlete.id);
 
     return (
         <div className="chat-full-screen">

@@ -57,7 +57,7 @@ model Log {
   date      String
   exercises Json // Completed sets, reps, rpes
 
-  @@index([programId])
+  @@index([programId, sessionId])
 }
 
 model Report {
