@@ -75,9 +75,9 @@ function getBestE1RMForLift(log: any, liftKey: 'squat' | 'bench' | 'deadlift'): 
 export interface CompetitionDataPoint {
     date: string;
     session: string;  // "Session 1", "Session 2", etc.
-    squat: number;    // E1RM lbs
-    bench: number;    // E1RM lbs
-    deadlift: number; // E1RM lbs
+    squat: number | null;    // E1RM lbs, null when not logged this session
+    bench: number | null;    // E1RM lbs, null when not logged this session
+    deadlift: number | null; // E1RM lbs, null when not logged this session
     totalLbs: number; // squat + bench + deadlift E1RM in lbs
     total: number;    // SBD total kg (for DOTs)
     dots: number;     // 0 if no weight class / gender
@@ -134,9 +134,9 @@ export function getCompetitionDataPoints(
             date: dateLabel,
             session: `Session ${points.length + 1}`,
             // Show this session's E1RM for individual lift lines; null shows as gap (connectNulls bridges it)
-            squat: squatE1rm > 0 ? Math.round(squatE1rm) : 0,
-            bench: benchE1rm > 0 ? Math.round(benchE1rm) : 0,
-            deadlift: deadliftE1rm > 0 ? Math.round(deadliftE1rm) : 0,
+            squat: squatE1rm > 0 ? Math.round(squatE1rm) : null,
+            bench: benchE1rm > 0 ? Math.round(benchE1rm) : null,
+            deadlift: deadliftE1rm > 0 ? Math.round(deadliftE1rm) : null,
             totalLbs: Math.round(
                 (squatE1rm > 0 ? squatE1rm : lastKnown.squat) +
                 (benchE1rm > 0 ? benchE1rm : lastKnown.bench) +

@@ -39,7 +39,7 @@ const CHART_COLORS = {
 
 const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
-    const validPayload = payload.filter((p: any) => p.value > 0);
+    const validPayload = payload.filter((p: any) => p.value != null && p.value > 0);
     if (!validPayload.length) return null;
     const date = payload[0]?.payload?.date;
     return (
@@ -115,7 +115,8 @@ export default function DotsChart({ athleteId, logs, programs = [], initialGende
     // Find the last non-zero value for each lift across all data points
     const latestLift = (key: 'squat' | 'bench' | 'deadlift' | 'totalLbs') => {
         for (let i = data.length - 1; i >= 0; i--) {
-            if (data[i][key] > 0) return data[i][key];
+            const val = data[i][key];
+            if (val != null && val > 0) return val;
         }
         return 0;
     };
