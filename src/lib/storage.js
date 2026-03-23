@@ -17,6 +17,10 @@ export const getAthletes = cache(async (coachId) => {
             coachId: true,
             nextMeetName: true,
             nextMeetDate: true,
+            weightClass: true,
+            gender: true,
+            meetAttempts: true,
+            pastMeets: true,
             programs: {
                 where: { status: 'active' },
                 select: { id: true, name: true, status: true, startDate: true, endDate: true }
