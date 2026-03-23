@@ -451,6 +451,10 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
     const [collapsedWeeks, setCollapsedWeeks] = useState<Record<string, boolean>>({});
     const [collapsedSessions, setCollapsedSessions] = useState<Record<string, boolean>>({});
 
+    // Duplicate-to-date modal state: stores source {weekIndex, sessionIndex} or null
+    const [duplicateSource, setDuplicateSource] = useState<{ weekIndex: number; sessionIndex: number } | null>(null);
+    const [duplicateTargetDate, setDuplicateTargetDate] = useState('');
+
     const toggleWeek = (weekId: string) => {
         setCollapsedWeeks(prev => ({ ...prev, [weekId]: !prev[weekId] }));
     };
@@ -531,6 +535,72 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
 
         newWeeks[weekIndex].sessions.push(newSession);
         setWeeks(newWeeks);
+    };
+
+    const duplicateSessionToDate = (sourceWeekIndex: number, sourceSessionIndex: number, targetDateStr: string) => {
+        if (!targetDateStr || !startDate) return;
+
+        const originalSession = weeks[sourceWeekIndex]?.sessions[sourceSessionIndex];
+        if (!originalSession) return;
+
+        // Calculate target week/day from the date
+        const [sY, sM, sD] = startDate.split('-').map(Number);
+        const progStart = new Date(sY, sM - 1, sD);
+        progStart.setHours(0, 0, 0, 0);
+
+        const [tY, tM, tD] = targetDateStr.split('-').map(Number);
+        const targetDate = new Date(tY, tM - 1, tD);
+        targetDate.setHours(0, 0, 0, 0);
+
+        const diffDays = Math.round((targetDate.getTime() - progStart.getTime()) / (1000 * 60 * 60 * 24));
+        if (diffDays < 0) {
+            alert('Target date is before the program start date.');
+            return;
+        }
+
+        const targetWeekNum = Math.floor(diffDays / 7) + 1;
+        const targetDayNum = (diffDays % 7) + 1;
+
+        const newWeeks = [...weeks];
+
+        // Ensure target week exists
+        let targetWeekIndex = newWeeks.findIndex(w => w.weekNumber === targetWeekNum);
+        if (targetWeekIndex === -1) {
+            const maxWeek = newWeeks.reduce((m, w) => Math.max(m, w.weekNumber), 0);
+            for (let i = maxWeek + 1; i <= targetWeekNum; i++) {
+                if (!newWeeks.find(w => w.weekNumber === i)) {
+                    newWeeks.push({ id: generateId(), weekNumber: i, sessions: [] });
+                }
+            }
+            newWeeks.sort((a, b) => a.weekNumber - b.weekNumber);
+            targetWeekIndex = newWeeks.findIndex(w => w.weekNumber === targetWeekNum);
+        }
+
+        // Check if target slot is occupied
+        const existingIdx = newWeeks[targetWeekIndex].sessions.findIndex(s => s.day === targetDayNum);
+        if (existingIdx !== -1) {
+            if (!confirm('A session already exists on that date. Replace it?')) return;
+            newWeeks[targetWeekIndex].sessions.splice(existingIdx, 1);
+        }
+
+        // Clone session with new IDs
+        const clonedSession = {
+            ...originalSession,
+            id: generateId(),
+            day: targetDayNum,
+            name: originalSession.name,
+            scheduledDate: targetDateStr,
+            exercises: (originalSession.exercises || []).map(e => ({
+                ...e,
+                id: generateId(),
+                sets: (e.sets || []).map(s => ({ ...s, id: generateId() }))
+            }))
+        };
+
+        newWeeks[targetWeekIndex].sessions.push(clonedSession);
+        setWeeks(newWeeks);
+        setDuplicateSource(null);
+        setDuplicateTargetDate('');
     };
 
     const removeSession = (weekIndex, sessionIndex) => {
@@ -1554,6 +1624,13 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                                                 ❐
                                                             </button>
                                                             <button
+                                                                onClick={(e) => { e.stopPropagation(); setDuplicateSource({ weekIndex: wIndex, sessionIndex: sIndex }); setDuplicateTargetDate(''); }}
+                                                                title="Duplicate to Date..."
+                                                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--accent)' }}
+                                                            >
+                                                                ❐→
+                                                            </button>
+                                                            <button
                                                                 onClick={(e) => { e.stopPropagation(); removeSession(wIndex, sIndex); }}
                                                                 title="Delete Session"
                                                                 style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1rem', color: 'var(--error)' }}
@@ -1661,6 +1738,64 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                     {dragExercise ? 'Drop exercise here' : 'Use the exercise library above to add exercises.'}
                                 </div>
                             )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Duplicate to Date Modal */}
+            {duplicateSource && (
+                <div
+                    onClick={() => { setDuplicateSource(null); setDuplicateTargetDate(''); }}
+                    style={{
+                        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+                    }}
+                >
+                    <div
+                        onClick={e => e.stopPropagation()}
+                        style={{
+                            background: 'var(--card-bg)', border: '1px solid var(--card-border)',
+                            borderRadius: 'var(--radius)', padding: '1.5rem', minWidth: '320px',
+                            display: 'flex', flexDirection: 'column', gap: '1rem',
+                        }}
+                    >
+                        <div style={{ fontWeight: 700, fontSize: '1rem' }}>
+                            Duplicate Session to Date
+                        </div>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--secondary-foreground)' }}>
+                            Duplicating: <strong style={{ color: 'var(--foreground)' }}>
+                                {weeks[duplicateSource.weekIndex]?.sessions[duplicateSource.sessionIndex]?.name}
+                            </strong>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                            <label style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)' }}>Target date</label>
+                            <input
+                                type="date"
+                                className="input"
+                                value={duplicateTargetDate}
+                                onChange={e => setDuplicateTargetDate(e.target.value)}
+                                min={startDate}
+                                autoFocus
+                                style={{ padding: '0.5rem', fontSize: '0.9rem' }}
+                            />
+                        </div>
+                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
+                            <button
+                                className="btn btn-secondary"
+                                onClick={() => { setDuplicateSource(null); setDuplicateTargetDate(''); }}
+                                style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                className="btn btn-primary"
+                                disabled={!duplicateTargetDate}
+                                onClick={() => duplicateSessionToDate(duplicateSource.weekIndex, duplicateSource.sessionIndex, duplicateTargetDate)}
+                                style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}
+                            >
+                                Duplicate
+                            </button>
                         </div>
                     </div>
                 </div>
