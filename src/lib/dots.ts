@@ -74,6 +74,7 @@ function getBestE1RMForLift(log: any, liftKey: 'squat' | 'bench' | 'deadlift'): 
 
 export interface CompetitionDataPoint {
     date: string;
+    session: string;  // "Session 1", "Session 2", etc.
     squat: number;    // E1RM lbs
     bench: number;    // E1RM lbs
     deadlift: number; // E1RM lbs
@@ -131,6 +132,7 @@ export function getCompetitionDataPoints(
 
         points.push({
             date: dateLabel,
+            session: `Session ${points.length + 1}`,
             // Show this session's E1RM for individual lift lines; null shows as gap (connectNulls bridges it)
             squat: squatE1rm > 0 ? Math.round(squatE1rm) : 0,
             bench: benchE1rm > 0 ? Math.round(benchE1rm) : 0,

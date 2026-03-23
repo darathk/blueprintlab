@@ -41,9 +41,11 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
     const validPayload = payload.filter((p: any) => p.value > 0);
     if (!validPayload.length) return null;
+    const date = payload[0]?.payload?.date;
     return (
         <div style={{ background: 'rgba(15,23,42,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 14px', fontSize: 12 }}>
-            <p style={{ fontWeight: 700, color: '#f8fafc', marginBottom: 6 }}>{label}</p>
+            <p style={{ fontWeight: 700, color: '#f8fafc', marginBottom: 2 }}>{label}</p>
+            {date && <p style={{ color: '#64748b', margin: '0 0 6px', fontSize: 11 }}>{date}</p>}
             {validPayload.map((p: any) => (
                 <p key={p.dataKey} style={{ color: p.color, margin: '2px 0' }}>
                     {p.name}: <strong>{p.value > 0 ? p.value : '—'}{p.dataKey === 'dots' ? '' : ' lbs'}</strong>
@@ -289,7 +291,7 @@ export default function DotsChart({ athleteId, logs, programs = [], initialGende
                                 ))}
                             </defs>
                             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                            <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} label={{ value: 'Session Date', position: 'insideBottom', offset: -2, fill: '#64748b', fontSize: 10 }} height={40} />
+                            <XAxis dataKey="session" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} label={{ value: 'Log Session', position: 'insideBottom', offset: -2, fill: '#64748b', fontSize: 10 }} height={40} />
                             <YAxis yAxisId="lbs" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={62} label={{ value: 'E1RM (lbs)', angle: -90, position: 'insideLeft', offset: 10, fill: '#94a3b8', fontSize: 10 }} />
                             <YAxis yAxisId="dots" orientation="right" tick={{ fill: CHART_COLORS.dots, fontSize: 11 }} axisLine={false} tickLine={false} width={58} label={{ value: 'DOTs Score', angle: 90, position: 'insideRight', offset: -4, fill: CHART_COLORS.dots, fontSize: 10 }} />
                             <Tooltip content={<CustomTooltip />} />
