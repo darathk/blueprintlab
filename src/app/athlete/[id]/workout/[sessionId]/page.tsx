@@ -40,9 +40,9 @@ export default async function WorkoutPage({ params }) {
     const sortedSessions = [...weekSessions].sort((a: any, b: any) => (a?.day || 1) - (b?.day || 1));
     const sessionNum = sortedSessions.findIndex((s: any) => (s?.day || 1) === dayNum) + 1;
 
-    // Compute sequential week display number (1-based position among sorted weeks)
-    const sortedWeeks = [...(program.weeks as any[])].sort((a: any, b: any) => (a?.weekNumber || 1) - (b?.weekNumber || 1));
-    const weekDisplayNum = sortedWeeks.findIndex((w: any) => (w?.weekNumber || 1) === weekNum) + 1;
+    // Compute sequential week display number (only counting weeks with sessions)
+    const weeksWithSessions = [...(program.weeks as any[])].filter((w: any) => Array.isArray(w?.sessions) && w.sessions.length > 0).sort((a: any, b: any) => (a?.weekNumber || 1) - (b?.weekNumber || 1));
+    const weekDisplayNum = weeksWithSessions.findIndex((w: any) => (w?.weekNumber || 1) === weekNum) + 1;
 
     // Determine the week start date for display
     const programStart = program.startDate ? new Date(program.startDate) : null;

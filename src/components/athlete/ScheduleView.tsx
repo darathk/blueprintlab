@@ -390,12 +390,12 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
             const isActive = program.status === 'active';
 
             const weeks: any[] = Array.isArray(program.weeks) ? program.weeks : [];
-            // Sort weeks by weekNumber to compute sequential display index
-            const sortedWeeks = [...weeks].sort((a: any, b: any) => (a?.weekNumber || 1) - (b?.weekNumber || 1));
+            // Sort weeks with sessions by weekNumber to compute sequential display index (skip empty weeks)
+            const weeksWithSessions = [...weeks].filter((w: any) => Array.isArray(w?.sessions) && w.sessions.length > 0).sort((a: any, b: any) => (a?.weekNumber || 1) - (b?.weekNumber || 1));
             weeks.forEach((week: any) => {
                 const wn = week.weekNumber || 1;
-                // Sequential 1-based display week number
-                const weekDisplayNum = sortedWeeks.findIndex((w: any) => (w?.weekNumber || 1) === wn) + 1;
+                // Sequential 1-based display week number (only counting weeks that have sessions)
+                const weekDisplayNum = weeksWithSessions.findIndex((w: any) => (w?.weekNumber || 1) === wn) + 1;
                 const sessions: any[] = Array.isArray(week.sessions) ? week.sessions : [];
                 // Sort sessions by day to determine sequential session number
                 const sortedSessions = [...sessions].sort((a: any, b: any) => (a?.day || 1) - (b?.day || 1));
@@ -1110,8 +1110,8 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
 
                         {/* ═══ Weeks ═══ */}
                         {blockOpen && (() => {
-                            // Sort weeks for sequential display numbering
-                            const sortedWeeksForDisplay = [...weeks].sort((a: any, b: any) => (a?.weekNumber || 1) - (b?.weekNumber || 1));
+                            // Sort weeks with sessions for sequential display numbering (skip empty weeks)
+                            const sortedWeeksForDisplay = [...weeks].filter((w: any) => Array.isArray(w?.sessions) && w.sessions.length > 0).sort((a: any, b: any) => (a?.weekNumber || 1) - (b?.weekNumber || 1));
                             return weeks.map((week: any) => {
                             if (!week) return null;
                             const sessions: any[] = Array.isArray(week.sessions) ? week.sessions : [];
