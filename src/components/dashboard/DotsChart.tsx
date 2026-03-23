@@ -110,6 +110,14 @@ export default function DotsChart({ athleteId, logs, programs = [], initialGende
     const latestDots = data.length > 0 ? data[data.length - 1].dots : 0;
     const latestTotal = data.length > 0 ? data[data.length - 1].total : 0;
 
+    // Find the last non-zero value for each lift across all data points
+    const latestLift = (key: 'squat' | 'bench' | 'deadlift' | 'totalLbs') => {
+        for (let i = data.length - 1; i >= 0; i--) {
+            if (data[i][key] > 0) return data[i][key];
+        }
+        return 0;
+    };
+
     const toggleLine = (key: keyof typeof activeLines) =>
         setActiveLines(prev => ({ ...prev, [key]: !prev[key] }));
 
@@ -175,10 +183,10 @@ export default function DotsChart({ athleteId, logs, programs = [], initialGende
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                     {[
                         { label: 'Latest DOTs', value: latestDots > 0 ? latestDots.toFixed(1) : '—', color: CHART_COLORS.dots },
-                        { label: 'Total E1RM', value: data[data.length - 1].totalLbs > 0 ? `${data[data.length - 1].totalLbs} lbs` : '—', color: CHART_COLORS.totalLbs },
-                        { label: 'Latest Squat E1RM', value: data[data.length - 1].squat > 0 ? `${data[data.length - 1].squat} lbs` : '—', color: CHART_COLORS.squat },
-                        { label: 'Latest Bench E1RM', value: data[data.length - 1].bench > 0 ? `${data[data.length - 1].bench} lbs` : '—', color: CHART_COLORS.bench },
-                        { label: 'Latest Deadlift E1RM', value: data[data.length - 1].deadlift > 0 ? `${data[data.length - 1].deadlift} lbs` : '—', color: CHART_COLORS.deadlift },
+                        { label: 'Total E1RM', value: latestLift('totalLbs') > 0 ? `${latestLift('totalLbs')} lbs` : '—', color: CHART_COLORS.totalLbs },
+                        { label: 'Latest Squat E1RM', value: latestLift('squat') > 0 ? `${latestLift('squat')} lbs` : '—', color: CHART_COLORS.squat },
+                        { label: 'Latest Bench E1RM', value: latestLift('bench') > 0 ? `${latestLift('bench')} lbs` : '—', color: CHART_COLORS.bench },
+                        { label: 'Latest Deadlift E1RM', value: latestLift('deadlift') > 0 ? `${latestLift('deadlift')} lbs` : '—', color: CHART_COLORS.deadlift },
                     ].map(s => (
                         <div key={s.label} style={{ flex: '1 1 110px', background: 'rgba(15,23,42,0.5)', border: `1px solid ${s.color}33`, borderRadius: 10, padding: '12px 16px' }}>
                             <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{s.label}</div>
