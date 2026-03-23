@@ -1489,6 +1489,14 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                 startDate={startDate}
                                 onSelectDate={handleSelectDate}
                                 onSessionMove={handleSessionMove}
+                                onDuplicateSession={(weekNum, dayNum) => {
+                                    const wIdx = weeks.findIndex(w => w.weekNumber === weekNum);
+                                    if (wIdx === -1) return;
+                                    const sIdx = weeks[wIdx].sessions.findIndex(s => s.day === dayNum);
+                                    if (sIdx === -1) return;
+                                    setDuplicateSource({ weekIndex: wIdx, sessionIndex: sIdx });
+                                    setDuplicateTargetDate('');
+                                }}
                             />
                         </div>
                     )}
@@ -1709,7 +1717,30 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                             className="input"
                             style={{ fontSize: '1.1rem', fontWeight: 600, flex: 1, marginRight: '1rem' }}
                         />
-                        <button onClick={closeEditor} className="btn btn-primary" style={{ flexShrink: 0 }}>Done</button>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
+                            <button
+                                onClick={() => { duplicateSession(editingSession.w, editingSession.s); }}
+                                title="Duplicate Session"
+                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1rem' }}
+                            >
+                                ❐
+                            </button>
+                            <button
+                                onClick={() => { setDuplicateSource({ weekIndex: editingSession.w, sessionIndex: editingSession.s }); setDuplicateTargetDate(''); }}
+                                title="Duplicate to Date..."
+                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--accent)' }}
+                            >
+                                ❐→
+                            </button>
+                            <button
+                                onClick={() => { const w = editingSession.w; const s = editingSession.s; closeEditor(); removeSession(w, s); }}
+                                title="Delete Session"
+                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1rem', color: 'var(--error)' }}
+                            >
+                                🗑️
+                            </button>
+                            <button onClick={closeEditor} className="btn btn-primary" style={{ marginLeft: '0.5rem' }}>Done</button>
+                        </div>
                     </div>
 
                     {/* Editor body */}
