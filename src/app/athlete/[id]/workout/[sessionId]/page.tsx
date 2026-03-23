@@ -36,6 +36,10 @@ export default async function WorkoutPage({ params }) {
     // Pass all sessions in this week for the week overview drawer
     const weekSessions = week?.sessions || [];
 
+    // Compute sequential session number (1-based position among sessions sorted by day)
+    const sortedSessions = [...weekSessions].sort((a: any, b: any) => (a?.day || 1) - (b?.day || 1));
+    const sessionNum = sortedSessions.findIndex((s: any) => (s?.day || 1) === dayNum) + 1;
+
     // Determine the week start date for display
     const programStart = program.startDate ? new Date(program.startDate) : null;
     let weekStartDate = '';
@@ -49,7 +53,7 @@ export default async function WorkoutPage({ params }) {
         <div style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
             <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>{session.name}</h1>
             <p style={{ color: 'var(--secondary-foreground)', marginBottom: '2rem' }}>
-                Week {weekNum} • Day {dayNum}
+                Week {weekNum} • Session {sessionNum}
             </p>
 
             <WorkoutLogger
@@ -58,7 +62,7 @@ export default async function WorkoutPage({ params }) {
                 programId={programId}
                 sessionId={sessionId}
                 weekNum={weekNum}
-                dayNum={dayNum}
+                dayNum={sessionNum}
                 blockName={program.name}
                 exercises={session.exercises}
                 initialLog={existingLog}

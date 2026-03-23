@@ -379,7 +379,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
     // Uses same logic as MasterProgramCalendar: Day 1 = program startDate,
     // Day 2 = startDate+1, etc. Week boundaries every 7 days from startDate.
     const sessionsByDate = useMemo(() => {
-        const map: Record<string, { program: any; weekNum: number; session: any; sKey: string; isActive: boolean }[]> = {};
+        const map: Record<string, { program: any; weekNum: number; session: any; sKey: string; isActive: boolean; sessionNum: number }[]> = {};
         if (!Array.isArray(programs)) return map;
 
         programs.forEach(program => {
@@ -391,6 +391,8 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
             weeks.forEach((week: any) => {
                 const wn = week.weekNumber || 1;
                 const sessions: any[] = Array.isArray(week.sessions) ? week.sessions : [];
+                // Sort sessions by day to determine sequential session number
+                const sortedSessions = [...sessions].sort((a: any, b: any) => (a?.day || 1) - (b?.day || 1));
                 sessions.forEach((session: any) => {
                     const day = session.day || 1;
                     // Compute actual date: startDate + (wn-1)*7 + (day-1)
@@ -398,8 +400,10 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                     d.setDate(d.getDate() + (wn - 1) * 7 + (day - 1));
                     const ds = toDateStr(d);
                     const sKey = sessionKey(program.id, wn, day);
+                    // sessionNum is the 1-based position of this session in the week (sorted by day)
+                    const sessionNum = sortedSessions.findIndex((s: any) => (s?.day || 1) === day) + 1;
                     if (!map[ds]) map[ds] = [];
-                    map[ds].push({ program, weekNum: wn, session, sKey, isActive });
+                    map[ds].push({ program, weekNum: wn, session, sKey, isActive, sessionNum });
                 });
             });
         });
@@ -636,7 +640,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                         </div>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                            {selectedDateSessions.map(({ program, weekNum, session, sKey, isActive }) => {
+                            {selectedDateSessions.map(({ program, weekNum, session, sKey, isActive, sessionNum }) => {
                                 const exercises: any[] = Array.isArray(session.exercises) ? session.exercises : [];
                                 const log = Array.isArray(logs) ? logs.find(l => l.sessionId === sKey && l.programId === program.id) : undefined;
                                 const progress = sessionProgress(exercises, log, editState[sKey]);
@@ -943,7 +947,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                                                                         coachId={coachId || ''}
                                                                         exerciseName={exerciseData.name || ex.name}
                                                                         weekNum={weekNum}
-                                                                        dayNum={session.day || 1}
+                                                                        dayNum={sessionNum}
                                                                         blockName={program.name}
                                                                         unit={unit}
                                                                         sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any, i: number) => ({ setNumber: i + 1, actual: s.actual || { weight: '', reps: '', rpe: '' } }))}
@@ -1171,9 +1175,10 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                                     </div>
 
                                     {/* ═══ Sessions (Days) ═══ */}
-                                    {weekOpen && [...sessions].sort((a: any, b: any) => (a?.day || 1) - (b?.day || 1)).map((session: any) => {
+                                    {weekOpen && [...sessions].sort((a: any, b: any) => (a?.day || 1) - (b?.day || 1)).map((session: any, sessionIndex: number) => {
                                         if (!session) return null;
                                         const day = session.day || 1;
+                                        const sessionNum = sessionIndex + 1; // 1-based sequential session number
                                         const sKey = sessionKey(program.id, weekNum, day);
                                         const sessionOpen = openSessions.has(sKey);
                                         const exercises: any[] = Array.isArray(session.exercises) ? session.exercises : [];
@@ -1474,7 +1479,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                                                                                     coachId={coachId || ''}
                                                                                     exerciseName={exerciseData.name || ex.name}
                                                                                     weekNum={weekNum}
-                                                                                    dayNum={day}
+                                                                                    dayNum={sessionNum}
                                                                                     blockName={program.name}
                                                                                     unit={unit}
                                                                                     sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any, i: number) => ({ setNumber: i + 1, actual: s.actual || { weight: '', reps: '', rpe: '' } }))}

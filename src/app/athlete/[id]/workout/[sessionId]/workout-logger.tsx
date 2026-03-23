@@ -318,7 +318,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                     justifyContent: 'space-between',
                     alignItems: 'center'
                 }}>
-                    <h2 style={{ fontSize: '1.2rem', margin: 0, fontWeight: 600 }}>Session {sessionId.split('_')[2]?.substring(1)}</h2>
+                    <h2 style={{ fontSize: '1.2rem', margin: 0, fontWeight: 600 }}>Session {dayNum}</h2>
                     <div style={{ fontSize: '0.8rem', opacity: 0.9, textAlign: 'right' }}>
                         <div style={{ fontWeight: 600 }}>Stress: {sessionStats.total}</div>
                         <div style={{ fontSize: '0.7rem', opacity: 0.8 }}>C: {sessionStats.central} | P: {sessionStats.peripheral}</div>
