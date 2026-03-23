@@ -40,6 +40,10 @@ export default async function WorkoutPage({ params }) {
     const sortedSessions = [...weekSessions].sort((a: any, b: any) => (a?.day || 1) - (b?.day || 1));
     const sessionNum = sortedSessions.findIndex((s: any) => (s?.day || 1) === dayNum) + 1;
 
+    // Compute sequential week display number (1-based position among sorted weeks)
+    const sortedWeeks = [...(program.weeks as any[])].sort((a: any, b: any) => (a?.weekNumber || 1) - (b?.weekNumber || 1));
+    const weekDisplayNum = sortedWeeks.findIndex((w: any) => (w?.weekNumber || 1) === weekNum) + 1;
+
     // Determine the week start date for display
     const programStart = program.startDate ? new Date(program.startDate) : null;
     let weekStartDate = '';
@@ -53,7 +57,7 @@ export default async function WorkoutPage({ params }) {
         <div style={{ padding: '2rem', maxWidth: '800px', margin: '0 auto' }}>
             <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>{session.name}</h1>
             <p style={{ color: 'var(--secondary-foreground)', marginBottom: '2rem' }}>
-                Week {weekNum} • Session {sessionNum}
+                Week {weekDisplayNum} • Session {sessionNum}
             </p>
 
             <WorkoutLogger
@@ -61,7 +65,7 @@ export default async function WorkoutPage({ params }) {
                 coachId={athlete?.coachId ?? ''}
                 programId={programId}
                 sessionId={sessionId}
-                weekNum={weekNum}
+                weekNum={weekDisplayNum}
                 dayNum={sessionNum}
                 blockName={program.name}
                 exercises={session.exercises}

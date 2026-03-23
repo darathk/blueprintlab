@@ -90,7 +90,7 @@ export default function AthleteProgramPane({ athleteId, coachId, onClose }: Prop
 
                 {!loading && data && data.programs.length > 0 && (
                     <div style={{ margin: '-1rem' }}>
-                        <ScheduleView programs={data.programs} athleteId={athleteId} coachId={coachId} logs={data.logs} />
+                        <ScheduleView programs={data.programs} athleteId={athleteId} coachId={coachId} logs={data.logs} isCoachView={true} />
                     </div>
                 )}
             </div>

@@ -104,11 +104,12 @@ function sessionProgress(exercises: any[], log: any, editStateData?: any[]): num
 }
 
 /* ─────────── component ─────────── */
-export default function ScheduleView({ programs, athleteId, coachId, logs }: {
+export default function ScheduleView({ programs, athleteId, coachId, logs, isCoachView = false }: {
     programs: any[];
     athleteId: string;
     coachId?: string;
     logs: any[];
+    isCoachView?: boolean;
 }) {
     const router = useRouter();
 
@@ -138,6 +139,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
     const sessionMetaRef = useRef<Record<string, { exercises: any[]; sessionName: string }>>({});
 
     // Readiness gating: track which sessions have completed readiness
+    // Coach view bypasses readiness entirely
     const [readySessions, setReadySessions] = useState<Set<string>>(new Set());
     const [readinessPopup, setReadinessPopup] = useState<string | null>(null); // session key of popup
     const [shakeKey, setShakeKey] = useState<string | null>(null); // exercise key to shake
@@ -379,7 +381,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
     // Uses same logic as MasterProgramCalendar: Day 1 = program startDate,
     // Day 2 = startDate+1, etc. Week boundaries every 7 days from startDate.
     const sessionsByDate = useMemo(() => {
-        const map: Record<string, { program: any; weekNum: number; session: any; sKey: string; isActive: boolean; sessionNum: number }[]> = {};
+        const map: Record<string, { program: any; weekNum: number; weekDisplayNum: number; session: any; sKey: string; isActive: boolean; sessionNum: number }[]> = {};
         if (!Array.isArray(programs)) return map;
 
         programs.forEach(program => {
@@ -388,8 +390,12 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
             const isActive = program.status === 'active';
 
             const weeks: any[] = Array.isArray(program.weeks) ? program.weeks : [];
+            // Sort weeks by weekNumber to compute sequential display index
+            const sortedWeeks = [...weeks].sort((a: any, b: any) => (a?.weekNumber || 1) - (b?.weekNumber || 1));
             weeks.forEach((week: any) => {
                 const wn = week.weekNumber || 1;
+                // Sequential 1-based display week number
+                const weekDisplayNum = sortedWeeks.findIndex((w: any) => (w?.weekNumber || 1) === wn) + 1;
                 const sessions: any[] = Array.isArray(week.sessions) ? week.sessions : [];
                 // Sort sessions by day to determine sequential session number
                 const sortedSessions = [...sessions].sort((a: any, b: any) => (a?.day || 1) - (b?.day || 1));
@@ -403,7 +409,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                     // sessionNum is the 1-based position of this session in the week (sorted by day)
                     const sessionNum = sortedSessions.findIndex((s: any) => (s?.day || 1) === day) + 1;
                     if (!map[ds]) map[ds] = [];
-                    map[ds].push({ program, weekNum: wn, session, sKey, isActive, sessionNum });
+                    map[ds].push({ program, weekNum: wn, weekDisplayNum, session, sKey, isActive, sessionNum });
                 });
             });
         });
@@ -640,7 +646,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                         </div>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                            {selectedDateSessions.map(({ program, weekNum, session, sKey, isActive, sessionNum }) => {
+                            {selectedDateSessions.map(({ program, weekNum, weekDisplayNum, session, sKey, isActive, sessionNum }) => {
                                 const exercises: any[] = Array.isArray(session.exercises) ? session.exercises : [];
                                 const log = Array.isArray(logs) ? logs.find(l => l.sessionId === sKey && l.programId === program.id) : undefined;
                                 const progress = sessionProgress(exercises, log, editState[sKey]);
@@ -701,7 +707,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                                                                 {session.name || `Session ${session.day}`}
                                                             </div>
                                                             <div style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', marginTop: 2 }}>
-                                                                {program.name} — {weekDateRange(program.startDate, weekNum)}
+                                                                {program.name} — Week {weekDisplayNum} • {weekDateRange(program.startDate, weekNum)}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -735,7 +741,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
-                                                        if (!readySessions.has(sKey)) {
+                                                        if (!isCoachView && !readySessions.has(sKey)) {
                                                             handleLockedExerciseClick(sKey, `${sKey}-expand-all`);
                                                             return;
                                                         }
@@ -766,10 +772,10 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                                         {/* Expanded: Readiness + Exercise Cards */}
                                         {sessionOpen && (
                                             <div style={{ background: 'var(--card-border)', position: 'relative' }}>
-                                                <ReadinessCheckin athleteId={athleteId} sessionKey={sKey} programId={program.id} onReadinessSubmit={() => markSessionReady(sKey)} />
+                                                {!isCoachView && <ReadinessCheckin athleteId={athleteId} sessionKey={sKey} programId={program.id} onReadinessSubmit={() => markSessionReady(sKey)} />}
 
                                                 {/* Readiness gate popup */}
-                                                {readinessPopup === sKey && (
+                                                {!isCoachView && readinessPopup === sKey && (
                                                     <div style={{
                                                         position: 'sticky', top: 0, zIndex: 50,
                                                         display: 'flex', justifyContent: 'center', padding: '0 16px',
@@ -827,7 +833,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                                                     const category = exerciseData.category || ex.category || getExerciseCategory(exerciseData.name || ex.name);
                                                     const catColor = CATEGORY_COLORS[category] || '#94A3B8';
 
-                                                    const isLocked = !readySessions.has(sKey);
+                                                    const isLocked = !isCoachView && !readySessions.has(sKey);
 
                                                     return (
                                                         <div key={exIdx} className={shakeKey === exKey ? 'readiness-shake' : ''} style={{ background: 'var(--background)', borderBottom: '1px solid var(--card-border)', opacity: isLocked ? 0.5 : 1, transition: 'opacity 0.3s' }}>
@@ -946,7 +952,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                                                                         athleteId={athleteId}
                                                                         coachId={coachId || ''}
                                                                         exerciseName={exerciseData.name || ex.name}
-                                                                        weekNum={weekNum}
+                                                                        weekNum={weekDisplayNum}
                                                                         dayNum={sessionNum}
                                                                         blockName={program.name}
                                                                         unit={unit}
@@ -1103,11 +1109,15 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                         </button>
 
                         {/* ═══ Weeks ═══ */}
-                        {blockOpen && weeks.map((week: any) => {
+                        {blockOpen && (() => {
+                            // Sort weeks for sequential display numbering
+                            const sortedWeeksForDisplay = [...weeks].sort((a: any, b: any) => (a?.weekNumber || 1) - (b?.weekNumber || 1));
+                            return weeks.map((week: any) => {
                             if (!week) return null;
                             const sessions: any[] = Array.isArray(week.sessions) ? week.sessions : [];
                             if (sessions.length === 0) return null;
                             const weekNum = week.weekNumber || 1;
+                            const weekDisplayNum = sortedWeeksForDisplay.findIndex((w: any) => (w?.weekNumber || 1) === weekNum) + 1;
 
                             // Skip weeks that fall outside the program's date range
                             if (program.startDate) {
@@ -1142,7 +1152,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                                                 color: 'var(--foreground)', cursor: 'pointer', fontSize: '1rem', fontWeight: 600
                                             }}
                                         >
-                                            <span>{weekDateRange(program.startDate, weekNum)} <span style={{ fontWeight: 400, color: 'var(--secondary-foreground)', fontSize: '0.85rem' }}>• {sessions.length} session{sessions.length !== 1 ? 's' : ''}</span></span>
+                                            <span>Week {weekDisplayNum} — {weekDateRange(program.startDate, weekNum)} <span style={{ fontWeight: 400, color: 'var(--secondary-foreground)', fontSize: '0.85rem' }}>• {sessions.length} session{sessions.length !== 1 ? 's' : ''}</span></span>
                                             <span style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', transition: 'transform 200ms', transform: weekOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
                                         </button>
                                         {/* Week Overview Button */}
@@ -1289,10 +1299,10 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                                                             </div>
 
                                                             {/* Readiness Check-In */}
-                                                            <ReadinessCheckin athleteId={athleteId} sessionKey={sKey} programId={program.id} onReadinessSubmit={() => markSessionReady(sKey)} />
+                                                            {!isCoachView && <ReadinessCheckin athleteId={athleteId} sessionKey={sKey} programId={program.id} onReadinessSubmit={() => markSessionReady(sKey)} />}
 
                                                             {/* Readiness gate popup */}
-                                                            {readinessPopup === sKey && (
+                                                            {!isCoachView && readinessPopup === sKey && (
                                                                 <div style={{
                                                                     position: 'sticky', top: 0, zIndex: 50,
                                                                     display: 'flex', justifyContent: 'center', padding: '0 16px',
@@ -1348,7 +1358,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                                                                     }
                                                                 });
 
-                                                                const isLocked = !readySessions.has(sKey);
+                                                                const isLocked = !isCoachView && !readySessions.has(sKey);
 
                                                                 return (
                                                                     <div key={exIdx} className={shakeKey === exKey ? 'readiness-shake' : ''} style={{ background: 'var(--background)', borderBottom: '1px solid #cbd5e1', opacity: isLocked ? 0.5 : 1, transition: 'opacity 0.3s' }}>
@@ -1478,7 +1488,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                                                                                     athleteId={athleteId}
                                                                                     coachId={coachId || ''}
                                                                                     exerciseName={exerciseData.name || ex.name}
-                                                                                    weekNum={weekNum}
+                                                                                    weekNum={weekDisplayNum}
                                                                                     dayNum={sessionNum}
                                                                                     blockName={program.name}
                                                                                     unit={unit}
@@ -1497,7 +1507,8 @@ export default function ScheduleView({ programs, athleteId, coachId, logs }: {
                                     })}
                                 </div>
                             );
-                        })}
+                        });
+                        })()}
                     </div>
                 );
             })}
