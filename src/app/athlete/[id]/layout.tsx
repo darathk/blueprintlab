@@ -6,7 +6,7 @@ import Link from 'next/link';
 import AthleteNav from '@/components/athlete/AthleteNav';
 import MobileBottomNav, { NavItem } from '@/components/navigation/MobileBottomNav';
 import AppSetupBubble from '@/components/notifications/AppSetupBubble';
-import { LayoutDashboard, MessageSquare, Dumbbell, Medal, Target, Settings } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, Dumbbell, Medal, Target, Settings, Search } from 'lucide-react';
 
 export default async function AthletePortalLayout({
     children,
@@ -64,6 +64,7 @@ export default async function AthletePortalLayout({
         { label: 'Dashboard', href: `/athlete/${id}/dashboard`, icon: <LayoutDashboard size={26} /> },
         { label: 'Messages', href: `/athlete/${id}/chat`, icon: <MessageSquare size={26} />, unreadCount },
         { label: 'Board', href: `/athlete/${id}/leaderboard`, icon: <Medal size={26} /> },
+        { label: 'History', href: `/athlete/${id}/history`, icon: <Search size={26} /> },
         { label: 'Loader', href: `/athlete/${id}/plate-loader`, icon: <Dumbbell size={26} /> }
     ];
 
