@@ -4,8 +4,10 @@ import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { Mic, MoreVertical, Reply, Copy, Download, Paperclip, X, Send, Search, Scissors, Pencil, Play, Maximize } from 'lucide-react';
+import { Mic, MoreVertical, Reply, Copy, Download, Paperclip, X, Send, Search, Scissors, Pencil, Play, Maximize, Plus } from 'lucide-react';
 const VideoCropper = dynamic(() => import('./VideoCropper'), { ssr: false });
+const EmojiPicker = dynamic(() => import('./EmojiPicker'), { ssr: false });
+const GifPicker = dynamic(() => import('./GifPicker'), { ssr: false });
 
 // Lazy-loading video component for iOS reliability
 function LazyVideo({ src, onLoadedData, style }: { src: string; onLoadedData?: () => void; style?: React.CSSProperties }) {
@@ -158,6 +160,12 @@ export default function ChatInterface({
     const [loaded, setLoaded] = useState(false);
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [searchText, setSearchText] = useState('');
+
+    // Emoji picker state (for reactions)
+    const [emojiPickerMessageId, setEmojiPickerMessageId] = useState<string | null>(null);
+
+    // GIF picker state
+    const [showGifPicker, setShowGifPicker] = useState(false);
 
     // Video Cropper state
     const [cropFile, setCropFile] = useState<File | null>(null);
@@ -662,6 +670,51 @@ export default function ChatInterface({
         }
     };
 
+    // Send GIF as a message
+    const handleSendGif = async (gifUrl: string) => {
+        setShowGifPicker(false);
+        const tempId = `temp-${Date.now()}`;
+        const optimisticMsg: Message = {
+            id: tempId,
+            senderId: currentUserId,
+            receiverId: otherUserId,
+            content: 'GIF',
+            mediaUrl: gifUrl,
+            mediaType: 'image/gif',
+            createdAt: new Date().toISOString(),
+            read: false,
+            replyToId: replyingTo?.id || null,
+            replyTo: replyingTo ? { id: replyingTo.id, content: replyingTo.content, mediaUrl: replyingTo.mediaUrl, mediaType: replyingTo.mediaType, sender: replyingTo.sender } : null,
+            sender: { id: currentUserId, name: currentUserName, email: '' },
+            receiver: { id: otherUserId, name: otherUserName, email: '' },
+        };
+        setMessages(prev => [...prev, optimisticMsg]);
+        setReplyingTo(null);
+        try {
+            const res = await fetch('/api/messages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    senderId: currentUserId,
+                    receiverId: otherUserId,
+                    content: 'GIF',
+                    mediaUrl: gifUrl,
+                    mediaType: 'image/gif',
+                    replyToId: replyingTo?.id || null,
+                }),
+            });
+            if (res.ok) {
+                const real = await res.json();
+                setMessages(prev => prev.map(m => m.id === tempId ? real : m));
+                window.dispatchEvent(new Event('inbox-refresh'));
+            } else {
+                setMessages(prev => prev.filter(m => m.id !== tempId));
+            }
+        } catch {
+            setMessages(prev => prev.filter(m => m.id !== tempId));
+        }
+    };
+
     // Staging media
     const handleMedia = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
@@ -1111,7 +1164,7 @@ export default function ChatInterface({
                                                 >
                                                     <div style={{ fontWeight: 600, color: 'var(--primary)', marginBottom: 2 }}>{msg.replyTo.sender.name}</div>
                                                     <div style={{ color: 'rgba(255,255,255,0.4)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                        {msg.replyTo.mediaUrl ? (msg.replyTo.mediaType?.startsWith('image') ? 'Photo' : msg.replyTo.mediaType?.startsWith('audio') ? 'Voice' : 'Video') : msg.replyTo.content}
+                                                        {msg.replyTo.mediaUrl ? (msg.replyTo.mediaType === 'image/gif' ? 'GIF' : msg.replyTo.mediaType?.startsWith('image') ? 'Photo' : msg.replyTo.mediaType?.startsWith('audio') ? 'Voice' : 'Video') : msg.replyTo.content}
                                                     </div>
                                                 </div>
                                             )}
@@ -1229,7 +1282,7 @@ export default function ChatInterface({
                                                         <X size={14} color="var(--secondary-foreground)" />
                                                     </button>
                                                 </div>
-                                            ) : (!msg.mediaUrl || (msg.content && !['Video', 'Photo'].includes(msg.content.trim()))) ? (
+                                            ) : (!msg.mediaUrl || (msg.content && !['Video', 'Photo', 'GIF'].includes(msg.content.trim()))) ? (
                                                 <div style={{ fontSize: 14, lineHeight: 1.4, color: 'rgba(255,255,255,0.9)', padding: msg.mediaUrl ? '0 10px' : 0, whiteSpace: 'pre-wrap' }}>{highlightMatch(msg.content)}</div>
                                             ) : null}
 
@@ -1309,19 +1362,48 @@ export default function ChatInterface({
                                                     <div style={{
                                                         display: 'flex',
                                                         justifyContent: 'space-around',
+                                                        alignItems: 'center',
                                                         padding: '4px 8px 8px',
                                                         borderBottom: '1px solid rgba(255,255,255,0.08)',
-                                                        marginBottom: 4
+                                                        marginBottom: 4,
+                                                        position: 'relative',
                                                     }}>
                                                         {['❤️', '🔥', '👍', '💪', '🙌', '💯'].map(emoji => (
                                                             <button
                                                                 key={emoji}
-                                                                onClick={() => { handleToggleReaction(msg.id, emoji); setActiveMenu(null); }}
+                                                                onClick={() => { handleToggleReaction(msg.id, emoji); setActiveMenu(null); setEmojiPickerMessageId(null); }}
                                                                 style={{ fontSize: 18, background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}
                                                             >
                                                                 {emoji}
                                                             </button>
                                                         ))}
+                                                        <button
+                                                            onClick={() => setEmojiPickerMessageId(emojiPickerMessageId === msg.id ? null : msg.id)}
+                                                            style={{
+                                                                fontSize: 14,
+                                                                background: emojiPickerMessageId === msg.id ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.06)',
+                                                                border: '1px solid rgba(255,255,255,0.1)',
+                                                                borderRadius: '50%',
+                                                                width: 24,
+                                                                height: 24,
+                                                                cursor: 'pointer',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                color: 'var(--secondary-foreground)',
+                                                                flexShrink: 0,
+                                                            }}
+                                                            title="More emojis"
+                                                        >
+                                                            <Plus size={14} />
+                                                        </button>
+                                                        {emojiPickerMessageId === msg.id && (
+                                                            <EmojiPicker
+                                                                onSelect={(emoji) => { handleToggleReaction(msg.id, emoji); setActiveMenu(null); setEmojiPickerMessageId(null); }}
+                                                                onClose={() => setEmojiPickerMessageId(null)}
+                                                                position="above"
+                                                            />
+                                                        )}
                                                     </div>
 
                                                     <button onClick={() => { setReplyingTo(msg); setActiveMenu(null); setTimeout(() => inputRef.current?.focus(), 50); }}
@@ -1365,7 +1447,7 @@ export default function ChatInterface({
                         <div style={{ flex: 1, paddingLeft: 10, borderLeft: '2px solid var(--primary)', minWidth: 0 }}>
                             <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--primary)' }}>Replying to {replyingTo.sender.name}</div>
                             <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                {replyingTo.mediaUrl ? (replyingTo.mediaType?.startsWith('image') ? 'Photo' : replyingTo.mediaType?.startsWith('audio') ? 'Voice' : 'Video') : replyingTo.content}
+                                {replyingTo.mediaUrl ? (replyingTo.mediaType === 'image/gif' ? 'GIF' : replyingTo.mediaType?.startsWith('image') ? 'Photo' : replyingTo.mediaType?.startsWith('audio') ? 'Voice' : 'Video') : replyingTo.content}
                             </div>
                         </div>
                         <button onClick={() => setReplyingTo(null)} style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><X size={16} /></button>
@@ -1393,8 +1475,16 @@ export default function ChatInterface({
                 paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 4px))',
                 background: 'var(--background)',
                 flexShrink: 0,
-                zIndex: 40
+                zIndex: 40,
+                position: 'relative',
             }}>
+                {/* GIF Picker overlay */}
+                {showGifPicker && (
+                    <GifPicker
+                        onSelect={handleSendGif}
+                        onClose={() => setShowGifPicker(false)}
+                    />
+                )}
                 <input ref={fileRef} type="file" multiple accept="video/*,image/*" onChange={handleMedia} style={{ display: 'none' }} />
                 {isRecording ? (
                     <div style={{
@@ -1437,7 +1527,7 @@ export default function ChatInterface({
                             }}
                         />
 
-                        {/* Bottom row: attachment + mic/send */}
+                        {/* Bottom row: attachment + gif + mic/send */}
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                                 <button onClick={() => fileRef.current?.click()} disabled={uploading}
@@ -1448,6 +1538,18 @@ export default function ChatInterface({
                                         display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
                                     }}>
                                     <Paperclip size={16} />
+                                </button>
+                                <button onClick={() => setShowGifPicker(!showGifPicker)} disabled={uploading}
+                                    style={{
+                                        height: 34, borderRadius: 17, paddingLeft: 10, paddingRight: 10,
+                                        background: showGifPicker ? 'rgba(125,135,210,0.2)' : 'rgba(255,255,255,0.06)',
+                                        border: showGifPicker ? '1px solid rgba(125,135,210,0.4)' : '1px solid rgba(255,255,255,0.06)',
+                                        color: showGifPicker ? 'var(--primary)' : 'var(--secondary-foreground)',
+                                        cursor: 'pointer',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                                        fontSize: 12, fontWeight: 700, letterSpacing: 0.5,
+                                    }}>
+                                    GIF
                                 </button>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
