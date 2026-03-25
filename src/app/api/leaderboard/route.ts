@@ -3,6 +3,21 @@ export const dynamic = 'force-dynamic';
 import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/api-auth';
 
+/** Returns the start/end of the current 30-day leaderboard cycle and days remaining. */
+function getLeaderboardCycle() {
+    const now = new Date();
+    // Cycle starts on the 1st of the current month
+    const cycleStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    // Cycle ends on the 1st of the next month
+    const cycleEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+    const daysRemaining = Math.ceil((cycleEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+    return {
+        start: cycleStart.toISOString().split('T')[0],
+        end: cycleEnd.toISOString().split('T')[0],
+        daysRemaining,
+    };
+}
+
 export async function GET(request: Request) {
     const auth = await requireAuth();
     if ('error' in auth) return auth.error;
@@ -23,14 +38,26 @@ export async function GET(request: Request) {
     }
 
     try {
-        // Lightweight query: only get log counts per athlete (no weeks JSON, no log dates)
+        const cycle = getLeaderboardCycle();
+
+        // Lightweight query: only get log counts per athlete within the current cycle
         const athletes = await prisma.athlete.findMany({
             where: { coachId, role: 'athlete' },
             select: {
                 id: true,
                 name: true,
                 programs: {
-                    select: { _count: { select: { logs: true } } }
+                    select: {
+                        _count: {
+                            select: {
+                                logs: {
+                                    where: {
+                                        date: { gte: cycle.start, lt: cycle.end }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 },
             }
         });
@@ -61,7 +88,12 @@ export async function GET(request: Request) {
                     programs: {
                         select: {
                             weeks: true,
-                            logs: { select: { date: true } }
+                            logs: {
+                                select: { date: true },
+                                where: {
+                                    date: { gte: cycle.start, lt: cycle.end }
+                                }
+                            }
                         }
                     }
                 }
@@ -146,7 +178,14 @@ export async function GET(request: Request) {
             tier: getTier(index + 1, leaderboard.length),
         }));
 
-        return NextResponse.json(ranked);
+        return NextResponse.json({
+            entries: ranked,
+            cycle: {
+                start: cycle.start,
+                end: cycle.end,
+                daysRemaining: cycle.daysRemaining,
+            },
+        });
     } catch (error) {
         console.error('Leaderboard error:', error);
         return NextResponse.json({ error: 'Failed to fetch leaderboard' }, { status: 500 });

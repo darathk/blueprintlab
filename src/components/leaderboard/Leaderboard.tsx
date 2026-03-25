@@ -15,6 +15,12 @@ interface LeaderboardEntry {
     tier: string;
 }
 
+interface CycleInfo {
+    start: string;
+    end: string;
+    daysRemaining: number;
+}
+
 const TIER_CONFIG: Record<string, { color: string; glow: string; label: string; icon: string }> = {
     champion: { color: '#fbbf24', glow: 'rgba(251, 191, 36, 0.5)', label: 'Champion', icon: '👑' },
     gold: { color: '#f59e0b', glow: 'rgba(245, 158, 11, 0.4)', label: 'Gold', icon: '🥇' },
@@ -45,6 +51,7 @@ export default function Leaderboard({
     currentAthleteId?: string;
 }) {
     const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
+    const [cycle, setCycle] = useState<CycleInfo | null>(null);
     const [loading, setLoading] = useState(true);
 
     const fetchLeaderboard = useCallback(async () => {
@@ -52,7 +59,8 @@ export default function Leaderboard({
             const res = await fetch(`/api/leaderboard?coachId=${coachId}`);
             if (res.ok) {
                 const data = await res.json();
-                setEntries(data);
+                setEntries(data.entries);
+                setCycle(data.cycle);
             }
         } catch (e) {
             console.error('Failed to fetch leaderboard:', e);
@@ -122,6 +130,22 @@ export default function Leaderboard({
                 <p style={{ color: 'var(--secondary-foreground)', fontSize: '0.85rem', marginTop: '0.25rem' }}>
                     Who&apos;s putting in the work?
                 </p>
+                {cycle && (
+                    <div style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '0.4rem',
+                        marginTop: '0.5rem',
+                        padding: '0.3rem 0.75rem',
+                        borderRadius: 20,
+                        background: 'rgba(125, 135, 210, 0.1)',
+                        border: '1px solid rgba(125, 135, 210, 0.2)',
+                        fontSize: '0.75rem',
+                        color: 'var(--secondary-foreground)',
+                    }}>
+                        <span>Resets in <strong style={{ color: 'var(--foreground)' }}>{cycle.daysRemaining} day{cycle.daysRemaining !== 1 ? 's' : ''}</strong></span>
+                    </div>
+                )}
             </div>
 
             {/* Current athlete highlight card */}
@@ -336,7 +360,8 @@ export function LeaderboardRankWidget({
         try {
             const res = await fetch(`/api/leaderboard?coachId=${coachId}`);
             if (res.ok) {
-                const entries: LeaderboardEntry[] = await res.json();
+                const json = await res.json();
+                const entries: LeaderboardEntry[] = json.entries;
                 setTotal(entries.length);
                 const me = entries.find(e => e.id === athleteId);
                 if (me) setData(me);
