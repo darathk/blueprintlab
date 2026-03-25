@@ -840,17 +840,36 @@ export default function ChatInterface({
         );
     }, [messages, searchText]);
 
-    // Highlighting helper
+    // Check if a string is a URL
+    const isUrl = (text: string) => /^https?:\/\//.test(text);
+
+    // Highlighting helper (also linkifies URLs)
     const highlightMatch = (text: string) => {
-        if (!searchText.trim()) return text;
-        const parts = text.split(new RegExp(`(${searchText})`, 'gi'));
+        const parts = text.split(/(https?:\/\/[^\s<]+)/g);
+        if (!searchText.trim()) {
+            return (
+                <>
+                    {parts.map((part, i) =>
+                        isUrl(part)
+                            ? <a key={i} href={part} target="_blank" rel="noopener noreferrer" style={{ color: '#22d3ee', textDecoration: 'underline' }}>{part}</a>
+                            : part
+                    )}
+                </>
+            );
+        }
         return (
             <>
-                {parts.map((part, i) =>
-                    part.toLowerCase() === searchText.toLowerCase()
-                        ? <mark key={i} style={{ background: 'rgba(6, 182, 212, 0.4)', color: '#fff', borderRadius: 2, padding: '0 2px' }}>{part}</mark>
-                        : part
-                )}
+                {parts.map((part, i) => {
+                    if (isUrl(part)) {
+                        return <a key={i} href={part} target="_blank" rel="noopener noreferrer" style={{ color: '#22d3ee', textDecoration: 'underline' }}>{part}</a>;
+                    }
+                    const searchParts = part.split(new RegExp(`(${searchText})`, 'gi'));
+                    return searchParts.map((sp, j) =>
+                        sp.toLowerCase() === searchText.toLowerCase()
+                            ? <mark key={`${i}-${j}`} style={{ background: 'rgba(6, 182, 212, 0.4)', color: '#fff', borderRadius: 2, padding: '0 2px' }}>{sp}</mark>
+                            : sp
+                    );
+                })}
             </>
         );
     };
