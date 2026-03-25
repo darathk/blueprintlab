@@ -3,8 +3,11 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
-import { Mic, MoreVertical, Reply, Copy, Download, Paperclip, X, Send, Search, Scissors, Pencil, Play, Maximize } from 'lucide-react';
-import VideoCropper from './VideoCropper';
+import dynamic from 'next/dynamic';
+import { Mic, MoreVertical, Reply, Copy, Download, Paperclip, X, Send, Search, Scissors, Pencil, Play, Maximize, Plus } from 'lucide-react';
+const VideoCropper = dynamic(() => import('./VideoCropper'), { ssr: false });
+const EmojiPicker = dynamic(() => import('./EmojiPicker'), { ssr: false });
+const GifPicker = dynamic(() => import('./GifPicker'), { ssr: false });
 
 // Lazy-loading video component for iOS reliability
 function LazyVideo({ src, onLoadedData, style }: { src: string; onLoadedData?: () => void; style?: React.CSSProperties }) {
@@ -158,6 +161,12 @@ export default function ChatInterface({
     const [isSearchOpen, setIsSearchOpen] = useState(false);
     const [searchText, setSearchText] = useState('');
 
+    // Emoji picker state (for reactions)
+    const [emojiPickerMessageId, setEmojiPickerMessageId] = useState<string | null>(null);
+
+    // GIF picker state
+    const [showGifPicker, setShowGifPicker] = useState(false);
+
     // Video Cropper state
     const [cropFile, setCropFile] = useState<File | null>(null);
 
@@ -267,32 +276,52 @@ export default function ChatInterface({
         }
     }, [loaded, scrollToBottom]);
 
-    // Realtime — append only, no re-fetch
+    // Track whether Supabase realtime is connected
+    const realtimeConnected = useRef(false);
+
+    // Realtime — fetch only the single new message, not all 100
     useEffect(() => {
         const ch = supabase.channel(`chat-${athleteId}`)
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'Message', filter: `senderId=eq.${otherUserId}` },
                 (payload) => {
-                    fetch(`/api/messages?athleteId=${athleteId}`)
-                        .then(r => r.ok ? r.json() : null)
-                        .then(data => { if (data) setMessages(data); });
+                    // Fetch only the new message by ID to avoid re-fetching all 100
+                    const newMsgId = payload.new?.id;
+                    if (newMsgId) {
+                        fetch(`/api/messages/single?id=${newMsgId}`)
+                            .then(r => r.ok ? r.json() : null)
+                            .then(msg => {
+                                if (msg) {
+                                    setMessages(prev => {
+                                        // Avoid duplicates (polling may have already added it)
+                                        if (prev.some(m => m.id === msg.id)) return prev;
+                                        return [...prev, msg];
+                                    });
+                                }
+                            });
+                    }
+                    // Mark as read
                     fetch('/api/messages', {
                         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ athleteId: otherUserId, readerId: currentUserId })
                     }).then(() => window.dispatchEvent(new Event('unread-refresh')));
                 }
-            ).subscribe();
-        return () => { supabase.removeChannel(ch); };
+            ).subscribe((status) => {
+                realtimeConnected.current = status === 'SUBSCRIBED';
+            });
+        return () => { supabase.removeChannel(ch); realtimeConnected.current = false; };
     }, [athleteId, currentUserId, otherUserId]);
 
-    // Optimized Polling Fallback (Runs safely if Supabase keys are missing)
+    // Polling fallback — only runs when realtime is disconnected, at a slower interval
     useEffect(() => {
         const poll = setInterval(() => {
+            // Skip polling when realtime is actively handling delivery
+            if (realtimeConnected.current) return;
+
             fetch(`/api/messages?athleteId=${athleteId}`)
                 .then(r => r.ok ? r.json() : null)
                 .then(data => {
                     if (data && data.length > 0) {
                         setMessages(prev => {
-                            // Only trigger re-render if new messages arrived
                             if (prev.length !== data.length || prev[prev.length - 1]?.id !== data[data.length - 1]?.id) {
                                 const hasUnread = data.some((m: any) => m.receiverId === currentUserId && !m.read);
                                 if (hasUnread) {
@@ -307,7 +336,7 @@ export default function ChatInterface({
                         });
                     }
                 });
-        }, 10000); // Increased from 3s to 10s — Supabase realtime handles instant delivery
+        }, 30000); // 30s fallback — realtime handles instant delivery when connected
         return () => clearInterval(poll);
     }, [athleteId, currentUserId, otherUserId]);
 
@@ -456,6 +485,7 @@ export default function ChatInterface({
                 if (res.ok) {
                     const real = await res.json();
                     setMessages(prev => prev.map(m => m.id === tempId ? real : m));
+                    window.dispatchEvent(new Event('inbox-refresh'));
                 } else {
                     console.error('[API] Text message failed:', res.status);
                     setMessages(prev => prev.filter(m => m.id !== tempId));
@@ -566,6 +596,7 @@ export default function ChatInterface({
                     if (res.ok) {
                         const real = await res.json();
                         setMessages(prev => prev.map(m => m.id === tempId ? real : m));
+                        window.dispatchEvent(new Event('inbox-refresh'));
                     } else {
                         const errBody = await res.text();
                         console.error('[API] Message create failed:', res.status, errBody);
@@ -639,6 +670,51 @@ export default function ChatInterface({
         }
     };
 
+    // Send GIF as a message
+    const handleSendGif = async (gifUrl: string) => {
+        setShowGifPicker(false);
+        const tempId = `temp-${Date.now()}`;
+        const optimisticMsg: Message = {
+            id: tempId,
+            senderId: currentUserId,
+            receiverId: otherUserId,
+            content: 'GIF',
+            mediaUrl: gifUrl,
+            mediaType: 'image/gif',
+            createdAt: new Date().toISOString(),
+            read: false,
+            replyToId: replyingTo?.id || null,
+            replyTo: replyingTo ? { id: replyingTo.id, content: replyingTo.content, mediaUrl: replyingTo.mediaUrl, mediaType: replyingTo.mediaType, sender: replyingTo.sender } : null,
+            sender: { id: currentUserId, name: currentUserName, email: '' },
+            receiver: { id: otherUserId, name: otherUserName, email: '' },
+        };
+        setMessages(prev => [...prev, optimisticMsg]);
+        setReplyingTo(null);
+        try {
+            const res = await fetch('/api/messages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    senderId: currentUserId,
+                    receiverId: otherUserId,
+                    content: 'GIF',
+                    mediaUrl: gifUrl,
+                    mediaType: 'image/gif',
+                    replyToId: replyingTo?.id || null,
+                }),
+            });
+            if (res.ok) {
+                const real = await res.json();
+                setMessages(prev => prev.map(m => m.id === tempId ? real : m));
+                window.dispatchEvent(new Event('inbox-refresh'));
+            } else {
+                setMessages(prev => prev.filter(m => m.id !== tempId));
+            }
+        } catch {
+            setMessages(prev => prev.filter(m => m.id !== tempId));
+        }
+    };
+
     // Staging media
     const handleMedia = (e: React.ChangeEvent<HTMLInputElement>) => {
         const files = Array.from(e.target.files || []);
@@ -699,6 +775,28 @@ export default function ChatInterface({
         };
     };
 
+    // Handle pasting images from clipboard
+    const handlePaste = useCallback((e: React.ClipboardEvent) => {
+        const items = e.clipboardData?.items;
+        if (!items) return;
+        const pastedFiles: File[] = [];
+        for (let i = 0; i < items.length; i++) {
+            const item = items[i];
+            if (item.kind === 'file' && (item.type.startsWith('image/') || item.type.startsWith('video/'))) {
+                const file = item.getAsFile();
+                if (file && file.size <= 200 * 1024 * 1024) pastedFiles.push(file);
+            }
+        }
+        if (pastedFiles.length === 0) return;
+        e.preventDefault();
+        const startIndex = stagedFiles.length;
+        setStagedFiles(prev => [...prev, ...pastedFiles]);
+        setStagedFileUrls(prev => [...prev, ...pastedFiles.map(f => URL.createObjectURL(f))]);
+        pastedFiles.forEach((f, i) => {
+            if (f.type.startsWith('video/')) generateVideoPoster(f, startIndex + i);
+        });
+    }, [stagedFiles.length]);
+
     const handleCropComplete = (file: File, trimStart?: number, trimEnd?: number) => {
         // Check if we're re-trimming an already staged file
         const existingIndex = stagedFiles.findIndex(f => f === cropFile);
@@ -744,9 +842,28 @@ export default function ChatInterface({
 
     const saveMedia = async (url: string, isImg?: boolean) => {
         try {
-            const r = await fetch(url); const b = await r.blob(); const a = document.createElement('a');
+            const r = await fetch(url);
+            const b = await r.blob();
             const ext = isImg ? '.jpg' : url.includes('.webm') ? '.webm' : '.mp4';
-            a.href = URL.createObjectURL(b); a.download = `lift_${Date.now()}${ext}`; a.click(); URL.revokeObjectURL(a.href);
+            const filename = `lift_${Date.now()}${ext}`;
+
+            // On mobile, use Web Share API so the OS offers "Save to Photos"
+            if (navigator.share && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
+                const file = new File([b], filename, { type: b.type });
+                try {
+                    await navigator.share({ files: [file] });
+                    return;
+                } catch (shareErr: any) {
+                    // User cancelled or share failed — fall through to download
+                    if (shareErr?.name === 'AbortError') return;
+                }
+            }
+
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(b);
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(a.href);
         } catch { window.open(url, '_blank'); }
     };
 
@@ -776,17 +893,36 @@ export default function ChatInterface({
         );
     }, [messages, searchText]);
 
-    // Highlighting helper
+    // Check if a string is a URL
+    const isUrl = (text: string) => /^https?:\/\//.test(text);
+
+    // Highlighting helper (also linkifies URLs)
     const highlightMatch = (text: string) => {
-        if (!searchText.trim()) return text;
-        const parts = text.split(new RegExp(`(${searchText})`, 'gi'));
+        const parts = text.split(/(https?:\/\/[^\s<]+)/g);
+        if (!searchText.trim()) {
+            return (
+                <>
+                    {parts.map((part, i) =>
+                        isUrl(part)
+                            ? <a key={i} href={part} target="_blank" rel="noopener noreferrer" style={{ color: '#22d3ee', textDecoration: 'underline' }}>{part}</a>
+                            : part
+                    )}
+                </>
+            );
+        }
         return (
             <>
-                {parts.map((part, i) =>
-                    part.toLowerCase() === searchText.toLowerCase()
-                        ? <mark key={i} style={{ background: 'rgba(6, 182, 212, 0.4)', color: '#fff', borderRadius: 2, padding: '0 2px' }}>{part}</mark>
-                        : part
-                )}
+                {parts.map((part, i) => {
+                    if (isUrl(part)) {
+                        return <a key={i} href={part} target="_blank" rel="noopener noreferrer" style={{ color: '#22d3ee', textDecoration: 'underline' }}>{part}</a>;
+                    }
+                    const searchParts = part.split(new RegExp(`(${searchText})`, 'gi'));
+                    return searchParts.map((sp, j) =>
+                        sp.toLowerCase() === searchText.toLowerCase()
+                            ? <mark key={`${i}-${j}`} style={{ background: 'rgba(6, 182, 212, 0.4)', color: '#fff', borderRadius: 2, padding: '0 2px' }}>{sp}</mark>
+                            : sp
+                    );
+                })}
             </>
         );
     };
@@ -1028,7 +1164,7 @@ export default function ChatInterface({
                                                 >
                                                     <div style={{ fontWeight: 600, color: 'var(--primary)', marginBottom: 2 }}>{msg.replyTo.sender.name}</div>
                                                     <div style={{ color: 'rgba(255,255,255,0.4)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                        {msg.replyTo.mediaUrl ? (msg.replyTo.mediaType?.startsWith('image') ? 'Photo' : msg.replyTo.mediaType?.startsWith('audio') ? 'Voice' : 'Video') : msg.replyTo.content}
+                                                        {msg.replyTo.mediaUrl ? (msg.replyTo.mediaType === 'image/gif' ? 'GIF' : msg.replyTo.mediaType?.startsWith('image') ? 'Photo' : msg.replyTo.mediaType?.startsWith('audio') ? 'Voice' : 'Video') : msg.replyTo.content}
                                                     </div>
                                                 </div>
                                             )}
@@ -1146,7 +1282,7 @@ export default function ChatInterface({
                                                         <X size={14} color="var(--secondary-foreground)" />
                                                     </button>
                                                 </div>
-                                            ) : (!msg.mediaUrl || (msg.content && !['Video', 'Photo'].includes(msg.content.trim()))) ? (
+                                            ) : (!msg.mediaUrl || (msg.content && !['Video', 'Photo', 'GIF'].includes(msg.content.trim()))) ? (
                                                 <div style={{ fontSize: 14, lineHeight: 1.4, color: 'rgba(255,255,255,0.9)', padding: msg.mediaUrl ? '0 10px' : 0, whiteSpace: 'pre-wrap' }}>{highlightMatch(msg.content)}</div>
                                             ) : null}
 
@@ -1213,12 +1349,12 @@ export default function ChatInterface({
                                                         bottom: 0,
                                                         [mine ? 'right' : 'left']: 0,
                                                         zIndex: 999,
-                                                        background: 'var(--card-bg)',
-                                                        border: '1px solid rgba(255,255,255,0.08)',
+                                                        background: '#1a1a24',
+                                                        border: '1px solid rgba(255,255,255,0.1)',
                                                         borderRadius: 16,
-                                                        boxShadow: '0 8px 32px rgba(0,0,0,0.4)',
+                                                        boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
                                                         padding: '8px 0',
-                                                        width: 200,
+                                                        width: 220,
                                                         animation: 'scaleIn 0.15s ease-out'
                                                     }}
                                                 >
@@ -1226,19 +1362,48 @@ export default function ChatInterface({
                                                     <div style={{
                                                         display: 'flex',
                                                         justifyContent: 'space-around',
-                                                        padding: '4px 8px 8px',
+                                                        alignItems: 'center',
+                                                        padding: '4px 12px 8px',
                                                         borderBottom: '1px solid rgba(255,255,255,0.08)',
-                                                        marginBottom: 4
+                                                        marginBottom: 4,
+                                                        position: 'relative',
                                                     }}>
                                                         {['❤️', '🔥', '👍', '💪', '🙌', '💯'].map(emoji => (
                                                             <button
                                                                 key={emoji}
-                                                                onClick={() => { handleToggleReaction(msg.id, emoji); setActiveMenu(null); }}
+                                                                onClick={() => { handleToggleReaction(msg.id, emoji); setActiveMenu(null); setEmojiPickerMessageId(null); }}
                                                                 style={{ fontSize: 18, background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}
                                                             >
                                                                 {emoji}
                                                             </button>
                                                         ))}
+                                                        <button
+                                                            onClick={() => setEmojiPickerMessageId(emojiPickerMessageId === msg.id ? null : msg.id)}
+                                                            style={{
+                                                                fontSize: 14,
+                                                                background: emojiPickerMessageId === msg.id ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.06)',
+                                                                border: '1px solid rgba(255,255,255,0.1)',
+                                                                borderRadius: '50%',
+                                                                width: 24,
+                                                                height: 24,
+                                                                cursor: 'pointer',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                color: 'var(--secondary-foreground)',
+                                                                flexShrink: 0,
+                                                            }}
+                                                            title="More emojis"
+                                                        >
+                                                            <Plus size={14} />
+                                                        </button>
+                                                        {emojiPickerMessageId === msg.id && (
+                                                            <EmojiPicker
+                                                                onSelect={(emoji) => { handleToggleReaction(msg.id, emoji); setActiveMenu(null); setEmojiPickerMessageId(null); }}
+                                                                onClose={() => setEmojiPickerMessageId(null)}
+                                                                position="above"
+                                                            />
+                                                        )}
                                                     </div>
 
                                                     <button onClick={() => { setReplyingTo(msg); setActiveMenu(null); setTimeout(() => inputRef.current?.focus(), 50); }}
@@ -1282,7 +1447,7 @@ export default function ChatInterface({
                         <div style={{ flex: 1, paddingLeft: 10, borderLeft: '2px solid var(--primary)', minWidth: 0 }}>
                             <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--primary)' }}>Replying to {replyingTo.sender.name}</div>
                             <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                {replyingTo.mediaUrl ? (replyingTo.mediaType?.startsWith('image') ? 'Photo' : replyingTo.mediaType?.startsWith('audio') ? 'Voice' : 'Video') : replyingTo.content}
+                                {replyingTo.mediaUrl ? (replyingTo.mediaType === 'image/gif' ? 'GIF' : replyingTo.mediaType?.startsWith('image') ? 'Photo' : replyingTo.mediaType?.startsWith('audio') ? 'Voice' : 'Video') : replyingTo.content}
                             </div>
                         </div>
                         <button onClick={() => setReplyingTo(null)} style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><X size={16} /></button>
@@ -1310,8 +1475,16 @@ export default function ChatInterface({
                 paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 4px))',
                 background: 'var(--background)',
                 flexShrink: 0,
-                zIndex: 40
+                zIndex: 40,
+                position: 'relative',
             }}>
+                {/* GIF Picker overlay */}
+                {showGifPicker && (
+                    <GifPicker
+                        onSelect={handleSendGif}
+                        onClose={() => setShowGifPicker(false)}
+                    />
+                )}
                 <input ref={fileRef} type="file" multiple accept="video/*,image/*" onChange={handleMedia} style={{ display: 'none' }} />
                 {isRecording ? (
                     <div style={{
@@ -1342,6 +1515,7 @@ export default function ChatInterface({
                         {/* Text input */}
                         <textarea ref={inputRef} value={newMessage} onChange={e => setNewMessage(e.target.value)}
                             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
+                            onPaste={handlePaste}
                             placeholder="Type a message..."
                             rows={1}
                             disabled={uploading}
@@ -1353,7 +1527,7 @@ export default function ChatInterface({
                             }}
                         />
 
-                        {/* Bottom row: attachment + mic/send */}
+                        {/* Bottom row: attachment + gif + mic/send */}
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                                 <button onClick={() => fileRef.current?.click()} disabled={uploading}
@@ -1364,6 +1538,18 @@ export default function ChatInterface({
                                         display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
                                     }}>
                                     <Paperclip size={16} />
+                                </button>
+                                <button onClick={() => setShowGifPicker(!showGifPicker)} disabled={uploading}
+                                    style={{
+                                        height: 34, borderRadius: 17, paddingLeft: 10, paddingRight: 10,
+                                        background: showGifPicker ? 'rgba(125,135,210,0.2)' : 'rgba(255,255,255,0.06)',
+                                        border: showGifPicker ? '1px solid rgba(125,135,210,0.4)' : '1px solid rgba(255,255,255,0.06)',
+                                        color: showGifPicker ? 'var(--primary)' : 'var(--secondary-foreground)',
+                                        cursor: 'pointer',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                                        fontSize: 12, fontWeight: 700, letterSpacing: 0.5,
+                                    }}>
+                                    GIF
                                 </button>
                             </div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -1528,6 +1714,7 @@ export default function ChatInterface({
                                     rows={1}
                                     enterKeyHint="send"
                                     style={{ flex: 1, background: 'transparent', border: 'none', color: 'var(--foreground)', outline: 'none', fontSize: 15, padding: '8px 0', resize: 'none', lineHeight: '1.4', fontFamily: 'inherit' }}
+                                    onPaste={handlePaste}
                                     onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
                                 />
                             </div>
