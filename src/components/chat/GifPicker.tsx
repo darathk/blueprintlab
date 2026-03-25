@@ -142,9 +142,9 @@ export default function GifPicker({ onSelect, onClose }: GifPickerProps) {
             <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(2, 1fr)',
-                gap: 4,
-                padding: '0 6px 6px',
-                maxHeight: 300,
+                gap: 8,
+                padding: '0 8px 8px',
+                maxHeight: 340,
                 overflowY: 'auto',
                 WebkitOverflowScrolling: 'touch',
             }}>
@@ -169,13 +169,16 @@ export default function GifPicker({ onSelect, onClose }: GifPickerProps) {
                         onClick={() => onSelect(gif.url)}
                         style={{
                             background: 'rgba(255,255,255,0.04)',
-                            border: 'none',
-                            borderRadius: 8,
+                            border: '1px solid rgba(255,255,255,0.06)',
+                            borderRadius: 12,
                             overflow: 'hidden',
                             cursor: 'pointer',
                             padding: 0,
-                            aspectRatio: '1',
+                            height: 130,
                             position: 'relative',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
                         }}
                     >
                         <img
@@ -187,6 +190,7 @@ export default function GifPicker({ onSelect, onClose }: GifPickerProps) {
                                 height: '100%',
                                 objectFit: 'cover',
                                 display: 'block',
+                                borderRadius: 12,
                             }}
                         />
                     </button>
