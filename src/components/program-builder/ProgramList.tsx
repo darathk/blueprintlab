@@ -121,6 +121,27 @@ export default function ProgramList({ athleteId }) {
         setActionLoading(false);
     };
 
+    const handleSaveAsTemplate = async (programId: string, programName: string) => {
+        const templateName = prompt('Template name:', programName);
+        if (!templateName) return;
+
+        try {
+            const res = await fetch('/api/templates', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ programId, name: templateName }),
+            });
+            if (res.ok) {
+                alert(`"${templateName}" saved as a template! Find it in the Templates Library.`);
+            } else {
+                const data = await res.json();
+                alert(data.error || 'Failed to save template');
+            }
+        } catch {
+            alert('Network error');
+        }
+    };
+
     const handleDuplicate = async (programId: string) => {
         const program = programs.find((p: any) => p.id === programId);
         const programName = program ? (program as any).name : 'this program';
@@ -239,6 +260,9 @@ export default function ProgramList({ athleteId }) {
                                 </button>
                                 <button onClick={() => openDropdown(p.id, 'copy')} style={actionBtnStyle(isCopyOpen)}>
                                     Copy
+                                </button>
+                                <button onClick={() => handleSaveAsTemplate(p.id, p.name)} style={actionBtnStyle(false)}>
+                                    Template
                                 </button>
                                 <button onClick={() => openDropdown(p.id, 'transfer')} style={actionBtnStyle(isTransferOpen)}>
                                     Transfer

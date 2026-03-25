@@ -8,8 +8,7 @@ import HistoricalPerformance from '@/components/dashboard/HistoricalPerformance'
 import AthleteCalendarContainer from '@/components/dashboard/AthleteCalendarContainer';
 import CollapsibleSection from '@/components/ui/CollapsibleSection';
 import dynamic from 'next/dynamic';
-
-
+import CoachNotes from '@/components/dashboard/CoachNotes';
 
 import { MessageSquare } from 'lucide-react';
 
@@ -87,6 +86,10 @@ async function AthleteData({ id }: { id: string }) {
 
             <CollapsibleSection title="Historical Performance" defaultOpen={false}>
                 <HistoricalPerformance athlete={athlete} />
+            </CollapsibleSection>
+
+            <CollapsibleSection title="Coach Notes" defaultOpen={false}>
+                <CoachNotes athleteId={id} />
             </CollapsibleSection>
 
             <CollapsibleSection title="Program History" defaultOpen={false}>

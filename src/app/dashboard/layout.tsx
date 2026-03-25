@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { cache } from 'react';
 import TopNavigation from '@/components/dashboard/TopNavigation';
 import MobileBottomNav, { NavItem } from '@/components/navigation/MobileBottomNav';
-import { Home, MessageSquare, Hammer, Dumbbell, Medal, Settings, ClipboardList } from 'lucide-react';
+import { Home, MessageSquare, Hammer, Dumbbell, Medal, Settings, ClipboardList, BookTemplate } from 'lucide-react';
 import { UserButton } from '@clerk/nextjs';
 
 // Cache the auth check so it only runs once per request lifecycle

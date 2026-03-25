@@ -30,6 +30,9 @@ model Athlete {
   sentMessages     Message[]   @relation("SentMessages")
   receivedMessages Message[]   @relation("ReceivedMessages")
   pushSubscriptions PushSubscription[]
+  programTemplates  ProgramTemplate[]  @relation("CoachTemplates")
+  coachNotes        CoachNote[]        @relation("CoachNotes")
+  athleteNotes      CoachNote[]        @relation("AthleteNotes")
 
   @@index([coachId])
 }
@@ -120,4 +123,33 @@ model PushSubscription {
   createdAt DateTime @default(now())
 
   @@index([athleteId])
+}
+
+model ProgramTemplate {
+  id          String   @id @default(uuid())
+  coachId     String
+  coach       Athlete  @relation("CoachTemplates", fields: [coachId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  weeks       Json
+  tags        Json?    // string[] for categorization
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([coachId])
+}
+
+model CoachNote {
+  id        String   @id @default(uuid())
+  coachId   String
+  coach     Athlete  @relation("CoachNotes", fields: [coachId], references: [id], onDelete: Cascade)
+  athleteId String
+  athlete   Athlete  @relation("AthleteNotes", fields: [athleteId], references: [id], onDelete: Cascade)
+  content   String
+  category  String   @default("general") // general, injury, cues, preferences
+  pinned    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([coachId, athleteId])
 }

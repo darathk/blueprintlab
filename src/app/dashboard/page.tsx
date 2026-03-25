@@ -2,9 +2,14 @@ import { getAthletes, getPrograms, getLogSummariesForDashboard } from '@/lib/sto
 import { prisma } from '@/lib/prisma';
 import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
+import CollapsibleSection from '@/components/ui/CollapsibleSection';
 
 const ActivePersonnelList = dynamic(() => import('@/components/dashboard/ActivePersonnelList'), {
     loading: () => <div style={{ textAlign: 'center', padding: '50px', color: 'var(--muted)' }}>Loading Command Center...</div>
+});
+
+const WeeklyCheckInSummary = dynamic(() => import('@/components/dashboard/WeeklyCheckInSummary'), {
+    loading: () => <div style={{ textAlign: 'center', padding: '30px', color: 'var(--muted)' }}>Loading summary...</div>
 });
 
 import { currentUser } from '@clerk/nextjs/server';
@@ -48,6 +53,10 @@ export default async function DashboardPage() {
                 </h1>
             </div>
 
+
+            <CollapsibleSection title="Weekly Check-In Summary" defaultOpen={false}>
+                <WeeklyCheckInSummary />
+            </CollapsibleSection>
 
             <Suspense fallback={<div style={{ textAlign: 'center', padding: '50px', color: 'var(--secondary-foreground)' }} className="pulse">Loading athletes...</div>}>
                 <DashboardData coachId={coachId} />
