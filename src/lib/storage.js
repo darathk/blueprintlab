@@ -376,6 +376,24 @@ export const getCoachInbox = cache(async (coachId) => {
     return prisma.$queryRawUnsafe(sql, coachId);
 });
 
+/** Returns a map of { athleteId: lastLogDateString } for all athletes under a coach */
+export const getLastLogDates = cache(async (coachId) => {
+    if (!coachId) return {};
+    const rows = await prisma.$queryRawUnsafe(`
+        SELECT p."athleteId", MAX(l.date) AS "lastLogDate"
+        FROM "Log" l
+        JOIN "Program" p ON p.id = l."programId"
+        JOIN "Athlete" a ON a.id = p."athleteId"
+        WHERE a."coachId" = $1
+        GROUP BY p."athleteId"
+    `, coachId);
+    const map = {};
+    for (const row of rows) {
+        map[row.athleteId] = row.lastLogDate;
+    }
+    return map;
+});
+
 // Dummy functions to prevent older unused routes from crashing during import tree parsing
 export async function readData() { return []; }
 export async function writeData() { }

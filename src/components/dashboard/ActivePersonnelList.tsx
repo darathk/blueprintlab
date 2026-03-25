@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Search, SlidersHorizontal, Plus, X } from 'lucide-react';
 import AthleteStatusCard from '@/app/dashboard/athlete-status-card';
 
-export default function ActivePersonnelList({ athletes, programs, logSummaries, coachId }) {
+export default function ActivePersonnelList({ athletes, programs, logSummaries, lastLogDates = {}, coachId }) {
     const router = useRouter();
     const [searchQuery, setSearchQuery] = useState('');
     const [isAdding, setIsAdding] = useState(false);
@@ -101,12 +101,27 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
             daysOut = Math.ceil((meetDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
         }
 
+        // Days since last logged session
+        let daysSinceLastLog: number | null = null;
+        const lastLogDate = lastLogDates[athlete.id];
+        if (lastLogDate) {
+            const logDate = new Date(lastLogDate);
+            logDate.setHours(0, 0, 0, 0);
+            const nowDate = new Date();
+            nowDate.setHours(0, 0, 0, 0);
+            daysSinceLastLog = Math.floor((nowDate.getTime() - logDate.getTime()) / (1000 * 60 * 60 * 24));
+        } else if (currentProgram) {
+            // Has a program but never logged
+            daysSinceLastLog = -1; // sentinel for "never logged"
+        }
+
         return {
             ...athlete,
             computedProgress: progress,
             progressPercent,
             daysOut,
-            hasMeet: !!athlete.nextMeetDate
+            hasMeet: !!athlete.nextMeetDate,
+            daysSinceLastLog
         };
     });
 
@@ -340,6 +355,7 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
                             key={enrichedAthlete.id}
                             athlete={enrichedAthlete}
                             progress={enrichedAthlete.computedProgress}
+                            daysSinceLastLog={enrichedAthlete.daysSinceLastLog}
                         />
                     ))}
                 </div>

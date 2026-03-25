@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-export default function AthleteStatusCard({ athlete, progress }) {
+export default function AthleteStatusCard({ athlete, progress, daysSinceLastLog = null }) {
     const router = useRouter();
     const [editingEmail, setEditingEmail] = useState(false);
     const [emailValue, setEmailValue] = useState(athlete.email || '');
@@ -268,6 +268,44 @@ export default function AthleteStatusCard({ athlete, progress }) {
                             </>
                         )}
                     </div>
+                </div>
+            )}
+
+            {/* Missed session alert */}
+            {daysSinceLastLog !== null && (daysSinceLastLog === -1 || daysSinceLastLog >= 3) && (
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.6rem',
+                    padding: '0.5rem 0.75rem',
+                    marginBottom: '0.75rem',
+                    borderRadius: '8px',
+                    background: daysSinceLastLog >= 7 || daysSinceLastLog === -1
+                        ? 'rgba(239, 68, 68, 0.1)'
+                        : 'rgba(245, 158, 11, 0.1)',
+                    border: `1px solid ${daysSinceLastLog >= 7 || daysSinceLastLog === -1
+                        ? 'rgba(239, 68, 68, 0.25)'
+                        : 'rgba(245, 158, 11, 0.25)'}`,
+                    fontSize: '0.78rem',
+                }}>
+                    <span style={{
+                        width: 8,
+                        height: 8,
+                        borderRadius: '50%',
+                        background: daysSinceLastLog >= 7 || daysSinceLastLog === -1 ? '#EF4444' : '#F59E0B',
+                        flexShrink: 0,
+                        animation: 'pulse 2s infinite',
+                    }} />
+                    <span style={{
+                        color: daysSinceLastLog >= 7 || daysSinceLastLog === -1
+                            ? '#FCA5A5'
+                            : '#FCD34D',
+                        fontWeight: 600,
+                    }}>
+                        {daysSinceLastLog === -1
+                            ? 'No sessions logged yet'
+                            : `No log in ${daysSinceLastLog} day${daysSinceLastLog !== 1 ? 's' : ''}`}
+                    </span>
                 </div>
             )}
 

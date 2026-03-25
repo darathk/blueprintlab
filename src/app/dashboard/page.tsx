@@ -1,4 +1,4 @@
-import { getAthletes, getPrograms, getLogSummariesForDashboard } from '@/lib/storage';
+import { getAthletes, getPrograms, getLogSummariesForDashboard, getLastLogDates } from '@/lib/storage';
 import { prisma } from '@/lib/prisma';
 import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
@@ -15,10 +15,11 @@ const WeeklyCheckInSummary = dynamic(() => import('@/components/dashboard/Weekly
 import { currentUser } from '@clerk/nextjs/server';
 
 async function DashboardData({ coachId }: { coachId: string }) {
-    const [athletes, programs, logSummaries] = await Promise.all([
+    const [athletes, programs, logSummaries, lastLogDates] = await Promise.all([
         getAthletes(coachId),
         getPrograms(coachId),
-        getLogSummariesForDashboard(coachId)
+        getLogSummariesForDashboard(coachId),
+        getLastLogDates(coachId)
     ]);
 
     return (
@@ -26,6 +27,7 @@ async function DashboardData({ coachId }: { coachId: string }) {
             athletes={athletes}
             programs={programs}
             logSummaries={logSummaries}
+            lastLogDates={lastLogDates}
             coachId={coachId}
         />
     );
