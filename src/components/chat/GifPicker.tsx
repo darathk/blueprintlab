@@ -200,7 +200,7 @@ export default function GifPicker({ onSelect, onClose }: GifPickerProps) {
                 fontSize: 10,
                 color: 'rgba(255,255,255,0.3)',
             }}>
-                Powered by Tenor
+                Powered by Klipy
             </div>
         </div>
     );
