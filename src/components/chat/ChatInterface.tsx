@@ -1354,7 +1354,7 @@ export default function ChatInterface({
                                                         borderRadius: 16,
                                                         boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
                                                         padding: '8px 0',
-                                                        width: 200,
+                                                        width: 220,
                                                         animation: 'scaleIn 0.15s ease-out'
                                                     }}
                                                 >
@@ -1363,7 +1363,7 @@ export default function ChatInterface({
                                                         display: 'flex',
                                                         justifyContent: 'space-around',
                                                         alignItems: 'center',
-                                                        padding: '4px 8px 8px',
+                                                        padding: '4px 12px 8px',
                                                         borderBottom: '1px solid rgba(255,255,255,0.08)',
                                                         marginBottom: 4,
                                                         position: 'relative',
