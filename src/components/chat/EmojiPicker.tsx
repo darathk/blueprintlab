@@ -372,23 +372,42 @@ export default function EmojiPicker({ onSelect, onClose, position = 'above' }: E
 
     const filteredEmojis = useMemo(() => {
         if (!search) return EMOJI_CATEGORIES[activeCategory].emojis;
-        const q = search.toLowerCase();
+        const q = search.toLowerCase().trim();
+        if (!q) return EMOJI_CATEGORIES[activeCategory].emojis;
+        const terms = q.split(/\s+/).filter(Boolean);
         const allEmojis = EMOJI_CATEGORIES.flatMap(c => c.emojis);
-        // Search across keywords AND category names for comprehensive results
-        const keywordMatched = new Set<string>();
-        allEmojis.forEach(emoji => {
-            const keywords = EMOJI_KEYWORDS[emoji];
-            if (keywords && keywords.toLowerCase().includes(q)) {
-                keywordMatched.add(emoji);
+        const uniqueEmojis = [...new Set(allEmojis)];
+
+        // Score each emoji: higher score = better match
+        const scored: { emoji: string; score: number }[] = [];
+        for (const emoji of uniqueEmojis) {
+            const keywords = (EMOJI_KEYWORDS[emoji] || '').toLowerCase();
+            const keywordList = keywords.split(/\s+/);
+            let score = 0;
+
+            for (const term of terms) {
+                // Exact keyword match (word starts with the term)
+                const exactMatch = keywordList.some(kw => kw === term);
+                const prefixMatch = keywordList.some(kw => kw.startsWith(term));
+                const partialMatch = keywords.includes(term);
+
+                // Also check category names
+                const categoryMatch = EMOJI_CATEGORIES.some(
+                    c => c.name.toLowerCase().includes(term) && c.emojis.includes(emoji)
+                );
+
+                if (exactMatch) score += 3;
+                else if (prefixMatch) score += 2;
+                else if (partialMatch) score += 1;
+                if (categoryMatch) score += 1;
             }
-        });
-        // Also include all emojis from categories whose name matches the query
-        EMOJI_CATEGORIES.forEach(c => {
-            if (c.name.toLowerCase().includes(q)) {
-                c.emojis.forEach(e => keywordMatched.add(e));
-            }
-        });
-        return Array.from(keywordMatched);
+
+            if (score > 0) scored.push({ emoji, score });
+        }
+
+        // Sort by score descending for best matches first
+        scored.sort((a, b) => b.score - a.score);
+        return scored.map(s => s.emoji);
     }, [search, activeCategory]);
 
     return (

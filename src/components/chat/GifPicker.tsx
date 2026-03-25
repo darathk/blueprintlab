@@ -140,26 +140,25 @@ export default function GifPicker({ onSelect, onClose }: GifPickerProps) {
 
             {/* GIF Grid */}
             <div style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(2, 1fr)',
-                gap: 8,
+                columnCount: 2,
+                columnGap: 8,
                 padding: '0 8px 8px',
                 maxHeight: 340,
                 overflowY: 'auto',
                 WebkitOverflowScrolling: 'touch',
             }}>
                 {loading && gifs.length === 0 && (
-                    <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'center', padding: 24 }}>
+                    <div style={{ display: 'flex', justifyContent: 'center', padding: 24 }}>
                         <div style={{ width: 24, height: 24, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
                     </div>
                 )}
                 {error && (
-                    <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: 24, color: 'var(--secondary-foreground)', fontSize: 13 }}>
+                    <div style={{ textAlign: 'center', padding: 24, color: 'var(--secondary-foreground)', fontSize: 13 }}>
                         {error}
                     </div>
                 )}
                 {!loading && !error && gifs.length === 0 && (
-                    <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: 24, color: 'var(--secondary-foreground)', fontSize: 13 }}>
+                    <div style={{ textAlign: 'center', padding: 24, color: 'var(--secondary-foreground)', fontSize: 13 }}>
                         No GIFs found
                     </div>
                 )}
@@ -174,11 +173,10 @@ export default function GifPicker({ onSelect, onClose }: GifPickerProps) {
                             overflow: 'hidden',
                             cursor: 'pointer',
                             padding: 0,
-                            height: 130,
-                            position: 'relative',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
+                            width: '100%',
+                            display: 'block',
+                            breakInside: 'avoid',
+                            marginBottom: 8,
                         }}
                     >
                         <img
@@ -187,8 +185,7 @@ export default function GifPicker({ onSelect, onClose }: GifPickerProps) {
                             loading="lazy"
                             style={{
                                 width: '100%',
-                                height: '100%',
-                                objectFit: 'cover',
+                                height: 'auto',
                                 display: 'block',
                                 borderRadius: 12,
                             }}
