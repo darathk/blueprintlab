@@ -24,8 +24,12 @@ export async function GET() {
             },
         });
         return NextResponse.json(templates);
-    } catch (error) {
+    } catch (error: any) {
         console.error('GET /api/templates error:', error);
+        if (error?.code === 'P2021') {
+            // Table doesn't exist yet — return empty array instead of error
+            return NextResponse.json([]);
+        }
         return NextResponse.json({ error: 'Failed to fetch templates' }, { status: 500 });
     }
 }
@@ -96,9 +100,15 @@ export async function POST(request: Request) {
             },
         });
         return NextResponse.json(template, { status: 201 });
-    } catch (error) {
+    } catch (error: any) {
         console.error('POST /api/templates error:', error);
-        return NextResponse.json({ error: 'Failed to create template' }, { status: 500 });
+        // Surface Prisma-specific errors for easier debugging
+        const message = error?.code === 'P2021'
+            ? 'Template table not found — please run "npx prisma db push" to sync the database schema'
+            : error?.code === 'P2003'
+            ? 'Foreign key constraint failed — coach record not found'
+            : error?.message || 'Failed to create template';
+        return NextResponse.json({ error: message }, { status: 500 });
     }
 }
 

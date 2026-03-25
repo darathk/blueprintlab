@@ -134,11 +134,15 @@ export default function ProgramList({ athleteId }) {
             if (res.ok) {
                 alert(`"${templateName}" saved as a template! Find it in the Templates Library.`);
             } else {
-                const data = await res.json();
-                alert(data.error || 'Failed to save template');
+                let errorMsg = 'Failed to save template';
+                try {
+                    const data = await res.json();
+                    errorMsg = data.error || errorMsg;
+                } catch { /* response wasn't JSON */ }
+                alert(errorMsg);
             }
         } catch {
-            alert('Network error');
+            alert('Network error — check your connection and try again');
         }
     };
 
