@@ -26,8 +26,17 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
     const [showProgram, setShowProgram] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
 
+    // Sort conversations: unread first, then by latest message
+    const sortedConvos = [...convos].sort((a, b) => {
+        const aUnread = a.unreadCount > 0;
+        const bUnread = b.unreadCount > 0;
+        if (aUnread && !bUnread) return -1;
+        if (!aUnread && bUnread) return 1;
+        return new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime();
+    });
+
     // Filtered conversations based on search term
-    const filteredConvos = convos.filter(c =>
+    const filteredConvos = sortedConvos.filter(c =>
         c.athleteName.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
