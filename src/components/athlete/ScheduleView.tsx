@@ -774,6 +774,18 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                             <div style={{ background: 'var(--card-border)', position: 'relative' }}>
                                                 {!isCoachView && <ReadinessCheckin athleteId={athleteId} sessionKey={sKey} programId={program.id} onReadinessSubmit={() => markSessionReady(sKey)} />}
 
+                                                {/* Warmup Drills Display */}
+                                                {(session.warmupDrills || log?.warmupDrills) && (
+                                                    <div style={{ padding: '12px 16px', background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid var(--card-border)' }}>
+                                                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--primary)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                            <span style={{ fontSize: '1rem' }}>🔥</span> Warm-Up & Prep Drills
+                                                        </div>
+                                                        <div style={{ fontSize: '0.9rem', color: 'var(--foreground)', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>
+                                                            {session.warmupDrills || log?.warmupDrills}
+                                                        </div>
+                                                    </div>
+                                                )}
+
                                                 {/* Readiness gate popup */}
                                                 {!isCoachView && readinessPopup === sKey && (
                                                     <div style={{
