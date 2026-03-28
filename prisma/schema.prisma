@@ -60,6 +60,7 @@ model Log {
   sessionId String
   date      String
   exercises Json // Completed sets, reps, rpes
+  warmupDrills String? @default("") // Pre-workout warm-up drills instruction/notes
 
   @@index([programId, sessionId])
 }

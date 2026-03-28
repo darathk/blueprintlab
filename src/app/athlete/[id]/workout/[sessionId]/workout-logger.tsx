@@ -57,6 +57,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
     const [isSaving, setIsSaving] = useState(false);
     const [lastSaved, setLastSaved] = useState(Date.now());
     const [weekDrawerOpen, setWeekDrawerOpen] = useState(false);
+    const [warmupDrills, setWarmupDrills] = useState(initialLog?.warmupDrills || '');
 
     // Initialize logs
     const [exerciseLogs, setExerciseLogs] = useState(() => {
@@ -124,7 +125,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
         }, 1000); // Debounce 1s
 
         return () => clearTimeout(timer);
-    }, [exerciseLogs]);
+    }, [exerciseLogs, warmupDrills]);
 
     // Calculate Completion for Progress Bar
     // A set counts as complete only when ALL 3 inputs are filled: weight, reps AND rpe
@@ -256,7 +257,8 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                     programId,
                     sessionId,
                     date: new Date().toISOString(),
-                    exercises: cleanLogs
+                    exercises: cleanLogs,
+                    warmupDrills
                 }),
             });
 
@@ -322,6 +324,48 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                     <div style={{ fontSize: '0.8rem', opacity: 0.9, textAlign: 'right' }}>
                         <div style={{ fontWeight: 600 }}>Stress: {sessionStats.total}</div>
                         <div style={{ fontSize: '0.7rem', opacity: 0.8 }}>C: {sessionStats.central} | P: {sessionStats.peripheral}</div>
+                    </div>
+                </div>
+
+                {/* Warm-Up / Pre-Workout Drills Section */}
+                <div style={{ 
+                    marginBottom: '1rem', 
+                    background: 'var(--card-bg)', 
+                    border: '1px solid var(--card-border)', 
+                    borderRadius: '4px',
+                    overflow: 'hidden'
+                }}>
+                    <div style={{ 
+                        padding: '10px 16px', 
+                        background: 'rgba(255,255,255,0.03)', 
+                        borderBottom: '1px solid var(--card-border)',
+                        fontSize: '0.9rem',
+                        fontWeight: 600,
+                        color: 'var(--primary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px'
+                    }}>
+                        <span style={{ fontSize: '1.1rem' }}>🔥</span> Warm-Up & Prep Drills
+                    </div>
+                    <div style={{ padding: '0' }}>
+                        <textarea
+                            value={warmupDrills}
+                            onChange={(e) => setWarmupDrills(e.target.value)}
+                            placeholder="Write out warm-up drills, mobility work, or pre-workout instructions here..."
+                            style={{
+                                width: '100%',
+                                minHeight: '80px',
+                                padding: '12px 16px',
+                                border: 'none',
+                                background: 'transparent',
+                                fontSize: '0.95rem',
+                                color: 'var(--foreground)',
+                                resize: 'vertical',
+                                outline: 'none',
+                                lineHeight: '1.5'
+                            }}
+                        />
                     </div>
                 </div>
 

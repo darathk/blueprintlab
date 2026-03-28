@@ -43,6 +43,7 @@ export async function POST(request: Request) {
                 data: {
                     date: body.date,
                     exercises: body.exercises,
+                    ...(body.warmupDrills !== undefined && { warmupDrills: body.warmupDrills })
                 }
             });
         } else {
@@ -53,6 +54,7 @@ export async function POST(request: Request) {
                     sessionId: body.sessionId,
                     date: body.date,
                     exercises: body.exercises,
+                    ...(body.warmupDrills !== undefined && { warmupDrills: body.warmupDrills })
                 }
             });
         }
