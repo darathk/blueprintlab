@@ -24,6 +24,7 @@ model Athlete {
   meetAttempts     Json?
   pastMeets        Json?
   liftTargets      Json?     // { liftName: { timeToPeak: weeks, stressTarget: number } }
+  trainingSchedule String?   // Preferred training schedule (e.g., "Mon, Wed, Fri")
   programs         Program[]
   reports          Report[]
   readiness        Readiness[]

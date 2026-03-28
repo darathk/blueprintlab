@@ -8,8 +8,8 @@ export default async function NewProgramPage({ params }: { params: Promise<{ id:
         getExerciseLibrary(),
         prisma.athlete.findUnique({
             where: { id },
-            select: { id: true, name: true, liftTargets: true }
+            select: { id: true, name: true, liftTargets: true, trainingSchedule: true }
         })
     ]);
-    return <ProgramBuilder athleteId={id} initialExercises={initialExercises} athleteLiftTargets={athlete?.liftTargets} athleteName={athlete?.name} />;
+    return <ProgramBuilder athleteId={id} initialExercises={initialExercises} athleteLiftTargets={athlete?.liftTargets} athleteTrainingSchedule={athlete?.trainingSchedule} athleteName={athlete?.name} />;
 }

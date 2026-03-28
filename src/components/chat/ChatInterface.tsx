@@ -260,8 +260,8 @@ export default function ChatInterface({
         const isNewMsg = newCount > prevMsgCount.current;
         prevMsgCount.current = newCount;
         if (isNewMsg) {
-            // New message: scroll to bottom only if user was already near bottom
-            scrollToBottom(false);
+            // Force scroll to bottom every time a new message is added
+            scrollToBottom(true);
         }
     }, [messages, loaded, scrollToBottom]);
 

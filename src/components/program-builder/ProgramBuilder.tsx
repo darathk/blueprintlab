@@ -205,7 +205,7 @@ const BuilderExerciseCard = ({ exercise, onUpdate, onRemove, onDragStart, onDrag
 
 
 
-export default function ProgramBuilder({ athleteId, initialData = null, athletes = [], initialExercises = null, athleteLiftTargets = null, athleteName = '' }: { athleteId?: string, initialData?: any, athletes?: any[], initialExercises?: any, athleteLiftTargets?: any, athleteName?: string }) {
+export default function ProgramBuilder({ athleteId, initialData = null, athletes = [], initialExercises = null, athleteLiftTargets = null, athleteTrainingSchedule = null, athleteName = '' }: { athleteId?: string, initialData?: any, athletes?: any[], initialExercises?: any, athleteLiftTargets?: any, athleteTrainingSchedule?: string | null, athleteName?: string }) {
     const router = useRouter();
     const [programName, setProgramName] = useState('');
     const [startDate, setStartDate] = useState(() => snapToSunday(new Date().toISOString().split('T')[0]));
@@ -223,6 +223,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
         return defaults;
     });
     const [liftTargetsExpanded, setLiftTargetsExpanded] = useState(true);
+    const [trainingSchedule, setTrainingSchedule] = useState(athleteTrainingSchedule || '');
     const [savingTargets, setSavingTargets] = useState(false);
     const [targetsSaved, setTargetsSaved] = useState(false);
 
@@ -258,7 +259,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
             await fetch(`/api/athletes/${targetAthleteId}`, {
                 method: 'PATCH',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ liftTargets })
+                body: JSON.stringify({ liftTargets, trainingSchedule })
             });
             setTargetsSaved(true);
             setTimeout(() => setTargetsSaved(false), 2000);
@@ -1261,6 +1262,24 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                         </div>
                         {liftTargetsExpanded && (
                             <div style={{ padding: '0.5rem' }}>
+                                <div style={{ marginBottom: '12px' }}>
+                                    <div style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>Preferred Schedule</div>
+                                    <input
+                                        type="text"
+                                        placeholder="e.g., M/W/F Evenings"
+                                        value={trainingSchedule}
+                                        onChange={e => { setTrainingSchedule(e.target.value); setTargetsSaved(false); }}
+                                        style={{
+                                            background: 'rgba(18, 18, 18, 0.6)',
+                                            border: '1px solid var(--card-border)',
+                                            borderRadius: '4px',
+                                            color: 'var(--foreground)',
+                                            fontSize: '0.75rem',
+                                            padding: '6px 8px',
+                                            width: '100%',
+                                        }}
+                                    />
+                                </div>
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 65px 20px', gap: '4px', alignItems: 'center', marginBottom: '4px' }}>
                                     <div style={{ fontSize: '0.6rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Lift</div>
                                     <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', textAlign: 'center', whiteSpace: 'nowrap' }}>Peak (wks)</div>

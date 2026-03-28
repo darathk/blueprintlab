@@ -14,11 +14,11 @@ export default async function EditProgramPage({ params }: { params: Promise<{ id
         getExerciseLibrary(),
         prisma.athlete.findUnique({
             where: { id },
-            select: { id: true, name: true, liftTargets: true }
+            select: { id: true, name: true, liftTargets: true, trainingSchedule: true }
         })
     ]);
 
     if (!program) return <div style={{ padding: '2rem' }}>Program not found.</div>;
 
-    return <ProgramBuilder athleteId={id} initialData={program} initialExercises={initialExercises} athleteLiftTargets={athlete?.liftTargets} athleteName={athlete?.name} />;
+    return <ProgramBuilder athleteId={id} initialData={program} initialExercises={initialExercises} athleteLiftTargets={athlete?.liftTargets} athleteTrainingSchedule={athlete?.trainingSchedule} athleteName={athlete?.name} />;
 }
