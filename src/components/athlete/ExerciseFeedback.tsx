@@ -262,35 +262,51 @@ export default function ExerciseFeedback({
         setUploadProgress(0);
 
         try {
-            let mediaUrl: string | null = null;
-            let mediaType: string | null = null;
+            const filesToSend = stagedFiles.length > 0 ? [...stagedFiles] : [];
+            const textContent = message.trim();
 
-            // Upload first file (messages support single media)
-            // Videos upload at original quality — no re-encoding preserves
-            // full quality, audio, and eliminates processing delay
-            if (stagedFiles.length > 0) {
-                const result = await uploadFile(stagedFiles[0], 0);
-                // Append media fragment URI for trimmed videos
-                const trim = stagedTrimData[0];
-                mediaUrl = trim ? `${result.url}#t=${trim.start},${trim.end}` : result.url;
-                mediaType = result.type;
+            if (filesToSend.length === 0) {
+                // Just text
+                const res = await fetch('/api/messages', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        senderId: athleteId,
+                        receiverId: resolvedCoachId,
+                        content: textContent,
+                        mediaUrl: null,
+                        mediaType: null,
+                    }),
+                });
+                if (!res.ok) throw new Error('Failed to send text');
+            } else {
+                // Upload all files and send multiple messages sequentially
+                for (let i = 0; i < filesToSend.length; i++) {
+                    const result = await uploadFile(filesToSend[i], i);
+                    // Append media fragment URI for trimmed videos
+                    const trim = stagedTrimData[i];
+                    const mediaUrl = trim ? `${result.url}#t=${trim.start},${trim.end}` : result.url;
+                    const mediaType = result.type;
+
+                    const isVid = filesToSend[i].type.startsWith('video/');
+                    const isAudio = filesToSend[i].type.startsWith('audio/');
+                    const msgContent = i === 0 && textContent ? textContent : isAudio ? 'Voice Message' : isVid ? 'Video' : 'Photo';
+
+                    const res = await fetch('/api/messages', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            senderId: athleteId,
+                            receiverId: resolvedCoachId,
+                            content: msgContent,
+                            mediaUrl,
+                            mediaType,
+                        }),
+                    });
+
+                    if (!res.ok) throw new Error(`Failed to send file ${i + 1}`);
+                }
             }
-
-            const content = message.trim() || (stagedFiles.length > 0 ? 'Video feedback' : '');
-
-            const res = await fetch('/api/messages', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    senderId: athleteId,
-                    receiverId: resolvedCoachId,
-                    content,
-                    mediaUrl,
-                    mediaType,
-                }),
-            });
-
-            if (!res.ok) throw new Error('Failed to send');
 
             setSent(true);
             setTimeout(() => {
