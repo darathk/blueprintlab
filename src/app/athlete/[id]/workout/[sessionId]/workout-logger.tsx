@@ -346,7 +346,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                         alignItems: 'center',
                         gap: '8px'
                     }}>
-                        <span style={{ fontSize: '1.1rem' }}>🔥</span> Warm-Up & Prep Drills
+                        <span style={{ fontSize: '1.1rem' }}></span> Warm-Up & Prep Drills
                     </div>
                     <div style={{ padding: '0' }}>
                         <textarea

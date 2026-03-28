@@ -1673,7 +1673,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                                         <div style={{ marginBottom: '1rem', padding: '0 0.5rem' }}>
                                                             <textarea
                                                                 className="input"
-                                                                placeholder="🔥 Warm-up Drills & Pre-workout Notes"
+                                                                placeholder="Warm-up Drills & Pre-workout Notes"
                                                                 value={session.warmupDrills || ''}
                                                                 onChange={e => {
                                                                     const newWeeks = [...weeks];

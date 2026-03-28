@@ -58,6 +58,28 @@ function formatSetsSummary(sets: any[]) {
 }
 
 /* ─────────── helpers ─────────── */
+function linkify(text: string | null | undefined) {
+    if (!text) return '';
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    return text.split(urlRegex).map((part, i) => {
+        if (part.match(urlRegex)) {
+            return (
+                <a
+                    key={i}
+                    href={part}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ color: 'var(--primary)', textDecoration: 'underline' }}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {part}
+                </a>
+            );
+        }
+        return part;
+    });
+}
+
 /** Parse a date string as local time to avoid UTC timezone shift */
 function parseLocalDate(dateStr: any): Date {
     const s = String(dateStr).split('T')[0];
@@ -778,10 +800,10 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                 {(session.warmupDrills || log?.warmupDrills) && (
                                                     <div style={{ padding: '12px 16px', background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid var(--card-border)' }}>
                                                         <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--primary)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                            <span style={{ fontSize: '1rem' }}>🔥</span> Warm-Up & Prep Drills
+                                                            Warm-Up & Prep Drills
                                                         </div>
                                                         <div style={{ fontSize: '0.9rem', color: 'var(--foreground)', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>
-                                                            {session.warmupDrills || log?.warmupDrills}
+                                                            {linkify(session.warmupDrills || log?.warmupDrills)}
                                                         </div>
                                                     </div>
                                                 )}
