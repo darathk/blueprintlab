@@ -69,6 +69,7 @@ export default async function WorkoutPage({ params }) {
                 dayNum={sessionNum}
                 blockName={program.name}
                 exercises={session.exercises}
+                sessionWarmupDrills={session.warmupDrills || ''}
                 initialLog={existingLog}
                 weekSessions={weekSessions}
                 weekStartDate={weekStartDate}

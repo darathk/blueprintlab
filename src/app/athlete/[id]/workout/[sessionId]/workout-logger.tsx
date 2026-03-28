@@ -52,12 +52,12 @@ function formatSetsSummary(sets) {
     return parts.join(', ');
 }
 
-export default function WorkoutLogger({ athleteId, coachId = '', programId, sessionId, weekNum = 1, dayNum = 1, blockName = 'Block', exercises, initialLog, weekSessions = [], weekStartDate = '', programName = '' }) {
+export default function WorkoutLogger({ athleteId, coachId = '', programId, sessionId, weekNum = 1, dayNum = 1, blockName = 'Block', exercises, sessionWarmupDrills = '', initialLog, weekSessions = [], weekStartDate = '', programName = '' }) {
     const router = useRouter();
     const [isSaving, setIsSaving] = useState(false);
     const [lastSaved, setLastSaved] = useState(Date.now());
     const [weekDrawerOpen, setWeekDrawerOpen] = useState(false);
-    const [warmupDrills, setWarmupDrills] = useState(initialLog?.warmupDrills || '');
+    const [warmupDrills, setWarmupDrills] = useState(initialLog?.warmupDrills || sessionWarmupDrills || '');
 
     // Initialize logs
     const [exerciseLogs, setExerciseLogs] = useState(() => {

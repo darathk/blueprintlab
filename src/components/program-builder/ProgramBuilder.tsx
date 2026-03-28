@@ -322,6 +322,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
         name: string;
         exercises: Exercise[];
         scheduledDate?: string;
+        warmupDrills?: string;
     }
 
     interface Week {
@@ -1669,6 +1670,29 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
 
                                                     {!collapsedSessions[session.id] && (
                                                     <>
+                                                        <div style={{ marginBottom: '1rem', padding: '0 0.5rem' }}>
+                                                            <textarea
+                                                                className="input"
+                                                                placeholder="🔥 Warm-up Drills & Pre-workout Notes"
+                                                                value={session.warmupDrills || ''}
+                                                                onChange={e => {
+                                                                    const newWeeks = [...weeks];
+                                                                    newWeeks[wIndex].sessions[sIndex].warmupDrills = e.target.value;
+                                                                    setWeeks(newWeeks);
+                                                                }}
+                                                                style={{
+                                                                    width: '100%',
+                                                                    minHeight: '60px',
+                                                                    padding: '8px 12px',
+                                                                    fontSize: '0.85rem',
+                                                                    background: 'rgba(255, 255, 255, 0.02)',
+                                                                    border: '1px dashed var(--card-border)',
+                                                                    color: 'var(--foreground)',
+                                                                    resize: 'vertical',
+                                                                    borderRadius: '4px'
+                                                                }}
+                                                            />
+                                                        </div>
                                                     {session.exercises.length === 0 ? (
                                                         <div
                                                             onDragOver={e => { e.preventDefault(); }}
