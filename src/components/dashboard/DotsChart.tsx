@@ -7,10 +7,16 @@ import {
 } from 'recharts';
 import { getCompetitionDataPoints, CompetitionDataPoint } from '@/lib/dots';
 
-// IPF weight classes (kg) — male & female
-const WEIGHT_CLASSES = {
-    male: [59, 66, 74, 83, 93, 105, 120, 'Open'],
-    female: [47, 52, 57, 63, 69, 76, 84, 'Open'],
+// Weight classes (kg) — male & female per Federation
+const FEDERATIONS = {
+    IPF: {
+        male: [59, 66, 74, 83, 93, 105, 120, 'Open'],
+        female: [47, 52, 57, 63, 69, 76, 84, 'Open'],
+    },
+    USAPL: {
+        male: [52, 56, 60, 67.5, 75, 82.5, 90, 100, 110, 125, 140, 'Open'],
+        female: [44, 48, 52, 56, 60, 67.5, 75, 82.5, 90, 100, 'Open'],
+    }
 };
 
 const TIMELINES: Record<string, number> = {
@@ -57,6 +63,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export default function DotsChart({ athleteId, logs, programs = [], initialGender, initialWeightClass }: Props) {
     const [gender, setGender] = useState<string>(initialGender ?? '');
+    const [fed, setFed] = useState<'IPF' | 'USAPL'>('IPF');
     const [weightClass, setWeightClass] = useState<string>(initialWeightClass?.toString() ?? '');
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
@@ -81,7 +88,7 @@ export default function DotsChart({ athleteId, logs, programs = [], initialGende
 
     const wc = parseFloat(weightClass) || 0;
     const genderKey = (gender === 'male' || gender === 'female') ? gender : null;
-    const classes = gender && WEIGHT_CLASSES[gender as 'male' | 'female'] ? WEIGHT_CLASSES[gender as 'male' | 'female'] : [];
+    const classes = gender && FEDERATIONS[fed][gender as 'male' | 'female'] ? FEDERATIONS[fed][gender as 'male' | 'female'] : [];
 
     // Filter logs by selected timeline and program before computing data points
     const filteredLogs = useMemo(() => {
@@ -109,9 +116,6 @@ export default function DotsChart({ athleteId, logs, programs = [], initialGende
         [filteredLogs, wc, genderKey]
     );
 
-    const latestDots = data.length > 0 ? data[data.length - 1].dots : 0;
-    const latestTotal = data.length > 0 ? data[data.length - 1].total : 0;
-
     // Find the last non-zero value for each lift across all data points
     const latestLift = (key: 'squat' | 'bench' | 'deadlift' | 'totalLbs') => {
         for (let i = data.length - 1; i >= 0; i--) {
@@ -120,6 +124,16 @@ export default function DotsChart({ athleteId, logs, programs = [], initialGende
         }
         return 0;
     };
+
+    const latestTotal = data.length > 0 ? latestLift('totalLbs') : 0;
+    
+    // Dynamically compute the absolute latest DOTs score based on the highest active E1RM total
+    const latestDots = useMemo(() => {
+        if (!genderKey || wc <= 0 || latestTotal <= 0) return 0;
+        // Import calculation directly from the lib to guarantee it syncs with the exact peak E1RM card
+        const { calculateDots } = require('@/lib/dots');
+        return calculateDots(latestTotal / 2.20462, wc, genderKey);
+    }, [genderKey, wc, latestTotal]);
 
     const toggleLine = (key: keyof typeof activeLines) =>
         setActiveLines(prev => ({ ...prev, [key]: !prev[key] }));
@@ -148,6 +162,24 @@ export default function DotsChart({ athleteId, logs, programs = [], initialGende
                             ))}
                         </div>
                     </div>
+
+                    {/* Federation Input */}
+                    {gender && (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
+                            <label style={{ fontSize: 11, fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Federation</label>
+                            <div style={{ display: 'flex', gap: 6 }}>
+                                {['IPF', 'USAPL'].map(f => (
+                                    <button key={f} onClick={() => { setFed(f as any); setWeightClass(''); }} style={{
+                                        padding: '7px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600,
+                                        background: fed === f ? 'var(--primary)' : 'rgba(255,255,255,0.07)',
+                                        color: fed === f ? '#fff' : 'var(--secondary-foreground)', transition: 'all 0.15s',
+                                    }}>
+                                        {f}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    )}
 
                     {/* Weight Class */}
                     {gender && (
