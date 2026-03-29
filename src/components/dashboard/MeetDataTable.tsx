@@ -137,15 +137,33 @@ export default function MeetDataTable({ athletes, coachId }: Props) {
         const avgSuccessful = withTotals.reduce((s, e) => s + calcSuccessful(e), 0) / withTotals.length;
         const avgTotal = withTotals.reduce((s, e) => s + calcTotalAttempts(e), 0) / withTotals.length;
         const avgPercent = withTotals.reduce((s, e) => s + (calcSuccessful(e) / calcTotalAttempts(e) * 100), 0) / withTotals.length;
-        const avgTotalKg = withTotals.reduce((s, e) => s + calcTotal(e), 0) / withTotals.length;
+        
+        const prMeets = withTotals.filter(e => (e as any)._totalPR > 0);
+        const avgPR = prMeets.length > 0 ? prMeets.reduce((s, e) => s + (e as any)._totalPR, 0) / prMeets.length : 0;
+        
         const avgDots = withTotals.reduce((s, e) => {
             const total = calcTotal(e);
             const bw = e.bodyweight || e.weightClass;
             const isMale = e.gender !== 'female';
-            return s + (total > 0 && bw > 0 ? calculateDots(total, bw, isMale) : 0);
+            return s + (e.csvDotsPoints || (total > 0 && bw > 0 ? calculateDots(total, bw, isMale) : 0));
         }, 0) / withTotals.length;
-        return { avgSuccessful: avgSuccessful.toFixed(1), avgTotal: avgTotal.toFixed(0), avgPercent: avgPercent.toFixed(1), avgTotalKg: avgTotalKg.toFixed(1), avgDots: avgDots.toFixed(2) };
-    }, [entries]);
+
+        const avgIpf = withTotals.reduce((s, e) => {
+            const total = calcTotal(e);
+            const bw = e.bodyweight || e.weightClass;
+            const isMale = e.gender !== 'female';
+            return s + (e.csvIpfPoints || (total > 0 && bw > 0 ? calculateGL(total, bw, isMale, false, false) : 0));
+        }, 0) / withTotals.length;
+
+        return { 
+            avgSuccessful: avgSuccessful.toFixed(1), 
+            avgTotal: avgTotal.toFixed(0), 
+            avgPercent: avgPercent.toFixed(1), 
+            avgPR: avgPR.toFixed(1), 
+            avgDots: avgDots.toFixed(2),
+            avgIpf: avgIpf.toFixed(2)
+        };
+    }, [entries, totalPRs]);
 
     const saveEntriesToBackend = async (updatedEntries: MeetEntry[]) => {
         // Group entries by athlete and save to their pastMeets
@@ -698,11 +716,13 @@ export default function MeetDataTable({ athletes, coachId }: Props) {
                                 <td style={{ ...cellStyle, fontWeight: 600 }}>{averages.avgSuccessful}</td>
                                 <td style={{ ...cellStyle, fontWeight: 600 }}>{averages.avgTotal}</td>
                                 <td style={{ ...cellStyle, fontWeight: 600 }}>{averages.avgPercent}%</td>
-                                <td style={{ ...cellStyle, fontWeight: 700, color: 'var(--primary)' }}>{averages.avgTotalKg}</td>
-                                <td style={cellStyle}>N/A</td>
+                                <td style={{ ...cellStyle, fontWeight: 700, color: 'var(--secondary-foreground)' }}>-</td>
+                                <td style={{ ...cellStyle, color: parseFloat(averages.avgPR) > 0 ? '#4ade80' : 'var(--secondary-foreground)', fontWeight: 600 }}>
+                                    {parseFloat(averages.avgPR) > 0 ? `+${averages.avgPR}` : '-'}
+                                </td>
                                 <td style={{ ...cellStyle, color: '#f59e0b', fontWeight: 600 }}>{averages.avgDots}</td>
-                                <td style={{ ...cellStyle, color: '#38bdf8' }}></td>
-                                <td style={cellStyle}></td>
+                                <td style={{ ...cellStyle, color: '#38bdf8', fontWeight: 600 }}>{averages.avgIpf}</td>
+                                <td style={{ ...cellStyle, borderRight: 'none' }}></td>
                             </tr>
                         )}
                     </tbody>
