@@ -24,6 +24,8 @@ interface MeetEntry {
     gender: string;
     csvDotsPoints?: number;
     csvIpfPoints?: number;
+    referencePreviousTotal?: number;
+    isFirstMeetExplicit?: boolean;
 }
 
 interface Props {
@@ -63,6 +65,7 @@ export default function MeetDataTable({ athletes, coachId }: Props) {
         sq1: '', sq2: '', sq3: '', sq1g: true, sq2g: true, sq3g: true,
         bp1: '', bp2: '', bp3: '', bp1g: true, bp2g: true, bp3g: true,
         dl1: '', dl2: '', dl3: '', dl1g: true, dl2g: true, dl3g: true,
+        referencePreviousTotal: '', isFirstMeetExplicit: false,
     });
 
     // Calculations
@@ -102,15 +105,26 @@ export default function MeetDataTable({ athletes, coachId }: Props) {
         const sorted = [...entries].sort((a, b) => (a.meetDate || '').localeCompare(b.meetDate || ''));
         for (const e of sorted) {
             const total = calcTotal(e);
-            if (total <= 0) continue;
-            const prev = prs[e.athleteId] || 0;
-            if (total > prev) {
-                prs[e.athleteId] = total;
-                (e as any)._totalPR = prev > 0 ? total - prev : 0;
-                (e as any)._isFirstMeet = prev === 0;
-            } else {
+            if (total <= 0) {
                 (e as any)._totalPR = 0;
                 (e as any)._isFirstMeet = false;
+                continue;
+            }
+
+            let prev = prs[e.athleteId] || 0;
+            if (e.isFirstMeetExplicit) {
+                prev = 0;
+            } else if (e.referencePreviousTotal && e.referencePreviousTotal > prev) {
+                prev = e.referencePreviousTotal;
+            }
+
+            if (total > prev) {
+                prs[e.athleteId] = total; 
+                (e as any)._totalPR = prev > 0 ? total - prev : 0;
+                (e as any)._isFirstMeet = prev === 0 || e.isFirstMeetExplicit;
+            } else {
+                (e as any)._totalPR = 0;
+                (e as any)._isFirstMeet = e.isFirstMeetExplicit; 
             }
         }
         return prs;
@@ -192,11 +206,13 @@ export default function MeetDataTable({ athletes, coachId }: Props) {
             meetDate: newEntry.meetDate,
             meetName: newEntry.meetName,
             gender: newEntry.gender || athlete.gender || 'male',
-            squat: [parseFloat(newEntry.sq1) || 0, parseFloat(newEntry.sq2) || 0, parseFloat(newEntry.sq3) || 0],
+            referencePreviousTotal: parseFloat(newEntry.referencePreviousTotal) || undefined,
+            isFirstMeetExplicit: newEntry.isFirstMeetExplicit,
+            squat: [Math.abs(parseFloat(newEntry.sq1) || 0), Math.abs(parseFloat(newEntry.sq2) || 0), Math.abs(parseFloat(newEntry.sq3) || 0)],
             squatResults: [newEntry.sq1g, newEntry.sq2g, newEntry.sq3g],
-            bench: [parseFloat(newEntry.bp1) || 0, parseFloat(newEntry.bp2) || 0, parseFloat(newEntry.bp3) || 0],
+            bench: [Math.abs(parseFloat(newEntry.bp1) || 0), Math.abs(parseFloat(newEntry.bp2) || 0), Math.abs(parseFloat(newEntry.bp3) || 0)],
             benchResults: [newEntry.bp1g, newEntry.bp2g, newEntry.bp3g],
-            deadlift: [parseFloat(newEntry.dl1) || 0, parseFloat(newEntry.dl2) || 0, parseFloat(newEntry.dl3) || 0],
+            deadlift: [Math.abs(parseFloat(newEntry.dl1) || 0), Math.abs(parseFloat(newEntry.dl2) || 0), Math.abs(parseFloat(newEntry.dl3) || 0)],
             deadliftResults: [newEntry.dl1g, newEntry.dl2g, newEntry.dl3g],
         };
 
@@ -460,6 +476,20 @@ export default function MeetDataTable({ athletes, coachId }: Props) {
                                 <option value="female">Female</option>
                             </select>
                         </div>
+                        <div style={{ gridColumn: '1 / -1', marginTop: '0.2rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                                <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: 'var(--secondary-foreground)', cursor: 'pointer' }}>
+                                    <input type="checkbox" checked={newEntry.isFirstMeetExplicit} onChange={e => setNewEntry({ ...newEntry, isFirstMeetExplicit: e.target.checked, referencePreviousTotal: '' })} />
+                                    This is their first meet
+                                </label>
+                                {!newEntry.isFirstMeetExplicit && (
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                        <span style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)' }}>OR Previous Total PR (kg):</span>
+                                        <input type="number" step="0.5" className="input" placeholder="e.g. 450" value={newEntry.referencePreviousTotal} onChange={e => setNewEntry({ ...newEntry, referencePreviousTotal: e.target.value })} style={{ width: 100 }} />
+                                    </div>
+                                )}
+                            </div>
+                        </div>
                     </div>
 
                     {/* Attempts Grid */}
@@ -469,20 +499,44 @@ export default function MeetDataTable({ athletes, coachId }: Props) {
                         <div style={{ ...labelStyle, textAlign: 'center', margin: 0 }}>2nd</div>
                         <div style={{ ...labelStyle, textAlign: 'center', margin: 0 }}>3rd</div>
 
+                        {/* Squat */}
                         <div style={labelStyle}>Squat</div>
-                        <input type="number" step="0.5" className="input" value={newEntry.sq1} onChange={e => setNewEntry({ ...newEntry, sq1: e.target.value })} style={{ width: '100%', textAlign: 'center' }} />
-                        <input type="number" step="0.5" className="input" value={newEntry.sq2} onChange={e => setNewEntry({ ...newEntry, sq2: e.target.value })} style={{ width: '100%', textAlign: 'center' }} />
-                        <input type="number" step="0.5" className="input" value={newEntry.sq3} onChange={e => setNewEntry({ ...newEntry, sq3: e.target.value })} style={{ width: '100%', textAlign: 'center' }} />
+                        {[1, 2, 3].map(i => {
+                            const valKey = `sq${i}` as keyof typeof newEntry;
+                            const goodKey = `sq${i}g` as keyof typeof newEntry;
+                            return (
+                                <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                                    <input type="number" step="0.5" className="input" value={newEntry[valKey] as string} onChange={e => setNewEntry({ ...newEntry, [valKey]: e.target.value })} style={{ width: '100%', textAlign: 'center', color: newEntry[goodKey] ? '#4ade80' : '#f87171' }} />
+                                    <button type="button" onClick={() => setNewEntry({ ...newEntry, [goodKey]: !newEntry[goodKey] })} style={{ fontSize: '0.65rem', cursor: 'pointer', background: 'none', border: 'none', color: newEntry[goodKey] ? '#4ade80' : '#f87171' }}>{newEntry[goodKey] ? 'good' : 'miss'}</button>
+                                </div>
+                            );
+                        })}
 
+                        {/* Bench */}
                         <div style={labelStyle}>Bench</div>
-                        <input type="number" step="0.5" className="input" value={newEntry.bp1} onChange={e => setNewEntry({ ...newEntry, bp1: e.target.value })} style={{ width: '100%', textAlign: 'center' }} />
-                        <input type="number" step="0.5" className="input" value={newEntry.bp2} onChange={e => setNewEntry({ ...newEntry, bp2: e.target.value })} style={{ width: '100%', textAlign: 'center' }} />
-                        <input type="number" step="0.5" className="input" value={newEntry.bp3} onChange={e => setNewEntry({ ...newEntry, bp3: e.target.value })} style={{ width: '100%', textAlign: 'center' }} />
+                        {[1, 2, 3].map(i => {
+                            const valKey = `bp${i}` as keyof typeof newEntry;
+                            const goodKey = `bp${i}g` as keyof typeof newEntry;
+                            return (
+                                <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                                    <input type="number" step="0.5" className="input" value={newEntry[valKey] as string} onChange={e => setNewEntry({ ...newEntry, [valKey]: e.target.value })} style={{ width: '100%', textAlign: 'center', color: newEntry[goodKey] ? '#4ade80' : '#f87171' }} />
+                                    <button type="button" onClick={() => setNewEntry({ ...newEntry, [goodKey]: !newEntry[goodKey] })} style={{ fontSize: '0.65rem', cursor: 'pointer', background: 'none', border: 'none', color: newEntry[goodKey] ? '#4ade80' : '#f87171' }}>{newEntry[goodKey] ? 'good' : 'miss'}</button>
+                                </div>
+                            );
+                        })}
 
+                        {/* Deadlift */}
                         <div style={labelStyle}>Deadlift</div>
-                        <input type="number" step="0.5" className="input" value={newEntry.dl1} onChange={e => setNewEntry({ ...newEntry, dl1: e.target.value })} style={{ width: '100%', textAlign: 'center' }} />
-                        <input type="number" step="0.5" className="input" value={newEntry.dl2} onChange={e => setNewEntry({ ...newEntry, dl2: e.target.value })} style={{ width: '100%', textAlign: 'center' }} />
-                        <input type="number" step="0.5" className="input" value={newEntry.dl3} onChange={e => setNewEntry({ ...newEntry, dl3: e.target.value })} style={{ width: '100%', textAlign: 'center' }} />
+                        {[1, 2, 3].map(i => {
+                            const valKey = `dl${i}` as keyof typeof newEntry;
+                            const goodKey = `dl${i}g` as keyof typeof newEntry;
+                            return (
+                                <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem' }}>
+                                    <input type="number" step="0.5" className="input" value={newEntry[valKey] as string} onChange={e => setNewEntry({ ...newEntry, [valKey]: e.target.value })} style={{ width: '100%', textAlign: 'center', color: newEntry[goodKey] ? '#4ade80' : '#f87171' }} />
+                                    <button type="button" onClick={() => setNewEntry({ ...newEntry, [goodKey]: !newEntry[goodKey] })} style={{ fontSize: '0.65rem', cursor: 'pointer', background: 'none', border: 'none', color: newEntry[goodKey] ? '#4ade80' : '#f87171' }}>{newEntry[goodKey] ? 'good' : 'miss'}</button>
+                                </div>
+                            );
+                        })}
                     </div>
 
                     <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
