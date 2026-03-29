@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Papa from 'papaparse';
 import { Upload, Plus, X, Trash2, Pencil, Check } from 'lucide-react';
 import { calculateGL, calculateDots } from '@/lib/calculators';
+import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface MeetEntry {
     id: string;
@@ -58,6 +59,8 @@ export default function MeetDataTable({ athletes, coachId }: Props) {
     const [importResult, setImportResult] = useState('');
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editDraft, setEditDraft] = useState<MeetEntry | null>(null);
+    const [chartAthleteId, setChartAthleteId] = useState<string>('');
+    const [chartMetric, setChartMetric] = useState<'total' | 'dots' | 'ipf'>('total');
 
     // New entry form
     const [newEntry, setNewEntry] = useState({
@@ -424,6 +427,26 @@ export default function MeetDataTable({ athletes, coachId }: Props) {
         zIndex: 1,
     };
 
+    const chartData = useMemo(() => {
+        if (!chartAthleteId) return [];
+        return entries
+            .filter(e => e.athleteId === chartAthleteId)
+            .map(e => {
+                const total = calcTotal(e);
+                const bw = e.bodyweight || e.weightClass;
+                const isMale = e.gender !== 'female';
+                return {
+                    meetDate: e.meetDate,
+                    total,
+                    dots: Number((e.csvDotsPoints || (total > 0 && bw > 0 ? calculateDots(total, bw, isMale) : 0)).toFixed(2)),
+                    ipf: Number((e.csvIpfPoints || (total > 0 && bw > 0 ? calculateGL(total, bw, isMale, false, false) : 0)).toFixed(2)),
+                };
+            })
+            .filter(d => d.total > 0);
+    }, [entries, chartAthleteId]);
+
+    const chartColor = chartMetric === 'total' ? 'var(--primary)' : chartMetric === 'dots' ? '#f59e0b' : '#38bdf8';
+
     return (
         <div>
             {/* Header Actions */}
@@ -563,6 +586,57 @@ export default function MeetDataTable({ athletes, coachId }: Props) {
                 </div>
             )}
 
+            {/* Chart Section */}
+            <div style={{ marginBottom: '1.5rem', background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '0.75rem', padding: '1.25rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: 10 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                        <label style={{ fontSize: '0.85rem', color: 'var(--secondary-foreground)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Athlete Chart</label>
+                        <select className="input" value={chartAthleteId} onChange={e => setChartAthleteId(e.target.value)} style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}>
+                            <option value="">Select Athlete...</option>
+                            {athletes.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
+                        </select>
+                    </div>
+                    {chartAthleteId && (
+                        <div style={{ display: 'flex', gap: '0.5rem' }}>
+                            {['total', 'dots', 'ipf'].map(m => (
+                                <button key={m} onClick={() => setChartMetric(m as any)} style={{
+                                    padding: '4px 10px', borderRadius: 6, border: `1px solid ${m === 'total' ? 'var(--primary)' : m === 'dots' ? '#f59e0b' : '#38bdf8'}`,
+                                    background: chartMetric === m ? `${m === 'total' ? 'rgba(6,182,212,0.1)' : m === 'dots' ? 'rgba(245,158,11,0.1)' : 'rgba(56,189,248,0.1)'}` : 'transparent',
+                                    color: chartMetric === m ? (m === 'total' ? 'var(--primary)' : m === 'dots' ? '#f59e0b' : '#38bdf8') : 'rgba(255,255,255,0.4)',
+                                    fontSize: 11, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s', textTransform: 'uppercase'
+                                }}>
+                                    {m === 'total' ? 'Total (kg)' : m === 'dots' ? 'DOTS' : 'IPF GL'}
+                                </button>
+                            ))}
+                        </div>
+                    )}
+                </div>
+                
+                {chartAthleteId ? (
+                    chartData.length > 0 ? (
+                        <ResponsiveContainer width="100%" height={240}>
+                            <AreaChart data={chartData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+                                <defs>
+                                    <linearGradient id="colorMetric" x1="0" y1="0" x2="0" y2="1">
+                                        <stop offset="5%" stopColor={chartColor} stopOpacity={0.4} />
+                                        <stop offset="95%" stopColor={chartColor} stopOpacity={0} />
+                                    </linearGradient>
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                                <XAxis dataKey="meetDate" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
+                                <YAxis domain={['auto', 'auto']} tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={40} />
+                                <Tooltip contentStyle={{ background: 'rgba(15,23,42,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 12, color: '#fff' }} />
+                                <Area type="monotone" dataKey={chartMetric} stroke={chartColor} strokeWidth={2.5} fill="url(#colorMetric)" dot={{ r: 4, fill: chartColor, strokeWidth: 0 }} activeDot={{ r: 6, strokeWidth: 0 }} />
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--secondary-foreground)', fontSize: '0.85rem' }}>No meet data found for this athlete.</div>
+                    )
+                ) : (
+                    <div style={{ textAlign: 'center', padding: '2rem 1rem', color: 'var(--secondary-foreground)', fontSize: '0.85rem', border: '1px dashed rgba(255,255,255,0.1)', borderRadius: 8 }}>Select an athlete to view their meet history chart.</div>
+                )}
+            </div>
+
             {/* Main Table */}
             <div style={{ overflowX: 'auto', borderRadius: '0.75rem', border: '1px solid var(--card-border)', background: 'var(--card-bg)' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'center', minWidth: 1400 }}>
@@ -668,7 +742,7 @@ export default function MeetDataTable({ athletes, coachId }: Props) {
                                     <td style={cellStyle}>{e.category}</td>
                                     <td style={cellStyle}>{e.weightClass || '-'}</td>
                                     <td style={cellStyle}>{e.meetDate || '-'}</td>
-                                    <td style={{ ...cellStyle, textAlign: 'left', maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis' }} title={e.meetName}>{e.meetName}</td>
+                                    <td style={{ ...cellStyle, textAlign: 'left', minWidth: 200, whiteSpace: 'normal', wordBreak: 'break-word' }}>{e.meetName}</td>
 
                                     <AttemptCell value={e.squat[0]} good={e.squatResults[0]} />
                                     <AttemptCell value={e.squat[1]} good={e.squatResults[1]} />
