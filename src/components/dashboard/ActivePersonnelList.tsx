@@ -15,6 +15,27 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
     const [filterMeet, setFilterMeet] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
+    useEffect(() => {
+        const savedSort = localStorage.getItem('dashboard-sort');
+        if (savedSort === 'name' || savedSort === 'progress' || savedSort === 'meet') {
+            setSortBy(savedSort as any);
+        }
+        const savedFilter = localStorage.getItem('dashboard-filter-meet');
+        if (savedFilter === 'true') {
+            setFilterMeet(true);
+        }
+    }, []);
+
+    const updateSort = (val: 'name' | 'progress' | 'meet') => {
+        setSortBy(val);
+        localStorage.setItem('dashboard-sort', val);
+    };
+
+    const updateFilterMeet = (val: boolean) => {
+        setFilterMeet(val);
+        localStorage.setItem('dashboard-filter-meet', String(val));
+    };
+
     const handleAddAthlete = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsSubmitting(true);
@@ -266,7 +287,7 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
                                 ].map(opt => (
                                     <button
                                         key={opt.value}
-                                        onClick={() => setSortBy(opt.value as any)}
+                                        onClick={() => updateSort(opt.value as any)}
                                         style={{
                                             flex: 1,
                                             padding: '0.35rem 0.5rem',
@@ -286,7 +307,7 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
                             </div>
                             <div style={{ height: 1, background: 'var(--card-border)' }} />
                             <button
-                                onClick={() => setFilterMeet(!filterMeet)}
+                                onClick={() => updateFilterMeet(!filterMeet)}
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',

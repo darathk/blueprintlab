@@ -23,6 +23,7 @@ export const getAthletes = cache(async (coachId) => {
             pastMeets: true,
             programs: {
                 where: { status: 'active' },
+                orderBy: { createdAt: 'asc' },
                 select: { id: true, name: true, status: true, startDate: true, endDate: true }
             }
         }
@@ -138,6 +139,38 @@ export async function saveLog(logEntry) {
             }
         });
     }
+
+    // Check if the program is now fully complete (auto-advance logic)
+    const program = await prisma.program.findUnique({
+        where: { id: logEntry.programId },
+        select: { id: true, status: true, weeks: true }
+    });
+
+    if (program && program.status === 'active') {
+        const weeks = typeof program.weeks === 'string' ? JSON.parse(program.weeks) : program.weeks;
+        let totalSessions = 0;
+        (weeks || []).forEach(w => {
+            totalSessions += (w.sessions?.length || 0);
+        });
+
+        if (totalSessions > 0) {
+            const logsCount = await prisma.log.groupBy({
+                by: ['sessionId'],
+                where: { programId: logEntry.programId },
+                _count: { sessionId: true }
+            });
+            
+            if (logsCount.length >= totalSessions) {
+                // All sessions are logged! Mark the program as completed.
+                // Any later-created active programs (blocks written ahead of time)
+                // will seamlessly take over as the current program.
+                await prisma.program.update({
+                    where: { id: logEntry.programId },
+                    data: { status: 'completed' }
+                });
+            }
+        }
+    }
 }
 
 export const getReadiness = cache(async (coachId) => {
@@ -167,6 +200,7 @@ export const getAthleteById = cache(async (id) => {
         include: {
             programs: {
                 where: { status: 'active' },
+                orderBy: { createdAt: 'asc' },
                 select: { id: true }
             }
         }
