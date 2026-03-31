@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Search, ChevronDown, ChevronUp, Calendar, Dumbbell } from 'lucide-react';
 import { getExerciseCategory } from '@/lib/exercise-db';
 
@@ -57,6 +57,25 @@ export default function TrainingHistory({
 }) {
     const [query, setQuery] = useState('');
     const [expandedId, setExpandedId] = useState<string | null>(null);
+    const [unit, setUnit] = useState<'lbs' | 'kg'>('lbs');
+
+    useEffect(() => {
+        const saved = localStorage.getItem('athlete-unit-pref');
+        if (saved === 'kg' || saved === 'lbs') setUnit(saved as 'kg' | 'lbs');
+    }, []);
+
+    const toggleUnit = (u: 'kg' | 'lbs') => {
+        setUnit(u);
+        localStorage.setItem('athlete-unit-pref', u);
+    };
+
+    const toDisplay = (weightStr: string | undefined) => {
+        if (!weightStr) return '';
+        const val = parseFloat(weightStr);
+        if (isNaN(val)) return weightStr;
+        if (unit === 'lbs') return val.toString();
+        return (val * 0.45359237).toFixed(1).replace(/\.0$/, '');
+    };
 
     const programMap = useMemo(() => {
         const map: Record<string, string> = {};
@@ -107,7 +126,7 @@ export default function TrainingHistory({
         return sets
             .map((s, i) => {
                 const parts: string[] = [];
-                if (s.weight) parts.push(`${s.weight}kg`);
+                if (s.weight) parts.push(`${toDisplay(s.weight)}${unit === 'lbs' ? 'lbs' : 'kg'}`);
                 if (s.reps) parts.push(`${s.reps} reps`);
                 if (s.rpe) parts.push(`RPE ${s.rpe}`);
                 return parts.length > 0 ? `Set ${i + 1}: ${parts.join(' × ')}` : null;
@@ -132,7 +151,32 @@ export default function TrainingHistory({
 
     return (
         <div style={{ padding: '1rem', maxWidth: 600, margin: '0 auto' }}>
-            <h1 style={{ fontSize: '1.25rem', fontWeight: 700, marginBottom: '1rem' }}>Training History</h1>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                <h1 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>Training History</h1>
+                {/* Unit toggle */}
+                <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: '2px' }}>
+                    {(['lbs', 'kg'] as const).map(u => (
+                        <button
+                            key={u}
+                            onClick={() => toggleUnit(u)}
+                            style={{
+                                padding: '4px 12px',
+                                borderRadius: '6px',
+                                border: 'none',
+                                background: unit === u ? 'var(--primary)' : 'transparent',
+                                color: unit === u ? 'white' : 'var(--secondary-foreground)',
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                textTransform: 'uppercase',
+                                transition: 'all 0.2s ease'
+                            }}
+                        >
+                            {u}
+                        </button>
+                    ))}
+                </div>
+            </div>
 
             {/* Search Input */}
             <div style={{
@@ -260,7 +304,7 @@ export default function TrainingHistory({
                                         whiteSpace: 'nowrap',
                                         textAlign: 'right',
                                     }}>
-                                        {best.weight && `${best.weight}kg`}
+                                        {best.weight && `${toDisplay(best.weight)}${unit === 'lbs' ? 'lbs' : 'kg'}`}
                                         {best.weight && best.reps && ' × '}
                                         {best.reps && `${best.reps}`}
                                     </div>
@@ -313,7 +357,7 @@ export default function TrainingHistory({
                                                 {r.exercise.sets.map((s, si) => (
                                                     <tr key={si} style={{ borderTop: '1px solid var(--card-border)' }}>
                                                         <td style={{ padding: '4px 0' }}>{si + 1}</td>
-                                                        <td style={{ padding: '4px 0' }}>{s.weight ? `${s.weight}kg` : '—'}</td>
+                                                        <td style={{ padding: '4px 0' }}>{s.weight ? `${toDisplay(s.weight)}${unit === 'lbs' ? 'lbs' : 'kg'}` : '—'}</td>
                                                         <td style={{ padding: '4px 0' }}>{s.reps || '—'}</td>
                                                         <td style={{ padding: '4px 0' }}>{s.rpe || '—'}</td>
                                                     </tr>
