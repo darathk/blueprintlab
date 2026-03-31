@@ -309,10 +309,11 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
     interface Exercise {
         id: string;
         name: string;
-        sets: number | any[];
-        reps: string;
-        rpeTarget: number;
+        sets: any[];
+        reps?: string;
+        rpeTarget?: number;
         notes?: string;
+        category?: string;
         isPrimary?: boolean;
     }
 
@@ -345,7 +346,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
 
     // ... (rest of component state)
 
-    const [weeks, setWeeks] = useState([{
+    const [weeks, setWeeks] = useState<Week[]>([{
         id: generateId(),
         weekNumber: 1,
         sessions: [{
@@ -353,7 +354,8 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
             day: 1,
             name: 'Session 1',
             exercises: [],
-            scheduledDate: ''
+            scheduledDate: '',
+            warmupDrills: ''
         }]
     }]);
     const [isSaving, setIsSaving] = useState(false);
@@ -1692,6 +1694,29 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                                                     borderRadius: '4px'
                                                                 }}
                                                             />
+                                                            {session.warmupDrills && session.warmupDrills.trim().length > 0 && (
+                                                                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
+                                                                    <button
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            if (confirm('Apply these warm-up drills to EVERY session in the entire block? This will overwrite existing warm-ups elsewhere.')) {
+                                                                                const newWeeks = [...weeks];
+                                                                                newWeeks.forEach(w => w.sessions.forEach(s => s.warmupDrills = session.warmupDrills));
+                                                                                setWeeks(newWeeks);
+                                                                            }
+                                                                        }}
+                                                                        style={{
+                                                                            background: 'none', border: 'none', color: 'var(--accent)',
+                                                                            fontSize: '0.75rem', cursor: 'pointer', padding: '4px 8px',
+                                                                            fontWeight: 600, opacity: 0.8
+                                                                        }}
+                                                                        onMouseOver={e => e.currentTarget.style.opacity = '1'}
+                                                                        onMouseOut={e => e.currentTarget.style.opacity = '0.8'}
+                                                                    >
+                                                                        Apply to all sessions
+                                                                    </button>
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     {session.exercises.length === 0 ? (
                                                         <div
@@ -1788,6 +1813,55 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
 
                     {/* Editor body */}
                     <div style={{ flex: 1, overflowY: 'auto', padding: '1rem 1.25rem' }}>
+                        {/* Warm-Up Drills Section (Side Panel) */}
+                        <div style={{ marginBottom: '1.5rem' }}>
+                            <textarea
+                                className="input"
+                                placeholder="Warm-up Drills & Pre-workout Notes"
+                                value={weeks[editingSession.w].sessions[editingSession.s].warmupDrills || ''}
+                                onChange={e => {
+                                    const newWeeks = [...weeks];
+                                    newWeeks[editingSession.w].sessions[editingSession.s].warmupDrills = e.target.value;
+                                    setWeeks(newWeeks);
+                                }}
+                                style={{
+                                    width: '100%',
+                                    minHeight: '60px',
+                                    padding: '8px 12px',
+                                    fontSize: '0.85rem',
+                                    background: 'rgba(255, 255, 255, 0.02)',
+                                    border: '1px dashed var(--card-border)',
+                                    color: 'var(--foreground)',
+                                    resize: 'vertical',
+                                    borderRadius: '4px'
+                                }}
+                            />
+                            {weeks[editingSession.w].sessions[editingSession.s].warmupDrills?.trim().length > 0 && (
+                                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
+                                    <button
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            if (confirm('Apply these warm-up drills to EVERY session in the entire block? This will overwrite existing warm-ups elsewhere.')) {
+                                                const newWeeks = [...weeks];
+                                                const drills = weeks[editingSession.w].sessions[editingSession.s].warmupDrills;
+                                                newWeeks.forEach(w => w.sessions.forEach(s => s.warmupDrills = drills));
+                                                setWeeks(newWeeks);
+                                            }
+                                        }}
+                                        style={{
+                                            background: 'none', border: 'none', color: 'var(--accent)',
+                                            fontSize: '0.75rem', cursor: 'pointer', padding: '4px 8px',
+                                            fontWeight: 600, opacity: 0.8
+                                        }}
+                                        onMouseOver={e => e.currentTarget.style.opacity = '1'}
+                                        onMouseOut={e => e.currentTarget.style.opacity = '0.8'}
+                                    >
+                                        Apply to all sessions
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+
                         {/* Exercises */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                             {weeks[editingSession.w].sessions[editingSession.s].exercises.map((ex, exIndex) => (
