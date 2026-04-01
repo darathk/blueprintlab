@@ -3,7 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-export default function AthleteStatusCard({ athlete, progress, daysSinceLastLog = null }) {
+export default function AthleteStatusCard({ athlete, progress, daysSinceLastLog = null, needsUpdate = false, hasNextBlockReady = false }) {
     const router = useRouter();
     const [editingEmail, setEditingEmail] = useState(false);
     const [emailValue, setEmailValue] = useState(athlete.email || '');
@@ -271,6 +271,30 @@ export default function AthleteStatusCard({ athlete, progress, daysSinceLastLog 
                 </div>
             )}
 
+            {/* Needs Update alert */}
+            {needsUpdate && (
+                <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.6rem',
+                    padding: '0.5rem 0.75rem',
+                    marginBottom: '0.75rem',
+                    borderRadius: '8px',
+                    background: hasNextBlockReady ? 'rgba(245, 158, 11, 0.08)' : 'rgba(239, 68, 68, 0.1)',
+                    border: `1px solid ${hasNextBlockReady ? 'rgba(245, 158, 11, 0.25)' : 'rgba(239, 68, 68, 0.25)'}`,
+                    fontSize: '0.78rem',
+                }}>
+                    <span style={{
+                        width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
+                        background: hasNextBlockReady ? '#F59E0B' : '#EF4444',
+                        animation: 'pulse 2s infinite',
+                    }} />
+                    <span style={{ color: hasNextBlockReady ? '#FCD34D' : '#FCA5A5', fontWeight: 600 }}>
+                        {hasNextBlockReady ? '⚡ Finishing soon — next block ready' : '⚠️ Finishing soon — needs new program'}
+                    </span>
+                </div>
+            )}
+
             {/* Missed session alert */}
             {daysSinceLastLog !== null && (daysSinceLastLog === -1 || daysSinceLastLog >= 3) && (
                 <div style={{
@@ -313,9 +337,6 @@ export default function AthleteStatusCard({ athlete, progress, daysSinceLastLog 
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', fontSize: '0.85rem' }}>
                     <div style={{ fontWeight: 600, color: 'var(--foreground)' }}>
                         Session {progress.completedSessions} <span style={{ color: 'var(--secondary-foreground)' }}>/ {progress.totalSessions}</span>
-                    </div>
-                    <div style={{ color: 'var(--accent)', fontWeight: 600 }}>
-                        Week {progress.currentWeek} <span style={{ color: 'var(--secondary-foreground)', fontWeight: 400 }}>/ {progress.totalWeeks}</span>
                     </div>
                 </div>
 

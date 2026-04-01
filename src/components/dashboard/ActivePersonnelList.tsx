@@ -13,6 +13,7 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
     const [newEmail, setNewEmail] = useState('');
     const [sortBy, setSortBy] = useState<'name' | 'progress' | 'meet'>('name');
     const [filterMeet, setFilterMeet] = useState(false);
+    const [filterNeedsUpdate, setFilterNeedsUpdate] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     useEffect(() => {
@@ -20,10 +21,8 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
         if (savedSort === 'name' || savedSort === 'progress' || savedSort === 'meet') {
             setSortBy(savedSort as any);
         }
-        const savedFilter = localStorage.getItem('dashboard-filter-meet');
-        if (savedFilter === 'true') {
-            setFilterMeet(true);
-        }
+        if (localStorage.getItem('dashboard-filter-meet') === 'true') setFilterMeet(true);
+        if (localStorage.getItem('dashboard-filter-needs-update') === 'true') setFilterNeedsUpdate(true);
     }, []);
 
     const updateSort = (val: 'name' | 'progress' | 'meet') => {
@@ -34,6 +33,11 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
     const updateFilterMeet = (val: boolean) => {
         setFilterMeet(val);
         localStorage.setItem('dashboard-filter-meet', String(val));
+    };
+
+    const updateFilterNeedsUpdate = (val: boolean) => {
+        setFilterNeedsUpdate(val);
+        localStorage.setItem('dashboard-filter-needs-update', String(val));
     };
 
     const handleAddAthlete = async (e: React.FormEvent) => {
@@ -163,6 +167,23 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
             daysSinceLastLog = -1; // sentinel for "never logged"
         }
 
+        // Needs update: athlete is within 1 week of sessions remaining in this block
+        let needsUpdate = false;
+        let hasNextBlockReady = false;
+        if (currentProgram && progress.totalSessions > 0) {
+            const sessionsRemaining = progress.totalSessions - progress.completedSessions;
+            // Estimate sessions per week
+            const totalWeeks = progress.totalWeeks || 1;
+            const sessionsPerWeek = Math.ceil(progress.totalSessions / totalWeeks);
+            needsUpdate = sessionsRemaining > 0 && sessionsRemaining <= sessionsPerWeek;
+
+            // Check if a next block already exists (another active program written ahead)
+            const activeSorted = [...athletePrograms]
+                .filter(p => p.status === 'active')
+                .sort((a, b) => new Date(a.createdAt || a.startDate || 0).getTime() - new Date(b.createdAt || b.startDate || 0).getTime());
+            hasNextBlockReady = activeSorted.length > 1 || (activeSorted.length === 1 && activeSorted[0].id !== activeProgId);
+        }
+
         return {
             ...athlete,
             currentProgramId: activeProgId,
@@ -170,7 +191,9 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
             progressPercent,
             daysOut,
             hasMeet: !!athlete.nextMeetDate,
-            daysSinceLastLog
+            daysSinceLastLog,
+            needsUpdate,
+            hasNextBlockReady,
         };
     });
 
@@ -178,7 +201,8 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
         .filter(athlete => {
             const matchesSearch = athlete.name.toLowerCase().includes(searchQuery.toLowerCase());
             const matchesMeet = !filterMeet || athlete.hasMeet;
-            return matchesSearch && matchesMeet;
+            const matchesNeedsUpdate = !filterNeedsUpdate || athlete.needsUpdate;
+            return matchesSearch && matchesMeet && matchesNeedsUpdate;
         })
         .sort((a, b) => {
             if (sortBy === 'progress') {
@@ -214,7 +238,7 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [showFilters]);
 
-    const hasActiveFilters = filterMeet || sortBy !== 'name';
+    const hasActiveFilters = filterMeet || filterNeedsUpdate || sortBy !== 'name';
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
@@ -355,6 +379,27 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
                                 Has Meet
                                 <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>{filterMeet ? 'On' : 'Off'}</span>
                             </button>
+                            <button
+                                onClick={() => updateFilterNeedsUpdate(!filterNeedsUpdate)}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    padding: '0.35rem 0.5rem',
+                                    borderRadius: '8px',
+                                    border: `1px solid ${filterNeedsUpdate ? '#F59E0B' : 'var(--card-border)'}`,
+                                    background: filterNeedsUpdate ? 'rgba(245, 158, 11, 0.12)' : 'transparent',
+                                    color: filterNeedsUpdate ? '#F59E0B' : 'var(--foreground)',
+                                    fontSize: '0.8rem',
+                                    fontWeight: 500,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.15s',
+                                    width: '100%',
+                                }}
+                            >
+                                Needs Update
+                                <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>{filterNeedsUpdate ? 'On' : 'Off'}</span>
+                            </button>
                         </div>
                     )}
                 </div>
@@ -405,6 +450,8 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
                             athlete={enrichedAthlete}
                             progress={enrichedAthlete.computedProgress}
                             daysSinceLastLog={enrichedAthlete.daysSinceLastLog}
+                            needsUpdate={enrichedAthlete.needsUpdate}
+                            hasNextBlockReady={enrichedAthlete.hasNextBlockReady}
                         />
                     ))}
                 </div>
