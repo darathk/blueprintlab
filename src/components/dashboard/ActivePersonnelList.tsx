@@ -71,7 +71,34 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
 
     // Pre-calculate progress for all athletes to allow sorting
     const enrichedAthletes = (athletes || []).map(athlete => {
-        const currentProgram = programs.find(p => p.id === athlete.currentProgramId);
+        const athletePrograms = programs.filter(p => p.athleteId === athlete.id);
+        const athleteLogs = logSummaries.filter(l => l.program?.athleteId === athlete.id);
+
+        let activeProgId = athlete.currentProgramId;
+
+        // Auto-advance logic: ignore old "active" programs that are actually 100% complete
+        if (athletePrograms.length > 0) {
+            const activeSorted = [...athletePrograms]
+                .filter(p => p.status === 'active' || p.id === athlete.currentProgramId)
+                .sort((a, b) => new Date(a.createdAt || a.startDate || 0).getTime() - new Date(b.createdAt || b.startDate || 0).getTime());
+            
+            for (const prog of activeSorted) {
+                let totalSessions = 0;
+                (prog.weeks || []).forEach((w: any) => totalSessions += (w.sessions?.length || 0));
+                
+                const progLogs = athleteLogs.filter(l => l.programId === prog.id);
+                const uniqueSessions = new Set(progLogs.map(l => l.sessionId));
+                
+                activeProgId = prog.id; // Assume this one
+                
+                // If it's incomplete, stop. It's the true active program.
+                if (totalSessions === 0 || uniqueSessions.size < totalSessions) {
+                    break;
+                }
+            }
+        }
+
+        const currentProgram = programs.find(p => p.id === activeProgId);
 
         let progress = {
             completedSessions: 0,
@@ -138,6 +165,7 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
 
         return {
             ...athlete,
+            currentProgramId: activeProgId,
             computedProgress: progress,
             progressPercent,
             daysOut,
