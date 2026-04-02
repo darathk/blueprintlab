@@ -8,7 +8,8 @@ export const dynamic = 'force-dynamic';
  * GET /api/cron/session-reminders
  *
  * Sends push notifications to athletes who have a training session scheduled today.
- * Intended to be called once daily (e.g., 7-8 AM) via an external cron scheduler.
+ * Intended to be called once daily (e.g., 8 AM) via Vercel Cron.
+ * Supports both sessions with explicit `scheduledDate` and day-of-week scheduling.
  *
  * Auth: Bearer token via CRON_SECRET env var.
  */
@@ -22,11 +23,13 @@ export async function GET(request: Request) {
 
         const today = new Date();
         today.setHours(0, 0, 0, 0);
+        const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
+
         // JavaScript: 0=Sun, 1=Mon, ..., 6=Sat → convert to 1=Mon, ..., 7=Sun
         const jsDow = today.getDay();
         const todayDow = jsDow === 0 ? 7 : jsDow;
 
-        // Fetch all active programs with their athlete info
+        // Fetch all active programs with athlete info
         const activePrograms = await prisma.program.findMany({
             where: { status: 'active' },
             select: {
@@ -39,56 +42,57 @@ export async function GET(request: Request) {
             },
         });
 
-        // Determine which athletes have sessions today and haven't already logged them
-        const notifications: Array<{ userId: string; title: string; body: string; url: string }> = [];
         const athleteSessionMap = new Map<string, string[]>(); // athleteId → session names
 
         for (const program of activePrograms) {
             const startDate = parseLocalDate(program.startDate);
-            if (!startDate) continue;
-
-            const diffDays = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
-            if (diffDays < 0) continue; // Program hasn't started yet
-
-            const currentWeekIndex = Math.floor(diffDays / 7);
             const weeks = program.weeks as any[];
-            if (!weeks || currentWeekIndex >= weeks.length) continue;
+            if (!weeks) continue;
 
-            const week = weeks[currentWeekIndex];
-            if (!week || !week.sessions) continue;
+            for (let wi = 0; wi < weeks.length; wi++) {
+                const week = weeks[wi];
+                if (!week || !week.sessions) continue;
+                const weekNumber = week.weekNumber || (wi + 1);
 
-            // Find sessions scheduled for today's day of week
-            const todaySessions = week.sessions.filter((s: any) => s.day === todayDow);
-            if (todaySessions.length === 0) continue;
+                for (const session of week.sessions) {
+                    let isToday = false;
 
-            // Check if any of these sessions are already logged
-            const sessionIds = todaySessions.map((s: any) =>
-                `${program.id}_w${currentWeekIndex + 1}_d${s.day}`
-            );
+                    // Method 1: explicit scheduledDate on the session
+                    if (session.scheduledDate) {
+                        const sDate = String(session.scheduledDate).split('T')[0];
+                        isToday = sDate === todayStr;
+                    }
 
-            const existingLogs = await prisma.log.findMany({
-                where: {
-                    programId: program.id,
-                    sessionId: { in: sessionIds },
-                },
-                select: { sessionId: true },
-            });
-            const loggedIds = new Set(existingLogs.map((l) => l.sessionId));
+                    // Method 2: fall back to day-of-week based on program startDate
+                    if (!isToday && startDate) {
+                        const diffDays = Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+                        if (diffDays >= 0) {
+                            const currentWeekIndex = Math.floor(diffDays / 7);
+                            if (currentWeekIndex === wi && session.day === todayDow) {
+                                isToday = true;
+                            }
+                        }
+                    }
 
-            const unloggedSessions = todaySessions.filter(
-                (s: any) => !loggedIds.has(`${program.id}_w${currentWeekIndex + 1}_d${s.day}`)
-            );
-            if (unloggedSessions.length === 0) continue;
+                    if (!isToday) continue;
 
-            const names = unloggedSessions.map(
-                (s: any) => s.sessionName || `Session ${s.day}`
-            );
+                    // Check if this session has already been logged
+                    const sessionId = `${program.id}_w${weekNumber}_d${session.day}`;
+                    const existing = await prisma.log.findFirst({
+                        where: { programId: program.id, sessionId },
+                        select: { id: true },
+                    });
+                    if (existing) continue; // already logged, skip
 
-            const existing = athleteSessionMap.get(program.athleteId) || [];
-            athleteSessionMap.set(program.athleteId, [...existing, ...names]);
+                    const sessionName = session.name || session.sessionName || `Session ${session.day}`;
+                    const existing2 = athleteSessionMap.get(program.athleteId) || [];
+                    athleteSessionMap.set(program.athleteId, [...existing2, sessionName]);
+                }
+            }
         }
 
         // Build notification payloads
+        const notifications: Array<{ userId: string; title: string; body: string; url: string }> = [];
         for (const [athleteId, sessionNames] of athleteSessionMap) {
             const body =
                 sessionNames.length === 1
@@ -97,7 +101,7 @@ export async function GET(request: Request) {
 
             notifications.push({
                 userId: athleteId,
-                title: 'Training Day',
+                title: '🏋️ Training Day',
                 body,
                 url: `/athlete/${athleteId}/dashboard`,
             });
