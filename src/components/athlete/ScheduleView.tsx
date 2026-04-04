@@ -684,7 +684,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                         borderRadius: 12,
                                         overflow: 'hidden',
                                         transition: 'border-color 0.2s, opacity 0.2s',
-                                        opacity: isActive ? 1 : 0.5,
+                                        opacity: 1,
                                     }}>
                                         {/* Past program label */}
                                         {!isActive && (
