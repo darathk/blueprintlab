@@ -1,9 +1,14 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, SlidersHorizontal, Plus, X } from 'lucide-react';
+import { Search, SlidersHorizontal, Plus, X, Megaphone, ChevronDown } from 'lucide-react';
 import AthleteStatusCard from '@/app/dashboard/athlete-status-card';
+
+function todayStr() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+}
 
 export default function ActivePersonnelList({ athletes, programs, logSummaries, lastLogDates = {}, coachId }) {
     const router = useRouter();
@@ -15,6 +20,55 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
     const [filterMeet, setFilterMeet] = useState(false);
     const [filterNeedsUpdate, setFilterNeedsUpdate] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    // ── Broadcast announcement state ──
+    const [broadcastOpen, setBroadcastOpen] = useState(false);
+    const [broadcastMsg, setBroadcastMsg] = useState('');
+    const [broadcastStart, setBroadcastStart] = useState(todayStr());
+    const [broadcastEnd, setBroadcastEnd] = useState('');
+    const [broadcastSaving, setBroadcastSaving] = useState(false);
+    const [broadcastSaved, setBroadcastSaved] = useState(false);
+    const [activeAnnouncement, setActiveAnnouncement] = useState<{ message: string; startDate: string; endDate: string } | null>(null);
+
+    const fetchAnnouncement = useCallback(async () => {
+        try {
+            const res = await fetch(`/api/announcements?coachId=${coachId}`);
+            if (res.ok) {
+                const data = await res.json();
+                setActiveAnnouncement(data.announcement);
+            }
+        } catch {}
+    }, [coachId]);
+
+    useEffect(() => { fetchAnnouncement(); }, [fetchAnnouncement]);
+
+    const handleSaveBroadcast = async () => {
+        if (!broadcastMsg.trim() || !broadcastStart || !broadcastEnd) return;
+        setBroadcastSaving(true);
+        try {
+            const res = await fetch('/api/announcements', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ coachId, message: broadcastMsg.trim(), startDate: broadcastStart, endDate: broadcastEnd }),
+            });
+            if (res.ok) {
+                setBroadcastSaved(true);
+                setBroadcastMsg('');
+                setBroadcastEnd('');
+                setBroadcastStart(todayStr());
+                setBroadcastOpen(false);
+                await fetchAnnouncement();
+                setTimeout(() => setBroadcastSaved(false), 3000);
+            }
+        } finally {
+            setBroadcastSaving(false);
+        }
+    };
+
+    const handleClearBroadcast = async () => {
+        await fetch(`/api/announcements?coachId=${coachId}`, { method: 'DELETE' });
+        setActiveAnnouncement(null);
+    };
 
     useEffect(() => {
         const savedSort = localStorage.getItem('dashboard-sort');
@@ -242,6 +296,148 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
 
     return (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+
+            {/* ── Broadcast Announcement Panel ── */}
+            <div style={{
+                borderRadius: 14,
+                border: broadcastOpen ? '1px solid rgba(251,191,36,0.5)' : '1px solid rgba(251,191,36,0.2)',
+                background: 'rgba(251,191,36,0.05)',
+                overflow: 'hidden',
+                transition: 'border-color 0.2s',
+            }}>
+                {/* Panel header — always visible */}
+                <button
+                    onClick={() => setBroadcastOpen(o => !o)}
+                    style={{
+                        width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '0.75rem 1rem', background: 'transparent', border: 'none',
+                        cursor: 'pointer', color: 'var(--foreground)', textAlign: 'left',
+                    }}
+                >
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+                        <Megaphone size={16} color="#fbbf24" />
+                        <span style={{ fontWeight: 700, fontSize: '0.85rem', color: '#fbbf24' }}>Broadcast Message</span>
+                        {activeAnnouncement && (
+                            <span style={{
+                                background: 'rgba(251,191,36,0.2)', color: '#fbbf24',
+                                borderRadius: 20, padding: '1px 8px', fontSize: '0.7rem', fontWeight: 700,
+                            }}>LIVE</span>
+                        )}
+                        {broadcastSaved && (
+                            <span style={{ color: '#34d399', fontSize: '0.75rem', fontWeight: 600 }}>✓ Sent!</span>
+                        )}
+                    </div>
+                    <ChevronDown size={16} color="#fbbf24" style={{ transform: broadcastOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+                </button>
+
+                {/* Active announcement preview */}
+                {!broadcastOpen && activeAnnouncement && (
+                    <div style={{
+                        margin: '0 1rem 0.75rem',
+                        padding: '0.6rem 0.85rem',
+                        borderRadius: 8,
+                        background: 'rgba(251,191,36,0.08)',
+                        border: '1px solid rgba(251,191,36,0.2)',
+                        fontSize: '0.8rem',
+                        color: 'var(--secondary-foreground)',
+                        display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8,
+                    }}>
+                        <div>
+                            <span style={{ color: '#fbbf24', fontWeight: 600, fontSize: '0.7rem', display: 'block', marginBottom: 2 }}>
+                                Active: {activeAnnouncement.startDate} → {activeAnnouncement.endDate}
+                            </span>
+                            {activeAnnouncement.message}
+                        </div>
+                        <button
+                            onClick={(e) => { e.stopPropagation(); handleClearBroadcast(); }}
+                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--secondary-foreground)', flexShrink: 0, padding: 2 }}
+                            title="Clear announcement"
+                        >
+                            <X size={14} />
+                        </button>
+                    </div>
+                )}
+
+                {/* Compose form */}
+                {broadcastOpen && (
+                    <div style={{ padding: '0 1rem 1rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        <textarea
+                            value={broadcastMsg}
+                            onChange={e => setBroadcastMsg(e.target.value)}
+                            placeholder="Write your message to all athletes... (e.g. 'I'm traveling this week — response times may be delayed')"
+                            rows={3}
+                            style={{
+                                width: '100%', padding: '0.75rem', borderRadius: 8,
+                                border: '1px solid rgba(251,191,36,0.3)',
+                                background: 'rgba(0,0,0,0.2)', color: 'var(--foreground)',
+                                fontSize: '0.9rem', resize: 'vertical', outline: 'none',
+                                fontFamily: 'inherit',
+                            }}
+                        />
+                        <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+                            <div style={{ flex: 1, minWidth: 140 }}>
+                                <label style={{ display: 'block', fontSize: '0.7rem', color: '#fbbf24', fontWeight: 600, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Show from</label>
+                                <input
+                                    type="date"
+                                    value={broadcastStart}
+                                    onChange={e => setBroadcastStart(e.target.value)}
+                                    style={{
+                                        width: '100%', padding: '0.5rem 0.65rem', borderRadius: 7,
+                                        border: '1px solid rgba(251,191,36,0.3)',
+                                        background: 'rgba(0,0,0,0.2)', color: 'var(--foreground)',
+                                        fontSize: '0.85rem', outline: 'none',
+                                    }}
+                                />
+                            </div>
+                            <div style={{ flex: 1, minWidth: 140 }}>
+                                <label style={{ display: 'block', fontSize: '0.7rem', color: '#fbbf24', fontWeight: 600, marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Until</label>
+                                <input
+                                    type="date"
+                                    value={broadcastEnd}
+                                    min={broadcastStart}
+                                    onChange={e => setBroadcastEnd(e.target.value)}
+                                    style={{
+                                        width: '100%', padding: '0.5rem 0.65rem', borderRadius: 7,
+                                        border: '1px solid rgba(251,191,36,0.3)',
+                                        background: 'rgba(0,0,0,0.2)', color: 'var(--foreground)',
+                                        fontSize: '0.85rem', outline: 'none',
+                                    }}
+                                />
+                            </div>
+                            <div style={{ display: 'flex', gap: '0.5rem', flexShrink: 0 }}>
+                                {activeAnnouncement && (
+                                    <button
+                                        onClick={handleClearBroadcast}
+                                        style={{
+                                            padding: '0.5rem 1rem', borderRadius: 8,
+                                            border: '1px solid rgba(148,163,184,0.3)',
+                                            background: 'transparent', color: 'var(--secondary-foreground)',
+                                            fontSize: '0.82rem', fontWeight: 600, cursor: 'pointer',
+                                        }}
+                                    >
+                                        Clear Live
+                                    </button>
+                                )}
+                                <button
+                                    onClick={handleSaveBroadcast}
+                                    disabled={broadcastSaving || !broadcastMsg.trim() || !broadcastEnd}
+                                    style={{
+                                        padding: '0.5rem 1.25rem', borderRadius: 8,
+                                        border: 'none',
+                                        background: (!broadcastMsg.trim() || !broadcastEnd) ? 'rgba(251,191,36,0.3)' : 'linear-gradient(135deg,#f59e0b,#fbbf24)',
+                                        color: '#000',
+                                        fontSize: '0.82rem', fontWeight: 700, cursor: 'pointer',
+                                        opacity: broadcastSaving ? 0.7 : 1,
+                                    }}
+                                >
+                                    {broadcastSaving ? 'Sending...' : '📣 Deploy'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+
             {/* Search Bar */}
             <div style={{
                 display: 'flex',
