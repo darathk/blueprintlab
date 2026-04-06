@@ -5,7 +5,7 @@ import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid,
     Tooltip, ResponsiveContainer
 } from 'recharts';
-import { getCompetitionDataPoints, CompetitionDataPoint } from '@/lib/dots';
+import { getCompetitionDataPoints, CompetitionDataPoint, calculateDots, lbsToKg } from '@/lib/dots';
 
 // Weight classes (kg) — male & female per Federation
 const FEDERATIONS = {
@@ -116,7 +116,25 @@ export default function DotsChart({ athleteId, logs, programs = [], initialGende
         [filteredLogs, wc, genderKey]
     );
 
-    // Find the last non-zero value for each lift across all data points
+    // Compute an unfiltered set across ALL logs for the stat cards.
+    // This ensures "Latest DOTs", "Latest Squat E1RM", etc. always reflect
+    // the true most-recent E1RM for each lift, regardless of timeline/program filter.
+    const allData: CompetitionDataPoint[] = useMemo(
+        () => getCompetitionDataPoints(logs ?? [], wc, genderKey),
+        [logs, wc, genderKey]
+    );
+
+    // Walk backwards through ALL data to find the most-recently logged value per lift.
+    const latestLiftAll = (key: 'squat' | 'bench' | 'deadlift' | 'totalLbs') => {
+        for (let i = allData.length - 1; i >= 0; i--) {
+            const val = allData[i][key];
+            if (val != null && val > 0) return val;
+        }
+        return 0;
+    };
+
+    // Walk backwards through FILTERED data for the chart's own latest total
+    // (kept separate so the chart still respects the active timeline filter).
     const latestLift = (key: 'squat' | 'bench' | 'deadlift' | 'totalLbs') => {
         for (let i = data.length - 1; i >= 0; i--) {
             const val = data[i][key];
@@ -125,15 +143,18 @@ export default function DotsChart({ athleteId, logs, programs = [], initialGende
         return 0;
     };
 
-    const latestTotal = data.length > 0 ? latestLift('totalLbs') : 0;
-    
-    // Dynamically compute the absolute latest DOTs score based on the highest active E1RM total
+    // Compute Latest DOTs from the globally-latest E1RM of each lift independently.
+    // Converting each lift separately before summing avoids rounding error from
+    // converting a rounded lbs-total to kg.
     const latestDots = useMemo(() => {
-        if (!genderKey || wc <= 0 || latestTotal <= 0) return 0;
-        // Import calculation directly from the lib to guarantee it syncs with the exact peak E1RM card
-        const { calculateDots } = require('@/lib/dots');
-        return calculateDots(latestTotal / 2.20462, wc, genderKey);
-    }, [genderKey, wc, latestTotal]);
+        if (!genderKey || wc <= 0) return 0;
+        const sqLbs  = latestLiftAll('squat');
+        const bnLbs  = latestLiftAll('bench');
+        const dlLbs  = latestLiftAll('deadlift');
+        const totalKg = lbsToKg(sqLbs) + lbsToKg(bnLbs) + lbsToKg(dlLbs);
+        if (totalKg <= 0) return 0;
+        return calculateDots(totalKg, wc, genderKey);
+    }, [genderKey, wc, allData]);
 
     const toggleLine = (key: keyof typeof activeLines) =>
         setActiveLines(prev => ({ ...prev, [key]: !prev[key] }));
@@ -214,14 +235,20 @@ export default function DotsChart({ athleteId, logs, programs = [], initialGende
             </div>
 
             {/* Stats Summary */}
-            {data.length > 0 && latestTotal > 0 && (
+            {allData.length > 0 && (
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                     {[
                         { label: 'Latest DOTs', value: latestDots > 0 ? latestDots.toFixed(1) : '—', color: CHART_COLORS.dots },
-                        { label: 'Total E1RM', value: latestLift('totalLbs') > 0 ? `${latestLift('totalLbs')} lbs` : '—', color: CHART_COLORS.totalLbs },
-                        { label: 'Latest Squat E1RM', value: latestLift('squat') > 0 ? `${latestLift('squat')} lbs` : '—', color: CHART_COLORS.squat },
-                        { label: 'Latest Bench E1RM', value: latestLift('bench') > 0 ? `${latestLift('bench')} lbs` : '—', color: CHART_COLORS.bench },
-                        { label: 'Latest Deadlift E1RM', value: latestLift('deadlift') > 0 ? `${latestLift('deadlift')} lbs` : '—', color: CHART_COLORS.deadlift },
+                        {
+                            label: 'Total E1RM',
+                            value: (latestLiftAll('squat') + latestLiftAll('bench') + latestLiftAll('deadlift')) > 0
+                                ? `${Math.round(latestLiftAll('squat') + latestLiftAll('bench') + latestLiftAll('deadlift'))} lbs`
+                                : '—',
+                            color: CHART_COLORS.totalLbs,
+                        },
+                        { label: 'Latest Squat E1RM', value: latestLiftAll('squat') > 0 ? `${latestLiftAll('squat')} lbs` : '—', color: CHART_COLORS.squat },
+                        { label: 'Latest Bench E1RM', value: latestLiftAll('bench') > 0 ? `${latestLiftAll('bench')} lbs` : '—', color: CHART_COLORS.bench },
+                        { label: 'Latest Deadlift E1RM', value: latestLiftAll('deadlift') > 0 ? `${latestLiftAll('deadlift')} lbs` : '—', color: CHART_COLORS.deadlift },
                     ].map(s => (
                         <div key={s.label} style={{ flex: '1 1 110px', background: 'rgba(15,23,42,0.5)', border: `1px solid ${s.color}33`, borderRadius: 10, padding: '12px 16px' }}>
                             <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{s.label}</div>

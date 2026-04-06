@@ -394,6 +394,26 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
         triggerAutoSave(sKey, programId);
     };
 
+    /** Returns the most recently logged sets for an exercise, excluding the current session */
+    const getPrevSets = useCallback((exerciseName: string, currentSKey: string) => {
+        if (!Array.isArray(logs) || logs.length === 0) return null;
+        const key = (exerciseName || '').toLowerCase().trim();
+        const sorted = [...logs]
+            .filter(l => l.sessionId !== currentSKey)
+            .sort((a, b) => new Date(b.date ?? 0).getTime() - new Date(a.date ?? 0).getTime());
+        for (const log of sorted) {
+            const logExercises: any[] = Array.isArray(log.exercises) ? log.exercises : [];
+            const found = logExercises.find((le: any) => (le.name || '').toLowerCase().trim() === key);
+            if (found) {
+                const sets = (Array.isArray(found.sets) ? found.sets : [])
+                    .map((s: any) => ({ weight: s.weight || '', reps: s.reps || '', rpe: s.rpe || '' }))
+                    .filter((s: any) => s.weight || s.reps);
+                if (sets.length > 0) return { sets, date: log.date || '' };
+            }
+        }
+        return null;
+    }, [logs]);
+
     // ─── Date strip state ───
     const [selectedDate, setSelectedDate] = useState<string>(() => toDateStr(new Date()));
     const [viewMode, setViewMode] = useState<'date' | 'blocks'>('date');
@@ -921,6 +941,35 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                             <span style={{ flex: 1, textAlign: 'center' }}>RPE</span>
                                                                         </div>
                                                                     </div>
+                                                                    {/* Previous session reference — shown once per exercise above the sets */}
+                                                                    {(() => {
+                                                                        const prev = getPrevSets(exerciseData.name || ex.name, sKey);
+                                                                        if (!prev) return null;
+                                                                        const dateLabel = prev.date ? new Date(prev.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Last session';
+                                                                        return (
+                                                                            <div style={{
+                                                                                display: 'flex', alignItems: 'center', gap: 6,
+                                                                                padding: '4px 8px 8px',
+                                                                                fontSize: '0.72rem', color: 'var(--secondary-foreground)',
+                                                                                borderBottom: '1px dashed var(--card-border)', marginBottom: 4,
+                                                                            }}>
+                                                                                <span style={{ opacity: 0.5, fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>🕐 {dateLabel}:</span>
+                                                                                <span style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                                                                    {prev.sets.map((s, i) => (
+                                                                                        <span key={i} style={{
+                                                                                            background: 'rgba(125,135,210,0.12)',
+                                                                                            border: '1px solid rgba(125,135,210,0.2)',
+                                                                                            borderRadius: 4, padding: '1px 6px',
+                                                                                            fontWeight: 600, color: 'var(--primary)',
+                                                                                            fontSize: '0.72rem',
+                                                                                        }}>
+                                                                                            {toDisplay(s.weight) && `${toDisplay(s.weight)} ${unit}`}{s.reps && ` × ${s.reps}`}{s.rpe && ` @${s.rpe}`}
+                                                                                        </span>
+                                                                                    ))}
+                                                                                </span>
+                                                                            </div>
+                                                                        );
+                                                                    })()}
                                                                     {sets.map((set: any, setIdx: number) => {
                                                                         const target = isEdit ? set.target : set;
                                                                         const actual = isEdit ? set.actual : { weight: '', reps: '', rpe: '' };
@@ -1448,6 +1497,36 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                         <span style={{ flex: 1, textAlign: 'center' }}>RPE</span>
                                                                                     </div>
                                                                                 </div>
+
+                                                                                {/* Previous session reference — shown once per exercise above the sets */}
+                                                                                {(() => {
+                                                                                    const prev = getPrevSets(exerciseData.name || ex.name, sKey);
+                                                                                    if (!prev) return null;
+                                                                                    const dateLabel = prev.date ? new Date(prev.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Last session';
+                                                                                    return (
+                                                                                        <div style={{
+                                                                                            display: 'flex', alignItems: 'center', gap: 6,
+                                                                                            padding: '4px 8px 8px',
+                                                                                            fontSize: '0.72rem', color: 'var(--secondary-foreground)',
+                                                                                            borderBottom: '1px dashed #e2e8f0', marginBottom: 4,
+                                                                                        }}>
+                                                                                            <span style={{ opacity: 0.5, fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>🕐 {dateLabel}:</span>
+                                                                                            <span style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                                                                                                {prev.sets.map((s, i) => (
+                                                                                                    <span key={i} style={{
+                                                                                                        background: 'rgba(125,135,210,0.12)',
+                                                                                                        border: '1px solid rgba(125,135,210,0.2)',
+                                                                                                        borderRadius: 4, padding: '1px 6px',
+                                                                                                        fontWeight: 600, color: 'var(--primary)',
+                                                                                                        fontSize: '0.72rem',
+                                                                                                    }}>
+                                                                                                        {toDisplay(s.weight) && `${toDisplay(s.weight)} ${unit}`}{s.reps && ` × ${s.reps}`}{s.rpe && ` @${s.rpe}`}
+                                                                                                    </span>
+                                                                                                ))}
+                                                                                            </span>
+                                                                                        </div>
+                                                                                    );
+                                                                                })()}
 
                                                                                 {/* Set rows */}
                                                                                 {sets.map((set: any, setIdx: number) => {

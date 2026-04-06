@@ -72,7 +72,7 @@ export default function Leaderboard({
     useEffect(() => {
         fetchLeaderboard();
 
-        // Real-time: listen for new Log inserts to auto-refresh
+        // Real-time: listen for Log changes and Athlete deletions
         const channel = supabase
             .channel('leaderboard-logs')
             .on(
@@ -85,6 +85,13 @@ export default function Leaderboard({
             .on(
                 'postgres_changes',
                 { event: 'UPDATE', schema: 'public', table: 'Log' },
+                () => {
+                    fetchLeaderboard();
+                }
+            )
+            .on(
+                'postgres_changes',
+                { event: 'DELETE', schema: 'public', table: 'Athlete' },
                 () => {
                     fetchLeaderboard();
                 }
@@ -379,6 +386,7 @@ export function LeaderboardRankWidget({
         const channel = supabase
             .channel('rank-widget-logs')
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'Log' }, () => fetchRank())
+            .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'Athlete' }, () => fetchRank())
             .subscribe();
 
         const interval = setInterval(fetchRank, 60000);
