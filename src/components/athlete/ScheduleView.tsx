@@ -923,12 +923,12 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                 <div style={{ padding: '0 8px 16px 8px' }}>
                                                                     {(() => {
                                                                         const prevForHeader = getPrevSets(exerciseData.name || ex.name, sKey);
-                                                                        const prevDateLabel = prevForHeader?.date ? new Date(prevForHeader.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : null;
+                                                                        const prevDateLabel = (() => { const raw = prevForHeader?.date; if (!raw) return null; const d = new Date(raw.slice(0, 10)); return isNaN(d.getTime()) ? null : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); })();
                                                                         return (
                                                                             <>
                                                                                 <div style={{ display: 'flex', borderBottom: '1px dashed var(--card-border)', marginBottom: 8 }}>
                                                                                     <div style={{ width: '130px', textAlign: 'center', fontWeight: 'bold', fontSize: '0.85rem', color: prevDateLabel ? 'var(--secondary-foreground)' : 'var(--primary)', padding: '4px 0' }}>
-                                                                                        {prevDateLabel ? <span>🕐 {prevDateLabel}</span> : 'Target'}
+                                                                                        {prevDateLabel ? <span>🕐 {prevDateLabel}</span> : 'Prescribed'}
                                                                                     </div>
                                                                                     <div style={{ flex: 1, position: 'relative' }}>
                                                                                         <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: 1, background: 'var(--card-border)' }} />
@@ -1476,8 +1476,8 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                 <div style={{ display: 'flex', borderBottom: '1px dashed #cbd5e1', marginBottom: 8 }}>
                                                                                     {(() => {
                                                                                         const prevForHeader = getPrevSets(exerciseData.name || ex.name, sKey);
-                                                                                        const prevDateLabel = prevForHeader?.date ? new Date(prevForHeader.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : null;
-                                                                                        return <div style={{ width: '130px', textAlign: 'center', fontWeight: 'bold', fontSize: '0.85rem', color: prevDateLabel ? 'var(--secondary-foreground)' : 'var(--primary)', padding: '4px 0' }}>{prevDateLabel ? <span>🕐 {prevDateLabel}</span> : 'Target'}</div>;
+                                                                                        const prevDateLabel = (() => { const raw = prevForHeader?.date; if (!raw) return null; const d = new Date(raw.slice(0, 10)); return isNaN(d.getTime()) ? null : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); })();
+                                                                                        return <div style={{ width: '130px', textAlign: 'center', fontWeight: 'bold', fontSize: '0.85rem', color: prevDateLabel ? 'var(--secondary-foreground)' : 'var(--primary)', padding: '4px 0' }}>{prevDateLabel ? <span>🕐 {prevDateLabel}</span> : 'Prescribed'}</div>;
                                                                                     })()}
                                                                                     <div style={{ flex: 1, position: 'relative' }}>
                                                                                         <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: 1, background: 'var(--card-border)' }}></div>
