@@ -921,66 +921,63 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
 
                                                             {exOpen && (
                                                                 <div style={{ padding: '0 8px 16px 8px' }}>
-                                                                    <div style={{ display: 'flex', borderBottom: '1px dashed var(--card-border)', marginBottom: 8 }}>
-                                                                        <div style={{ width: '130px', textAlign: 'center', fontWeight: 'bold', fontSize: '0.85rem', color: 'var(--primary)', padding: '4px 0' }}>Target</div>
-                                                                        <div style={{ flex: 1, position: 'relative' }}>
-                                                                            <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: 1, background: 'var(--card-border)' }} />
-                                                                            <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '0.85rem', color: 'var(--primary)', padding: '4px 0', background: 'var(--card-bg)' }}>Actual</div>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div style={{ display: 'flex', marginBottom: 8, fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)' }}>
-                                                                        <div style={{ display: 'flex', width: '130px', justifyContent: 'center', gap: 4 }}>
-                                                                            <span style={{ flex: 1, textAlign: 'center' }}>Weight</span>
-                                                                            <span style={{ flex: 1, textAlign: 'center' }}>Reps</span>
-                                                                            <span style={{ flex: 1, textAlign: 'center' }}>RPE</span>
-                                                                        </div>
-                                                                        <div style={{ position: 'relative', width: 1, background: 'var(--card-border)', margin: '0 8px' }} />
-                                                                        <div style={{ display: 'flex', flex: 1, justifyContent: 'center', gap: 4 }}>
-                                                                            <span style={{ flex: 1, textAlign: 'center' }}>Weight</span>
-                                                                            <span style={{ flex: 1, textAlign: 'center' }}>Reps</span>
-                                                                            <span style={{ flex: 1, textAlign: 'center' }}>RPE</span>
-                                                                        </div>
-                                                                    </div>
-                                                                    {/* Previous session reference — shown once per exercise above the sets */}
                                                                     {(() => {
-                                                                        const prev = getPrevSets(exerciseData.name || ex.name, sKey);
-                                                                        if (!prev) return null;
-                                                                        const dateLabel = prev.date ? new Date(prev.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Last session';
+                                                                        const prevForHeader = getPrevSets(exerciseData.name || ex.name, sKey);
+                                                                        const prevDateLabel = prevForHeader?.date ? new Date(prevForHeader.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : null;
                                                                         return (
-                                                                            <div style={{
-                                                                                display: 'flex', alignItems: 'center', gap: 6,
-                                                                                padding: '4px 8px 8px',
-                                                                                fontSize: '0.72rem', color: 'var(--secondary-foreground)',
-                                                                                borderBottom: '1px dashed var(--card-border)', marginBottom: 4,
-                                                                            }}>
-                                                                                <span style={{ opacity: 0.5, fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>🕐 {dateLabel}:</span>
-                                                                                <span style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                                                                                    {prev.sets.map((s, i) => (
-                                                                                        <span key={i} style={{
-                                                                                            background: 'rgba(125,135,210,0.12)',
-                                                                                            border: '1px solid rgba(125,135,210,0.2)',
-                                                                                            borderRadius: 4, padding: '1px 6px',
-                                                                                            fontWeight: 600, color: 'var(--primary)',
-                                                                                            fontSize: '0.72rem',
-                                                                                        }}>
-                                                                                            {toDisplay(s.weight) && `${toDisplay(s.weight)} ${unit}`}{s.reps && ` × ${s.reps}`}{s.rpe && ` @${s.rpe}`}
-                                                                                        </span>
-                                                                                    ))}
-                                                                                </span>
-                                                                            </div>
+                                                                            <>
+                                                                                <div style={{ display: 'flex', borderBottom: '1px dashed var(--card-border)', marginBottom: 8 }}>
+                                                                                    <div style={{ width: '130px', textAlign: 'center', fontWeight: 'bold', fontSize: '0.85rem', color: prevDateLabel ? 'var(--secondary-foreground)' : 'var(--primary)', padding: '4px 0' }}>
+                                                                                        {prevDateLabel ? <span>🕐 {prevDateLabel}</span> : 'Target'}
+                                                                                    </div>
+                                                                                    <div style={{ flex: 1, position: 'relative' }}>
+                                                                                        <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: 1, background: 'var(--card-border)' }} />
+                                                                                        <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '0.85rem', color: 'var(--primary)', padding: '4px 0', background: 'var(--card-bg)' }}>Actual</div>
+                                                                                    </div>
+                                                                                </div>
+                                                                                <div style={{ display: 'flex', marginBottom: 8, fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)' }}>
+                                                                                    <div style={{ display: 'flex', width: '130px', justifyContent: 'center', gap: 4 }}>
+                                                                                        <span style={{ flex: 1, textAlign: 'center' }}>Weight</span>
+                                                                                        <span style={{ flex: 1, textAlign: 'center' }}>Reps</span>
+                                                                                        <span style={{ flex: 1, textAlign: 'center' }}>RPE</span>
+                                                                                    </div>
+                                                                                    <div style={{ position: 'relative', width: 1, background: 'var(--card-border)', margin: '0 8px' }} />
+                                                                                    <div style={{ display: 'flex', flex: 1, justifyContent: 'center', gap: 4 }}>
+                                                                                        <span style={{ flex: 1, textAlign: 'center' }}>Weight</span>
+                                                                                        <span style={{ flex: 1, textAlign: 'center' }}>Reps</span>
+                                                                                        <span style={{ flex: 1, textAlign: 'center' }}>RPE</span>
+                                                                                    </div>
+                                                                                </div>
+                                                                            </>
                                                                         );
                                                                     })()}
                                                                     {sets.map((set: any, setIdx: number) => {
                                                                         const target = isEdit ? set.target : set;
                                                                         const actual = isEdit ? set.actual : { weight: '', reps: '', rpe: '' };
+                                                                        const prev = getPrevSets(exerciseData.name || ex.name, sKey);
+                                                                        const prevSet = prev?.sets?.[setIdx];
                                                                         return (
                                                                             <div key={setIdx} style={{ display: 'flex', alignItems: 'center', padding: '6px 0', borderBottom: '1px dashed var(--card-border)' }}>
                                                                                 <div style={{ display: 'flex', width: '130px', justifyContent: 'center', gap: 4 }}>
-                                                                                    {['weight', 'reps', 'rpe'].map(f => (
-                                                                                        <div key={f} style={{ flex: 1, padding: '6px 4px', border: '1px solid var(--card-border)', borderRadius: 4, background: 'var(--background)', textAlign: 'center', fontSize: '0.9rem', color: 'var(--secondary-foreground)' }}>
-                                                                                            {f === 'weight' ? toDisplay(target[f]) : target[f] || '\u00A0'}
-                                                                                        </div>
-                                                                                    ))}
+                                                                                    {(['weight', 'reps', 'rpe'] as const).map(f => {
+                                                                                        const prevVal = prevSet ? (f === 'weight' ? toDisplay(prevSet.weight) : prevSet[f]) : '';
+                                                                                        const targVal = f === 'weight' ? toDisplay(target[f]) : target[f];
+                                                                                        const displayVal = prevVal || targVal || '\u00A0';
+                                                                                        const isPrev = !!prevVal;
+                                                                                        return (
+                                                                                            <div key={f} style={{
+                                                                                                flex: 1, padding: '6px 4px',
+                                                                                                border: `1px solid ${isPrev ? 'rgba(125,135,210,0.35)' : 'var(--card-border)'}`,
+                                                                                                borderRadius: 4,
+                                                                                                background: isPrev ? 'rgba(125,135,210,0.08)' : 'var(--background)',
+                                                                                                textAlign: 'center', fontSize: '0.9rem',
+                                                                                                color: isPrev ? 'var(--primary)' : 'var(--secondary-foreground)',
+                                                                                                fontWeight: isPrev ? 600 : 400,
+                                                                                            }}>
+                                                                                                {displayVal}
+                                                                                            </div>
+                                                                                        );
+                                                                                    })}
                                                                                 </div>
                                                                                 <button
                                                                                     onClick={() => setIdx > 0 ? copyPrevSet(sKey, exIdx, setIdx, program.id) : copyTargetToActual(sKey, exIdx, setIdx, program.id)}
@@ -1477,7 +1474,11 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                             <div style={{ padding: '0 8px 16px 8px' }}>
                                                                                 {/* Target / Actual Header */}
                                                                                 <div style={{ display: 'flex', borderBottom: '1px dashed #cbd5e1', marginBottom: 8 }}>
-                                                                                    <div style={{ width: '130px', textAlign: 'center', fontWeight: 'bold', fontSize: '0.85rem', color: 'var(--primary)', padding: '4px 0' }}>Target</div>
+                                                                                    {(() => {
+                                                                                        const prevForHeader = getPrevSets(exerciseData.name || ex.name, sKey);
+                                                                                        const prevDateLabel = prevForHeader?.date ? new Date(prevForHeader.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : null;
+                                                                                        return <div style={{ width: '130px', textAlign: 'center', fontWeight: 'bold', fontSize: '0.85rem', color: prevDateLabel ? 'var(--secondary-foreground)' : 'var(--primary)', padding: '4px 0' }}>{prevDateLabel ? <span>🕐 {prevDateLabel}</span> : 'Target'}</div>;
+                                                                                    })()}
                                                                                     <div style={{ flex: 1, position: 'relative' }}>
                                                                                         <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: 1, background: 'var(--card-border)' }}></div>
                                                                                         <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '0.85rem', color: 'var(--primary)', padding: '4px 0', background: 'var(--card-bg)' }}>Actual</div>
@@ -1498,52 +1499,38 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                     </div>
                                                                                 </div>
 
-                                                                                {/* Previous session reference — shown once per exercise above the sets */}
-                                                                                {(() => {
-                                                                                    const prev = getPrevSets(exerciseData.name || ex.name, sKey);
-                                                                                    if (!prev) return null;
-                                                                                    const dateLabel = prev.date ? new Date(prev.date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) : 'Last session';
-                                                                                    return (
-                                                                                        <div style={{
-                                                                                            display: 'flex', alignItems: 'center', gap: 6,
-                                                                                            padding: '4px 8px 8px',
-                                                                                            fontSize: '0.72rem', color: 'var(--secondary-foreground)',
-                                                                                            borderBottom: '1px dashed #e2e8f0', marginBottom: 4,
-                                                                                        }}>
-                                                                                            <span style={{ opacity: 0.5, fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.05em', whiteSpace: 'nowrap' }}>🕐 {dateLabel}:</span>
-                                                                                            <span style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
-                                                                                                {prev.sets.map((s, i) => (
-                                                                                                    <span key={i} style={{
-                                                                                                        background: 'rgba(125,135,210,0.12)',
-                                                                                                        border: '1px solid rgba(125,135,210,0.2)',
-                                                                                                        borderRadius: 4, padding: '1px 6px',
-                                                                                                        fontWeight: 600, color: 'var(--primary)',
-                                                                                                        fontSize: '0.72rem',
-                                                                                                    }}>
-                                                                                                        {toDisplay(s.weight) && `${toDisplay(s.weight)} ${unit}`}{s.reps && ` × ${s.reps}`}{s.rpe && ` @${s.rpe}`}
-                                                                                                    </span>
-                                                                                                ))}
-                                                                                            </span>
-                                                                                        </div>
-                                                                                    );
-                                                                                })()}
-
                                                                                 {/* Set rows */}
                                                                                 {sets.map((set: any, setIdx: number) => {
                                                                                     const target = isEdit ? set.target : set;
                                                                                     const actual = isEdit ? set.actual : { weight: '', reps: '', rpe: '' };
+                                                                                    const prev = getPrevSets(exerciseData.name || ex.name, sKey);
+                                                                                    const prevSet = prev?.sets?.[setIdx];
                                                                                     return (
                                                                                         <div key={setIdx} style={{ display: 'flex', alignItems: 'center', padding: '6px 0', borderBottom: '1px dashed #e2e8f0' }}>
-                                                                                            {/* Target side */}
+                                                                                            {/* Target side — shows prev logged if available, else coach target */}
                                                                                             <div style={{ display: 'flex', width: '130px', justifyContent: 'center', gap: 4 }}>
-                                                                                                {['weight', 'reps', 'rpe'].map(f => (
-                                                                                                    <div key={f} style={{ flex: 1, padding: '6px 4px', border: '1px solid #cbd5e1', borderRadius: 4, background: 'var(--background)', textAlign: 'center', fontSize: '0.9rem', color: 'var(--secondary-foreground)' }}>
-                                                                                                        {f === 'weight' ? toDisplay(target[f]) : target[f] || '\u00A0'}
-                                                                                                    </div>
-                                                                                                ))}
+                                                                                                {(['weight', 'reps', 'rpe'] as const).map(f => {
+                                                                                                    const prevVal = prevSet ? (f === 'weight' ? toDisplay(prevSet.weight) : prevSet[f]) : '';
+                                                                                                    const targVal = f === 'weight' ? toDisplay(target[f]) : target[f];
+                                                                                                    const displayVal = prevVal || targVal || '\u00A0';
+                                                                                                    const isPrev = !!prevVal;
+                                                                                                    return (
+                                                                                                        <div key={f} style={{
+                                                                                                            flex: 1, padding: '6px 4px',
+                                                                                                            border: `1px solid ${isPrev ? 'rgba(125,135,210,0.35)' : '#cbd5e1'}`,
+                                                                                                            borderRadius: 4,
+                                                                                                            background: isPrev ? 'rgba(125,135,210,0.08)' : 'var(--background)',
+                                                                                                            textAlign: 'center', fontSize: '0.9rem',
+                                                                                                            color: isPrev ? 'var(--primary)' : 'var(--secondary-foreground)',
+                                                                                                            fontWeight: isPrev ? 600 : 400,
+                                                                                                        }}>
+                                                                                                            {displayVal}
+                                                                                                        </div>
+                                                                                                    );
+                                                                                                })}
                                                                                             </div>
 
-                                                                                            {/* Green Arrow */}
+                                                                                            {/* Arrow */}
                                                                                             <button
                                                                                                 onClick={() => setIdx > 0 ? copyPrevSet(sKey, exIdx, setIdx, program.id) : copyTargetToActual(sKey, exIdx, setIdx, program.id)}
                                                                                                 style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 8px', display: 'flex', alignItems: 'center' }}
