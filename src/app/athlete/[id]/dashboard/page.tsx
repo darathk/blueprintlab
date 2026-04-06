@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { Suspense } from 'react';
 import { getAthleteById, getProgramsByAthlete, getLogsByAthlete } from '@/lib/storage';
 import dynamic from 'next/dynamic';
+import AnnouncementBanner from '@/components/athlete/AnnouncementBanner';
 
 const ScheduleView = dynamic(() => import('@/components/athlete/ScheduleView'));
 const LeaderboardRankWidget = dynamic(
@@ -49,6 +50,8 @@ export default async function AthleteDashboard({ params }) {
                 </div>
                 <Link href="/" style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)' }}>Logout</Link>
             </header>
+
+            {athlete.coachId && <AnnouncementBanner coachId={athlete.coachId} />}
 
             {athlete.coachId && (
                 <Link href={`/athlete/${id}/leaderboard`} style={{ textDecoration: 'none', color: 'inherit', display: 'block', marginBottom: '1rem' }}>

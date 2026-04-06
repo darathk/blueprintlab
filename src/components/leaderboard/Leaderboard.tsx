@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
-import { X } from 'lucide-react';
 
 interface LeaderboardEntry {
     id: string;
@@ -54,15 +53,6 @@ export default function Leaderboard({
     const [entries, setEntries] = useState<LeaderboardEntry[]>([]);
     const [cycle, setCycle] = useState<CycleInfo | null>(null);
     const [loading, setLoading] = useState(true);
-    const [announcement, setAnnouncement] = useState<{ message: string; startDate: string; endDate: string } | null>(null);
-    const [announcementDismissed, setAnnouncementDismissed] = useState(false);
-
-    useEffect(() => {
-        fetch(`/api/announcements?coachId=${coachId}`)
-            .then(r => r.ok ? r.json() : null)
-            .then(data => { if (data?.announcement) setAnnouncement(data.announcement); })
-            .catch(() => {});
-    }, [coachId]);
 
     const fetchLeaderboard = useCallback(async () => {
         try {
@@ -139,42 +129,6 @@ export default function Leaderboard({
 
     return (
         <div style={{ maxWidth: 600, margin: '0 auto' }}>
-
-            {/* Coach Announcement Banner */}
-            {announcement && !announcementDismissed && (
-                <div style={{
-                    margin: '0 1rem 1rem',
-                    padding: '1rem 1.1rem',
-                    borderRadius: 14,
-                    background: 'linear-gradient(135deg, rgba(251,191,36,0.15) 0%, rgba(245,158,11,0.1) 100%)',
-                    border: '1.5px solid rgba(251,191,36,0.5)',
-                    boxShadow: '0 4px 24px rgba(251,191,36,0.15)',
-                    display: 'flex',
-                    gap: '0.85rem',
-                    alignItems: 'flex-start',
-                    animation: 'fadeIn 0.4s ease',
-                }}>
-                    <span style={{ fontSize: '1.4rem', lineHeight: 1, flexShrink: 0, marginTop: 2 }}>📣</span>
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                        <div style={{ fontSize: '0.68rem', fontWeight: 700, color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.3rem' }}>
-                            Message from your Coach
-                        </div>
-                        <div style={{ fontSize: '0.95rem', color: 'var(--foreground)', lineHeight: 1.5, fontWeight: 500 }}>
-                            {announcement.message}
-                        </div>
-                        <div style={{ fontSize: '0.7rem', color: 'var(--secondary-foreground)', marginTop: '0.4rem', opacity: 0.7 }}>
-                            {announcement.startDate} – {announcement.endDate}
-                        </div>
-                    </div>
-                    <button
-                        onClick={() => setAnnouncementDismissed(true)}
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--secondary-foreground)', flexShrink: 0, padding: 2, opacity: 0.6 }}
-                        title="Dismiss"
-                    >
-                        <X size={16} />
-                    </button>
-                </div>
-            )}
 
             <div style={{ textAlign: 'center', padding: '1.5rem 1rem 1rem' }}>
                 <h1 style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.02em' }}>
