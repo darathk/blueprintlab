@@ -1,9 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { requireAuth } from '@/lib/api-auth';
 
 const KLIPY_API_KEY = process.env.KLIPY_API_KEY || '';
 const KLIPY_CLIENT_KEY = 'blueprintlab';
 
 export async function GET(req: NextRequest) {
+    const auth = await requireAuth();
+    if ('error' in auth) return auth.error;
+
     const { searchParams } = new URL(req.url);
     const query = searchParams.get('q') || '';
     const trending = searchParams.get('trending');

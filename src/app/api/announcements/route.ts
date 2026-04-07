@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireAuth, requireCoach } from '@/lib/api-auth';
 
 function todayStr() {
     const d = new Date();
@@ -8,6 +9,9 @@ function todayStr() {
 
 /** GET /api/announcements?coachId=  → returns active announcement or null */
 export async function GET(req: NextRequest) {
+    const auth = await requireAuth();
+    if ('error' in auth) return auth.error;
+
     const coachId = req.nextUrl.searchParams.get('coachId');
     if (!coachId) return NextResponse.json({ announcement: null });
 
@@ -26,6 +30,9 @@ export async function GET(req: NextRequest) {
 
 /** POST /api/announcements  → upsert (one active announcement per coach) */
 export async function POST(req: NextRequest) {
+    const auth = await requireCoach();
+    if ('error' in auth) return auth.error;
+
     try {
         const { coachId, message, startDate, endDate } = await req.json();
         if (!coachId || !message || !startDate || !endDate) {
@@ -48,6 +55,9 @@ export async function POST(req: NextRequest) {
 
 /** DELETE /api/announcements?coachId=  → remove all announcements for coach */
 export async function DELETE(req: NextRequest) {
+    const auth = await requireCoach();
+    if ('error' in auth) return auth.error;
+
     const coachId = req.nextUrl.searchParams.get('coachId');
     if (!coachId) return NextResponse.json({ error: 'Missing coachId' }, { status: 400 });
 
