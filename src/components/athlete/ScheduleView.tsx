@@ -960,7 +960,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                             <div key={setIdx} style={{ display: 'flex', alignItems: 'center', padding: '6px 0', borderBottom: '1px dashed var(--card-border)' }}>
                                                                                 <div style={{ display: 'flex', width: '130px', justifyContent: 'center', gap: 4 }}>
                                                                                     {(['weight', 'reps', 'rpe'] as const).map(f => {
-                                                                                        const prevVal = prevSet ? (f === 'weight' ? toDisplay(prevSet.weight) : prevSet[f]) : '';
+                                                                                        const prevVal = (prevSet && f === 'weight') ? toDisplay(prevSet.weight) : '';
                                                                                         const targVal = f === 'weight' ? toDisplay(target[f]) : target[f];
                                                                                         const displayVal = prevVal || targVal || '\u00A0';
                                                                                         const isPrev = !!prevVal;
@@ -1510,7 +1510,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                             {/* Target side — shows prev logged if available, else coach target */}
                                                                                             <div style={{ display: 'flex', width: '130px', justifyContent: 'center', gap: 4 }}>
                                                                                                 {(['weight', 'reps', 'rpe'] as const).map(f => {
-                                                                                                    const prevVal = prevSet ? (f === 'weight' ? toDisplay(prevSet.weight) : prevSet[f]) : '';
+                                                                                                    const prevVal = (prevSet && f === 'weight') ? toDisplay(prevSet.weight) : '';
                                                                                                     const targVal = f === 'weight' ? toDisplay(target[f]) : target[f];
                                                                                                     const displayVal = prevVal || targVal || '\u00A0';
                                                                                                     const isPrev = !!prevVal;
