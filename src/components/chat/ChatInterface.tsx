@@ -128,6 +128,25 @@ interface Message {
     reactions?: Record<string, string[]> | null; // { emoji: [userIds] }
 }
 
+// Helper to fix missing MIME types on iOS/native uploads
+const fixFileMimeType = (f: File): File => {
+    if (!f.type) {
+        const name = f.name.toLowerCase();
+        let type = '';
+        if (name.endsWith('.mov')) type = 'video/quicktime';
+        else if (name.endsWith('.mp4')) type = 'video/mp4';
+        else if (name.endsWith('.webm')) type = 'video/webm';
+        else if (name.endsWith('.jpg') || name.endsWith('.jpeg')) type = 'image/jpeg';
+        else if (name.endsWith('.png')) type = 'image/png';
+        else if (name.endsWith('.m4a')) type = 'audio/mp4';
+        
+        if (type) {
+            return new File([f], f.name, { type, lastModified: f.lastModified });
+        }
+    }
+    return f;
+};
+
 interface Props {
     currentUserId: string;
     otherUserId: string;
@@ -717,7 +736,7 @@ export default function ChatInterface({
 
     // Staging media
     const handleMedia = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = Array.from(e.target.files || []);
+        const files = Array.from(e.target.files || []).map(fixFileMimeType);
         if (files.length === 0) return;
 
         const validFiles = files.filter(f => {
@@ -782,9 +801,14 @@ export default function ChatInterface({
         const pastedFiles: File[] = [];
         for (let i = 0; i < items.length; i++) {
             const item = items[i];
-            if (item.kind === 'file' && (item.type.startsWith('image/') || item.type.startsWith('video/'))) {
+            if (item.kind === 'file') {
                 const file = item.getAsFile();
-                if (file && file.size <= 200 * 1024 * 1024) pastedFiles.push(file);
+                if (file) {
+                    const fixedFile = fixFileMimeType(file);
+                    if ((fixedFile.type.startsWith('image/') || fixedFile.type.startsWith('video/')) && fixedFile.size <= 200 * 1024 * 1024) {
+                        pastedFiles.push(fixedFile);
+                    }
+                }
             }
         }
         if (pastedFiles.length === 0) return;
@@ -1485,7 +1509,7 @@ export default function ChatInterface({
                         onClose={() => setShowGifPicker(false)}
                     />
                 )}
-                <input ref={fileRef} type="file" multiple accept="video/*,image/*" onChange={handleMedia} style={{ display: 'none' }} />
+                <input ref={fileRef} type="file" multiple accept="video/*,image/*,.mov,.mp4,.webm,.jpg,.jpeg,.png" onChange={handleMedia} style={{ display: 'none' }} />
                 {isRecording ? (
                     <div style={{
                         display: 'flex', alignItems: 'center', gap: 10, padding: '14px 18px',
