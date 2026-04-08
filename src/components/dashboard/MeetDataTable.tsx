@@ -713,7 +713,22 @@ export default function MeetDataTable({ athletes, coachId }: Props) {
                                         <td style={cellStyle}>{totalAttempts}</td>
                                         <td style={{ ...cellStyle, color: pct >= 88 ? '#4ade80' : pct >= 66 ? '#fbbf24' : '#f87171' }}>{pct.toFixed(1)}%</td>
                                         <td style={{ ...cellStyle, fontWeight: 700, color: total > 0 ? 'var(--primary)' : 'var(--secondary-foreground)' }}>{total > 0 ? total : '-'}</td>
-                                        <td style={cellStyle}>-</td>
+                                        <td style={{ ...cellStyle, padding: '0.2rem' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.2rem', alignItems: 'center' }}>
+                                                <label style={{ fontSize: '0.55rem', color: 'var(--secondary-foreground)', display: 'flex', gap: 2, alignItems: 'center', cursor: 'pointer' }}>
+                                                    <input type="checkbox" checked={editDraft.isFirstMeetExplicit || false} onChange={ev => updateDraft({ isFirstMeetExplicit: ev.target.checked, referencePreviousTotal: undefined })} />
+                                                    First Meet
+                                                </label>
+                                                {!editDraft.isFirstMeetExplicit && (
+                                                    <input 
+                                                        type="number" step="0.5" placeholder="Prev Total" title="Previous Best Total before this meet (kg)" 
+                                                        style={{ ...inputStyle, width: 60, fontSize: '0.65rem', padding: '0.1rem' }} 
+                                                        value={editDraft.referencePreviousTotal || ''} 
+                                                        onChange={ev => updateDraft({ referencePreviousTotal: parseFloat(ev.target.value) || undefined })} 
+                                                    />
+                                                )}
+                                            </div>
+                                        </td>
                                         <td style={{ ...cellStyle, color: '#f59e0b' }}>{dots > 0 ? dots.toFixed(2) : '-'}</td>
                                         <td style={{ ...cellStyle, color: '#38bdf8' }}>{ipf > 0 ? ipf.toFixed(2) : '-'}</td>
                                         <td style={{ ...cellStyle, display: 'flex', gap: '0.3rem' }}>
