@@ -1,19 +1,16 @@
 export function calculateE1RM(weight, reps, rpe) {
-    // RTS / Mike Tuchscherer Formula approximation
-    // This is generally more accurate for RPE-based training than Epley
     const w = parseFloat(weight);
     const r = parseFloat(reps);
+    if (!w || !r) return 0;
+    
+    const rpeValue = parseFloat(rpe) || 10;
 
-    if (!w || !r || !rpe) return 0;
-    const rpeValue = parseFloat(rpe);
-
-    // Prevent division by zero or negative numbers for extreme inputs
-    // Formula: 100 * weight / (102.78 - 2.78 * (reps + (10 - rpe)))
-    const denom = 102.78 - (2.78 * (r + (10 - rpeValue)));
+    // Adjusted formula: weight * (36 / (37 - (reps + (10 - rpe))))
+    const denom = 37 - (r + (10 - rpeValue));
 
     if (denom <= 0) return w; // Fallback to weight if calc fails (unlikely in normal range)
 
-    return (100 * w) / denom;
+    return w * (36 / denom);
 }
 
 export function processLogsForAnalytics(logs, exerciseName) {

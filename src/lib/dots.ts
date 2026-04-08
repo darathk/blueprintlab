@@ -39,13 +39,13 @@ export function lbsToKg(lbs: number): number {
 
 /**
  * E1RM formula matching the app's AthleteCharts / stress-index.js:
- * weight × (1 + (reps + (10 - rpe)) / 30)
+ * weight * (36 / (37 - (reps + (10 - RPE))))
  * RPE defaults to 10 if missing (conservative estimate).
  */
 function calcE1RM(weight: number, reps: number, rpe: number): number {
     if (weight <= 0 || reps <= 0) return 0;
     const safeRpe = rpe > 0 ? rpe : 10;
-    return weight * (1 + (reps + (10 - safeRpe)) / 30);
+    return weight * (36 / (37 - (reps + (10 - safeRpe))));
 }
 
 /** Get the best E1RM for a given lift from one log entry */

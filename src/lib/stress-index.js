@@ -1,15 +1,15 @@
 
 // E1RM Formula provided by user
 export function calculateSimpleE1RM(weight, reps, rpe) {
-    if (!weight || !reps || !rpe) return 0;
-    const rpeValue = parseFloat(rpe);
+    if (!weight || !reps) return 0;
     const weightValue = parseFloat(weight);
     const repsValue = parseFloat(reps);
+    const rpeValue = parseFloat(rpe) || 10;
 
     if (isNaN(weightValue) || isNaN(repsValue)) return 0;
 
-    // Epley / BlockReview formula: weight * (1 + (reps + (10 - rpe)) / 30)
-    return Math.round(weightValue * (1 + (repsValue + (10 - rpeValue)) / 30));
+    // Adjusted formula: weight * (36 / (37 - (reps + (10 - rpe))))
+    return Math.round(weightValue * (36 / (37 - (repsValue + (10 - rpeValue)))));
 }
 
 // RTS Stress Index Tables (Transcribed from user image)
