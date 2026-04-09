@@ -33,6 +33,7 @@ interface Props {
     programs?: any[];
     initialGender?: string | null;
     initialWeightClass?: number | null;
+    initialFederation?: string | null;
 }
 
 const CHART_COLORS = {
@@ -61,9 +62,9 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     );
 };
 
-export default function DotsChart({ athleteId, logs, programs = [], initialGender, initialWeightClass }: Props) {
+export default function DotsChart({ athleteId, logs, programs = [], initialGender, initialWeightClass, initialFederation }: Props) {
     const [gender, setGender] = useState<string>(initialGender ?? '');
-    const [fed, setFed] = useState<'IPF' | 'USAPL'>('IPF');
+    const [fed, setFed] = useState<'IPF' | 'USAPL'>((initialFederation as 'IPF' | 'USAPL') ?? 'IPF');
     const [weightClass, setWeightClass] = useState<string>(initialWeightClass?.toString() ?? '');
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
@@ -79,6 +80,7 @@ export default function DotsChart({ athleteId, logs, programs = [], initialGende
             body: JSON.stringify({
                 gender: gender || null,
                 weightClass: weightClass ? parseFloat(weightClass) : null,
+                federation: fed,
             }),
         });
         setSaving(false);

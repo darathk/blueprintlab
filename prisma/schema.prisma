@@ -20,6 +20,7 @@ model Athlete {
   nextMeetDate     String?
   weightClass      Float?   // kg, e.g. 83.0
   gender           String?  // "male" or "female"
+  federation       String?  @default("IPF")
   periodization    Json?
   meetAttempts     Json?
   pastMeets        Json?

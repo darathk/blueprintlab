@@ -15,15 +15,21 @@ export async function PATCH(
         if ('error' in auth) return auth.error;
 
         const body = await request.json();
-        const { weightClass, gender, liftTargets, email: rawEmail, trainingSchedule } = body;
+        const { weightClass, gender, federation, liftTargets, email: rawEmail, trainingSchedule } = body;
         const email = rawEmail !== undefined ? (typeof rawEmail === 'string' ? rawEmail.toLowerCase() : rawEmail) : undefined;
 
         // Validate inputs
-        if (weightClass !== undefined && weightClass !== null && (typeof weightClass !== 'string' || isNaN(parseFloat(weightClass)))) {
-            return NextResponse.json({ error: 'Invalid weightClass' }, { status: 400 });
+        if (weightClass !== undefined && weightClass !== null) {
+            const parsed = typeof weightClass === 'string' ? parseFloat(weightClass) : weightClass;
+            if (typeof parsed !== 'number' || isNaN(parsed)) {
+                return NextResponse.json({ error: 'Invalid weightClass' }, { status: 400 });
+            }
         }
         if (gender !== undefined && gender !== null && !['male', 'female', 'M', 'F', ''].includes(gender)) {
             return NextResponse.json({ error: 'Invalid gender' }, { status: 400 });
+        }
+        if (federation !== undefined && federation !== null && !['IPF', 'USAPL'].includes(federation)) {
+            return NextResponse.json({ error: 'Invalid federation' }, { status: 400 });
         }
         if (email !== undefined) {
             if (typeof email !== 'string' || !email.includes('@')) {
@@ -39,8 +45,9 @@ export async function PATCH(
         await prisma.athlete.update({
             where: { id },
             data: {
-                ...(weightClass !== undefined && { weightClass: weightClass === null ? null : parseFloat(weightClass) }),
+                ...(weightClass !== undefined && { weightClass: weightClass === null ? null : (typeof weightClass === 'string' ? parseFloat(weightClass) : weightClass) }),
                 ...(gender !== undefined && { gender }),
+                ...(federation !== undefined && { federation }),
                 ...(liftTargets !== undefined && { liftTargets }),
                 ...(trainingSchedule !== undefined && { trainingSchedule }),
                 ...(email !== undefined && { email }),

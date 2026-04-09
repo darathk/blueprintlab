@@ -135,22 +135,37 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
         let activeProgId = athlete.currentProgramId;
 
         // Auto-advance logic: ignore old "active" programs that are actually 100% complete
+        // OR if a newer active program's start date has already arrived.
         if (athletePrograms.length > 0) {
             const activeSorted = [...athletePrograms]
                 .filter(p => p.status === 'active' || p.id === athlete.currentProgramId)
-                .sort((a, b) => new Date(a.createdAt || a.startDate || 0).getTime() - new Date(b.createdAt || b.startDate || 0).getTime());
+                .sort((a, b) => new Date(a.startDate || a.createdAt || 0).getTime() - new Date(b.startDate || b.createdAt || 0).getTime());
             
-            for (const prog of activeSorted) {
+            for (let i = 0; i < activeSorted.length; i++) {
+                const prog = activeSorted[i];
                 let totalSessions = 0;
                 (prog.weeks || []).forEach((w: any) => totalSessions += (w.sessions?.length || 0));
                 
                 const progLogs = athleteLogs.filter(l => l.programId === prog.id);
                 const uniqueSessions = new Set(progLogs.map(l => l.sessionId));
                 
-                activeProgId = prog.id; // Assume this one
+                activeProgId = prog.id; // Assume this one is active
                 
-                // If it's incomplete, stop. It's the true active program.
-                if (totalSessions === 0 || uniqueSessions.size < totalSessions) {
+                // Check if the next program in the list has already started
+                let nextProgramHasStarted = false;
+                const nextProg = activeSorted[i + 1];
+                if (nextProg && nextProg.startDate) {
+                    const nextStart = new Date(nextProg.startDate);
+                    nextStart.setHours(0, 0, 0, 0);
+                    const now = new Date();
+                    now.setHours(0, 0, 0, 0);
+                    if (now >= nextStart) {
+                        nextProgramHasStarted = true;
+                    }
+                }
+                
+                // If this program is incomplete AND the next program hasn't started yet, we stay on this one.
+                if ((totalSessions === 0 || uniqueSessions.size < totalSessions) && !nextProgramHasStarted) {
                     break;
                 }
             }
@@ -221,21 +236,42 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
             daysSinceLastLog = -1; // sentinel for "never logged"
         }
 
-        // Needs update: athlete is within 1 week of sessions remaining in this block
         let needsUpdate = false;
         let hasNextBlockReady = false;
+
         if (currentProgram && progress.totalSessions > 0) {
             const sessionsRemaining = progress.totalSessions - progress.completedSessions;
             // Estimate sessions per week
             const totalWeeks = progress.totalWeeks || 1;
             const sessionsPerWeek = Math.ceil(progress.totalSessions / totalWeeks);
-            needsUpdate = sessionsRemaining > 0 && sessionsRemaining <= sessionsPerWeek;
 
-            // Check if a next block already exists (another active program written ahead)
-            const activeSorted = [...athletePrograms]
-                .filter(p => p.status === 'active')
-                .sort((a, b) => new Date(a.createdAt || a.startDate || 0).getTime() - new Date(b.createdAt || b.startDate || 0).getTime());
-            hasNextBlockReady = activeSorted.length > 1 || (activeSorted.length === 1 && activeSorted[0].id !== activeProgId);
+            // Needs update: athlete is within 1 week of sessions remaining in this block
+            // OR the program has mathematically expired based on the start date
+            let isExpired = false;
+            if (activeProgId) {
+                const progObj = programs.find((p: any) => p.id === activeProgId);
+                if (progObj && progObj.startDate) {
+                    const expiryData = new Date(progObj.startDate);
+                    expiryData.setHours(0,0,0,0);
+                    expiryData.setDate(expiryData.getDate() + totalWeeks * 7);
+                    if (new Date() >= expiryData) isExpired = true;
+                }
+            }
+
+            needsUpdate = (sessionsRemaining > 0 && sessionsRemaining <= sessionsPerWeek) || isExpired;
+
+            // Check if a next block already exists that starts AFTER the current block
+            hasNextBlockReady = false;
+            if (activeProgId) {
+                 const currProgObj = programs.find((p: any) => p.id === activeProgId);
+                 if (currProgObj) {
+                     const currStart = new Date(currProgObj.startDate || currProgObj.createdAt || 0).getTime();
+                     const futurePrograms = athletePrograms.filter((p: any) => p.status === 'active' && p.id !== activeProgId && new Date(p.startDate || p.createdAt || 0).getTime() > currStart);
+                     if (futurePrograms.length > 0) {
+                         hasNextBlockReady = true;
+                     }
+                 }
+            }
         }
 
         return {

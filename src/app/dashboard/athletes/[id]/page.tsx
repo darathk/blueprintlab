@@ -59,6 +59,7 @@ async function AthleteData({ id }: { id: string }) {
                     programs={programs}
                     initialGender={athlete?.gender ?? null}
                     initialWeightClass={athlete?.weightClass ?? null}
+                    initialFederation={athlete?.federation ?? null}
                 />
             </CollapsibleSection>
 
