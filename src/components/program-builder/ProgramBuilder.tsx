@@ -205,7 +205,7 @@ const BuilderExerciseCard = ({ exercise, onUpdate, onRemove, onDragStart, onDrag
 
 
 
-export default function ProgramBuilder({ athleteId, initialData = null, athletes = [], initialExercises = null, athleteLiftTargets = null, athleteTrainingSchedule = null, athleteName = '' }: { athleteId?: string, initialData?: any, athletes?: any[], initialExercises?: any, athleteLiftTargets?: any, athleteTrainingSchedule?: string | null, athleteName?: string }) {
+export default function ProgramBuilder({ athleteId, initialData = null, athletes = [], initialExercises = null, athleteLiftTargets = null, athleteTrainingSchedule = null, athleteName = '', existingPrograms = [] }: { athleteId?: string, initialData?: any, athletes?: any[], initialExercises?: any, athleteLiftTargets?: any, athleteTrainingSchedule?: string | null, athleteName?: string, existingPrograms?: any[] }) {
     const router = useRouter();
     const [programName, setProgramName] = useState('');
     const [startDate, setStartDate] = useState(() => snapToSunday(new Date().toISOString().split('T')[0]));
@@ -1607,6 +1607,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                             }}
                             onDuplicateSessionToNextWeek={duplicateSessionToNextWeek}
                             onDuplicateWeekToNextWeek={duplicateWeekToNextWeek}
+                            existingPrograms={existingPrograms}
                         />
                     </div>
 

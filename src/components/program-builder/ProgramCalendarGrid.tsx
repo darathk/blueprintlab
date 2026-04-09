@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 
-export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, onSessionMove, onDuplicateSession, onDuplicateSessionToNextWeek, onDuplicateWeekToNextWeek }) {
+export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, onSessionMove, onDuplicateSession, onDuplicateSessionToNextWeek, onDuplicateWeekToNextWeek, existingPrograms = [] }) {
     const [currentMonth, setCurrentMonth] = useState(() => {
         return startDate ? new Date(startDate) : new Date();
     });
@@ -18,6 +18,40 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
         prev.setMonth(prev.getMonth() - 1);
         setCurrentMonth(prev);
     };
+
+    // Build a lookup of existing program sessions by date string
+    const existingSessionsByDate = useMemo(() => {
+        const map: Record<string, { programName: string; sessionName: string; exerciseCount: number; status: string }[]> = {};
+        if (!Array.isArray(existingPrograms)) return map;
+
+        existingPrograms.forEach((prog: any) => {
+            if (!prog.startDate) return;
+            const startStr = String(prog.startDate).split('T')[0];
+            const [sy, sm, sd] = startStr.split('-').map(Number);
+            const progStart = new Date(sy, sm - 1, sd);
+            progStart.setHours(0, 0, 0, 0);
+
+            const programWeeks: any[] = Array.isArray(prog.weeks) ? prog.weeks : [];
+            programWeeks.forEach((week: any) => {
+                const wn = week.weekNumber || 1;
+                const sessions: any[] = Array.isArray(week.sessions) ? week.sessions : [];
+                sessions.forEach((session: any) => {
+                    const day = session.day || 1;
+                    const d = new Date(progStart);
+                    d.setDate(d.getDate() + (wn - 1) * 7 + (day - 1));
+                    const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                    if (!map[ds]) map[ds] = [];
+                    map[ds].push({
+                        programName: prog.name || 'Untitled',
+                        sessionName: session.name || `Session ${day}`,
+                        exerciseCount: Array.isArray(session.exercises) ? session.exercises.length : 0,
+                        status: prog.status || 'active'
+                    });
+                });
+            });
+        });
+        return map;
+    }, [existingPrograms]);
 
     // Generate calendar days for the CURRENT MONTH
     const calendarDays = useMemo(() => {
@@ -68,18 +102,22 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
             const week = weeks.find(w => w.weekNumber === weekNum);
             const session = week?.sessions?.find(s => s.day === dayNum);
 
+            // Find ghost sessions from existing programs
+            const ghostSessions = existingSessionsByDate[dateStr] || [];
+
             days.push({
                 date: date,
                 dateStr: dateStr,
                 weekNum,
                 dayNum,
                 session: session,
+                ghostSessions: ghostSessions,
                 isCurrentMonth: date.getMonth() === month,
                 isBeforeProgram
             });
         }
         return days;
-    }, [weeks, startDate, currentMonth]);
+    }, [weeks, startDate, currentMonth, existingSessionsByDate]);
 
     const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const monthName = currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' });
@@ -147,7 +185,7 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
                         onDragOver={(e) => handleDragOver(e, day.dateStr)}
                         onDragLeave={handleDragLeave}
                         onDrop={(e) => handleDrop(e, day.weekNum, day.dayNum, day.dateStr)}
-                        className={`calendar-cell ${day.session ? 'has-session' : ''} ${day.isCurrentMonth ? 'current-month' : 'other-month'}`}
+                        className={`calendar-cell ${day.session ? 'has-session' : ''} ${day.ghostSessions.length > 0 && !day.session ? 'has-ghost' : ''} ${day.isCurrentMonth ? 'current-month' : 'other-month'}`}
                         style={{
                             border: dragOverDate === day.dateStr
                                 ? '2px dashed var(--primary)'
@@ -217,6 +255,17 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
                                     )}
                                 </div>
                             </div>
+                        ) : day.ghostSessions.length > 0 ? (
+                            /* Ghost session from existing programs — read-only, dimmed */
+                            <div className="ghost-session-container">
+                                {day.ghostSessions.slice(0, 1).map((ghost, gi) => (
+                                    <div key={gi} className="ghost-session-text">
+                                        <div className="ghost-program-name">{ghost.programName}</div>
+                                        <div className="ghost-session-name">{ghost.sessionName}</div>
+                                        <div className="ghost-session-details">{ghost.exerciseCount} Exercises</div>
+                                    </div>
+                                ))}
+                            </div>
                         ) : (
                             <div className="add-indicator">
                                 <span>+</span>
@@ -248,6 +297,9 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
                 }
                 .calendar-cell.has-session {
                     background: var(--card-bg);
+                }
+                .calendar-cell.has-ghost {
+                    background: rgba(148, 163, 184, 0.04);
                 }
                 .calendar-cell:hover {
                     background: var(--card-bg);
@@ -306,6 +358,49 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
                     overflow: hidden;
                     text-overflow: ellipsis;
                 }
+
+                /* Ghost session styles */
+                .ghost-session-container {
+                    flex: 1;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 2px;
+                    overflow: hidden;
+                    margin-top: 4px;
+                    opacity: 0.45;
+                    pointer-events: none;
+                }
+                .ghost-session-text {
+                    display: flex;
+                    flex-direction: column;
+                    gap: 1px;
+                }
+                .ghost-program-name {
+                    font-size: 0.6rem;
+                    font-weight: 700;
+                    color: var(--secondary-foreground);
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    text-transform: uppercase;
+                    letter-spacing: 0.03em;
+                }
+                .ghost-session-name {
+                    font-size: 0.7rem;
+                    font-weight: 500;
+                    color: var(--secondary-foreground);
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+                .ghost-session-details {
+                    font-size: 0.65rem;
+                    color: var(--muted);
+                    white-space: nowrap;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                }
+
                 .date-number {
                     font-size: 0.8rem;
                     color: var(--muted);
@@ -376,6 +471,18 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
                     }
                     .duplicate-actions {
                         display: none !important;
+                    }
+                    .ghost-session-text {
+                        display: none;
+                    }
+                    .ghost-session-container {
+                        align-items: center;
+                        justify-content: center;
+                    }
+                    .ghost-session-container::after {
+                        content: '·';
+                        font-size: 1.2rem;
+                        color: var(--muted);
                     }
                 }
             `}</style>
