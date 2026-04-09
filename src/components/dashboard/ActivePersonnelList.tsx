@@ -245,23 +245,7 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
             const totalWeeks = progress.totalWeeks || 1;
             const sessionsPerWeek = Math.ceil(progress.totalSessions / totalWeeks);
 
-            // Needs update: athlete is within 1 week of sessions remaining in this block
-            // OR the program has mathematically expired based on the start date
-            let isExpired = false;
-            if (activeProgId) {
-                const progObj = programs.find((p: any) => p.id === activeProgId);
-                if (progObj && progObj.startDate) {
-                    const expiryData = new Date(progObj.startDate);
-                    expiryData.setHours(0,0,0,0);
-                    expiryData.setDate(expiryData.getDate() + totalWeeks * 7);
-                    if (new Date() >= expiryData) isExpired = true;
-                }
-            }
-
-            needsUpdate = (sessionsRemaining > 0 && sessionsRemaining <= sessionsPerWeek) || isExpired;
-
             // Check if a next block already exists that starts AFTER the current block
-            hasNextBlockReady = false;
             if (activeProgId) {
                  const currProgObj = programs.find((p: any) => p.id === activeProgId);
                  if (currProgObj) {
@@ -272,6 +256,28 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
                      }
                  }
             }
+
+            // Needs update: athlete is within 1 week of sessions remaining in this block (logs)
+            // OR the program is entering its last 7 days based on the start date (time)
+            let isEndingSoonByTime = false;
+            let isExpired = false;
+            if (activeProgId) {
+                const progObj = programs.find((p: any) => p.id === activeProgId);
+                if (progObj && progObj.startDate) {
+                    const expiryData = new Date(progObj.startDate);
+                    expiryData.setHours(0,0,0,0);
+                    expiryData.setDate(expiryData.getDate() + totalWeeks * 7);
+                    
+                    if (new Date() >= expiryData) isExpired = true;
+                    
+                    const oneWeekBeforeExpiry = new Date(expiryData);
+                    oneWeekBeforeExpiry.setDate(oneWeekBeforeExpiry.getDate() - 7);
+                    
+                    if (new Date() >= oneWeekBeforeExpiry) isEndingSoonByTime = true;
+                }
+            }
+
+            needsUpdate = (sessionsRemaining > 0 && sessionsRemaining <= sessionsPerWeek) || isEndingSoonByTime || isExpired;
         }
 
         return {
@@ -291,7 +297,7 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
         .filter(athlete => {
             const matchesSearch = athlete.name.toLowerCase().includes(searchQuery.toLowerCase());
             const matchesMeet = !filterMeet || athlete.hasMeet;
-            const matchesNeedsUpdate = !filterNeedsUpdate || athlete.needsUpdate;
+            const matchesNeedsUpdate = !filterNeedsUpdate || (athlete.needsUpdate && !athlete.hasNextBlockReady);
             return matchesSearch && matchesMeet && matchesNeedsUpdate;
         })
         .sort((a, b) => {
