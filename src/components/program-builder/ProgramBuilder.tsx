@@ -607,6 +607,108 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
         setDuplicateTargetDate('');
     };
 
+    const duplicateSessionToNextWeek = (weekNum: number, dayNum: number) => {
+        const newWeeks = [...weeks];
+        const sourceWeekIdx = newWeeks.findIndex(w => w.weekNumber === weekNum);
+        if (sourceWeekIdx === -1) return;
+        const sourceSession = newWeeks[sourceWeekIdx].sessions.find(s => s.day === dayNum);
+        if (!sourceSession) return;
+
+        const targetWeekNum = weekNum + 1;
+        const targetDayNum = dayNum;
+
+        let targetWeekIdx = newWeeks.findIndex(w => w.weekNumber === targetWeekNum);
+        if (targetWeekIdx === -1) {
+            const maxWeek = newWeeks.reduce((m, w) => Math.max(m, w.weekNumber), 0);
+            for (let i = maxWeek + 1; i <= targetWeekNum; i++) {
+                if (!newWeeks.find(w => w.weekNumber === i)) {
+                    newWeeks.push({ id: generateId(), weekNumber: i, sessions: [] });
+                }
+            }
+            newWeeks.sort((a, b) => a.weekNumber - b.weekNumber);
+            targetWeekIdx = newWeeks.findIndex(w => w.weekNumber === targetWeekNum);
+        }
+
+        const existingIdx = newWeeks[targetWeekIdx].sessions.findIndex(s => s.day === targetDayNum);
+        if (existingIdx !== -1) {
+            if (!confirm('A session already exists next week on this day. Replace it?')) return;
+            newWeeks[targetWeekIdx].sessions.splice(existingIdx, 1);
+        }
+
+        const clonedSession = {
+            ...sourceSession,
+            id: generateId(),
+            day: targetDayNum,
+            name: sourceSession.name,
+            scheduledDate: sourceSession.scheduledDate ? (() => {
+                 const d = new Date(sourceSession.scheduledDate);
+                 d.setDate(d.getDate() + 7);
+                 return d.toISOString().split('T')[0];
+            })() : '',
+            exercises: (sourceSession.exercises || []).map(e => ({
+                ...e,
+                id: generateId(),
+                sets: (e.sets || []).map(s => ({ ...s, id: generateId() }))
+            }))
+        };
+
+        newWeeks[targetWeekIdx].sessions.push(clonedSession);
+        setWeeks(newWeeks);
+    };
+
+    const duplicateWeekToNextWeek = (weekNum: number) => {
+        const newWeeks = [...weeks];
+        const sourceWeekIdx = newWeeks.findIndex(w => w.weekNumber === weekNum);
+        if (sourceWeekIdx === -1) return;
+        const sourceWeek = newWeeks[sourceWeekIdx];
+
+        if (sourceWeek.sessions.length === 0) return;
+
+        const targetWeekNum = weekNum + 1;
+
+        let targetWeekIdx = newWeeks.findIndex(w => w.weekNumber === targetWeekNum);
+        if (targetWeekIdx === -1) {
+            const maxWeek = newWeeks.reduce((m, w) => Math.max(m, w.weekNumber), 0);
+            for (let i = maxWeek + 1; i <= targetWeekNum; i++) {
+                if (!newWeeks.find(w => w.weekNumber === i)) {
+                    newWeeks.push({ id: generateId(), weekNumber: i, sessions: [] });
+                }
+            }
+            newWeeks.sort((a, b) => a.weekNumber - b.weekNumber);
+            targetWeekIdx = newWeeks.findIndex(w => w.weekNumber === targetWeekNum);
+        }
+
+        const occupiedDays = sourceWeek.sessions.map(s => s.day).filter(d => 
+             newWeeks[targetWeekIdx].sessions.some(ts => ts.day === d)
+        );
+
+        if (occupiedDays.length > 0) {
+            if (!confirm(`This will overwrite existing sessions in Week ${targetWeekNum}. Proceed?`)) {
+                return;
+            }
+            newWeeks[targetWeekIdx].sessions = newWeeks[targetWeekIdx].sessions.filter(ts => !occupiedDays.includes(ts.day));
+        }
+
+        const clonedSessions = sourceWeek.sessions.map(sourceSession => ({
+            ...sourceSession,
+            id: generateId(),
+            scheduledDate: sourceSession.scheduledDate ? (() => {
+                 const d = new Date(sourceSession.scheduledDate);
+                 d.setDate(d.getDate() + 7);
+                 return d.toISOString().split('T')[0];
+            })() : '',
+            exercises: (sourceSession.exercises || []).map(e => ({
+                ...e,
+                id: generateId(),
+                sets: (e.sets || []).map(s => ({ ...s, id: generateId() }))
+            }))
+        }));
+
+        newWeeks[targetWeekIdx].sessions.push(...clonedSessions);
+        setWeeks(newWeeks);
+    };
+
+
     const removeSession = (weekIndex, sessionIndex) => {
         if (!confirm('Are you sure you want to delete this session?')) return;
         const newWeeks = [...weeks];
@@ -905,7 +1007,6 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
     };
 
     // ... (previous state)
-    const [viewMode, setViewMode] = useState('list'); // 'calendar' | 'list'
     const [editingSession, setEditingSession] = useState<{ w: number, s: number } | null>(null);
 
     // ... (helpers)
@@ -1451,21 +1552,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
 
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1rem' }}>
                         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                            {/* View Toggle */}
-                            <div style={{ display: 'flex', background: 'var(--card-bg)', borderRadius: '4px', overflow: 'hidden', border: '1px solid var(--card-border)' }}>
-                                <button
-                                    onClick={() => setViewMode('list')}
-                                    style={{ padding: '0.5rem 1rem', background: viewMode === 'list' ? 'var(--accent)' : 'transparent', color: viewMode === 'list' ? 'black' : 'var(--foreground)', border: 'none', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600 }}
-                                >
-                                    List View
-                                </button>
-                                <button
-                                    onClick={() => setViewMode('calendar')}
-                                    style={{ padding: '0.5rem 1rem', background: viewMode === 'calendar' ? 'var(--accent)' : 'transparent', color: viewMode === 'calendar' ? 'black' : 'var(--foreground)', border: 'none', cursor: 'pointer', fontSize: '0.9rem', fontWeight: 600 }}
-                                >
-                                    Calendar View
-                                </button>
-                            </div>
+                            {/* View Toggle removed for streamlined Calendar UI */}
 
                             {autoSaveStatus !== 'idle' && (
                                 <span style={{
@@ -1503,264 +1590,27 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                 {/* SCROLLABLE CONTENT */}
                 <div style={{ overflowY: 'auto', paddingRight: '1rem', flex: 1 }}>
 
-                    {/* CALENDAR VIEW */}
-                    {viewMode === 'calendar' && (
-                        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-                            <ProgramCalendarGrid
-                                weeks={weeks}
-                                startDate={startDate}
-                                onSelectDate={handleSelectDate}
-                                onSessionMove={handleSessionMove}
-                                onDuplicateSession={(weekNum, dayNum) => {
-                                    const wIdx = weeks.findIndex(w => w.weekNumber === weekNum);
-                                    if (wIdx === -1) return;
-                                    const sIdx = weeks[wIdx].sessions.findIndex(s => s.day === dayNum);
-                                    if (sIdx === -1) return;
-                                    setDuplicateSource({ weekIndex: wIdx, sessionIndex: sIdx });
-                                    setDuplicateTargetDate('');
-                                }}
-                            />
-                        </div>
-                    )}
+                    {/* CALENDAR VIEW (Primary) */}
+                    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+                        <ProgramCalendarGrid
+                            weeks={weeks}
+                            startDate={startDate}
+                            onSelectDate={handleSelectDate}
+                            onSessionMove={handleSessionMove}
+                            onDuplicateSession={(weekNum, dayNum) => {
+                                const wIdx = weeks.findIndex(w => w.weekNumber === weekNum);
+                                if (wIdx === -1) return;
+                                const sIdx = weeks[wIdx].sessions.findIndex(s => s.day === dayNum);
+                                if (sIdx === -1) return;
+                                setDuplicateSource({ weekIndex: wIdx, sessionIndex: sIdx });
+                                setDuplicateTargetDate('');
+                            }}
+                            onDuplicateSessionToNextWeek={duplicateSessionToNextWeek}
+                            onDuplicateWeekToNextWeek={duplicateWeekToNextWeek}
+                        />
+                    </div>
 
-                    {/* LIST VIEW (Legacy) */}
-                    {viewMode === 'list' && (
-                        <div>
-                            {weeks.filter(week => week.sessions.length > 0).map((week) => {
-                                const wIndex = weeks.indexOf(week);
-                                return (
-                                <div key={week.id} style={{ marginBottom: '3rem' }}>
-                                    <div
-                                        style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: collapsedWeeks[week.id] ? '0' : '1rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '0.5rem', cursor: 'pointer' }}
-                                    >
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }} onClick={() => toggleWeek(week.id)}>
-                                            <span style={{
-                                                display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                                width: '20px', height: '20px', fontSize: '0.7rem',
-                                                border: '1px solid var(--card-border)', borderRadius: '3px',
-                                                color: 'var(--secondary-foreground)', transition: 'transform 0.2s',
-                                                transform: collapsedWeeks[week.id] ? 'rotate(-90deg)' : 'rotate(0deg)',
-                                            }}>
-                                                ▼
-                                            </span>
-                                            <h2 style={{ fontSize: '1.5rem', color: 'var(--primary)', margin: 0 }}>{weekDateRange(week.weekNumber)}</h2>
-                                            {collapsedWeeks[week.id] && (
-                                                <span style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', marginLeft: '0.5rem' }}>
-                                                    ({week.sessions.length} session{week.sessions.length !== 1 ? 's' : ''})
-                                                </span>
-                                            )}
-                                        </div>
 
-                                        <div style={{ display: 'flex', gap: '0.5rem' }}>
-                                            {clipboard?.type === 'week' && (
-                                                <button
-                                                    onClick={() => pasteWeek(wIndex)}
-                                                    className="btn btn-secondary"
-                                                    style={{ fontSize: '0.8rem', background: 'rgba(6, 182, 212, 0.1)', color: 'var(--primary)', border: '1px dashed var(--primary)' }}
-                                                    title="Overwrite this week with copied content"
-                                                >
-                                                    Paste Week
-                                                </button>
-                                            )}
-                                            <button onClick={() => copyWeek(wIndex)} className="btn btn-secondary" style={{ fontSize: '0.8rem' }}>Copy</button>
-                                            <button onClick={() => duplicateWeek(wIndex)} className="btn btn-secondary" style={{ fontSize: '0.8rem' }}>Duplicate</button>
-                                            <button onClick={() => addSession(wIndex)} className="btn btn-secondary" style={{ fontSize: '0.8rem' }}>+ Session</button>
-                                            {weeks.length > 1 && (
-                                                <button
-                                                    onClick={() => removeWeek(wIndex)}
-                                                    className="btn btn-secondary"
-                                                    style={{ fontSize: '0.8rem', color: 'var(--danger)', borderColor: 'rgba(239, 68, 68, 0.3)' }}
-                                                    title="Delete this week"
-                                                >
-                                                    Delete
-                                                </button>
-                                            )}
-                                        </div>
-                                    </div>
-                                    {!collapsedWeeks[week.id] && (
-                                    <div style={{ overflowX: 'auto', paddingBottom: '1rem', margin: '0 -1rem', padding: '0 1rem 1rem 1rem' }}>
-                                        <div style={{ display: 'grid', gap: '1.5rem', minWidth: '700px' }}>
-                                            {week.sessions.map((session, sIndex) => (
-                                                <div
-                                                    key={session.id}
-                                                    className="card"
-                                                    onClick={() => setActiveLocation({ w: wIndex, s: sIndex })}
-                                                    style={{
-                                                        border: (activeLocation.w === wIndex && activeLocation.s === sIndex) ? '1px solid var(--accent)' : '1px solid var(--card-border)',
-                                                        transition: 'all 0.2s',
-                                                        position: 'relative'
-                                                    }}
-                                                >
-                                                    {/* Selection Indicator */}
-                                                    {(activeLocation.w === wIndex && activeLocation.s === sIndex) && (
-                                                        <div style={{
-                                                            position: 'absolute', top: 10, right: 10,
-                                                            background: 'var(--accent)', color: 'black',
-                                                            padding: '2px 8px', borderRadius: '4px', fontSize: '0.7rem', fontWeight: 'bold'
-                                                        }}>
-                                                            ACTIVE
-                                                        </div>
-                                                    )}
-
-                                                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: collapsedSessions[session.id] ? '0' : '1rem', alignItems: 'center', gap: '1rem' }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: 1 }}>
-                                                            <span
-                                                                onClick={(e) => { e.stopPropagation(); toggleSession(session.id); }}
-                                                                style={{
-                                                                    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                                                    width: '18px', height: '18px', fontSize: '0.6rem',
-                                                                    border: '1px solid var(--card-border)', borderRadius: '3px',
-                                                                    color: 'var(--secondary-foreground)', cursor: 'pointer',
-                                                                    transition: 'transform 0.2s', flexShrink: 0,
-                                                                    transform: collapsedSessions[session.id] ? 'rotate(-90deg)' : 'rotate(0deg)',
-                                                                }}
-                                                            >
-                                                                ▼
-                                                            </span>
-                                                            <input
-                                                                value={session.name}
-                                                                onChange={e => {
-                                                                    const newWeeks = [...weeks];
-                                                                    newWeeks[wIndex].sessions[sIndex].name = e.target.value;
-                                                                    setWeeks(newWeeks);
-                                                                }}
-                                                                style={{ background: 'transparent', border: 'none', color: 'var(--foreground)', fontSize: '1.1rem', fontWeight: 600, flex: 1 }}
-                                                                placeholder="Session Name"
-                                                            />
-                                                            {collapsedSessions[session.id] && (
-                                                                <span style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)' }}>
-                                                                    {session.exercises.length} exercise{session.exercises.length !== 1 ? 's' : ''}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                                            <span style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)' }}>Date:</span>
-                                                            <input
-                                                                type="date"
-                                                                className="input"
-                                                                style={{ padding: '2px 8px', fontSize: '0.8rem', width: 'auto' }}
-                                                                value={session.scheduledDate || ''}
-                                                                onChange={e => {
-                                                                    const newWeeks = [...weeks];
-                                                                    newWeeks[wIndex].sessions[sIndex].scheduledDate = e.target.value;
-                                                                    setWeeks(newWeeks);
-                                                                }}
-                                                            />
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); duplicateSession(wIndex, sIndex); }}
-                                                                title="Duplicate Session"
-                                                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1rem' }}
-                                                            >
-                                                                ❐
-                                                            </button>
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); setDuplicateSource({ weekIndex: wIndex, sessionIndex: sIndex }); setDuplicateTargetDate(''); }}
-                                                                title="Duplicate to Date..."
-                                                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--accent)' }}
-                                                            >
-                                                                ❐→
-                                                            </button>
-                                                            <button
-                                                                onClick={(e) => { e.stopPropagation(); removeSession(wIndex, sIndex); }}
-                                                                title="Delete Session"
-                                                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1rem', color: 'var(--error)' }}
-                                                            >
-                                                                🗑️
-                                                            </button>
-                                                        </div>
-                                                    </div>
-
-                                                    {!collapsedSessions[session.id] && (
-                                                    <>
-                                                        <div style={{ marginBottom: '1rem', padding: '0 0.5rem' }}>
-                                                            <textarea
-                                                                className="input"
-                                                                placeholder="Warm-up Drills & Pre-workout Notes"
-                                                                value={session.warmupDrills || ''}
-                                                                onChange={e => {
-                                                                    const newWeeks = [...weeks];
-                                                                    newWeeks[wIndex].sessions[sIndex].warmupDrills = e.target.value;
-                                                                    setWeeks(newWeeks);
-                                                                }}
-                                                                style={{
-                                                                    width: '100%',
-                                                                    minHeight: '60px',
-                                                                    padding: '8px 12px',
-                                                                    fontSize: '0.85rem',
-                                                                    background: 'rgba(255, 255, 255, 0.02)',
-                                                                    border: '1px dashed var(--card-border)',
-                                                                    color: 'var(--foreground)',
-                                                                    resize: 'vertical',
-                                                                    borderRadius: '4px'
-                                                                }}
-                                                            />
-                                                            {session.warmupDrills && session.warmupDrills.trim().length > 0 && (
-                                                                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
-                                                                    <button
-                                                                        onClick={(e) => {
-                                                                            e.stopPropagation();
-                                                                            if (confirm('Apply these warm-up drills to EVERY session in the entire block? This will overwrite existing warm-ups elsewhere.')) {
-                                                                                const newWeeks = [...weeks];
-                                                                                newWeeks.forEach(w => w.sessions.forEach(s => s.warmupDrills = session.warmupDrills));
-                                                                                setWeeks(newWeeks);
-                                                                            }
-                                                                        }}
-                                                                        style={{
-                                                                            background: 'none', border: 'none', color: 'var(--accent)',
-                                                                            fontSize: '0.75rem', cursor: 'pointer', padding: '4px 8px',
-                                                                            fontWeight: 600, opacity: 0.8
-                                                                        }}
-                                                                        onMouseOver={e => e.currentTarget.style.opacity = '1'}
-                                                                        onMouseOut={e => e.currentTarget.style.opacity = '0.8'}
-                                                                    >
-                                                                        Apply to all sessions
-                                                                    </button>
-                                                                </div>
-                                                            )}
-                                                        </div>
-                                                    {session.exercises.length === 0 ? (
-                                                        <div
-                                                            onDragOver={e => { e.preventDefault(); }}
-                                                            onDrop={e => handleExerciseDropOnEmpty(e, wIndex, sIndex)}
-                                                            style={{ padding: '2rem', textAlign: 'center', border: dragExercise ? '2px dashed var(--primary)' : '2px dashed var(--card-border)', borderRadius: '8px', color: 'var(--secondary-foreground)', transition: 'border 0.15s' }}
-                                                        >
-                                                            {dragExercise ? 'Drop exercise here' : 'Select cards to "Active" then add exercises from sidebar'}
-                                                        </div>
-                                                    ) : (
-                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                                            {session.exercises.map((ex, exIndex) => (
-                                                                <BuilderExerciseCard
-                                                                    key={ex.id}
-                                                                    exercise={ex}
-                                                                    onUpdate={(field, val) => updateExercise(wIndex, sIndex, exIndex, field, val)}
-                                                                    onRemove={() => removeExercise(wIndex, sIndex, exIndex)}
-                                                                    onDragStart={() => handleExerciseDragStart(wIndex, sIndex, exIndex)}
-                                                                    onDragOver={(e) => handleExerciseDragOver(e, wIndex, sIndex, exIndex)}
-                                                                    onDrop={(e) => handleExerciseDrop(e, wIndex, sIndex, exIndex)}
-                                                                    onDragEnd={handleExerciseDragEnd}
-                                                                    isDragOver={dropTarget?.w === wIndex && dropTarget?.s === sIndex && dropTarget?.e === exIndex}
-                                                                />
-                                                            ))}
-                                                        </div>
-                                                    )}
-                                                    </>
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                    )}
-                                </div>
-                            ); })}
-
-                            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '4rem' }}>
-                                <button onClick={addWeek} className="btn btn-secondary" style={{ padding: '1rem 3rem' }}>
-                                    + Add Next Week
-                                </button>
-                            </div>
-
-                        </div>
-                    )}
                 </div>
             </div>
 

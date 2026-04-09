@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 
-export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, onSessionMove, onDuplicateSession }) {
+export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, onSessionMove, onDuplicateSession, onDuplicateSessionToNextWeek, onDuplicateWeekToNextWeek }) {
     const [currentMonth, setCurrentMonth] = useState(() => {
         return startDate ? new Date(startDate) : new Date();
     });
@@ -187,15 +187,35 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
                                         📋
                                     </div>
                                 </div>
-                                {onDuplicateSession && (
-                                    <button
-                                        className="duplicate-btn"
-                                        onClick={(e) => { e.stopPropagation(); onDuplicateSession(day.weekNum, day.dayNum); }}
-                                        title="Duplicate to Date..."
-                                    >
-                                        ❐→
-                                    </button>
-                                )}
+                                <div className="duplicate-actions" style={{ position: 'absolute', top: 2, right: 2, display: 'none', gap: '2px', zIndex: 2 }}>
+                                    {onDuplicateSession && (
+                                        <button
+                                            className="duplicate-btn"
+                                            onClick={(e) => { e.stopPropagation(); onDuplicateSession(day.weekNum, day.dayNum); }}
+                                            title="Duplicate to Date..."
+                                        >
+                                            ❐ Date
+                                        </button>
+                                    )}
+                                    {onDuplicateSessionToNextWeek && (
+                                        <button
+                                            className="duplicate-btn"
+                                            onClick={(e) => { e.stopPropagation(); onDuplicateSessionToNextWeek(day.weekNum, day.dayNum); }}
+                                            title="Duplicate Session to Next Week"
+                                        >
+                                            ❐ Next Wk
+                                        </button>
+                                    )}
+                                    {onDuplicateWeekToNextWeek && (
+                                        <button
+                                            className="duplicate-btn"
+                                            onClick={(e) => { e.stopPropagation(); onDuplicateWeekToNextWeek(day.weekNum); }}
+                                            title="Duplicate Full Week to Next Week"
+                                        >
+                                            ❐ Full Wk
+                                        </button>
+                                    )}
+                                </div>
                             </div>
                         ) : (
                             <div className="add-indicator">
@@ -253,23 +273,19 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
                 .session-icon {
                     display: none;
                 }
+                .calendar-cell:hover .duplicate-actions {
+                    display: flex !important;
+                }
                 .duplicate-btn {
-                    display: none;
-                    position: absolute;
-                    top: 2px;
-                    right: 2px;
                     background: var(--card-bg);
                     border: 1px solid var(--card-border);
                     border-radius: 4px;
                     color: var(--accent);
                     cursor: pointer;
                     font-size: 0.65rem;
-                    padding: 1px 4px;
+                    padding: 2px 6px;
                     line-height: 1;
-                    z-index: 2;
-                }
-                .calendar-cell:hover .duplicate-btn {
-                    display: block;
+                    transition: all 0.15s;
                 }
                 .duplicate-btn:hover {
                     background: var(--accent);
@@ -358,7 +374,7 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
                     .add-indicator span {
                         font-size: 1rem;
                     }
-                    .duplicate-btn {
+                    .duplicate-actions {
                         display: none !important;
                     }
                 }
