@@ -31,7 +31,11 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
             const progStart = new Date(sy, sm - 1, sd);
             progStart.setHours(0, 0, 0, 0);
 
-            const programWeeks: any[] = Array.isArray(prog.weeks) ? prog.weeks : [];
+            let parsedWeeks = prog.weeks;
+            if (typeof parsedWeeks === 'string') {
+                try { parsedWeeks = JSON.parse(parsedWeeks); } catch(e) { parsedWeeks = []; }
+            }
+            const programWeeks: any[] = Array.isArray(parsedWeeks) ? parsedWeeks : [];
             programWeeks.forEach((week: any) => {
                 const wn = week.weekNumber || 1;
                 const sessions: any[] = Array.isArray(week.sessions) ? week.sessions : [];
