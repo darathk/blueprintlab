@@ -155,7 +155,7 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
             };
 
             activeSorted = [...athletePrograms]
-                .filter(p => p.status === 'active' || p.id === athlete.currentProgramId)
+                .filter(p => p.status !== 'draft')
                 .sort((a, b) => {
                     const aStart = parseLocalDateStr(a.startDate || a.createdAt).getTime();
                     const bStart = parseLocalDateStr(b.startDate || b.createdAt).getTime();

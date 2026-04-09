@@ -23,8 +23,8 @@ export const getAthletes = cache(async (coachId) => {
             pastMeets: true,
             programs: {
                 where: { status: 'active' },
-                orderBy: { createdAt: 'asc' },
-                select: { id: true, name: true, status: true, startDate: true, endDate: true }
+                orderBy: { startDate: 'desc' },
+                select: { id: true, name: true, status: true, startDate: true, endDate: true, createdAt: true }
             }
         }
     });
@@ -79,7 +79,8 @@ export const getPrograms = cache(async (coachId) => {
             startDate: true,
             endDate: true,
             weeks: true,
-            status: true
+            status: true,
+            createdAt: true
         }
     });
 });
