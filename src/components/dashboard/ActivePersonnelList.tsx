@@ -136,10 +136,18 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
 
         // Auto-advance logic: ignore old "active" programs that are actually 100% complete
         // OR if a newer active program's start date has already arrived.
+        let activeSorted: any[] = [];
         if (athletePrograms.length > 0) {
-            const activeSorted = [...athletePrograms]
+            activeSorted = [...athletePrograms]
                 .filter(p => p.status === 'active' || p.id === athlete.currentProgramId)
-                .sort((a, b) => new Date(a.startDate || a.createdAt || 0).getTime() - new Date(b.startDate || b.createdAt || 0).getTime());
+                .sort((a, b) => {
+                    const aStart = new Date(a.startDate || a.createdAt || 0).getTime();
+                    const bStart = new Date(b.startDate || b.createdAt || 0).getTime();
+                    if (aStart === bStart) {
+                        return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
+                    }
+                    return aStart - bStart;
+                });
             
             for (let i = 0; i < activeSorted.length; i++) {
                 const prog = activeSorted[i];
@@ -247,13 +255,9 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
 
             // Check if a next block already exists that starts AFTER the current block
             if (activeProgId) {
-                 const currProgObj = programs.find((p: any) => p.id === activeProgId);
-                 if (currProgObj) {
-                     const currStart = new Date(currProgObj.startDate || currProgObj.createdAt || 0).getTime();
-                     const futurePrograms = athletePrograms.filter((p: any) => p.status === 'active' && p.id !== activeProgId && new Date(p.startDate || p.createdAt || 0).getTime() > currStart);
-                     if (futurePrograms.length > 0) {
-                         hasNextBlockReady = true;
-                     }
+                 const currIndex = activeSorted.findIndex(p => p.id === activeProgId);
+                 if (currIndex !== -1 && currIndex < activeSorted.length - 1) {
+                     hasNextBlockReady = true;
                  }
             }
 
