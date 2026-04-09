@@ -459,6 +459,9 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
     const [duplicateSource, setDuplicateSource] = useState<{ weekIndex: number; sessionIndex: number } | null>(null);
     const [duplicateTargetDate, setDuplicateTargetDate] = useState('');
 
+    // Reference panel: read-only view of a ghost session from an existing program
+    const [referenceSession, setReferenceSession] = useState<any | null>(null);
+
     const toggleWeek = (weekId: string) => {
         setCollapsedWeeks(prev => ({ ...prev, [weekId]: !prev[weekId] }));
     };
@@ -1608,6 +1611,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                             onDuplicateSessionToNextWeek={duplicateSessionToNextWeek}
                             onDuplicateWeekToNextWeek={duplicateWeekToNextWeek}
                             existingPrograms={existingPrograms}
+                            onGhostSessionClick={(ghost: any) => setReferenceSession(ghost)}
                         />
                     </div>
 
@@ -1742,7 +1746,128 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                 </div>
             )}
 
-            {/* Duplicate to Date Modal */}
+            {/* Reference Panel: Read-only view of a past program session */}
+            {referenceSession && (
+                <div style={{
+                    position: 'fixed', top: 'var(--header-height, 56px)', right: 0, bottom: 0,
+                    width: '40vw', minWidth: '480px', maxWidth: '90vw',
+                    background: 'var(--background)', borderLeft: '2px solid rgba(148, 163, 184, 0.3)',
+                    zIndex: 900, display: 'flex', flexDirection: 'column',
+                    boxShadow: '-8px 0 30px rgba(0,0,0,0.5)',
+                }}>
+                    {/* Header */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid var(--card-border)', background: 'rgba(148, 163, 184, 0.06)', flexShrink: 0 }}>
+                        <div style={{ flex: 1 }}>
+                            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>
+                                📎 Reference — {referenceSession.programName}
+                            </div>
+                            <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--foreground)' }}>
+                                {referenceSession.sessionName}
+                            </div>
+                        </div>
+                        <button
+                            onClick={() => setReferenceSession(null)}
+                            className="btn btn-secondary"
+                            style={{ marginLeft: '1rem', flexShrink: 0 }}
+                        >
+                            Close
+                        </button>
+                    </div>
+
+                    {/* Body */}
+                    <div style={{ flex: 1, overflowY: 'auto', padding: '1rem 1.25rem' }}>
+                        {/* Warm-up drills */}
+                        {referenceSession.warmupDrills && (
+                            <div style={{
+                                marginBottom: '1.25rem', padding: '10px 12px',
+                                background: 'rgba(255,255,255,0.02)', border: '1px dashed var(--card-border)',
+                                borderRadius: '4px', fontSize: '0.85rem', color: 'var(--secondary-foreground)',
+                                whiteSpace: 'pre-wrap', lineHeight: 1.5,
+                            }}>
+                                {referenceSession.warmupDrills}
+                            </div>
+                        )}
+
+                        {/* Exercises */}
+                        {referenceSession.exercises?.length > 0 ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                                {referenceSession.exercises.map((ex: any, idx: number) => (
+                                    <div key={ex.id || idx} style={{
+                                        background: 'var(--card-bg)', border: '1px solid var(--card-border)',
+                                        borderRadius: 'var(--radius)', overflow: 'hidden',
+                                    }}>
+                                        {/* Exercise header */}
+                                        <div style={{
+                                            padding: '10px 14px', display: 'flex', justifyContent: 'space-between',
+                                            alignItems: 'center', borderBottom: '1px solid var(--card-border)',
+                                            background: 'rgba(255,255,255,0.02)',
+                                        }}>
+                                            <div style={{ fontWeight: 600, fontSize: '0.9rem', color: 'var(--foreground)' }}>
+                                                {ex.name || 'Unnamed Exercise'}
+                                            </div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)' }}>
+                                                {ex.sets?.length || 0} sets
+                                            </div>
+                                        </div>
+
+                                        {/* Notes */}
+                                        {ex.notes && (
+                                            <div style={{
+                                                padding: '6px 14px', fontSize: '0.8rem',
+                                                color: 'var(--secondary-foreground)', fontStyle: 'italic',
+                                                borderBottom: '1px solid var(--card-border)',
+                                                background: 'rgba(255,255,255,0.01)',
+                                            }}>
+                                                {ex.notes}
+                                            </div>
+                                        )}
+
+                                        {/* Sets table */}
+                                        {Array.isArray(ex.sets) && ex.sets.length > 0 && (
+                                            <div style={{ padding: '8px 14px' }}>
+                                                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+                                                    <thead>
+                                                        <tr style={{ color: 'var(--secondary-foreground)', fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                            <th style={{ textAlign: 'left', padding: '4px 0', fontWeight: 600 }}>Set</th>
+                                                            <th style={{ textAlign: 'center', padding: '4px 0', fontWeight: 600 }}>Reps</th>
+                                                            <th style={{ textAlign: 'center', padding: '4px 0', fontWeight: 600 }}>RPE</th>
+                                                            <th style={{ textAlign: 'center', padding: '4px 0', fontWeight: 600 }}>Weight</th>
+                                                            <th style={{ textAlign: 'center', padding: '4px 0', fontWeight: 600 }}>%</th>
+                                                        </tr>
+                                                    </thead>
+                                                    <tbody>
+                                                        {ex.sets.map((set: any, si: number) => (
+                                                            <tr key={set.id || si} style={{ borderTop: '1px solid rgba(255,255,255,0.04)' }}>
+                                                                <td style={{ padding: '5px 0', color: 'var(--muted)' }}>{si + 1}</td>
+                                                                <td style={{ textAlign: 'center', padding: '5px 0', color: 'var(--foreground)', fontWeight: 500 }}>
+                                                                    {set.reps || '—'}
+                                                                </td>
+                                                                <td style={{ textAlign: 'center', padding: '5px 0', color: 'var(--accent)' }}>
+                                                                    {set.rpe ? `@${set.rpe}` : '—'}
+                                                                </td>
+                                                                <td style={{ textAlign: 'center', padding: '5px 0', color: 'var(--foreground)' }}>
+                                                                    {set.weight || '—'}
+                                                                </td>
+                                                                <td style={{ textAlign: 'center', padding: '5px 0', color: 'var(--secondary-foreground)' }}>
+                                                                    {set.percent ? `${set.percent}%` : '—'}
+                                                                </td>
+                                                            </tr>
+                                                        ))}
+                                                    </tbody>
+                                                </table>
+                                            </div>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--secondary-foreground)', fontSize: '0.9rem' }}>
+                                No exercises in this session.
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
             {duplicateSource && (
                 <div
                     onClick={() => { setDuplicateSource(null); setDuplicateTargetDate(''); }}

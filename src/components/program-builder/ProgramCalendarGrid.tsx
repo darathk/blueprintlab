@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 
-export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, onSessionMove, onDuplicateSession, onDuplicateSessionToNextWeek, onDuplicateWeekToNextWeek, existingPrograms = [] }) {
+export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, onSessionMove, onDuplicateSession, onDuplicateSessionToNextWeek, onDuplicateWeekToNextWeek, existingPrograms = [], onGhostSessionClick = null }) {
     const [currentMonth, setCurrentMonth] = useState(() => {
         return startDate ? new Date(startDate) : new Date();
     });
@@ -21,7 +21,7 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
 
     // Build a lookup of existing program sessions by date string
     const existingSessionsByDate = useMemo(() => {
-        const map: Record<string, { programName: string; sessionName: string; exerciseCount: number; status: string }[]> = {};
+        const map: Record<string, { programName: string; sessionName: string; exerciseCount: number; status: string; exercises: any[]; warmupDrills?: string }[]> = {};
         if (!Array.isArray(existingPrograms)) return map;
 
         existingPrograms.forEach((prog: any) => {
@@ -45,6 +45,8 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
                         programName: prog.name || 'Untitled',
                         sessionName: session.name || `Session ${day}`,
                         exerciseCount: Array.isArray(session.exercises) ? session.exercises.length : 0,
+                        exercises: Array.isArray(session.exercises) ? session.exercises : [],
+                        warmupDrills: session.warmupDrills || '',
                         status: prog.status || 'active'
                     });
                 });
@@ -256,8 +258,16 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
                                 </div>
                             </div>
                         ) : day.ghostSessions.length > 0 ? (
-                            /* Ghost session from existing programs — read-only, dimmed */
-                            <div className="ghost-session-container">
+                            /* Ghost session from existing programs — clickable for reference */
+                            <div
+                                className="ghost-session-container"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (onGhostSessionClick) {
+                                        onGhostSessionClick(day.ghostSessions[0]);
+                                    }
+                                }}
+                            >
                                 {day.ghostSessions.slice(0, 1).map((ghost, gi) => (
                                     <div key={gi} className="ghost-session-text">
                                         <div className="ghost-program-name">{ghost.programName}</div>
@@ -368,7 +378,13 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
                     overflow: hidden;
                     margin-top: 4px;
                     opacity: 0.45;
-                    pointer-events: none;
+                    cursor: pointer;
+                    transition: opacity 0.2s;
+                    border-left: 2px solid var(--muted);
+                    padding-left: 4px;
+                }
+                .calendar-cell:hover .ghost-session-container {
+                    opacity: 0.7;
                 }
                 .ghost-session-text {
                     display: flex;
