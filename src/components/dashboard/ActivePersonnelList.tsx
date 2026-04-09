@@ -138,11 +138,27 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
         // OR if a newer active program's start date has already arrived.
         let activeSorted: any[] = [];
         if (athletePrograms.length > 0) {
+            // Use rigorous parsing for date comparisons to prevent UTC boundary shifts
+            const parseLocalDateStr = (dateStr: any) => {
+                if (!dateStr) return new Date(0);
+                const s = String(dateStr).split('T')[0];
+                const parts = s.split('-');
+                if (parts.length === 3) {
+                    const [y, m, d] = parts.map(Number);
+                    const date = new Date(y, m - 1, d);
+                    date.setHours(0, 0, 0, 0);
+                    return date;
+                }
+                const date = new Date(dateStr);
+                date.setHours(0, 0, 0, 0);
+                return date;
+            };
+
             activeSorted = [...athletePrograms]
                 .filter(p => p.status === 'active' || p.id === athlete.currentProgramId)
                 .sort((a, b) => {
-                    const aStart = new Date(a.startDate || a.createdAt || 0).getTime();
-                    const bStart = new Date(b.startDate || b.createdAt || 0).getTime();
+                    const aStart = parseLocalDateStr(a.startDate || a.createdAt).getTime();
+                    const bStart = parseLocalDateStr(b.startDate || b.createdAt).getTime();
                     if (aStart === bStart) {
                         return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
                     }
@@ -159,14 +175,16 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
                 
                 activeProgId = prog.id; // Assume this one is active
                 
+                // If we've reached the last program in our list, we stay here.
+                if (i === activeSorted.length - 1) break;
+
                 // Check if the next program in the list has already started
                 let nextProgramHasStarted = false;
                 const nextProg = activeSorted[i + 1];
                 if (nextProg) {
                     const nextStartStr = nextProg.startDate || nextProg.createdAt;
                     if (nextStartStr) {
-                        const nextStart = new Date(nextStartStr);
-                        nextStart.setHours(0, 0, 0, 0);
+                        const nextStart = parseLocalDateStr(nextStartStr);
                         const now = new Date();
                         now.setHours(0, 0, 0, 0);
                         if (now >= nextStart) {
@@ -175,8 +193,10 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
                     }
                 }
                 
+                const isComplete = totalSessions > 0 && uniqueSessions.size >= totalSessions;
+
                 // If this program is incomplete AND the next program hasn't started yet, we stay on this one.
-                if ((totalSessions === 0 || uniqueSessions.size < totalSessions) && !nextProgramHasStarted) {
+                if (!isComplete && !nextProgramHasStarted) {
                     break;
                 }
             }
