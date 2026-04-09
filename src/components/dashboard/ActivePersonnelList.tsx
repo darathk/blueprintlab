@@ -162,13 +162,16 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
                 // Check if the next program in the list has already started
                 let nextProgramHasStarted = false;
                 const nextProg = activeSorted[i + 1];
-                if (nextProg && nextProg.startDate) {
-                    const nextStart = new Date(nextProg.startDate);
-                    nextStart.setHours(0, 0, 0, 0);
-                    const now = new Date();
-                    now.setHours(0, 0, 0, 0);
-                    if (now >= nextStart) {
-                        nextProgramHasStarted = true;
+                if (nextProg) {
+                    const nextStartStr = nextProg.startDate || nextProg.createdAt;
+                    if (nextStartStr) {
+                        const nextStart = new Date(nextStartStr);
+                        nextStart.setHours(0, 0, 0, 0);
+                        const now = new Date();
+                        now.setHours(0, 0, 0, 0);
+                        if (now >= nextStart) {
+                            nextProgramHasStarted = true;
+                        }
                     }
                 }
                 
