@@ -909,7 +909,9 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
     };
 
     const buildPayload = useCallback(() => {
-        const start = new Date(startDate);
+        // Always snap startDate to Sunday to ensure week alignment
+        const snappedStart = snapToSunday(startDate);
+        const start = new Date(snappedStart);
         const durationDays = weeks.length * 7;
         start.setDate(start.getDate() + durationDays);
         const endDate = start.toISOString().split('T')[0];
@@ -917,7 +919,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
             id: savedProgramIdRef.current || undefined,
             name: programName || 'Untitled Program',
             athleteId: selectedAthleteId,
-            startDate,
+            startDate: snappedStart,
             endDate,
             weeks,
             status: undefined as string | undefined
@@ -1146,7 +1148,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
         let weekIndex = newWeeks.findIndex(w => w.weekNumber === weekNum);
 
         if (weekIndex === -1) {
-            const currentMaxWeek = newWeeks.length;
+            const currentMaxWeek = newWeeks.reduce((m, w) => Math.max(m, w.weekNumber || 0), 0);
             // Fill gaps
             for (let i = currentMaxWeek + 1; i <= weekNum; i++) {
                 newWeeks.push({

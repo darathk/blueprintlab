@@ -93,12 +93,15 @@ function sessionKey(programId: string, weekNum: number, day: number) {
     return `${programId}_w${weekNum}_d${day}`;
 }
 
-/** Compute the date range label for a given program week, anchored to startDate */
+/** Compute the date range label for a given program week, anchored to startDate snapped to Sunday */
 function weekDateRange(programStartDate: any, weekNumber: number): string {
     if (!programStartDate) return `Week ${weekNumber}`;
     const start = parseLocalDate(programStartDate);
-    // Week starts at startDate + (weekNumber-1)*7
-    const weekStart = new Date(start);
+    // Snap to Sunday so week ranges align with Sun-Sat calendar weeks
+    const sunday = new Date(start);
+    sunday.setDate(sunday.getDate() - sunday.getDay());
+    // Week starts at sunday + (weekNumber-1)*7
+    const weekStart = new Date(sunday);
     weekStart.setDate(weekStart.getDate() + (weekNumber - 1) * 7);
     const weekEnd = new Date(weekStart);
     weekEnd.setDate(weekEnd.getDate() + 6);
@@ -428,7 +431,10 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
 
         programs.forEach(program => {
             if (!program.startDate) return;
-            const start = parseLocalDate(program.startDate);
+            const rawStart = parseLocalDate(program.startDate);
+            // Snap to Sunday so session dates align with Sun-Sat calendar weeks (matching ProgramBuilder grid)
+            const start = new Date(rawStart);
+            start.setDate(start.getDate() - start.getDay());
             const isActive = program.status === 'active';
 
             const weeks: any[] = Array.isArray(program.weeks) ? program.weeks : [];
@@ -443,7 +449,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                 const sortedSessions = [...sessions].sort((a: any, b: any) => (a?.day || 1) - (b?.day || 1));
                 sessions.forEach((session: any) => {
                     const day = session.day || 1;
-                    // Compute actual date: startDate + (wn-1)*7 + (day-1)
+                    // Compute actual date: sunday-snapped start + (wn-1)*7 + (day-1)
                     const d = new Date(start);
                     d.setDate(d.getDate() + (wn - 1) * 7 + (day - 1));
                     const ds = toDateStr(d);
