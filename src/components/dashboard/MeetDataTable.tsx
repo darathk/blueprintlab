@@ -146,14 +146,14 @@ export default function MeetDataTable({ athletes, coachId }: Props) {
             const total = calcTotal(e);
             const bw = e.bodyweight || e.weightClass;
             const isMale = e.gender !== 'female';
-            return s + (e.csvDotsPoints || (total > 0 && bw > 0 ? calculateDots(total, bw, isMale) : 0));
+            return s + (total > 0 && bw > 0 ? calculateDots(total, bw, isMale) : 0);
         }, 0) / withTotals.length;
 
         const avgIpf = withTotals.reduce((s, e) => {
             const total = calcTotal(e);
             const bw = e.bodyweight || e.weightClass;
             const isMale = e.gender !== 'female';
-            return s + (e.csvIpfPoints || (total > 0 && bw > 0 ? calculateGL(total, bw, isMale, false, false) : 0));
+            return s + (total > 0 && bw > 0 ? calculateGL(total, bw, isMale, false, false) : 0);
         }, 0) / withTotals.length;
 
         return { 
@@ -645,7 +645,7 @@ export default function MeetDataTable({ athletes, coachId }: Props) {
                             <th style={headerStyle}>Total PR</th>
                             <th style={{ ...headerStyle, color: '#f59e0b' }}>DOTS</th>
                             <th style={{ ...headerStyle, color: '#38bdf8' }}>IPF Pts</th>
-                            <th style={{ ...headerStyle, width: 40 }}></th>
+                            <th style={{ ...headerStyle, minWidth: 70 }}></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -664,8 +664,8 @@ export default function MeetDataTable({ athletes, coachId }: Props) {
                             const pct = totalAttempts > 0 ? (successful / totalAttempts * 100) : 0;
                             const bw = d.bodyweight || d.weightClass;
                             const isMale = d.gender !== 'female';
-                            const dots = d.csvDotsPoints || (total > 0 && bw > 0 ? calculateDots(total, bw, isMale) : 0);
-                            const ipf = d.csvIpfPoints || (total > 0 && bw > 0 ? calculateGL(total, bw, isMale, false, false) : 0);
+                            const dots = total > 0 && bw > 0 ? calculateDots(total, bw, isMale) : 0;
+                            const ipf = total > 0 && bw > 0 ? calculateGL(total, bw, isMale, false, false) : 0;
                             const pr = (e as any)._totalPR;
                             const isFirst = (e as any)._isFirstMeet;
 
