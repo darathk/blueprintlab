@@ -93,20 +93,20 @@ function sessionKey(programId: string, weekNum: number, day: number) {
     return `${programId}_w${weekNum}_d${day}`;
 }
 
-/** Compute the date range label for a given program week, anchored to startDate snapped to Sunday */
-function weekDateRange(programStartDate: any, weekNumber: number): string {
-    if (!programStartDate) return `Week ${weekNumber}`;
+/** Compute the Sun-Sat date range for the calendar week containing a given date */
+function weekDateRangeFromDate(programStartDate: any, weekNumber: number): string {
+    if (!programStartDate) return '';
     const start = parseLocalDate(programStartDate);
-    // Snap to Sunday so week ranges align with Sun-Sat calendar weeks
-    const sunday = new Date(start);
+    // Compute the actual session date anchor: start + (weekNumber-1)*7
+    const anchor = new Date(start);
+    anchor.setDate(anchor.getDate() + (weekNumber - 1) * 7);
+    // Snap to the Sunday of that week
+    const sunday = new Date(anchor);
     sunday.setDate(sunday.getDate() - sunday.getDay());
-    // Week starts at sunday + (weekNumber-1)*7
-    const weekStart = new Date(sunday);
-    weekStart.setDate(weekStart.getDate() + (weekNumber - 1) * 7);
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekEnd.getDate() + 6);
+    const saturday = new Date(sunday);
+    saturday.setDate(saturday.getDate() + 6);
     const fmt = (d: Date) => `${SHORT_MONTHS[d.getMonth()]} ${d.getDate()}`;
-    return `${fmt(weekStart)} – ${fmt(weekEnd)}`;
+    return `${fmt(sunday)} – ${fmt(saturday)}`;
 }
 
 function sessionProgress(exercises: any[], log: any, editStateData?: any[]): number {
@@ -189,7 +189,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
 
     const openWeekDrawer = (program: any, week: any) => {
         const wn = week.weekNumber || 1;
-        const dateRange = weekDateRange(program.startDate, wn);
+        const dateRange = weekDateRangeFromDate(program.startDate, wn);
         setWeekDrawer({
             open: true,
             programId: program.id,
@@ -431,33 +431,53 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
 
         programs.forEach(program => {
             if (!program.startDate) return;
-            const rawStart = parseLocalDate(program.startDate);
-            // Snap to Sunday so session dates align with Sun-Sat calendar weeks (matching ProgramBuilder grid)
-            const start = new Date(rawStart);
-            start.setDate(start.getDate() - start.getDay());
+            // Use RAW startDate for date computation — weekNum/dayNum are stored relative to this
+            const start = parseLocalDate(program.startDate);
+            // Snap to Sunday only for computing calendar-week display numbers
+            const startSunday = new Date(start);
+            startSunday.setDate(startSunday.getDate() - startSunday.getDay());
             const isActive = program.status === 'active';
 
             const weeks: any[] = Array.isArray(program.weeks) ? program.weeks : [];
-            // Sort weeks with sessions by weekNumber to compute sequential display index (skip empty weeks)
-            const weeksWithSessions = [...weeks].filter((w: any) => Array.isArray(w?.sessions) && w.sessions.length > 0).sort((a: any, b: any) => (a?.weekNumber || 1) - (b?.weekNumber || 1));
+            // Collect all sessions with their computed dates to determine sequential week display
+            const allSessionDates: { wn: number; date: Date }[] = [];
             weeks.forEach((week: any) => {
                 const wn = week.weekNumber || 1;
-                // Sequential 1-based display week number (only counting weeks that have sessions)
-                const weekDisplayNum = weeksWithSessions.findIndex((w: any) => (w?.weekNumber || 1) === wn) + 1;
+                const sessions: any[] = Array.isArray(week.sessions) ? week.sessions : [];
+                sessions.forEach((session: any) => {
+                    const day = session.day || 1;
+                    const d = new Date(start);
+                    d.setDate(d.getDate() + (wn - 1) * 7 + (day - 1));
+                    allSessionDates.push({ wn, date: d });
+                });
+            });
+            // Get unique calendar weeks (Sun-Sat) that have sessions, sorted chronologically
+            const calendarWeekSundays = [...new Set(allSessionDates.map(s => {
+                const sun = new Date(s.date);
+                sun.setDate(sun.getDate() - sun.getDay());
+                return sun.getTime();
+            }))].sort((a, b) => a - b);
+
+            weeks.forEach((week: any) => {
+                const wn = week.weekNumber || 1;
                 const sessions: any[] = Array.isArray(week.sessions) ? week.sessions : [];
                 // Sort sessions by day to determine sequential session number
                 const sortedSessions = [...sessions].sort((a: any, b: any) => (a?.day || 1) - (b?.day || 1));
                 sessions.forEach((session: any) => {
                     const day = session.day || 1;
-                    // Compute actual date: sunday-snapped start + (wn-1)*7 + (day-1)
+                    // Compute actual date from raw startDate
                     const d = new Date(start);
                     d.setDate(d.getDate() + (wn - 1) * 7 + (day - 1));
                     const ds = toDateStr(d);
                     const sKey = sessionKey(program.id, wn, day);
+                    // Compute calendar-week display number (1-based, only counting weeks with sessions)
+                    const sessionSunday = new Date(d);
+                    sessionSunday.setDate(sessionSunday.getDate() - sessionSunday.getDay());
+                    const weekDisplayNum = calendarWeekSundays.indexOf(sessionSunday.getTime()) + 1;
                     // sessionNum is the 1-based position of this session in the week (sorted by day)
                     const sessionNum = sortedSessions.findIndex((s: any) => (s?.day || 1) === day) + 1;
                     if (!map[ds]) map[ds] = [];
-                    map[ds].push({ program, weekNum: wn, weekDisplayNum, session, sKey, isActive, sessionNum });
+                    map[ds].push({ program, weekNum: wn, weekDisplayNum: weekDisplayNum || 1, session, sKey, isActive, sessionNum });
                 });
             });
         });
@@ -755,7 +775,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                 {session.name || `Session ${session.day}`}
                                                             </div>
                                                             <div style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', marginTop: 2 }}>
-                                                                {program.name} — Week {weekDisplayNum} • {weekDateRange(program.startDate, weekNum)}
+                                                                {program.name} — Week {weekDisplayNum} • {weekDateRangeFromDate(program.startDate, weekNum)}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1238,7 +1258,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                 color: 'var(--foreground)', cursor: 'pointer', fontSize: '1rem', fontWeight: 600
                                             }}
                                         >
-                                            <span>Week {weekDisplayNum} — {weekDateRange(program.startDate, weekNum)} <span style={{ fontWeight: 400, color: 'var(--secondary-foreground)', fontSize: '0.85rem' }}>• {sessions.length} session{sessions.length !== 1 ? 's' : ''}</span></span>
+                                            <span>Week {weekDisplayNum} — {weekDateRangeFromDate(program.startDate, weekNum)} <span style={{ fontWeight: 400, color: 'var(--secondary-foreground)', fontSize: '0.85rem' }}>• {sessions.length} session{sessions.length !== 1 ? 's' : ''}</span></span>
                                             <span style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', transition: 'transform 200ms', transform: weekOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
                                         </button>
                                         {/* Week Overview Button */}
