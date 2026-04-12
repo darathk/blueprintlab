@@ -51,7 +51,7 @@ export async function GET(request: Request) {
                 WHERE "receiverId" = $1 AND read = false
                 GROUP BY "senderId"
             ) unread_count ON unread_count."senderId" = a.id
-            WHERE a.id != $1
+            WHERE a.id != $1 AND a."coachId" = $1
             ORDER BY CASE WHEN COALESCE(unread_count.count, 0) > 0 THEN 1 ELSE 0 END DESC, "lastMessageAt" DESC;
         `;
 

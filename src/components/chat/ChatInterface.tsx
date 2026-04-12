@@ -324,7 +324,15 @@ export default function ChatInterface({
                         body: JSON.stringify({ athleteId: otherUserId, readerId: currentUserId })
                     }).then(() => window.dispatchEvent(new Event('unread-refresh')));
                 }
-            ).subscribe((status) => {
+            )
+            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'Message' }, (payload) => {
+                // Handle reaction updates from the other user
+                const updatedMsg = payload.new;
+                if (updatedMsg && (updatedMsg.senderId === otherUserId || updatedMsg.receiverId === otherUserId)) {
+                    setMessages(prev => prev.map(m => m.id === updatedMsg.id ? { ...m, reactions: updatedMsg.reactions, read: updatedMsg.read, content: updatedMsg.content } : m));
+                }
+            })
+            .subscribe((status) => {
                 realtimeConnected.current = status === 'SUBSCRIBED';
             });
         return () => { supabase.removeChannel(ch); realtimeConnected.current = false; };
@@ -692,6 +700,7 @@ export default function ChatInterface({
     // Send GIF as a message
     const handleSendGif = async (gifUrl: string) => {
         setShowGifPicker(false);
+        const savedReplyTo = replyingTo;
         const tempId = `temp-${Date.now()}`;
         const optimisticMsg: Message = {
             id: tempId,
@@ -702,8 +711,8 @@ export default function ChatInterface({
             mediaType: 'image/gif',
             createdAt: new Date().toISOString(),
             read: false,
-            replyToId: replyingTo?.id || null,
-            replyTo: replyingTo ? { id: replyingTo.id, content: replyingTo.content, mediaUrl: replyingTo.mediaUrl, mediaType: replyingTo.mediaType, sender: replyingTo.sender } : null,
+            replyToId: savedReplyTo?.id || null,
+            replyTo: savedReplyTo ? { id: savedReplyTo.id, content: savedReplyTo.content, mediaUrl: savedReplyTo.mediaUrl, mediaType: savedReplyTo.mediaType, sender: savedReplyTo.sender } : null,
             sender: { id: currentUserId, name: currentUserName, email: '' },
             receiver: { id: otherUserId, name: otherUserName, email: '' },
         };
@@ -719,7 +728,7 @@ export default function ChatInterface({
                     content: 'GIF',
                     mediaUrl: gifUrl,
                     mediaType: 'image/gif',
-                    replyToId: replyingTo?.id || null,
+                    replyToId: savedReplyTo?.id || null,
                 }),
             });
             if (res.ok) {
@@ -852,8 +861,26 @@ export default function ChatInterface({
             URL.revokeObjectURL(stagedFileUrls[index]);
             setStagedFiles(prev => prev.filter((_, i) => i !== index));
             setStagedFileUrls(prev => prev.filter((_, i) => i !== index));
-            setStagedPosters(prev => { const n = { ...prev }; delete n[index]; return n; });
-            setStagedTrimData(prev => { const n = { ...prev }; delete n[index]; return n; });
+            
+            // Re-map indices for posters and trim data to prevent corruption
+            setStagedPosters(prev => {
+                const n: Record<number, string> = {};
+                Object.entries(prev).forEach(([key, val]) => {
+                    const k = parseInt(key);
+                    if (k < index) n[k] = val;
+                    else if (k > index) n[k - 1] = val;
+                });
+                return n;
+            });
+            setStagedTrimData(prev => {
+                const n: Record<number, { start: number; end: number }> = {};
+                Object.entries(prev).forEach(([key, val]) => {
+                    const k = parseInt(key);
+                    if (k < index) n[k] = val;
+                    else if (k > index) n[k - 1] = val;
+                });
+                return n;
+            });
         } else {
             stagedFileUrls.forEach(url => URL.revokeObjectURL(url));
             setStagedFiles([]);
@@ -934,13 +961,17 @@ export default function ChatInterface({
                 </>
             );
         }
+        
+        // Escape regex special characters to prevent injection/crashing
+        const escapedSearch = searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        
         return (
             <>
                 {parts.map((part, i) => {
                     if (isUrl(part)) {
                         return <a key={i} href={part} target="_blank" rel="noopener noreferrer" style={{ color: '#22d3ee', textDecoration: 'underline' }}>{part}</a>;
                     }
-                    const searchParts = part.split(new RegExp(`(${searchText})`, 'gi'));
+                    const searchParts = part.split(new RegExp(`(${escapedSearch})`, 'gi'));
                     return searchParts.map((sp, j) =>
                         sp.toLowerCase() === searchText.toLowerCase()
                             ? <mark key={`${i}-${j}`} style={{ background: 'rgba(6, 182, 212, 0.4)', color: '#fff', borderRadius: 2, padding: '0 2px' }}>{sp}</mark>
@@ -1055,7 +1086,18 @@ export default function ChatInterface({
                         <button onClick={() => setSelectedMessageIds(new Set())} style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><X size={20} /></button>
                         <div style={{ flex: 1, fontWeight: 600, color: 'var(--primary)', fontSize: 16 }}>{selectedMessageIds.size} Selected</div>
                         <button onClick={handleCopyMultiple} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 20, color: '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer', padding: '6px 14px' }}><Copy size={14} color="#fff" /> Copy</button>
-                        <button onClick={async () => { if (!confirmBulkDelete) { setConfirmBulkDelete(true); return; } setConfirmBulkDelete(false); for (const id of selectedMessageIds) { setMessages(prev => prev.filter(m => m.id !== id)); await fetch(`/api/messages?id=${id}`, { method: 'DELETE' }); } setSelectedMessageIds(new Set()); }} style={{ display: 'flex', alignItems: 'center', gap: 6, background: confirmBulkDelete ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.05)', border: confirmBulkDelete ? '1px solid rgba(239,68,68,0.3)' : '1px solid rgba(255,255,255,0.08)', color: '#ef4444', fontSize: 13, fontWeight: 600, cursor: 'pointer', borderRadius: 20, padding: '6px 14px' }}><X size={14} color="#ef4444" /> {confirmBulkDelete ? 'Tap to confirm' : 'Delete'}</button>
+                        <button onClick={async () => { 
+                            if (!confirmBulkDelete) { setConfirmBulkDelete(true); return; } 
+                            setConfirmBulkDelete(false); 
+                            const idsToDelete = Array.from(selectedMessageIds);
+                            // Optimistically remove from UI
+                            setMessages(prev => prev.filter(m => !selectedMessageIds.has(m.id)));
+                            setSelectedMessageIds(new Set());
+                            
+                            // Delete in parallel
+                            await Promise.allSettled(idsToDelete.map(id => fetch(`/api/messages?id=${id}`, { method: 'DELETE' })));
+                            window.dispatchEvent(new Event('inbox-refresh'));
+                        }} style={{ display: 'flex', alignItems: 'center', gap: 6, background: confirmBulkDelete ? 'rgba(239,68,68,0.1)' : 'rgba(255,255,255,0.05)', border: confirmBulkDelete ? '1px solid rgba(239,68,68,0.3)' : '1px solid rgba(255,255,255,0.08)', color: '#ef4444', fontSize: 13, fontWeight: 600, cursor: 'pointer', borderRadius: 20, padding: '6px 14px' }}><X size={14} color="#ef4444" /> {confirmBulkDelete ? 'Tap to confirm' : 'Delete'}</button>
                     </>
                 ) : (
                     <>
@@ -1306,7 +1348,7 @@ export default function ChatInterface({
                                                         <X size={14} color="var(--secondary-foreground)" />
                                                     </button>
                                                 </div>
-                                            ) : (!msg.mediaUrl || (msg.content && !['Video', 'Photo', 'GIF'].includes(msg.content.trim()))) ? (
+                                            ) : (!msg.mediaUrl || (msg.content && !['Video', 'Photo', 'GIF', 'Voice Message'].includes(msg.content.trim()))) ? (
                                                 <div style={{ fontSize: 14, lineHeight: 1.4, color: 'rgba(255,255,255,0.9)', padding: msg.mediaUrl ? '0 10px' : 0, whiteSpace: 'pre-wrap' }}>{highlightMatch(msg.content)}</div>
                                             ) : null}
 
@@ -1622,7 +1664,7 @@ export default function ChatInterface({
                         paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))',
                         color: '#fff', background: 'var(--card-bg)'
                     }}>
-                        <button onClick={() => { setStagedFiles([]); setStagedFileUrls([]); setStagedPosters({}); setStagedPreviewIndex(0); }} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: 4 }}>
+                        <button onClick={() => clearStagedMedia()} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: 4 }}>
                             <X size={26} />
                         </button>
                         <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
