@@ -216,6 +216,7 @@ export default function ProgramList({ athleteId, initialPrograms }: { athleteId:
     };
 
     const openDropdown = (programId: string, mode: DropdownMode) => {
+        setAthleteSearch(''); // Reset search when opening/switching
         if (dropdownOpen?.programId === programId && dropdownOpen?.mode === mode) {
             setDropdownOpen(null);
         } else {
@@ -232,6 +233,13 @@ export default function ProgramList({ athleteId, initialPrograms }: { athleteId:
         color: isActive ? 'var(--primary)' : 'var(--secondary-foreground)',
         transition: 'all 0.2s',
     });
+
+    const [athleteSearch, setAthleteSearch] = useState('');
+
+    const filteredAthletes = athletes.filter(a => 
+        a.name.toLowerCase().includes(athleteSearch.toLowerCase()) || 
+        a.email.toLowerCase().includes(athleteSearch.toLowerCase())
+    );
 
     return (
         <div style={{ marginTop: '2rem' }}>
@@ -301,17 +309,37 @@ export default function ProgramList({ athleteId, initialPrograms }: { athleteId:
                                         borderRadius: 10, backdropFilter: 'blur(12px)',
                                     }}
                                 >
-                                    <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginBottom: '0.5rem', fontWeight: 600 }}>
-                                        {isTransferOpen ? 'Transfer to:' : 'Copy to:'}
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', fontWeight: 600 }}>
+                                            {isTransferOpen ? 'Transfer to:' : 'Copy to:'}
+                                        </div>
                                     </div>
+
+                                    {/* Search input field */}
+                                    <input
+                                        type="text"
+                                        placeholder="Search athletes..."
+                                        autoFocus
+                                        value={athleteSearch}
+                                        onChange={(e) => setAthleteSearch(e.target.value)}
+                                        style={{
+                                            width: '100%', marginBottom: '0.75rem', padding: '0.4rem 0.6rem',
+                                            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
+                                            borderRadius: 6, color: 'var(--foreground)', fontSize: '0.8rem', outline: 'none'
+                                        }}
+                                    />
 
                                     {athletes.length === 0 ? (
                                         <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', padding: '0.5rem 0' }}>
                                             Loading athletes...
                                         </div>
+                                    ) : filteredAthletes.length === 0 ? (
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', padding: '0.5rem 0', textAlign: 'center' }}>
+                                            No athletes found
+                                        </div>
                                     ) : (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', maxHeight: 200, overflowY: 'auto' }}>
-                                            {athletes.map((a: any) => (
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', maxHeight: 200, overflowY: 'auto', paddingRight: '2px' }}>
+                                            {filteredAthletes.map((a: any) => (
                                                 <button
                                                     key={a.id}
                                                     disabled={actionLoading}
