@@ -94,7 +94,7 @@ async function AthleteData({ id }: { id: string }) {
             </CollapsibleSection>
 
             <CollapsibleSection title="Program History" defaultOpen={false}>
-                <ProgramList athleteId={id} />
+                <ProgramList athleteId={id} initialPrograms={programs} />
             </CollapsibleSection>
         </>
     );

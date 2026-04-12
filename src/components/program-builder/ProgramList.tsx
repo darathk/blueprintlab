@@ -6,9 +6,12 @@ import { useRouter } from 'next/navigation';
 
 type DropdownMode = 'transfer' | 'copy';
 
-export default function ProgramList({ athleteId }) {
+export default function ProgramList({ athleteId, initialPrograms }: { athleteId: string; initialPrograms?: any[] }) {
     const router = useRouter();
-    const [programs, setPrograms] = useState([]);
+    const [programs, setPrograms] = useState(
+        initialPrograms ? initialPrograms.filter((p: any) => p.athleteId === athleteId && p.status !== 'draft') : []
+    );
+    const [loading, setLoading] = useState(!initialPrograms);
     const [dropdownOpen, setDropdownOpen] = useState<{ programId: string; mode: DropdownMode } | null>(null);
     const [athletes, setAthletes] = useState<any[]>([]);
     const [actionLoading, setActionLoading] = useState(false);
@@ -16,13 +19,19 @@ export default function ProgramList({ athleteId }) {
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
+        if (initialPrograms) return; // Skip fetch if data was provided
         const loadPrograms = async () => {
-            const res = await fetch(`/api/programs?athleteId=${athleteId}`);
-            const data = await res.json();
-            setPrograms(data.filter((p: any) => p.athleteId === athleteId && p.status !== 'draft'));
+            try {
+                const res = await fetch(`/api/programs?athleteId=${athleteId}`);
+                const data = await res.json();
+                setPrograms(data.filter((p: any) => p.athleteId === athleteId && p.status !== 'draft'));
+            } catch (e) {
+                console.error('Failed to load programs:', e);
+            }
+            setLoading(false);
         };
         loadPrograms();
-    }, [athleteId]);
+    }, [athleteId, initialPrograms]);
 
     // Load athletes list when dropdown is opened
     useEffect(() => {
@@ -172,7 +181,16 @@ export default function ProgramList({ athleteId }) {
         }
     };
 
-    if (programs.length === 0) return null;
+    if (loading) return (
+        <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--secondary-foreground)' }}>
+            Loading programs...
+        </div>
+    );
+    if (programs.length === 0) return (
+        <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--secondary-foreground)' }}>
+            No programs found for this athlete.
+        </div>
+    );
 
     // Count only weeks that have at least one session
     const activeWeekCount = (weeks) => {
