@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Papa from 'papaparse';
 import { Upload, Plus, X, Trash2, Pencil, Check } from 'lucide-react';
 import { calculateGL, calculateDots } from '@/lib/calculators';
-import { BarChart, Bar, Cell, LabelList, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { BarChart, Bar, LabelList, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
 interface MeetEntry {
     id: string;
@@ -426,32 +426,30 @@ export default function MeetDataTable({ athletes, coachId }: Props) {
     };
 
     const attemptStats = useMemo(() => {
-        let stats = [
-            { name: '1st Attempts', total: 0, good: 0 },
-            { name: '2nd Attempts', total: 0, good: 0 },
-            { name: '3rd Attempts', total: 0, good: 0 },
-        ];
+        const liftStats = {
+            squat: [{ total: 0, good: 0 }, { total: 0, good: 0 }, { total: 0, good: 0 }],
+            bench: [{ total: 0, good: 0 }, { total: 0, good: 0 }, { total: 0, good: 0 }],
+            deadlift: [{ total: 0, good: 0 }, { total: 0, good: 0 }, { total: 0, good: 0 }],
+        };
 
         for (const e of entries) {
-            // Squat
-            if (e.squat[0] && e.squat[0] > 0) { stats[0].total++; if (e.squatResults[0]) stats[0].good++; }
-            if (e.squat[1] && e.squat[1] > 0) { stats[1].total++; if (e.squatResults[1]) stats[1].good++; }
-            if (e.squat[2] && e.squat[2] > 0) { stats[2].total++; if (e.squatResults[2]) stats[2].good++; }
-            // Bench
-            if (e.bench[0] && e.bench[0] > 0) { stats[0].total++; if (e.benchResults[0]) stats[0].good++; }
-            if (e.bench[1] && e.bench[1] > 0) { stats[1].total++; if (e.benchResults[1]) stats[1].good++; }
-            if (e.bench[2] && e.bench[2] > 0) { stats[2].total++; if (e.benchResults[2]) stats[2].good++; }
-            // Deadlift
-            if (e.deadlift[0] && e.deadlift[0] > 0) { stats[0].total++; if (e.deadliftResults[0]) stats[0].good++; }
-            if (e.deadlift[1] && e.deadlift[1] > 0) { stats[1].total++; if (e.deadliftResults[1]) stats[1].good++; }
-            if (e.deadlift[2] && e.deadlift[2] > 0) { stats[2].total++; if (e.deadliftResults[2]) stats[2].good++; }
+            for (let i = 0; i < 3; i++) {
+                if (e.squat[i] && e.squat[i] > 0) { liftStats.squat[i].total++; if (e.squatResults[i]) liftStats.squat[i].good++; }
+                if (e.bench[i] && e.bench[i] > 0) { liftStats.bench[i].total++; if (e.benchResults[i]) liftStats.bench[i].good++; }
+                if (e.deadlift[i] && e.deadlift[i] > 0) { liftStats.deadlift[i].total++; if (e.deadliftResults[i]) liftStats.deadlift[i].good++; }
+            }
         }
 
-        return stats.map(s => ({
-            name: s.name,
-            successRate: s.total > 0 ? Number(((s.good / s.total) * 100).toFixed(1)) : 0,
-            good: s.good,
-            total: s.total,
+        const pct = (good: number, total: number) => total > 0 ? Number(((good / total) * 100).toFixed(1)) : 0;
+
+        return [0, 1, 2].map(i => ({
+            name: `${i + 1}${i === 0 ? 'st' : i === 1 ? 'nd' : 'rd'} Attempt`,
+            Squat: pct(liftStats.squat[i].good, liftStats.squat[i].total),
+            Bench: pct(liftStats.bench[i].good, liftStats.bench[i].total),
+            Deadlift: pct(liftStats.deadlift[i].good, liftStats.deadlift[i].total),
+            squatLabel: `${liftStats.squat[i].good}/${liftStats.squat[i].total}`,
+            benchLabel: `${liftStats.bench[i].good}/${liftStats.bench[i].total}`,
+            deadliftLabel: `${liftStats.deadlift[i].good}/${liftStats.deadlift[i].total}`,
         }));
     }, [entries]);
 
@@ -594,33 +592,46 @@ export default function MeetDataTable({ athletes, coachId }: Props) {
                 </div>
             )}
 
-            {/* Chart Section */}
+            {/* Chart Section — Attempt Success by Lift */}
             {entries.length > 0 && (
                 <div style={{ marginBottom: '1.5rem', background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '0.75rem', padding: '1.25rem' }}>
-                    <div style={{ marginBottom: '1.5rem' }}>
-                        <label style={{ fontSize: '0.85rem', color: 'var(--secondary-foreground)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Roster Success Rate by Attempt</label>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                        <label style={{ fontSize: '0.85rem', color: 'var(--secondary-foreground)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Attempt Success Rate by Lift</label>
+                        <div style={{ display: 'flex', gap: '1rem', fontSize: '0.7rem', color: '#cbd5e1' }}>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: 10, height: 10, borderRadius: 2, background: '#7d87d2', display: 'inline-block' }} /> Squat</span>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: 10, height: 10, borderRadius: 2, background: '#a855f7', display: 'inline-block' }} /> Bench</span>
+                            <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}><span style={{ width: 10, height: 10, borderRadius: 2, background: '#10b981', display: 'inline-block' }} /> Deadlift</span>
+                        </div>
                     </div>
                     
-                    <ResponsiveContainer width="100%" height={180}>
-                        <BarChart data={attemptStats} margin={{ top: 20, right: 0, left: 0, bottom: 0 }} maxBarSize={60}>
+                    <ResponsiveContainer width="100%" height={210}>
+                        <BarChart data={attemptStats} margin={{ top: 20, right: 0, left: 0, bottom: 0 }} barGap={2} barCategoryGap="25%">
                             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
                             <XAxis dataKey="name" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} />
                             <YAxis domain={[0, 100]} tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={40} tickFormatter={(val) => `${val}%`} />
-                            <Tooltip cursor={{ fill: 'rgba(255,255,255,0.02)' }} contentStyle={{ background: 'rgba(15,23,42,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8, fontSize: 12, color: '#fff' }} formatter={(val: number, name: string, props: any) => {
-                                if (name === 'successRate') return [`${val}%`, 'Success Rate'];
-                                if (name === 'good') return [`${val} / ${props.payload.total}`, 'Made'];
-                                return [val, name];
-                            }} />
-                            <Bar dataKey="successRate" radius={[4, 4, 0, 0]}>
-                                <LabelList dataKey="successRate" position="top" fill="#fff" fontSize={11} formatter={(val: number) => `${val}%`} />
-                                {attemptStats.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={index === 0 ? '#4ade80' : index === 1 ? '#fbbf24' : '#f87171'} />
-                                ))}
+                            <Tooltip
+                                cursor={{ fill: 'rgba(255,255,255,0.04)' }}
+                                contentStyle={{ background: 'rgba(15,23,42,0.95)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 8, fontSize: 12, color: '#fff' }}
+                                labelStyle={{ color: '#fff', fontWeight: 700, marginBottom: 4 }}
+                                itemStyle={{ color: '#fff', padding: '1px 0' }}
+                                formatter={(val: number, name: string, props: any) => {
+                                    const key = name === 'Squat' ? 'squatLabel' : name === 'Bench' ? 'benchLabel' : 'deadliftLabel';
+                                    return [`${val}%  (${props.payload[key]})`, name];
+                                }}
+                            />
+                            <Bar dataKey="Squat" fill="#7d87d2" radius={[3, 3, 0, 0]} maxBarSize={36}>
+                                <LabelList dataKey="Squat" position="top" fill="#fff" fontSize={9} formatter={(val: number) => val > 0 ? `${val}%` : ''} />
+                            </Bar>
+                            <Bar dataKey="Bench" fill="#a855f7" radius={[3, 3, 0, 0]} maxBarSize={36}>
+                                <LabelList dataKey="Bench" position="top" fill="#fff" fontSize={9} formatter={(val: number) => val > 0 ? `${val}%` : ''} />
+                            </Bar>
+                            <Bar dataKey="Deadlift" fill="#10b981" radius={[3, 3, 0, 0]} maxBarSize={36}>
+                                <LabelList dataKey="Deadlift" position="top" fill="#fff" fontSize={9} formatter={(val: number) => val > 0 ? `${val}%` : ''} />
                             </Bar>
                         </BarChart>
                     </ResponsiveContainer>
                     <div style={{ textAlign: 'center', fontSize: 10, color: 'rgba(148,163,184,0.5)', marginTop: 10 }}>
-                        Aggregated success percentage across all athletes and meets plotted above.
+                        Aggregated success percentage across all athletes and meets, grouped by lift.
                     </div>
                 </div>
             )}
