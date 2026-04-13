@@ -7,10 +7,11 @@ const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 function getDatabaseUrl() {
   const url = process.env.DATABASE_URL || '';
   if (!url) return url;
-  // Remove any existing connection_limit param and replace with 1
-  const cleaned = url.replace(/[?&]connection_limit=\d+/g, '');
+  // Remove existing limit and timeout params
+  let cleaned = url.replace(/[?&]connection_limit=\d+/g, '');
+  cleaned = cleaned.replace(/[?&]pool_timeout=\d+/g, '');
   const separator = cleaned.includes('?') ? '&' : '?';
-  return `${cleaned}${separator}connection_limit=10`;
+  return `${cleaned}${separator}connection_limit=3&pool_timeout=20`;
 }
 
 export const prisma =
