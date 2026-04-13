@@ -294,6 +294,17 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
                  if (currIdx >= 0 && currIdx < activeSorted.length - 1) {
                       hasNextBlockReady = true;
                  }
+                 // DEBUG: remove after confirming fix
+                 console.log('[DEBUG needsUpdate]', athlete.name, {
+                     activeProgId,
+                     currentProgramName: currentProgram?.name,
+                     activeSortedCount: activeSorted.length,
+                     activeSortedNames: activeSorted.map(p => `${p.name} (${p.status}, start=${p.startDate})`),
+                     currIdx,
+                     hasNextBlockReady,
+                     athleteProgramsCount: athletePrograms.length,
+                     athleteProgramStatuses: athletePrograms.map(p => `${p.name}: ${p.status}`),
+                 });
             }
 
             // Needs update: athlete is within 1 week of sessions remaining in this block (logs)
