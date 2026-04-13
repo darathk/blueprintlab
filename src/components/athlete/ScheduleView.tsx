@@ -129,12 +129,13 @@ function sessionProgress(exercises: any[], log: any, editStateData?: any[]): num
 }
 
 /* ─────────── component ─────────── */
-export default function ScheduleView({ programs, athleteId, coachId, logs, isCoachView = false }: {
+export default function ScheduleView({ programs, athleteId, coachId, logs, isCoachView = false, nextMeetDate = null }: {
     programs: any[];
     athleteId: string;
     coachId?: string;
     logs: any[];
     isCoachView?: boolean;
+    nextMeetDate?: string | null;
 }) {
     const router = useRouter();
 
@@ -488,7 +489,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
     const dateStrip = useMemo(() => {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
-        const days: { date: Date; dateStr: string; isToday: boolean; hasSession: boolean; hasActiveSession: boolean }[] = [];
+        const days: { date: Date; dateStr: string; isToday: boolean; hasSession: boolean; hasActiveSession: boolean, isMeet: boolean }[] = [];
         for (let i = -30; i <= 30; i++) {
             const d = new Date(today);
             d.setDate(d.getDate() + i);
@@ -500,10 +501,11 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                 isToday: i === 0,
                 hasSession: sessions.length > 0,
                 hasActiveSession: sessions.some(s => s.isActive),
+                isMeet: ds === nextMeetDate,
             });
         }
         return days;
-    }, [sessionsByDate]);
+    }, [sessionsByDate, nextMeetDate]);
 
     // Scroll to today on mount
     useEffect(() => {
@@ -623,17 +625,20 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                             }}>
                                 {d.date.getDate()}
                             </span>
-                            {/* Session dot indicator */}
-                            <div style={{
-                                width: 5,
-                                height: 5,
-                                borderRadius: '50%',
-                                background: d.hasSession
-                                    ? isSelected ? 'white'
-                                        : d.hasActiveSession ? 'var(--accent)' : 'rgba(148, 163, 184, 0.4)'
-                                    : 'transparent',
-                                transition: 'background 0.2s',
-                            }} />
+                            {/* Session/Meet indicators */}
+                            <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
+                                {d.isMeet && <span style={{ fontSize: '0.65rem' }}>🏆</span>}
+                                <div style={{
+                                    width: 5,
+                                    height: 5,
+                                    borderRadius: '50%',
+                                    background: d.hasSession
+                                        ? isSelected ? 'white'
+                                            : d.hasActiveSession ? 'var(--accent)' : 'rgba(148, 163, 184, 0.4)'
+                                        : 'transparent',
+                                    transition: 'background 0.2s',
+                                }} />
+                            </div>
                         </div>
                     );
                 })}

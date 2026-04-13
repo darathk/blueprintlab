@@ -23,6 +23,7 @@ async function AsyncSchedule({ id }: { id: string }) {
                 athleteId={id}
                 coachId={athlete?.coachId || ''}
                 logs={logs as any}
+                nextMeetDate={athlete?.nextMeetDate}
             />
         );
     } catch (e) {

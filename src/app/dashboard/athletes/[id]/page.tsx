@@ -75,6 +75,7 @@ async function AthleteData({ id }: { id: string }) {
                     currentProgramId={athlete?.currentProgramId}
                     logs={logs}
                     travelEvents={travelEvents}
+                    nextMeetDate={athlete?.nextMeetDate}
                 />
             </CollapsibleSection>
 

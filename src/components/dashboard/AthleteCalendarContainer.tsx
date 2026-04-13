@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import MasterProgramCalendar from './MasterProgramCalendar';
 import SessionDetailsModal from './SessionDetailsModal';
 
-export default function AthleteCalendarContainer({ programs, athleteId, currentProgramId, logs = [], travelEvents = [] }) {
+export default function AthleteCalendarContainer({ programs, athleteId, currentProgramId, logs = [], travelEvents = [], nextMeetDate = null }) {
     const [selectedSession, setSelectedSession] = useState(null);
     const [localLogs, setLocalLogs] = useState(logs);
     const [localTravelDates, setLocalTravelDates] = useState(travelEvents.map(e => e.date));
@@ -81,6 +81,7 @@ export default function AthleteCalendarContainer({ programs, athleteId, currentP
                 onToggleTravel={handleToggleTravel}
                 logs={localLogs}
                 travelDates={localTravelDates}
+                nextMeetDate={nextMeetDate}
             />
 
             {selectedSession && (

@@ -23,7 +23,8 @@ export default function MasterProgramCalendar({
     onSelectSession, 
     onToggleTravel,
     logs = [],
-    travelDates = []
+    travelDates = [],
+    nextMeetDate = null
 }: { 
     programs: any[], 
     athleteId?: string | null, 
@@ -31,7 +32,8 @@ export default function MasterProgramCalendar({
     onSelectSession: any, 
     onToggleTravel?: (date: string) => void,
     logs?: any[],
-    travelDates?: string[]
+    travelDates?: string[],
+    nextMeetDate?: string | null
 }) {
     const [currentMonth, setCurrentMonth] = useState(new Date());
 
@@ -129,17 +131,19 @@ export default function MasterProgramCalendar({
             const dateStr = toDateStr(date);
             const data = getProgramDataForDate(date);
             const isTravel = travelDates.includes(dateStr);
+            const isMeet = nextMeetDate === dateStr;
 
             days.push({
                 date,
                 dateStr,
                 isCurrentMonth: date.getMonth() === month,
                 isTravel,
+                isMeet,
                 ...data
             });
         }
         return days;
-    }, [currentMonth, athletePrograms, travelDates]);
+    }, [currentMonth, athletePrograms, travelDates, nextMeetDate]);
 
     const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -242,15 +246,52 @@ export default function MasterProgramCalendar({
                                             ✈️ Travel
                                         </div>
                                     )}
+                                    {day.isMeet && !hasSession && (
+                                        <div style={{
+                                            position: 'absolute',
+                                            bottom: day.isTravel ? '36px' : '8px',
+                                            left: '8px',
+                                            right: '8px',
+                                            background: 'rgba(56, 189, 248, 0.2)',
+                                            border: '1px solid rgba(56, 189, 248, 0.3)',
+                                            color: '#38bdf8',
+                                            padding: '4px 8px',
+                                            borderRadius: '4px',
+                                            fontSize: '0.7rem',
+                                            fontWeight: 600,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '4px'
+                                        }}>
+                                            🏆 Meet
+                                        </div>
+                                    )}
                                     {day.isTravel && hasSession && (
                                         <div style={{
                                             position: 'absolute',
                                             top: '4px',
                                             right: '4px',
                                             fontSize: '0.8rem',
-                                            zIndex: 5
-                                        }} title="Travel Day">
+                                            zIndex: 2,
+                                            background: 'rgba(245, 158, 11, 0.9)',
+                                            borderRadius: '100%',
+                                            width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                        }}>
                                             ✈️
+                                        </div>
+                                    )}
+                                    {day.isMeet && hasSession && (
+                                        <div style={{
+                                            position: 'absolute',
+                                            top: '4px',
+                                            left: '4px',
+                                            fontSize: '0.8rem',
+                                            zIndex: 2,
+                                            background: 'rgba(56, 189, 248, 0.9)',
+                                            borderRadius: '100%',
+                                            width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                        }}>
+                                            🏆
                                         </div>
                                     )}
                                 </div>
