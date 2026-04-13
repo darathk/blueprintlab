@@ -11,7 +11,10 @@ function getDatabaseUrl() {
   let cleaned = url.replace(/[?&]connection_limit=\d+/g, '');
   cleaned = cleaned.replace(/[?&]pool_timeout=\d+/g, '');
   const separator = cleaned.includes('?') ? '&' : '?';
-  return `${cleaned}${separator}connection_limit=3&pool_timeout=20`;
+  
+  // connection_limit=1 keeps Supabase Session pool alive across lambdas
+  // pool_timeout=0 prevents Prisma from timing out when parallel queries queue up on the 1 connection
+  return `${cleaned}${separator}connection_limit=1&pool_timeout=0`;
 }
 
 export const prisma =
