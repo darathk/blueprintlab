@@ -219,7 +219,6 @@ export default function MasterProgramCalendar({
                                                     📋
                                                 </div>
                                             </div>
-                                            </div>
                                         </div>
                                     )}
 
