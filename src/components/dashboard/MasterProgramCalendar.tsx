@@ -26,8 +26,8 @@ export default function MasterProgramCalendar({
     travelDates = []
 }: { 
     programs: any[], 
-    athleteId?: string, 
-    currentProgramId: string, 
+    athleteId?: string | null, 
+    currentProgramId?: string | null, 
     onSelectSession: any, 
     onToggleTravel?: (date: string) => void,
     logs?: any[],
@@ -126,6 +126,8 @@ export default function MasterProgramCalendar({
         for (let i = 0; i < 42; i++) {
             const date = new Date(gridStart);
             date.setDate(gridStart.getDate() + i);
+            const dateStr = toDateStr(date);
+            const data = getProgramDataForDate(date);
             const isTravel = travelDates.includes(dateStr);
 
             days.push({
