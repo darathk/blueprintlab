@@ -173,30 +173,43 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
                 const progLogs = athleteLogs.filter(l => l.programId === prog.id);
                 const uniqueSessions = new Set(progLogs.map(l => l.sessionId));
                 
-                activeProgId = prog.id; // Assume this one is active
+                activeProgId = prog.id;
                 
-                // If we've reached the last program in our list, we stay here.
                 if (i === activeSorted.length - 1) break;
 
-                // Check if the next program in the list has already started
-                let nextProgramHasStarted = false;
                 const nextProg = activeSorted[i + 1];
-                if (nextProg) {
-                    const nextStartStr = nextProg.startDate || nextProg.createdAt;
-                    if (nextStartStr) {
-                        const nextStart = parseLocalDateStr(nextStartStr);
-                        const now = new Date();
-                        now.setHours(0, 0, 0, 0);
-                        if (now >= nextStart) {
-                            nextProgramHasStarted = true;
-                        }
-                    }
-                }
+                const nextProgLogs = athleteLogs.filter(l => l.programId === nextProg.id);
+                const nextHasLogs = nextProgLogs.length > 0;
                 
                 const isComplete = totalSessions > 0 && uniqueSessions.size >= totalSessions;
 
-                // If this program is incomplete AND the next program hasn't started yet, we stay on this one.
-                if (!isComplete && !nextProgramHasStarted) {
+                // Check if next program has strictly started by date
+                let nextDateStarted = false;
+                if (nextProg.startDate) {
+                    const nextStart = parseLocalDateStr(nextProg.startDate);
+                    const now = new Date();
+                    now.setHours(0, 0, 0, 0);
+                    if (now >= nextStart) nextDateStarted = true;
+                }
+
+                // Check if current program is expired by date
+                let currentExpired = false;
+                const totalWeeks = (prog.weeks?.length || 0);
+                if (prog.startDate && totalWeeks > 0) {
+                    const expiryDate = parseLocalDateStr(prog.startDate);
+                    expiryDate.setDate(expiryDate.getDate() + totalWeeks * 7);
+                    const now = new Date();
+                    now.setHours(0, 0, 0, 0);
+                    if (now >= expiryDate) currentExpired = true;
+                }
+
+                // Advance if:
+                // 1. Current is complete
+                // 2. OR Athlete has already started the next one (has logs)
+                // 3. OR Current is expired AND next has started by date
+                const shouldAdvance = isComplete || nextHasLogs || (currentExpired && nextDateStarted);
+
+                if (!shouldAdvance) {
                     break;
                 }
             }
