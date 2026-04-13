@@ -288,15 +288,11 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
             const totalWeeks = progress.totalWeeks || 1;
             const sessionsPerWeek = Math.ceil(progress.totalSessions / totalWeeks);
 
-            // Check if a next block already exists that starts AFTER the current block
+            // Check if a next block already exists after the current program in the sorted list
             if (activeProgId) {
-                 const currProg = activeSorted.find(p => p.id === activeProgId);
-                 if (currProg && currProg.startDate) {
-                      const currStart = parseLocalDateStr(currProg.startDate).getTime();
-                      hasNextBlockReady = activeSorted.some(p => {
-                           if (!p.startDate) return false;
-                           return parseLocalDateStr(p.startDate).getTime() > currStart;
-                      });
+                 const currIdx = activeSorted.findIndex(p => p.id === activeProgId);
+                 if (currIdx >= 0 && currIdx < activeSorted.length - 1) {
+                      hasNextBlockReady = true;
                  }
             }
 
