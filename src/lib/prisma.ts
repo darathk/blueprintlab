@@ -10,7 +10,7 @@ function getDatabaseUrl() {
   // Remove any existing connection_limit param and replace with 1
   const cleaned = url.replace(/[?&]connection_limit=\d+/g, '');
   const separator = cleaned.includes('?') ? '&' : '?';
-  return `${cleaned}${separator}connection_limit=1`;
+  return `${cleaned}${separator}connection_limit=10`;
 }
 
 export const prisma =

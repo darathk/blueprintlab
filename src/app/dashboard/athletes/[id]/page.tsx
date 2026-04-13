@@ -1,5 +1,5 @@
 import { Suspense } from 'react';
-import { getAthleteById, getLogsByAthlete, getReadinessByAthlete, getProgramsByAthlete } from '@/lib/storage';
+import { getAthleteById, getLogsByAthlete, getReadinessByAthlete, getProgramsByAthlete, getTravelEventsByAthlete } from '@/lib/storage';
 import Link from 'next/link';
 import ProgramList from '@/components/program-builder/ProgramList';
 import BlockOrganizer from '@/components/dashboard/BlockOrganizer';
