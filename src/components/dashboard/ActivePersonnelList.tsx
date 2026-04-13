@@ -304,7 +304,7 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
                 }
             }
 
-            needsUpdate = (sessionsRemaining > 0 && sessionsRemaining <= sessionsPerWeek) || isEndingSoonByTime || isExpired;
+            needsUpdate = ((sessionsRemaining > 0 && sessionsRemaining <= sessionsPerWeek) || isEndingSoonByTime || isExpired) && !hasNextBlockReady;
         }
 
         return {

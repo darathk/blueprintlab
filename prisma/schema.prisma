@@ -35,8 +35,21 @@ model Athlete {
   programTemplates  ProgramTemplate[]  @relation("CoachTemplates")
   coachNotes        CoachNote[]        @relation("CoachNotes")
   athleteNotes      CoachNote[]        @relation("AthleteNotes")
+  travelEvents      TravelEvent[]
 
   @@index([coachId])
+}
+
+model TravelEvent {
+  id        String   @id @default(uuid())
+  athleteId String
+  athlete   Athlete  @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  date      String   // YYYY-MM-DD
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@unique([athleteId, date])
+  @@index([athleteId])
 }
 
 model Program {

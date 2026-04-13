@@ -13,12 +13,19 @@ export default function CalendarView({ program, athleteId }) {
     // Modal State
     const [selectedSession, setSelectedSession] = useState(null);
     const [showReadinessForm, setShowReadinessForm] = useState(false);
+    const [travelDates, setTravelDates] = useState([]);
 
     useEffect(() => {
         // Fetch readiness logs
         fetch(`/api/readiness?athleteId=${athleteId}`)
             .then(res => res.json())
             .then(data => setReadinessLogs(data))
+            .catch(err => console.error(err));
+
+        // Fetch travel events
+        fetch(`/api/athletes/travel?athleteId=${athleteId}`)
+            .then(res => res.json())
+            .then(data => setTravelDates(data.map(e => e.date)))
             .catch(err => console.error(err));
     }, [athleteId]);
 
@@ -214,8 +221,11 @@ export default function CalendarView({ program, athleteId }) {
                             position: 'relative',
                             background: isToday ? 'rgba(78, 205, 196, 0.05)' : 'transparent'
                         }}>
-                            <div style={{ fontSize: '0.8rem', marginBottom: '0.5rem', fontWeight: isToday ? 'bold' : 'normal', color: isToday ? 'var(--accent)' : 'inherit' }}>
-                                {day}
+                            <div style={{ fontSize: '0.8rem', marginBottom: '0.5rem', fontWeight: isToday ? 'bold' : 'normal', color: isToday ? 'var(--accent)' : 'inherit', display: 'flex', justifyContent: 'space-between' }}>
+                                <span>{day}</span>
+                                {travelDates.includes(new Date(year, month, day).toISOString().split('T')[0]) && (
+                                    <span title="Travel Day">✈️</span>
+                                )}
                             </div>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>

@@ -274,6 +274,13 @@ export const getReadinessByAthlete = cache(async (athleteId) => {
     });
 });
 
+export const getTravelEventsByAthlete = cache(async (athleteId) => {
+    return prisma.travelEvent.findMany({
+        where: { athleteId },
+        orderBy: { date: 'asc' }
+    });
+});
+
 // Lightweight aggregate: returns [{programId, athleteId, sessionId}] with NO exercise payloads
 export const getLogSummariesForDashboard = cache(async (coachId) => {
     if (!coachId) return [];

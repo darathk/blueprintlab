@@ -16,7 +16,23 @@ function toDateStr(d: Date): string {
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 }
 
-export default function MasterProgramCalendar({ programs, athleteId, currentProgramId, onSelectSession, logs = [] }: { programs: any[], athleteId?: string, currentProgramId: string, onSelectSession: any, logs?: any[] }) {
+export default function MasterProgramCalendar({ 
+    programs, 
+    athleteId, 
+    currentProgramId, 
+    onSelectSession, 
+    onToggleTravel,
+    logs = [],
+    travelDates = []
+}: { 
+    programs: any[], 
+    athleteId?: string, 
+    currentProgramId: string, 
+    onSelectSession: any, 
+    onToggleTravel?: (date: string) => void,
+    logs?: any[],
+    travelDates?: string[]
+}) {
     const [currentMonth, setCurrentMonth] = useState(new Date());
 
     // Filter programs for this athlete if athleteId is provided
@@ -110,19 +126,18 @@ export default function MasterProgramCalendar({ programs, athleteId, currentProg
         for (let i = 0; i < 42; i++) {
             const date = new Date(gridStart);
             date.setDate(gridStart.getDate() + i);
-            const dateStr = toDateStr(date);
-
-            const data = getProgramDataForDate(date);
+            const isTravel = travelDates.includes(dateStr);
 
             days.push({
                 date,
                 dateStr,
                 isCurrentMonth: date.getMonth() === month,
+                isTravel,
                 ...data
             });
         }
         return days;
-    }, [currentMonth, athletePrograms]);
+    }, [currentMonth, athletePrograms, travelDates]);
 
     const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -150,16 +165,25 @@ export default function MasterProgramCalendar({ programs, athleteId, currentProg
                             return (
                                 <div
                                     key={day.dateStr}
-                                    onClick={() => hasSession && onSelectSession && onSelectSession(day.program, day.weekNum, day.dayNum)}
+                                    onClick={() => {
+                                        if (hasSession && onSelectSession) {
+                                            onSelectSession(day.program, day.weekNum, day.dayNum);
+                                        } else if (onToggleTravel) {
+                                            onToggleTravel(day.dateStr);
+                                        }
+                                    }}
                                     style={{
                                         borderRight: (i + 1) % 7 === 0 ? 'none' : '1px solid var(--card-border)',
                                         borderBottom: '1px solid var(--card-border)',
-                                        background: day.isCurrentMonth ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.3)',
-                                        cursor: hasSession ? 'pointer' : 'default',
+                                        background: day.isTravel 
+                                            ? 'rgba(245, 158, 11, 0.15)' 
+                                            : (day.isCurrentMonth ? 'rgba(255,255,255,0.01)' : 'rgba(0,0,0,0.3)'),
+                                        cursor: (hasSession || onToggleTravel) ? 'pointer' : 'default',
                                         position: 'relative',
                                         transition: 'background 0.2s',
+                                        borderLeft: day.isTravel ? '2px solid #f59e0b' : 'none',
                                     }}
-                                    className={`calendar-cell ${hasSession ? 'calendar-day-active has-session' : ''} ${day.isCurrentMonth ? 'current-month' : 'other-month'}`}
+                                    className={`calendar-cell ${hasSession ? 'calendar-day-active has-session' : ''} ${day.isCurrentMonth ? 'current-month' : 'other-month'} ${day.isTravel ? 'is-travel' : ''}`}
                                 >
                                     <div className="date-number">
                                         {day.date.getDate()}
@@ -193,6 +217,39 @@ export default function MasterProgramCalendar({ programs, athleteId, currentProg
                                                     📋
                                                 </div>
                                             </div>
+                                            </div>
+                                        </div>
+                                    )}
+
+                                    {day.isTravel && !hasSession && (
+                                        <div style={{
+                                            position: 'absolute',
+                                            bottom: '8px',
+                                            left: '8px',
+                                            right: '8px',
+                                            background: 'rgba(245, 158, 11, 0.2)',
+                                            border: '1px solid rgba(245, 158, 11, 0.3)',
+                                            color: '#fbbf24',
+                                            padding: '4px 8px',
+                                            borderRadius: '4px',
+                                            fontSize: '0.7rem',
+                                            fontWeight: 600,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '4px'
+                                        }}>
+                                            ✈️ Travel
+                                        </div>
+                                    )}
+                                    {day.isTravel && hasSession && (
+                                        <div style={{
+                                            position: 'absolute',
+                                            top: '4px',
+                                            right: '4px',
+                                            fontSize: '0.8rem',
+                                            zIndex: 5
+                                        }} title="Travel Day">
+                                            ✈️
                                         </div>
                                     )}
                                 </div>

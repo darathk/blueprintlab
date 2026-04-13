@@ -23,11 +23,12 @@ const FatigueChart = dynamic(() => import('@/components/dashboard/FatigueChart')
 // Single data fetch — all child components receive pre-fetched data as props
 
 async function AthleteData({ id }: { id: string }) {
-    const [athlete, logs, programs, readiness] = await Promise.all([
+    const [athlete, logs, programs, readiness, travelEvents] = await Promise.all([
         getAthleteById(id),
         getLogsByAthlete(id),
         getProgramsByAthlete(id),
         getReadinessByAthlete(id),
+        getTravelEventsByAthlete(id),
     ]);
 
     return (
@@ -73,6 +74,7 @@ async function AthleteData({ id }: { id: string }) {
                     athleteId={id}
                     currentProgramId={athlete?.currentProgramId}
                     logs={logs}
+                    travelEvents={travelEvents}
                 />
             </CollapsibleSection>
 

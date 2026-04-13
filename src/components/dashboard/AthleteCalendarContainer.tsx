@@ -5,15 +5,48 @@ import { useRouter } from 'next/navigation';
 import MasterProgramCalendar from './MasterProgramCalendar';
 import SessionDetailsModal from './SessionDetailsModal';
 
-export default function AthleteCalendarContainer({ programs, athleteId, currentProgramId, logs = [] }) {
+export default function AthleteCalendarContainer({ programs, athleteId, currentProgramId, logs = [], travelEvents = [] }) {
     const [selectedSession, setSelectedSession] = useState(null);
     const [localLogs, setLocalLogs] = useState(logs);
-    const router = useRouter(); // You'll need to import useRouter
+    const [localTravelDates, setLocalTravelDates] = useState(travelEvents.map(e => e.date));
+    const router = useRouter();
 
-    // Update local logs when props change (e.g. after refresh)
     useEffect(() => {
         setLocalLogs(logs);
     }, [logs]);
+
+    useEffect(() => {
+        setLocalTravelDates(travelEvents.map(e => e.date));
+    }, [travelEvents]);
+
+    const handleToggleTravel = async (date) => {
+        // Optimistic update
+        const isCurrentlyTravel = localTravelDates.includes(date);
+        if (isCurrentlyTravel) {
+            setLocalTravelDates(prev => prev.filter(d => d !== date));
+        } else {
+            setLocalTravelDates(prev => [...prev, date]);
+        }
+
+        try {
+            const res = await fetch('/api/athletes/travel', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ athleteId, date })
+            });
+            if (!res.ok) throw new Error('Failed to toggle travel');
+            router.refresh(); // Sync potential DB changes
+        } catch (err) {
+            console.error(err);
+            // Rollback on error
+            if (isCurrentlyTravel) {
+                setLocalTravelDates(prev => [...prev, date]);
+            } else {
+                setLocalTravelDates(prev => prev.filter(d => d !== date));
+            }
+            alert('Error updating travel status');
+        }
+    };
 
     const handleSelectSession = (program, weekNum, dayNum) => {
         const week = program.weeks.find(w => w.weekNumber === weekNum);
@@ -45,7 +78,9 @@ export default function AthleteCalendarContainer({ programs, athleteId, currentP
                 athleteId={athleteId}
                 currentProgramId={currentProgramId}
                 onSelectSession={handleSelectSession}
+                onToggleTravel={handleToggleTravel}
                 logs={localLogs}
+                travelDates={localTravelDates}
             />
 
             {selectedSession && (
