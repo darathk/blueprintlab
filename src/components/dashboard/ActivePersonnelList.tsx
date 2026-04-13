@@ -137,24 +137,23 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
         // Auto-advance logic: ignore old "active" programs that are actually 100% complete
         // OR if a newer active program's start date has already arrived.
         let activeSorted: any[] = [];
-        if (athletePrograms.length > 0) {
-            // Use rigorous parsing for date comparisons to prevent UTC boundary shifts
-            const parseLocalDateStr = (dateStr: any) => {
-                if (!dateStr) return new Date(0);
-                const s = String(dateStr).split('T')[0];
-                const parts = s.split('-');
-                if (parts.length === 3) {
-                    const [y, m, d] = parts.map(Number);
-                    const date = new Date(y, m - 1, d);
-                    date.setHours(0, 0, 0, 0);
-                    return date;
-                }
-                const date = new Date(dateStr);
+        // Use rigorous parsing for date comparisons to prevent UTC boundary shifts
+        const parseLocalDateStr = (dateStr: any) => {
+            if (!dateStr) return new Date(0);
+            const s = String(dateStr).split('T')[0];
+            const parts = s.split('-');
+            if (parts.length === 3) {
+                const [y, m, d] = parts.map(Number);
+                const date = new Date(y, m - 1, d);
                 date.setHours(0, 0, 0, 0);
                 return date;
-            };
+            }
+            const date = new Date(dateStr);
+            date.setHours(0, 0, 0, 0);
+            return date;
+        };
 
-            activeSorted = [...athletePrograms]
+        if (athletePrograms.length > 0) {            activeSorted = [...athletePrograms]
                 .filter(p => p.status !== 'draft')
                 .sort((a, b) => {
                     const aStart = parseLocalDateStr(a.startDate || a.createdAt).getTime();
