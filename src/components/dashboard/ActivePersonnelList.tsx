@@ -291,9 +291,13 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
 
             // Check if a next block already exists that starts AFTER the current block
             if (activeProgId) {
-                 const currIndex = activeSorted.findIndex(p => p.id === activeProgId);
-                 if (currIndex !== -1 && currIndex < activeSorted.length - 1) {
-                     hasNextBlockReady = true;
+                 const currProg = activeSorted.find(p => p.id === activeProgId);
+                 if (currProg && currProg.startDate) {
+                      const currStart = parseLocalDateStr(currProg.startDate).getTime();
+                      hasNextBlockReady = activeSorted.some(p => {
+                           if (!p.startDate) return false;
+                           return parseLocalDateStr(p.startDate).getTime() > currStart;
+                      });
                  }
             }
 
