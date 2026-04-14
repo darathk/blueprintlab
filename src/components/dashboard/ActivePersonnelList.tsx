@@ -246,7 +246,7 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
 
             if (athleteLogSummaries.length > 0) {
                 const weeksFromLogs = athleteLogSummaries.map(l => {
-                    const match = l.sessionId.match(/week-(\d+)/i);
+                    const match = l.sessionId.match(/_w(\d+)_d/i);
                     return match ? parseInt(match[1]) : 1;
                 });
                 progress.currentWeek = Math.max(...weeksFromLogs);
@@ -309,16 +309,18 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
             if (activeProgId) {
                 const progObj = programs.find((p: any) => p.id === activeProgId);
                 if (progObj && progObj.startDate) {
-                    const expiryData = new Date(progObj.startDate);
-                    expiryData.setHours(0,0,0,0);
+                    const expiryData = parseLocalDateStr(progObj.startDate);
                     expiryData.setDate(expiryData.getDate() + totalWeeks * 7);
-                    
-                    if (new Date() >= expiryData) isExpired = true;
-                    
+
+                    const now = new Date();
+                    now.setHours(0, 0, 0, 0);
+
+                    if (now >= expiryData) isExpired = true;
+
                     const oneWeekBeforeExpiry = new Date(expiryData);
                     oneWeekBeforeExpiry.setDate(oneWeekBeforeExpiry.getDate() - 7);
-                    
-                    if (new Date() >= oneWeekBeforeExpiry) isEndingSoonByTime = true;
+
+                    if (now >= oneWeekBeforeExpiry) isEndingSoonByTime = true;
                 }
             }
 

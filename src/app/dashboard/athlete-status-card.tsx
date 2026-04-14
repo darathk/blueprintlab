@@ -77,15 +77,28 @@ export default function AthleteStatusCard({ athlete, progress, daysSinceLastLog 
         ? Math.min(100, Math.round((progress.completedSessions / progress.totalSessions) * 100))
         : 0;
 
-    // Meet countdown
-    const meetDate = athlete.nextMeetDate ? new Date(athlete.nextMeetDate) : null;
+    // Meet countdown — parse YYYY-MM-DD in local time so the day isn't off by one near midnight UTC.
+    const parseLocalMeetDate = (dateStr: any): Date | null => {
+        if (!dateStr) return null;
+        const s = String(dateStr).split('T')[0];
+        const parts = s.split('-');
+        if (parts.length === 3) {
+            const [y, m, d] = parts.map(Number);
+            const dt = new Date(y, m - 1, d);
+            dt.setHours(0, 0, 0, 0);
+            return dt;
+        }
+        const dt = new Date(dateStr);
+        dt.setHours(0, 0, 0, 0);
+        return dt;
+    };
+    const meetDate = parseLocalMeetDate(athlete.nextMeetDate);
     const now = new Date();
     now.setHours(0, 0, 0, 0);
     let daysOut = 0;
     let weeksOut = 0;
     let meetPassed = false;
     if (meetDate) {
-        meetDate.setHours(0, 0, 0, 0);
         const diffMs = meetDate.getTime() - now.getTime();
         daysOut = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
         weeksOut = Math.floor(daysOut / 7);
@@ -245,7 +258,7 @@ export default function AthleteStatusCard({ athlete, progress, daysSinceLastLog 
                             {athlete.nextMeetName || 'Meet'}
                         </div>
                         <div style={{ color: 'var(--secondary-foreground)', fontSize: '0.75rem', marginTop: '1px' }}>
-                            {new Date(athlete.nextMeetDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                            {meetDate ? meetDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : ''}
                         </div>
                     </div>
                     <div style={{

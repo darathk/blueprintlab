@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 import { getReadiness, saveReadiness, getReadinessByAthlete } from '@/lib/storage';
+import { prisma } from '@/lib/prisma';
 import { requireAuth, requireAccessToAthlete } from '@/lib/api-auth';
 
 export async function POST(request: Request) {
@@ -18,6 +19,18 @@ export async function POST(request: Request) {
         // Verify user has access to this athlete
         const access = await requireAccessToAthlete(data.athleteId);
         if ('error' in access) return access.error;
+
+        // If a programId is supplied, make sure it actually belongs to this athlete
+        // so a caller can't attach readiness data to an unrelated athlete's program.
+        if (data.programId) {
+            const prog = await prisma.program.findUnique({
+                where: { id: data.programId },
+                select: { athleteId: true }
+            });
+            if (!prog || prog.athleteId !== data.athleteId) {
+                return NextResponse.json({ error: 'programId does not belong to athlete' }, { status: 403 });
+            }
+        }
 
         const newLog = await saveReadiness(data);
         return NextResponse.json(newLog);
