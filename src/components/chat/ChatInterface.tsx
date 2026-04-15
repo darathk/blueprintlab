@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
+import { chatUploadManager, useChatUploadJobsForConversation, type UploadCompleteDetail } from '@/lib/chat-upload-manager';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { Mic, MoreVertical, Reply, Copy, Download, Paperclip, X, Send, Search, Scissors, Pencil, Play, Maximize, Plus } from 'lucide-react';
@@ -192,8 +193,18 @@ export default function ChatInterface({
     // Trim metadata per staged file index (from VideoCropper)
     const [stagedTrimData, setStagedTrimData] = useState<Record<number, { start: number; end: number }>>({});
 
-    // Upload progress per message (tempId → 0-100)
-    const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({});
+    // Upload progress per message (tempId → 0-100), driven by the global
+    // chat-upload manager so that uploads (and their progress UI) survive
+    // the chat unmounting.
+    const conversationJobs = useChatUploadJobsForConversation(currentUserId, otherUserId);
+    const uploadProgress = useMemo(() => {
+        const map: Record<string, number> = {};
+        for (const j of conversationJobs) {
+            if (j.status === 'done') continue; // hide bar after success
+            map[j.tempMessageId] = j.progress;
+        }
+        return map;
+    }, [conversationJobs]);
 
     // Editing state
     const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
@@ -446,6 +457,44 @@ export default function ChatInterface({
     // Close action menu on click outside but ignore if multi-selecting
     useEffect(() => { const c = () => { setActiveMenu(null); setConfirmDeleteId(null); }; window.addEventListener('click', c); return () => window.removeEventListener('click', c); }, []);
 
+    // When a background upload completes, swap the optimistic placeholder
+    // for the real saved message and revoke its preview object URL. If the
+    // chat happens to be unmounted at completion time the realtime/polling
+    // subscription will pick it up on remount instead.
+    useEffect(() => {
+        const onComplete = (e: Event) => {
+            const detail = (e as CustomEvent<UploadCompleteDetail>).detail;
+            if (!detail) return;
+            const { tempMessageId, realMessage } = detail;
+            setMessages(prev => prev.map(m => {
+                if (m.id !== tempMessageId) return m;
+                if (m.mediaUrl && m.mediaUrl.startsWith('blob:')) {
+                    try { URL.revokeObjectURL(m.mediaUrl); } catch {}
+                }
+                return realMessage;
+            }));
+        };
+        const onError = (e: Event) => {
+            const detail = (e as CustomEvent<{ tempMessageId: string }>).detail;
+            if (!detail) return;
+            // Remove the placeholder so it doesn't dangle. The global banner
+            // surfaces the failure to the user; per-message retry can come later.
+            setMessages(prev => prev.filter(m => {
+                if (m.id !== detail.tempMessageId) return true;
+                if (m.mediaUrl && m.mediaUrl.startsWith('blob:')) {
+                    try { URL.revokeObjectURL(m.mediaUrl); } catch {}
+                }
+                return false;
+            }));
+        };
+        window.addEventListener('chat-upload-complete', onComplete as EventListener);
+        window.addEventListener('chat-upload-error', onError as EventListener);
+        return () => {
+            window.removeEventListener('chat-upload-complete', onComplete as EventListener);
+            window.removeEventListener('chat-upload-error', onError as EventListener);
+        };
+    }, []);
+
     // Send — optimistic
     const handleSend = async () => {
         const text = newMessage.trim();
@@ -519,131 +568,38 @@ export default function ChatInterface({
                     alert('Failed to send message. Please try again.');
                 }
             } else {
-                setUploading(true);
-                setStatusText('Uploading…');
-
-                const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-                const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-                if (!supabaseUrl || !supabaseKey) {
-                    throw new Error('Supabase not configured');
-                }
-
-                // Compress images in parallel (fast, keeps quality)
-                // Videos upload at original quality — no re-encoding means
-                // lossless quality, working audio, and no processing delay
-                const compressedBlobs: (File | Blob)[] = [...filesToSend];
-                const compressedMimes: string[] = filesToSend.map(f => f.type);
-
-                const imageIndices = filesToSend.map((f, i) => f.type.startsWith('image/') ? i : -1).filter(i => i >= 0);
-                if (imageIndices.length > 0) {
-                    await Promise.all(imageIndices.map(async (i) => {
-                        try {
-                            const imageCompression = (await import('browser-image-compression')).default;
-                            const c = await (imageCompression as any)(filesToSend[i], { maxSizeMB: 0.5, maxWidthOrHeight: 1280, useWebWorker: true });
-                            compressedBlobs[i] = c;
-                            compressedMimes[i] = c.type;
-                        } catch { /* skip */ }
-                    }));
-                }
-
-                // Upload all files in parallel
-                const uploadOne = async (i: number) => {
+                // Hand each file off to the module-level upload manager and
+                // return immediately — uploads will continue running even if
+                // the user navigates away from this chat. ChatInterface stays
+                // synced via the `chat-upload-complete` window event below
+                // (when still mounted) and the global GlobalUploadStatus
+                // banner shows progress wherever the user is in the app.
+                filesToSend.forEach((file, i) => {
                     const tempId = optimisticMessages[i].id;
-                    const blob = compressedBlobs[i];
-                    let mime = compressedMimes[i];
-
-                    setUploadProgress(prev => ({ ...prev, [tempId]: 0 }));
-
-                    // Ensure we have a valid MIME type
-                    if (!mime) {
-                        const fileName = filesToSend[i].name.toLowerCase();
-                        if (fileName.endsWith('.mp4')) mime = 'video/mp4';
-                        else if (fileName.endsWith('.mov')) mime = 'video/quicktime';
-                        else if (fileName.endsWith('.webm')) mime = 'video/webm';
-                        else if (fileName.endsWith('.m4a')) mime = 'audio/mp4';
-                        else if (fileName.endsWith('.jpg') || fileName.endsWith('.jpeg')) mime = 'image/jpeg';
-                        else if (fileName.endsWith('.png')) mime = 'image/png';
-                        else mime = 'application/octet-stream';
-                    }
-
-                    const ext = mime.includes('png') ? '.png' : mime.includes('jpeg') || mime.includes('jpg') ? '.jpg' : mime.includes('quicktime') ? '.mov' : mime.includes('webm') ? '.webm' : mime.includes('audio') ? '.m4a' : '.mp4';
-                    const uploadPath = `${athleteId}/${Date.now()}-${i}${ext}`;
-
-                    // Upload with XHR for progress tracking
-                    const publicUrl = await new Promise<string>((resolve, reject) => {
-                        const xhr = new XMLHttpRequest();
-                        const url = `${supabaseUrl}/storage/v1/object/lift-videos/${uploadPath}`;
-
-                        xhr.upload.onprogress = (e) => {
-                            if (e.lengthComputable) {
-                                const pct = Math.round((e.loaded / e.total) * 100);
-                                setUploadProgress(prev => ({ ...prev, [tempId]: pct }));
-                            }
-                        };
-
-                        xhr.onload = () => {
-                            if (xhr.status >= 200 && xhr.status < 300) {
-                                const { data: u } = supabase.storage.from('lift-videos').getPublicUrl(uploadPath);
-                                resolve(u.publicUrl);
-                            } else {
-                                reject(new Error(`Upload failed: ${xhr.status} ${xhr.responseText}`));
-                            }
-                        };
-
-                        xhr.onerror = () => reject(new Error('Network error during upload'));
-                        xhr.ontimeout = () => reject(new Error('Upload timed out'));
-                        xhr.timeout = 300000;
-
-                        xhr.open('POST', url, true);
-                        xhr.setRequestHeader('Authorization', `Bearer ${supabaseKey}`);
-                        xhr.setRequestHeader('apikey', supabaseKey);
-                        xhr.setRequestHeader('Content-Type', mime);
-                        xhr.setRequestHeader('Cache-Control', '604800');
-                        xhr.setRequestHeader('x-upsert', 'true');
-                        xhr.send(blob);
-                    });
-
-                    setUploadProgress(prev => ({ ...prev, [tempId]: 100 }));
-
-                    // Append media fragment URI for trimmed videos (#t=start,end)
-                    const trim = trimDataToSend[i];
-                    const mediaUrl = trim ? `${publicUrl}#t=${trim.start},${trim.end}` : publicUrl;
-
-                    const isVid = filesToSend[i].type.startsWith('video/');
-                    const isAudio = filesToSend[i].type.startsWith('audio/');
-                    const content = i === 0 && text ? text : isAudio ? 'Voice Message' : isVid ? 'Video' : 'Photo';
+                    const isVid = file.type.startsWith('video/');
+                    const isAudio = file.type.startsWith('audio/');
+                    const content = i === 0 && text
+                        ? text
+                        : isAudio ? 'Voice Message' : isVid ? 'Video' : 'Photo';
                     const replyToId = i === 0 ? (replyingTo?.id || null) : null;
 
-                    const res = await fetch('/api/messages', {
-                        method: 'POST', headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ senderId: currentUserId, receiverId: otherUserId, content, mediaUrl, mediaType: mime, replyToId })
+                    chatUploadManager.startUpload({
+                        file,
+                        tempMessageId: tempId,
+                        athleteId,
+                        currentUserId,
+                        otherUserId,
+                        content,
+                        replyToId,
+                        trim: trimDataToSend[i],
                     });
+                });
 
-                    if (res.ok) {
-                        const real = await res.json();
-                        setMessages(prev => prev.map(m => m.id === tempId ? real : m));
-                        window.dispatchEvent(new Event('inbox-refresh'));
-                    } else {
-                        const errBody = await res.text();
-                        console.error('[API] Message create failed:', res.status, errBody);
-                        setMessages(prev => prev.filter(m => m.id !== tempId));
-                    }
-
-                    setUploadProgress(prev => { const n = { ...prev }; delete n[tempId]; return n; });
-                    URL.revokeObjectURL(urlsToSend[i]);
-                };
-
-                // Fire all uploads in parallel
-                const results = await Promise.allSettled(
-                    filesToSend.map((_, i) => uploadOne(i))
-                );
-
-                const failures = results.filter(r => r.status === 'rejected');
-                if (failures.length > 0) {
-                    console.error('[Upload] Some uploads failed:', failures);
-                    alert(`${failures.length} upload(s) failed.`);
-                }
+                // The optimistic <img>/<video> previews already reference the
+                // local object URLs in `urlsToSend`. We keep them alive until
+                // each upload completes (the `chat-upload-complete` handler
+                // revokes them then). If the chat unmounts before that, the
+                // browser cleans them up at page tear-down.
             }
         } catch (e: any) {
             console.error('[Send] Failed:', e);
@@ -1521,18 +1477,26 @@ export default function ChatInterface({
                 )
             }
 
-            {/* Upload progress */}
+            {/* Upload progress — driven by the global manager so it persists
+                across this chat unmounting. The hint reassures users that they
+                can leave the chat without aborting their uploads. */}
             {
-                uploading && (
-                    <div style={{ padding: '8px 16px', borderTop: '1px solid var(--card-border)', flexShrink: 0 }}>
-                        <div style={{ fontSize: 12, color: 'var(--primary)', fontWeight: 600, marginBottom: 4 }}>
-                            {statusText || 'Uploading…'}
+                (() => {
+                    const active = conversationJobs.filter(j => j.status !== 'done' && j.status !== 'error');
+                    if (active.length === 0) return null;
+                    const pct = Math.round(active.reduce((sum, j) => sum + j.progress, 0) / active.length);
+                    return (
+                        <div style={{ padding: '8px 16px', borderTop: '1px solid var(--card-border)', flexShrink: 0 }}>
+                            <div style={{ fontSize: 12, color: 'var(--primary)', fontWeight: 600, marginBottom: 4, display: 'flex', justifyContent: 'space-between', gap: 8 }}>
+                                <span>Uploading {active.length} file{active.length === 1 ? '' : 's'}…</span>
+                                <span style={{ color: 'var(--secondary-foreground)', fontWeight: 500 }}>You can close this chat — uploads keep going.</span>
+                            </div>
+                            <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
+                                <div style={{ height: '100%', borderRadius: 2, background: 'linear-gradient(90deg, #7d87d2, #a855f7)', transition: 'width 200ms', width: `${Math.max(2, pct)}%` }} />
+                            </div>
                         </div>
-                        <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.05)', overflow: 'hidden' }}>
-                            <div style={{ height: '100%', borderRadius: 2, background: 'linear-gradient(90deg, #7d87d2, #a855f7)', transition: 'width 200ms', width: (() => { const vals = Object.values(uploadProgress); return vals.length > 0 ? `${Math.round(vals.reduce((a, b) => a + b, 0) / vals.length)}%` : '0%'; })() }} />
-                        </div>
-                    </div>
-                )
+                    );
+                })()
             }
 
             {/* Input */}
