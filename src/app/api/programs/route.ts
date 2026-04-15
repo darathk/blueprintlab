@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
+import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { getProgramsByAthlete } from '@/lib/storage';
 import { requireAuth, requireAccessToAthlete, requireCoach } from '@/lib/api-auth';
@@ -93,6 +94,10 @@ export async function POST(request: Request) {
         const results = await prisma.$transaction(ops);
         const newProgram = results[results.length - 1];
 
+        // Invalidate the athlete's dashboard so a redirect after Save & Assign
+        // gets fresh program data without needing a client-side router.refresh().
+        revalidatePath(`/dashboard/athletes/${program.athleteId}`);
+
         return NextResponse.json(newProgram, { status: 201 });
     } catch (error) {
         console.error(error);
@@ -132,6 +137,10 @@ export async function PUT(request: Request) {
                 status: program.status !== undefined ? program.status : undefined,
             }
         });
+
+        // Invalidate the athlete dashboard cache so post-edit redirects don't
+        // need a client-side router.refresh() to see the latest program state.
+        revalidatePath(`/dashboard/athletes/${existing.athleteId}`);
 
         return NextResponse.json(updatedProgram, { status: 200 });
     } catch (error) {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
@@ -388,6 +388,10 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
         }]
     }]);
     const [isSaving, setIsSaving] = useState(false);
+    // useTransition tracks the in-flight router.push so the "Saving..." button
+    // stays disabled until the destination page has finished streaming —
+    // otherwise the button flashes back and the user sees nothing happen.
+    const [isNavigating, startNavigation] = useTransition();
     const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
     const savedProgramIdRef = useRef<string | null>(initialData?.id || null);
     const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -1037,17 +1041,24 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
             });
 
             if (res.ok) {
-                router.push(`/dashboard/athletes/${selectedAthleteId}`);
-                router.refresh();
-            } else {
-                alert('Failed to save');
+                // POST/PUT call revalidatePath() server-side, so the destination
+                // already has fresh data — no router.refresh() needed. Wrapping
+                // push() in startNavigation keeps isNavigating true until the
+                // athlete page finishes streaming, so the button stays in its
+                // disabled "Saving…" state instead of flashing back.
+                startNavigation(() => {
+                    router.push(`/dashboard/athletes/${selectedAthleteId}`);
+                });
+                // Don't reset isSaving — the component is unmounting.
+                return;
             }
+            alert('Failed to save');
         } catch (e) {
             console.error(e);
             alert('Error');
-        } finally {
-            setIsSaving(false);
         }
+        // Only reach here on error — reset so user can retry.
+        setIsSaving(false);
     };
 
     // ... (previous state)
@@ -1610,8 +1621,8 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                 </span>
                             )}
 
-                            <button onClick={handleSave} className="btn btn-primary" disabled={isSaving}>
-                                {isSaving ? 'Saving...' : 'Save & Assign'}
+                            <button onClick={handleSave} className="btn btn-primary" disabled={isSaving || isNavigating}>
+                                {isSaving ? 'Saving...' : isNavigating ? 'Loading dashboard...' : 'Save & Assign'}
                             </button>
                         </div>
 
