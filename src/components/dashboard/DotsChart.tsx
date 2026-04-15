@@ -265,7 +265,7 @@ export default function DotsChart({ athleteId, logs, programs = [], initialGende
                 <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--secondary-foreground)', fontSize: 14, background: 'rgba(15,23,42,0.3)', borderRadius: 12, border: '1px dashed rgba(255,255,255,0.08)' }}>
                     <div style={{ fontSize: 32, marginBottom: 10 }}>🏋️</div>
                     <div style={{ fontWeight: 600, marginBottom: 5 }}>No competition lift data {timeline !== 'ALL' ? `in the last ${timeline}` : 'yet'}</div>
-                    <div style={{ fontSize: 12, opacity: 0.7 }}>Sessions with <strong>Squat</strong>, <strong>Bench Press</strong>, or <strong>Deadlift</strong> logged with weight &amp; reps will appear here.</div>
+                    <div style={{ fontSize: 12, opacity: 0.7 }}>Sessions with <strong>Squat</strong>, <strong>Competition Bench</strong>, or <strong>Deadlift</strong> logged with weight &amp; reps will appear here.</div>
                 </div>
             ) : (
                 <div style={{ background: 'rgba(15,23,42,0.4)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.07)', padding: '16px 8px 8px' }}>

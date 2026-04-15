@@ -316,7 +316,10 @@ export function generatePrimaryLiftProgress(logs, timeRange) {
 
         log.exercises.forEach(ex => {
             const parent = getParentLift(ex.name);
-            if (progressData[parent]) { // Only track main 3
+            // Require the exact parent lift name — otherwise accessory variants
+            // (Close Grip Bench Press, Incline Bench, Push Up) and non-"Bench Press"
+            // exercises like "Competition Bench" would be folded into the same bucket.
+            if (progressData[parent] && ex.name === parent) {
                 const e1rms = ex.sets.map(s => calculateSimpleE1RM(parseFloat(s.weight), parseFloat(s.reps), parseFloat(s.rpe)));
                 const max = Math.max(0, ...e1rms);
                 if (max > 0) {
