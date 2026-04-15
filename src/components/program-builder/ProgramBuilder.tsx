@@ -106,10 +106,39 @@ const BuilderExerciseCard = ({ exercise, onUpdate, onRemove, onDragStart, onDrag
                     </span>
                 </div>
                 <button
-                    onClick={(e) => { e.stopPropagation(); onRemove(); }}
-                    style={{ background: 'transparent', border: 'none', color: 'var(--error)', cursor: 'pointer', fontSize: '1.2rem' }}
+                    type="button"
+                    title={`Delete ${exercise.name}`}
+                    aria-label={`Delete ${exercise.name}`}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm(`Delete "${exercise.name}" from this session?`)) {
+                            onRemove();
+                        }
+                    }}
+                    style={{
+                        background: 'rgba(239, 68, 68, 0.12)',
+                        border: '1px solid rgba(239, 68, 68, 0.4)',
+                        color: 'var(--error, #ef4444)',
+                        cursor: 'pointer',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        transition: 'background 0.15s, border-color 0.15s',
+                    }}
+                    onMouseOver={e => {
+                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.25)';
+                        e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.8)';
+                    }}
+                    onMouseOut={e => {
+                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.12)';
+                        e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+                    }}
                 >
-                    ×
+                    🗑 Delete
                 </button>
             </div>
 
@@ -808,9 +837,19 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
     };
 
     const removeExercise = (weekIndex, sessionIndex, exerciseIndex) => {
-        const newWeeks = [...weeks];
-        newWeeks[weekIndex].sessions[sessionIndex].exercises.splice(exerciseIndex, 1);
-        setWeeks(newWeeks);
+        // Immutable update so memoized children (BuilderExerciseCard) re-render
+        // correctly and StrictMode double-invocation can't splice the same array twice.
+        setWeeks(prev => prev.map((w, wi) =>
+            wi !== weekIndex ? w : {
+                ...w,
+                sessions: w.sessions.map((s, si) =>
+                    si !== sessionIndex ? s : {
+                        ...s,
+                        exercises: s.exercises.filter((_, ei) => ei !== exerciseIndex),
+                    }
+                ),
+            }
+        ));
     };
 
     // --- Exercise Drag & Drop ---
