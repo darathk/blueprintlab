@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useId } from 'react';
 import { supabase } from '@/lib/supabase';
 import { MessageCircle, Video, X, Send, CheckCircle, Scissors, Paperclip, Image } from 'lucide-react';
 import VideoCropper from '@/components/chat/VideoCropper';
@@ -42,6 +42,15 @@ export default function ExerciseFeedback({
     const [stagedTrimData, setStagedTrimData] = useState<Record<number, { start: number; end: number }>>({});
 
     const fileRef = useRef<HTMLInputElement>(null);
+
+    // React-guaranteed unique id. Without this, the old
+    // `feedback-media-${athleteId}-${exerciseName}` id collided whenever the
+    // same exercise appeared more than once in a session (supersets, back-off
+    // sets, warmup + main block). Multiple <label htmlFor> pointing at the
+    // same id means the browser fires the click on the first matching input —
+    // so the file ended up staged on the WRONG ExerciseFeedback instance and
+    // the athlete thought their attach silently did nothing.
+    const inputId = `feedback-media-${useId()}`;
 
     // Resolve coach ID
     useEffect(() => {
@@ -437,10 +446,10 @@ export default function ExerciseFeedback({
                             accept="video/*,image/*"
                             onChange={handleMedia}
                             style={{ display: 'none' }}
-                            id={`feedback-media-${athleteId}-${exerciseName.replace(/\s/g, '-')}`}
+                            id={inputId}
                         />
                         <label
-                            htmlFor={`feedback-media-${athleteId}-${exerciseName.replace(/\s/g, '-')}`}
+                            htmlFor={inputId}
                             style={{
                                 display: 'flex', alignItems: 'center', gap: 5,
                                 background: stagedFiles.length > 0 ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.06)',
