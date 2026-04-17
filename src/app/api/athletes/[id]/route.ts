@@ -3,6 +3,33 @@ import { prisma } from '@/lib/prisma';
 import { currentUser } from '@clerk/nextjs/server';
 import { requireAccessToAthlete, requireCoach } from '@/lib/api-auth';
 
+export async function GET(
+    request: Request,
+    { params }: { params: Promise<{ id: string }> }
+) {
+    try {
+        const { id } = await params;
+
+        const auth = await requireAccessToAthlete(id);
+        if ('error' in auth) return auth.error;
+
+        const athlete = await prisma.athlete.findUnique({
+            where: { id },
+            select: {
+                id: true, name: true, email: true, role: true, coachId: true,
+                weightClass: true, gender: true, federation: true,
+            },
+        });
+        if (!athlete) {
+            return NextResponse.json({ error: 'Athlete not found' }, { status: 404 });
+        }
+        return NextResponse.json(athlete);
+    } catch (error) {
+        console.error('GET /api/athletes/[id] error:', error);
+        return NextResponse.json({ error: 'Failed to fetch athlete' }, { status: 500 });
+    }
+}
+
 export async function PATCH(
     request: Request,
     { params }: { params: Promise<{ id: string }> }

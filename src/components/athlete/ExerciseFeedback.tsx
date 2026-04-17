@@ -52,13 +52,13 @@ export default function ExerciseFeedback({
     // the athlete thought their attach silently did nothing.
     const inputId = `feedback-media-${useId()}`;
 
-    // Resolve coach ID
+    // Resolve coach ID if not provided via prop
     useEffect(() => {
         if (resolvedCoachId) return;
         fetch(`/api/athletes/${athleteId}`)
-            .then(r => r.json())
+            .then(r => r.ok ? r.json() : null)
             .then(data => {
-                const cid = data?.coachId || data?.athlete?.coachId || '';
+                const cid = data?.coachId || '';
                 if (cid) setResolvedCoachId(cid);
             })
             .catch(() => { });

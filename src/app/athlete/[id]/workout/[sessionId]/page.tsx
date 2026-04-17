@@ -1,4 +1,5 @@
 import { getProgramsByAthlete, getLogsByAthlete, getAthleteById } from '@/lib/storage';
+import { prisma } from '@/lib/prisma';
 import WorkoutLogger from './workout-logger';
 
 export default async function WorkoutPage({ params }) {
@@ -17,6 +18,19 @@ export default async function WorkoutPage({ params }) {
         getLogsByAthlete(athleteId),
         getAthleteById(athleteId),
     ]);
+
+    // Resolve coachId: prefer athlete.coachId, fall back to admin email lookup
+    let coachId = athlete?.coachId || '';
+    if (!coachId) {
+        const adminEmail = (process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.ADMIN_EMAIL || '').toLowerCase();
+        if (adminEmail) {
+            const coach = await prisma.athlete.findFirst({
+                where: { email: { equals: adminEmail, mode: 'insensitive' } },
+                select: { id: true },
+            });
+            coachId = coach?.id || '';
+        }
+    }
     const program = programs.find(p => p.id === programId);
 
     if (!program) return <div>Program not found</div>;
@@ -62,7 +76,7 @@ export default async function WorkoutPage({ params }) {
 
             <WorkoutLogger
                 athleteId={athleteId}
-                coachId={athlete?.coachId ?? ''}
+                coachId={coachId}
                 programId={programId}
                 sessionId={sessionId}
                 weekNum={weekDisplayNum}
