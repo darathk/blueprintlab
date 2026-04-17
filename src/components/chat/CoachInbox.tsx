@@ -16,9 +16,9 @@ interface Message {
 
 interface ConvSummary { athleteId: string; athleteName: string; lastMessage: string; lastMessageAt: string; unreadCount: number; }
 
-interface Props { coachId: string; coachName: string; initialConvos?: ConvSummary[]; initialAthleteId?: string; }
+interface Props { coachId: string; coachName: string; initialConvos?: ConvSummary[]; initialAthleteId?: string; initialMessages?: Message[]; }
 
-export default function CoachInbox({ coachId, coachName, initialConvos = [], initialAthleteId }: Props) {
+export default function CoachInbox({ coachId, coachName, initialConvos = [], initialAthleteId, initialMessages = [] }: Props) {
     const [convos, setConvos] = useState<ConvSummary[]>(initialConvos);
     const [selectedId, setSelectedId] = useState<string | null>(initialAthleteId || null);
     const selectedConvo = convos.find(c => c.athleteId === selectedId);
@@ -227,6 +227,7 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                         currentUserName={coachName}
                         otherUserName={selectedConvo?.athleteName || 'Athlete'}
                         athleteId={selectedId}
+                        initialMessages={selectedId === initialAthleteId ? initialMessages : undefined}
                         isEmbedded={true}
                         onBack={isMobile ? () => setSelectedId(null) : undefined}
                         headerActions={

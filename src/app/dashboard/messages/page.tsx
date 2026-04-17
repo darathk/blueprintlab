@@ -1,6 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import { CoachInbox } from '@/components/chat/ClientCoachInbox';
-import { getCoachInbox } from '@/lib/storage';
+import { getCoachInbox, getMessagesByAthlete } from '@/lib/storage';
 
 export default async function MessagesPage({ searchParams }: { searchParams: Promise<{ athleteId?: string }> }) {
     const params = await searchParams;
@@ -17,7 +17,11 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
         coach = await prisma.athlete.update({ where: { id: coach.id }, data: { role: 'coach', email: adminEmail }, select: { id: true, name: true, email: true, role: true } });
     }
 
-    const initialConvos = (await getCoachInbox(coach.id)) as any[];
+    // Pre-fetch in parallel: inbox list + initial athlete's messages (avoids a second round-trip on the client)
+    const [initialConvos, initialMessages] = await Promise.all([
+        getCoachInbox(coach.id) as Promise<any[]>,
+        initialAthleteId ? getMessagesByAthlete(initialAthleteId) : Promise.resolve([]),
+    ]);
 
     return (
         <div>
@@ -27,7 +31,7 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
                 </h1>
             </div>
 
-            <CoachInbox coachId={coach.id} coachName={coach.name} initialConvos={initialConvos} initialAthleteId={initialAthleteId} />
+            <CoachInbox coachId={coach.id} coachName={coach.name} initialConvos={initialConvos} initialAthleteId={initialAthleteId} initialMessages={initialMessages as any} />
         </div>
     );
 }
