@@ -206,9 +206,8 @@ export default function ChatInterface({
         return map;
     }, [conversationJobs]);
 
-    // Editing state
-    const [editingMessageId, setEditingMessageId] = useState<string | null>(null);
-    const [editText, setEditText] = useState('');
+    // Editing state (compose-bar approach — no inline bubble edit)
+    const [editingMessage, setEditingMessage] = useState<Message | null>(null);
 
     // Multi-select state
     const [selectedMessageIds, setSelectedMessageIds] = useState<Set<string>>(new Set());
@@ -499,6 +498,13 @@ export default function ChatInterface({
     const handleSend = async () => {
         const text = newMessage.trim();
         if (!text && stagedFiles.length === 0) return;
+
+        // If in edit mode, update the existing message rather than sending a new one
+        if (editingMessage) {
+            setNewMessage('');
+            await handleEditMessage(editingMessage.id, text);
+            return;
+        }
 
         // Copy the files and clear UI state immediately
         const filesToSend = [...stagedFiles];
@@ -990,8 +996,7 @@ export default function ChatInterface({
 
         // Optimistic update
         setMessages(prev => prev.map(m => m.id === msgId ? { ...m, content: trimmed } : m));
-        setEditingMessageId(null);
-        setEditText('');
+        setEditingMessage(null);
 
         try {
             const res = await fetch('/api/messages', {
@@ -1281,30 +1286,7 @@ export default function ChatInterface({
                                             )}
 
                                             {/* Text */}
-                                            {/* Text content or inline edit */}
-                                            {editingMessageId === msg.id ? (
-                                                <div style={{ padding: msg.mediaUrl ? '0 10px' : 0, display: 'flex', alignItems: 'center', gap: 6 }}>
-                                                    <input
-                                                        autoFocus
-                                                        type="text"
-                                                        value={editText}
-                                                        onChange={e => setEditText(e.target.value)}
-                                                        onKeyDown={e => {
-                                                            if (e.key === 'Enter') handleEditMessage(msg.id, editText);
-                                                            if (e.key === 'Escape') { setEditingMessageId(null); setEditText(''); }
-                                                        }}
-                                                        style={{ flex: 1, background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(125,135,210,0.3)', borderRadius: 12, color: '#fff', fontSize: 14, padding: '6px 12px', outline: 'none', minWidth: 0 }}
-                                                    />
-                                                    <button onClick={() => handleEditMessage(msg.id, editText)}
-                                                        style={{ background: 'var(--primary)', border: 'none', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
-                                                        <Send size={14} color="#fff" />
-                                                    </button>
-                                                    <button onClick={() => { setEditingMessageId(null); setEditText(''); }}
-                                                        style={{ background: 'rgba(255,255,255,0.06)', border: 'none', borderRadius: '50%', width: 28, height: 28, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
-                                                        <X size={14} color="var(--secondary-foreground)" />
-                                                    </button>
-                                                </div>
-                                            ) : (!msg.mediaUrl || (msg.content && !['Video', 'Photo', 'GIF', 'Voice Message'].includes(msg.content.trim()))) ? (
+                                            {(!msg.mediaUrl || (msg.content && !['Video', 'Photo', 'GIF', 'Voice Message'].includes(msg.content.trim()))) ? (
                                                 <div style={{ fontSize: 14, lineHeight: 1.4, color: 'rgba(255,255,255,0.9)', padding: msg.mediaUrl ? '0 10px' : 0, whiteSpace: 'pre-wrap' }}>{highlightMatch(msg.content)}</div>
                                             ) : null}
 
@@ -1431,7 +1413,7 @@ export default function ChatInterface({
                                                     <button onClick={() => { setReplyingTo(msg); setActiveMenu(null); setTimeout(() => inputRef.current?.focus(), 50); }}
                                                         style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: 'var(--foreground)', cursor: 'pointer' }}><Reply size={16} color="var(--secondary-foreground)" /> Reply</button>
                                                     {mine && msg.content && !msg.mediaUrl && (
-                                                        <button onClick={() => { setEditingMessageId(msg.id); setEditText(msg.content); setActiveMenu(null); }}
+                                                        <button onClick={() => { setEditingMessage(msg); setNewMessage(msg.content); setActiveMenu(null); setTimeout(() => inputRef.current?.focus(), 50); }}
                                                             style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: 'var(--foreground)', cursor: 'pointer' }}><Pencil size={16} color="var(--secondary-foreground)" /> Edit</button>
                                                     )}
                                                     <button onClick={() => { navigator.clipboard.writeText(msg.content); setActiveMenu(null); }}
@@ -1473,6 +1455,22 @@ export default function ChatInterface({
                             </div>
                         </div>
                         <button onClick={() => setReplyingTo(null)} style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><X size={16} /></button>
+                    </div>
+                )
+            }
+
+            {/* Editing bar */}
+            {
+                editingMessage && (
+                    <div style={{ padding: '8px 16px', background: 'var(--card-bg)', borderTop: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0 }}>
+                        <Pencil size={14} color="var(--primary)" style={{ flexShrink: 0 }} />
+                        <div style={{ flex: 1, paddingLeft: 10, borderLeft: '2px solid var(--primary)', minWidth: 0 }}>
+                            <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--primary)' }}>Editing message</div>
+                            <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {editingMessage.content}
+                            </div>
+                        </div>
+                        <button onClick={() => { setEditingMessage(null); setNewMessage(''); }} style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><X size={16} /></button>
                     </div>
                 )
             }
