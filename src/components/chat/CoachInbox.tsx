@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import { MessageSquare, Calendar as CalendarIcon, Search, X, MailOpen } from 'lucide-react';
+import { MessageSquare, Calendar as CalendarIcon, Search, X, MailOpen, LayoutDashboard } from 'lucide-react';
+import Link from 'next/link';
 import ChatInterface from './ChatInterface';
 import AthleteProgramPane from './AthleteProgramPane';
 
@@ -231,19 +232,34 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                         isEmbedded={true}
                         onBack={isMobile ? () => setSelectedId(null) : undefined}
                         headerActions={
-                            <button
-                                onClick={() => setShowProgram(!showProgram)}
-                                style={{
-                                    display: 'flex', alignItems: 'center', gap: 6,
-                                    background: showProgram ? 'var(--primary)' : 'rgba(255,255,255,0.1)',
-                                    border: 'none', borderRadius: 6, padding: '6px 10px',
-                                    color: '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer',
-                                    marginRight: 8, transition: 'background 0.2s'
-                                }}
-                            >
-                                <CalendarIcon size={14} />
-                                {showProgram ? 'Hide Program' : 'View Program'}
-                            </button>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <Link
+                                    href={`/dashboard/athletes/${selectedId}`}
+                                    style={{
+                                        display: 'flex', alignItems: 'center', gap: 6,
+                                        background: 'rgba(255,255,255,0.1)',
+                                        border: 'none', borderRadius: 6, padding: '6px 10px',
+                                        color: '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                                        textDecoration: 'none', transition: 'background 0.2s',
+                                    }}
+                                >
+                                    <LayoutDashboard size={14} />
+                                    Dashboard
+                                </Link>
+                                <button
+                                    onClick={() => setShowProgram(!showProgram)}
+                                    style={{
+                                        display: 'flex', alignItems: 'center', gap: 6,
+                                        background: showProgram ? 'var(--primary)' : 'rgba(255,255,255,0.1)',
+                                        border: 'none', borderRadius: 6, padding: '6px 10px',
+                                        color: '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                                        transition: 'background 0.2s',
+                                    }}
+                                >
+                                    <CalendarIcon size={14} />
+                                    {showProgram ? 'Hide Program' : 'View Program'}
+                                </button>
+                            </div>
                         }
                     />
                 )}
