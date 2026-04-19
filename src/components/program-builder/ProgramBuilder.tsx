@@ -532,6 +532,90 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
     // Week overview drawer
     const [weekOverviewIndex, setWeekOverviewIndex] = useState<number | null>(null);
 
+    // Coach Notes panel
+    const [notesOpen, setNotesOpen] = useState(false);
+    const [coachNotes, setCoachNotes] = useState<any[]>([]);
+    const [notesLoading, setNotesLoading] = useState(false);
+    const [newNoteContent, setNewNoteContent] = useState('');
+    const [newNoteCategory, setNewNoteCategory] = useState('general');
+    const [notesSaving, setNotesSaving] = useState(false);
+
+    const NOTE_CATEGORIES = [
+        { value: 'general', label: 'General', color: 'var(--secondary-foreground)' },
+        { value: 'injury', label: 'Injury', color: '#ef4444' },
+        { value: 'cues', label: 'Cues', color: '#f59e0b' },
+        { value: 'preferences', label: 'Prefs', color: '#a855f7' },
+    ];
+
+    const fetchNotes = async () => {
+        if (!athleteId) return;
+        setNotesLoading(true);
+        try {
+            const r = await fetch(`/api/coach-notes?athleteId=${athleteId}`);
+            if (r.ok) setCoachNotes(await r.json());
+        } catch { /* ignore */ }
+        setNotesLoading(false);
+    };
+
+    useEffect(() => {
+        if (notesOpen && athleteId) fetchNotes();
+    }, [notesOpen, athleteId]);
+
+    const addNote = async () => {
+        if (!newNoteContent.trim() || !athleteId) return;
+        setNotesSaving(true);
+        try {
+            const r = await fetch('/api/coach-notes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ athleteId, content: newNoteContent.trim(), category: newNoteCategory }),
+            });
+            if (r.ok) {
+                const note = await r.json();
+                setCoachNotes(prev => [note, ...prev]);
+                setNewNoteContent('');
+            }
+        } catch { /* ignore */ }
+        setNotesSaving(false);
+    };
+
+    const togglePinNote = async (note: any) => {
+        try {
+            const r = await fetch('/api/coach-notes', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: note.id, pinned: !note.pinned }),
+            });
+            if (r.ok) {
+                setCoachNotes(prev => prev.map(n => n.id === note.id ? { ...n, pinned: !n.pinned } : n));
+            }
+        } catch { /* ignore */ }
+    };
+
+    const deleteNote = async (id: string) => {
+        try {
+            const r = await fetch(`/api/coach-notes?id=${id}`, { method: 'DELETE' });
+            if (r.ok) setCoachNotes(prev => prev.filter(n => n.id !== id));
+        } catch { /* ignore */ }
+    };
+
+    const fmtNoteDate = (s: string) => {
+        const d = new Date(s), n = new Date();
+        const diffMs = n.getTime() - d.getTime();
+        const diffDays = Math.floor(diffMs / 86400000);
+        if (diffDays === 0) return 'Today';
+        if (diffDays === 1) return 'Yesterday';
+        if (diffDays < 7) return `${diffDays}d ago`;
+        if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
+        return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    };
+
+    const sortedNotes = [...coachNotes].sort((a, b) => {
+        if (a.pinned && !b.pinned) return -1;
+        if (!a.pinned && b.pinned) return 1;
+        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+    });
+
     // Reference panel: read-only view of a ghost session from an existing program
     const [referenceSession, setReferenceSession] = useState<any | null>(null);
 
@@ -1661,6 +1745,21 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                 </span>
                             )}
 
+                            {athleteId && (
+                                <button
+                                    onClick={() => setNotesOpen(o => !o)}
+                                    style={{
+                                        display: 'flex', alignItems: 'center', gap: 6,
+                                        background: notesOpen ? 'rgba(168,85,247,0.2)' : 'rgba(255,255,255,0.07)',
+                                        border: `1px solid ${notesOpen ? '#a855f7' : 'var(--card-border)'}`,
+                                        borderRadius: 'var(--radius)', padding: '0.5rem 1rem',
+                                        color: notesOpen ? '#a855f7' : 'var(--secondary-foreground)',
+                                        fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
+                                    }}
+                                >
+                                    📝 Notes{coachNotes.length > 0 ? ` (${coachNotes.length})` : ''}
+                                </button>
+                            )}
                             <button onClick={handleSave} className="btn btn-primary" disabled={isSaving || isNavigating}>
                                 {isSaving ? 'Saving...' : isNavigating ? 'Loading dashboard...' : 'Save & Assign'}
                             </button>
@@ -1960,6 +2059,162 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                     </div>
                 </div>
             )}
+            {/* Coach Notes Side Panel */}
+            {notesOpen && athleteId && (
+                <>
+                    <div
+                        onClick={() => setNotesOpen(false)}
+                        style={{ position: 'fixed', inset: 0, zIndex: 900, background: 'rgba(0,0,0,0.3)' }}
+                    />
+                    <div style={{
+                        position: 'fixed', top: 0, left: 0, bottom: 0, width: 360, zIndex: 901,
+                        background: 'var(--background)', borderRight: '1px solid var(--card-border)',
+                        display: 'flex', flexDirection: 'column', boxShadow: '4px 0 24px rgba(0,0,0,0.4)',
+                    }}>
+                        {/* Panel header */}
+                        <div style={{
+                            padding: '1rem 1.25rem', borderBottom: '1px solid var(--card-border)',
+                            display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0,
+                        }}>
+                            <div>
+                                <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--foreground)' }}>
+                                    Coach Notes
+                                </div>
+                                {athleteName && (
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', marginTop: 2 }}>
+                                        {athleteName}
+                                    </div>
+                                )}
+                            </div>
+                            <button
+                                onClick={() => setNotesOpen(false)}
+                                style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', padding: 4, fontSize: 18, lineHeight: 1 }}
+                            >
+                                ×
+                            </button>
+                        </div>
+
+                        {/* Notes list */}
+                        <div style={{ flex: 1, overflowY: 'auto', padding: '0.75rem 1rem' }}>
+                            {notesLoading ? (
+                                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--secondary-foreground)', fontSize: '0.85rem' }}>
+                                    Loading...
+                                </div>
+                            ) : sortedNotes.length === 0 ? (
+                                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--secondary-foreground)', fontSize: '0.85rem' }}>
+                                    No notes yet. Add your first note below.
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                                    {sortedNotes.map(note => {
+                                        const cat = NOTE_CATEGORIES.find(c => c.value === note.category) || NOTE_CATEGORIES[0];
+                                        return (
+                                            <div key={note.id} style={{
+                                                background: 'var(--card-bg)', border: `1px solid var(--card-border)`,
+                                                borderLeft: `3px solid ${cat.color}`,
+                                                borderRadius: 'var(--radius)', padding: '0.75rem',
+                                                position: 'relative',
+                                            }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: '0.4rem' }}>
+                                                    <span style={{
+                                                        fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase',
+                                                        letterSpacing: '0.06em', color: cat.color,
+                                                    }}>
+                                                        {note.pinned ? '📌 ' : ''}{cat.label}
+                                                    </span>
+                                                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                                                        <button
+                                                            onClick={() => togglePinNote(note)}
+                                                            title={note.pinned ? 'Unpin' : 'Pin'}
+                                                            style={{
+                                                                background: 'none', border: 'none', cursor: 'pointer', padding: 2,
+                                                                color: note.pinned ? '#a855f7' : 'rgba(255,255,255,0.2)',
+                                                                fontSize: 13, lineHeight: 1, transition: 'color 0.15s',
+                                                            }}
+                                                        >
+                                                            📌
+                                                        </button>
+                                                        <button
+                                                            onClick={() => { if (confirm('Delete this note?')) deleteNote(note.id); }}
+                                                            title="Delete"
+                                                            style={{
+                                                                background: 'none', border: 'none', cursor: 'pointer', padding: 2,
+                                                                color: 'rgba(255,255,255,0.2)', fontSize: 13, lineHeight: 1, transition: 'color 0.15s',
+                                                            }}
+                                                            onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
+                                                            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.2)')}
+                                                        >
+                                                            ×
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div style={{ fontSize: '0.85rem', color: 'var(--foreground)', lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                                                    {note.content}
+                                                </div>
+                                                <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.25)', marginTop: '0.4rem' }}>
+                                                    {fmtNoteDate(note.updatedAt)}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Quick-add form */}
+                        <div style={{
+                            padding: '1rem', borderTop: '1px solid var(--card-border)', flexShrink: 0,
+                            background: 'rgba(168,85,247,0.04)',
+                        }}>
+                            <textarea
+                                value={newNoteContent}
+                                onChange={e => setNewNoteContent(e.target.value)}
+                                placeholder="Add a note..."
+                                onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) addNote(); }}
+                                style={{
+                                    width: '100%', background: 'var(--card-bg)', border: '1px solid var(--card-border)',
+                                    borderRadius: 'var(--radius)', color: 'var(--foreground)', fontSize: '0.85rem',
+                                    padding: '0.6rem 0.75rem', resize: 'none', minHeight: 72, outline: 'none',
+                                    boxSizing: 'border-box',
+                                }}
+                                onFocus={e => (e.target.style.borderColor = '#a855f7')}
+                                onBlur={e => (e.target.style.borderColor = 'var(--card-border)')}
+                            />
+                            <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center' }}>
+                                <select
+                                    value={newNoteCategory}
+                                    onChange={e => setNewNoteCategory(e.target.value)}
+                                    style={{
+                                        flex: 1, background: 'var(--card-bg)', border: '1px solid var(--card-border)',
+                                        borderRadius: 'var(--radius)', color: 'var(--foreground)', fontSize: '0.8rem',
+                                        padding: '0.4rem 0.6rem', outline: 'none',
+                                    }}
+                                >
+                                    {NOTE_CATEGORIES.map(c => (
+                                        <option key={c.value} value={c.value}>{c.label}</option>
+                                    ))}
+                                </select>
+                                <button
+                                    onClick={addNote}
+                                    disabled={notesSaving || !newNoteContent.trim()}
+                                    style={{
+                                        background: '#a855f7', border: 'none', borderRadius: 'var(--radius)',
+                                        color: '#fff', fontSize: '0.8rem', fontWeight: 600, padding: '0.4rem 1rem',
+                                        cursor: notesSaving || !newNoteContent.trim() ? 'not-allowed' : 'pointer',
+                                        opacity: notesSaving || !newNoteContent.trim() ? 0.5 : 1, flexShrink: 0,
+                                    }}
+                                >
+                                    {notesSaving ? '...' : 'Add'}
+                                </button>
+                            </div>
+                            <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.2)', marginTop: 6 }}>
+                                ⌘↵ to add
+                            </div>
+                        </div>
+                    </div>
+                </>
+            )}
+
             {/* Week Overview toggle */}
             <button
                 onClick={() => setWeekOverviewIndex(prev => prev !== null ? null : 0)}
