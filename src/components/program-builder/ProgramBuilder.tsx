@@ -1951,14 +1951,20 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                 </div>
             )}
 
-            {/* Reference Panel: Read-only view of a past program session */}
+            {/* Reference Panel: Read-only view of a past program session.
+                When the session editor is also open, this slides to the left of
+                the editor so both panels sit side by side. */}
             {referenceSession && (
                 <div style={{
-                    position: 'fixed', top: 'var(--header-height, 56px)', right: 0, bottom: 0,
+                    position: 'fixed', top: 'var(--header-height, 56px)',
+                    right: editingSession ? 'max(40vw, 480px)' : 0, bottom: 0,
                     width: '40vw', minWidth: '480px', maxWidth: '90vw',
-                    background: 'var(--background)', borderLeft: '2px solid rgba(148, 163, 184, 0.3)',
-                    zIndex: 900, display: 'flex', flexDirection: 'column',
-                    boxShadow: '-8px 0 30px rgba(0,0,0,0.5)',
+                    background: 'var(--background)',
+                    borderLeft: '2px solid rgba(148, 163, 184, 0.3)',
+                    borderRight: editingSession ? '1px solid var(--card-border)' : 'none',
+                    zIndex: 899, display: 'flex', flexDirection: 'column',
+                    boxShadow: editingSession ? 'none' : '-8px 0 30px rgba(0,0,0,0.5)',
+                    transition: 'right 0.25s ease',
                 }}>
                     {/* Header */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid var(--card-border)', background: 'rgba(148, 163, 184, 0.06)', flexShrink: 0 }}>
