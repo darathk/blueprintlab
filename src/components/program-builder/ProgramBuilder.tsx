@@ -271,7 +271,7 @@ const BuilderExerciseCard = ({ exercise, onUpdate, onRemove, onDragStart, onDrag
 
 
 
-export default function ProgramBuilder({ athleteId, initialData = null, athletes = [], initialExercises = null, athleteLiftTargets = null, athleteTrainingSchedule = null, athleteName = '', existingPrograms = [] }: { athleteId?: string, initialData?: any, athletes?: any[], initialExercises?: any, athleteLiftTargets?: any, athleteTrainingSchedule?: string | null, athleteName?: string, existingPrograms?: any[] }) {
+export default function ProgramBuilder({ athleteId, initialData = null, athletes = [], initialExercises = null, athleteLiftTargets = null, athleteTrainingSchedule = null, athleteName = '', existingPrograms = [], initialCoachNotes = null }: { athleteId?: string, initialData?: any, athletes?: any[], initialExercises?: any, athleteLiftTargets?: any, athleteTrainingSchedule?: string | null, athleteName?: string, existingPrograms?: any[], initialCoachNotes?: any[] | null }) {
     const router = useRouter();
     const [programName, setProgramName] = useState('');
     const [startDate, setStartDate] = useState(() => snapToSunday(new Date().toISOString().split('T')[0]));
@@ -534,8 +534,9 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
 
     // Coach Notes panel
     const [notesOpen, setNotesOpen] = useState(false);
-    const [coachNotes, setCoachNotes] = useState<any[]>([]);
+    const [coachNotes, setCoachNotes] = useState<any[]>(initialCoachNotes || []);
     const [notesLoading, setNotesLoading] = useState(false);
+    const notesFetchedRef = useRef<boolean>(!!initialCoachNotes);
     const [newNoteContent, setNewNoteContent] = useState('');
     const [newNoteCategory, setNewNoteCategory] = useState('general');
     const [notesSaving, setNotesSaving] = useState(false);
@@ -547,19 +548,29 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
         { value: 'preferences', label: 'Prefs', color: '#a855f7' },
     ];
 
-    const fetchNotes = async () => {
+    const fetchNotes = async (showSpinner: boolean) => {
         if (!athleteId) return;
-        setNotesLoading(true);
+        if (showSpinner) setNotesLoading(true);
         try {
             const r = await fetch(`/api/coach-notes?athleteId=${athleteId}`);
             if (r.ok) setCoachNotes(await r.json());
         } catch { /* ignore */ }
-        setNotesLoading(false);
+        notesFetchedRef.current = true;
+        if (showSpinner) setNotesLoading(false);
     };
 
     useEffect(() => {
-        if (notesOpen && athleteId) fetchNotes();
+        if (notesOpen && athleteId && !notesFetchedRef.current) {
+            fetchNotes(true);
+        }
     }, [notesOpen, athleteId]);
+
+    // Background prefetch on mount so the panel opens instantly the first time
+    useEffect(() => {
+        if (athleteId && !notesFetchedRef.current) {
+            fetchNotes(false);
+        }
+    }, [athleteId]);
 
     const addNote = async () => {
         if (!newNoteContent.trim() || !athleteId) return;
