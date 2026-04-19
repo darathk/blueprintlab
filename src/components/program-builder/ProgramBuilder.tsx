@@ -1505,7 +1505,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
     };
 
     return (
-        <div className="program-builder-layout" style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 3fr', gap: '1.5rem', height: 'calc(100vh - 100px)', paddingTop: '1.5rem' }}>
+        <div className="program-builder-layout" style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 3fr', gap: '1.5rem', height: 'calc(100vh - 100px)', paddingTop: '1.5rem', paddingLeft: notesOpen && athleteId ? 360 : 0, transition: 'padding-left 0.25s ease' }}>
 
             {/* LEFTSIDE BAR: Exercise Picker + Stress Index */}
             <div className="program-builder-sidebar" style={{ display: 'flex', flexDirection: 'column', gap: '0', height: '100%', overflow: 'hidden' }}>
@@ -2062,12 +2062,8 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
             {/* Coach Notes Side Panel */}
             {notesOpen && athleteId && (
                 <>
-                    <div
-                        onClick={() => setNotesOpen(false)}
-                        style={{ position: 'fixed', inset: 0, zIndex: 900, background: 'rgba(0,0,0,0.3)' }}
-                    />
                     <div style={{
-                        position: 'fixed', top: 0, left: 0, bottom: 0, width: 360, zIndex: 901,
+                        position: 'fixed', top: 'var(--header-height, 56px)', left: 0, bottom: 0, width: 360, zIndex: 850,
                         background: 'var(--background)', borderRight: '1px solid var(--card-border)',
                         display: 'flex', flexDirection: 'column', boxShadow: '4px 0 24px rgba(0,0,0,0.4)',
                     }}>
