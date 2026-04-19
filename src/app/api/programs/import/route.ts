@@ -68,12 +68,18 @@ export async function POST(request: Request) {
         }));
 
         // In order to satisfy the foreign key, either we need an athleteId or we leave it if we change schema.
-        // Assuming we need a dummy 'Unassigned' athlete for imports if no explicit athleteId is passed.
-        let defaultAthleteId = 'unassigned';
+        // Use a per-coach 'Unassigned' athlete so imports are scoped to the importing coach
+        // and never leak across coaches (the legacy shared 'unassigned' record would have).
+        let defaultAthleteId = `unassigned-${auth.user.id}`;
         const existingUnassigned = await prisma.athlete.findUnique({ where: { id: defaultAthleteId }, select: { id: true } });
         if (!existingUnassigned) {
             await prisma.athlete.create({
-                data: { id: defaultAthleteId, name: 'Unassigned Programs', email: 'unassigned@example.com' }
+                data: {
+                    id: defaultAthleteId,
+                    name: 'Unassigned Programs',
+                    email: `unassigned-${auth.user.id}@example.com`,
+                    coachId: auth.user.id
+                }
             });
         }
 

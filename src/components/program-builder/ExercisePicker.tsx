@@ -115,6 +115,24 @@ export default function ExercisePicker({ onDragStart, onAdd, initialExercises = 
         }
     };
 
+    const handleDeleteCustomExercise = async (name: string) => {
+        if (!confirm(`Delete custom exercise "${name}"? This cannot be undone.`)) return;
+        try {
+            const res = await fetch(`/api/exercises?name=${encodeURIComponent(name)}`, {
+                method: 'DELETE',
+            });
+            if (res.ok) {
+                await refreshExercises();
+            } else {
+                const data = await res.json().catch(() => ({}));
+                alert(data.error || 'Failed to delete exercise');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('Error deleting exercise');
+        }
+    };
+
     const handleDragStartInternal = (e, name) => {
         // Find full exercise data
         const exerciseData = exerciseDB[name] || { name };
@@ -202,31 +220,82 @@ export default function ExercisePicker({ onDragStart, onAdd, initialExercises = 
 
                             {isExpanded && (
                                 <div style={{ padding: '0.5rem', background: 'rgba(0,0,0,0.2)' }}>
-                                    {exercises.map(exName => (
-                                        <div
-                                            key={exName}
-                                            draggable
-                                            onDragStart={(e) => handleDragStartInternal(e, exName)}
-                                            onClick={() => onAdd(exerciseDB[exName] || { name: exName })}
-                                            style={{
-                                                padding: '0.5rem',
-                                                marginBottom: '4px',
-                                                background: 'var(--card-bg)',
-                                                borderRadius: '4px',
-                                                cursor: 'grab',
-                                                fontSize: '0.9rem',
-                                                border: '1px solid transparent',
-                                                transition: 'all 0.2s',
-                                                display: 'flex',
-                                                justifyContent: 'space-between',
-                                                alignItems: 'center'
-                                            }}
-                                            className="exercise-item"
-                                        >
-                                            {exName}
-                                            <span style={{ fontSize: '1.2rem', lineHeight: 0, color: 'var(--accent)' }}>+</span>
-                                        </div>
-                                    ))}
+                                    {exercises.map(exName => {
+                                        const exData: any = exerciseDB[exName] || { name: exName };
+                                        const isCustom = !!exData.isCustom;
+                                        return (
+                                            <div
+                                                key={exName}
+                                                draggable
+                                                onDragStart={(e) => handleDragStartInternal(e, exName)}
+                                                onClick={() => onAdd(exData)}
+                                                style={{
+                                                    padding: '0.5rem',
+                                                    marginBottom: '4px',
+                                                    background: 'var(--card-bg)',
+                                                    borderRadius: '4px',
+                                                    cursor: 'grab',
+                                                    fontSize: '0.9rem',
+                                                    border: '1px solid transparent',
+                                                    transition: 'all 0.2s',
+                                                    display: 'flex',
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    gap: '0.5rem'
+                                                }}
+                                                className="exercise-item"
+                                            >
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0, flex: 1 }}>
+                                                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{exName}</span>
+                                                    {isCustom && (
+                                                        <span style={{
+                                                            fontSize: '0.65rem',
+                                                            fontWeight: 700,
+                                                            color: 'var(--accent)',
+                                                            border: '1px solid var(--accent)',
+                                                            borderRadius: 3,
+                                                            padding: '1px 4px',
+                                                            textTransform: 'uppercase',
+                                                            letterSpacing: '0.04em',
+                                                            flexShrink: 0,
+                                                        }}>Custom</span>
+                                                    )}
+                                                </span>
+                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexShrink: 0 }}>
+                                                    {isCustom && (
+                                                        <button
+                                                            type="button"
+                                                            title={`Delete custom exercise "${exName}"`}
+                                                            aria-label={`Delete custom exercise ${exName}`}
+                                                            draggable={false}
+                                                            onMouseDown={e => e.stopPropagation()}
+                                                            onDragStart={e => { e.preventDefault(); e.stopPropagation(); }}
+                                                            onClick={e => {
+                                                                e.stopPropagation();
+                                                                e.preventDefault();
+                                                                handleDeleteCustomExercise(exName);
+                                                            }}
+                                                            style={{
+                                                                background: 'transparent',
+                                                                border: 'none',
+                                                                color: 'var(--error, #ef4444)',
+                                                                cursor: 'pointer',
+                                                                fontSize: '0.95rem',
+                                                                padding: '2px 6px',
+                                                                borderRadius: 4,
+                                                                lineHeight: 1,
+                                                            }}
+                                                            onMouseOver={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.15)'; }}
+                                                            onMouseOut={e => { e.currentTarget.style.background = 'transparent'; }}
+                                                        >
+                                                            🗑
+                                                        </button>
+                                                    )}
+                                                    <span style={{ fontSize: '1.2rem', lineHeight: 0, color: 'var(--accent)' }}>+</span>
+                                                </span>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>

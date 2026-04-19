@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import { MessageSquare, Calendar as CalendarIcon, Search, X, MailOpen } from 'lucide-react';
+import { MessageSquare, Calendar as CalendarIcon, Search, X, MailOpen, LayoutDashboard } from 'lucide-react';
+import Link from 'next/link';
 import ChatInterface from './ChatInterface';
 import AthleteProgramPane from './AthleteProgramPane';
 
@@ -16,9 +17,9 @@ interface Message {
 
 interface ConvSummary { athleteId: string; athleteName: string; lastMessage: string; lastMessageAt: string; unreadCount: number; }
 
-interface Props { coachId: string; coachName: string; initialConvos?: ConvSummary[]; initialAthleteId?: string; }
+interface Props { coachId: string; coachName: string; initialConvos?: ConvSummary[]; initialAthleteId?: string; initialMessages?: Message[]; }
 
-export default function CoachInbox({ coachId, coachName, initialConvos = [], initialAthleteId }: Props) {
+export default function CoachInbox({ coachId, coachName, initialConvos = [], initialAthleteId, initialMessages = [] }: Props) {
     const [convos, setConvos] = useState<ConvSummary[]>(initialConvos);
     const [selectedId, setSelectedId] = useState<string | null>(initialAthleteId || null);
     const selectedConvo = convos.find(c => c.athleteId === selectedId);
@@ -227,22 +228,38 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                         currentUserName={coachName}
                         otherUserName={selectedConvo?.athleteName || 'Athlete'}
                         athleteId={selectedId}
+                        initialMessages={selectedId === initialAthleteId ? initialMessages : undefined}
                         isEmbedded={true}
                         onBack={isMobile ? () => setSelectedId(null) : undefined}
                         headerActions={
-                            <button
-                                onClick={() => setShowProgram(!showProgram)}
-                                style={{
-                                    display: 'flex', alignItems: 'center', gap: 6,
-                                    background: showProgram ? 'var(--primary)' : 'rgba(255,255,255,0.1)',
-                                    border: 'none', borderRadius: 6, padding: '6px 10px',
-                                    color: '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer',
-                                    marginRight: 8, transition: 'background 0.2s'
-                                }}
-                            >
-                                <CalendarIcon size={14} />
-                                {showProgram ? 'Hide Program' : 'View Program'}
-                            </button>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                                <Link
+                                    href={`/dashboard/athletes/${selectedId}`}
+                                    style={{
+                                        display: 'flex', alignItems: 'center', gap: 6,
+                                        background: 'rgba(255,255,255,0.1)',
+                                        border: 'none', borderRadius: 6, padding: '6px 10px',
+                                        color: '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                                        textDecoration: 'none', transition: 'background 0.2s',
+                                    }}
+                                >
+                                    <LayoutDashboard size={14} />
+                                    Dashboard
+                                </Link>
+                                <button
+                                    onClick={() => setShowProgram(!showProgram)}
+                                    style={{
+                                        display: 'flex', alignItems: 'center', gap: 6,
+                                        background: showProgram ? 'var(--primary)' : 'rgba(255,255,255,0.1)',
+                                        border: 'none', borderRadius: 6, padding: '6px 10px',
+                                        color: '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                                        transition: 'background 0.2s',
+                                    }}
+                                >
+                                    <CalendarIcon size={14} />
+                                    {showProgram ? 'Hide Program' : 'View Program'}
+                                </button>
+                            </div>
                         }
                     />
                 )}

@@ -246,7 +246,7 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
 
             if (athleteLogSummaries.length > 0) {
                 const weeksFromLogs = athleteLogSummaries.map(l => {
-                    const match = l.sessionId.match(/week-(\d+)/i);
+                    const match = l.sessionId.match(/_w(\d+)_d/i);
                     return match ? parseInt(match[1]) : 1;
                 });
                 progress.currentWeek = Math.max(...weeksFromLogs);
@@ -288,12 +288,18 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
             const totalWeeks = progress.totalWeeks || 1;
             const sessionsPerWeek = Math.ceil(progress.totalSessions / totalWeeks);
 
-            // Check if a next block already exists after the current program in the sorted list
+            // Check if any assigned program hasn't been started yet (queued for the future)
             if (activeProgId) {
-                 const currIdx = activeSorted.findIndex(p => p.id === activeProgId);
-                 if (currIdx >= 0 && currIdx < activeSorted.length - 1) {
-                      hasNextBlockReady = true;
-                 }
+                 hasNextBlockReady = activeSorted.some(p => {
+                      if (p.id === activeProgId) return false; // skip current program
+                      // Check if athlete has logged any sessions for this program
+                      const pLogs = athleteLogs.filter(l => l.programId === p.id);
+                      if (pLogs.length > 0) return false; // already started, not queued
+                      // Check if the program actually has sessions
+                      let pSessions = 0;
+                      (p.weeks || []).forEach((w: any) => pSessions += (w.sessions?.length || 0));
+                      return pSessions > 0; // has sessions but no logs = future program
+                 });
             }
 
             // Needs update: athlete is within 1 week of sessions remaining in this block (logs)
@@ -303,16 +309,18 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
             if (activeProgId) {
                 const progObj = programs.find((p: any) => p.id === activeProgId);
                 if (progObj && progObj.startDate) {
-                    const expiryData = new Date(progObj.startDate);
-                    expiryData.setHours(0,0,0,0);
+                    const expiryData = parseLocalDateStr(progObj.startDate);
                     expiryData.setDate(expiryData.getDate() + totalWeeks * 7);
-                    
-                    if (new Date() >= expiryData) isExpired = true;
-                    
+
+                    const now = new Date();
+                    now.setHours(0, 0, 0, 0);
+
+                    if (now >= expiryData) isExpired = true;
+
                     const oneWeekBeforeExpiry = new Date(expiryData);
                     oneWeekBeforeExpiry.setDate(oneWeekBeforeExpiry.getDate() - 7);
-                    
-                    if (new Date() >= oneWeekBeforeExpiry) isEndingSoonByTime = true;
+
+                    if (now >= oneWeekBeforeExpiry) isEndingSoonByTime = true;
                 }
             }
 

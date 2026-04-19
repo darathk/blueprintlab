@@ -5,9 +5,11 @@
  */
 
 // Accepted name variants for each competition lift (lowercase, matching AthleteCharts)
+// Bench intentionally rejects the generic "Bench Press" / "Bench" names so that
+// accessory bench work isn't conflated with the actual competition bench.
 const COMPETITION_LIFT_NAMES: Record<'squat' | 'bench' | 'deadlift', string[]> = {
     squat: ['squat', 'competition squat'],
-    bench: ['bench press', 'bench', 'competition bench', 'competition bench press'],
+    bench: ['competition bench', 'competition bench press'],
     deadlift: ['deadlift', 'competition deadlift'],
 };
 

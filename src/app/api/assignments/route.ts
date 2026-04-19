@@ -32,17 +32,46 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Athlete not found' }, { status: 404 });
         }
 
-        // Deactivate old active programs
-        await prisma.program.updateMany({
-            where: { athleteId, status: 'active', id: { not: programId } },
-            data: { status: 'completed' }
+        // Verify the program exists AND the current assignee belongs to this coach
+        // (prevents stealing programs assigned to athletes owned by another coach).
+        const program = await prisma.program.findUnique({
+            where: { id: programId },
+            select: {
+                id: true,
+                athleteId: true,
+                athlete: { select: { coachId: true, id: true } }
+            }
         });
 
-        // Activate the new assigned program
-        await prisma.program.update({
-            where: { id: programId },
-            data: { status: 'active', athleteId } // Ensuring it belongs to them
-        });
+        if (!program) {
+            return NextResponse.json({ error: 'Program not found' }, { status: 404 });
+        }
+
+        const programCoachId = program.athlete?.coachId;
+        const programOwnerId = program.athlete?.id;
+        // Allow reassignment only if the program currently belongs to:
+        //   - the coach themselves (a template program), OR
+        //   - an athlete whose coach is the current coach, OR
+        //   - the 'unassigned' bucket (shared import target).
+        const isOwnedByCoach = programCoachId === auth.user.id
+            || programOwnerId === auth.user.id
+            || program.athleteId === 'unassigned';
+        if (!isOwnedByCoach) {
+            return NextResponse.json({ error: 'Program not accessible' }, { status: 403 });
+        }
+
+        // Transactionally deactivate old programs and activate the new one so we
+        // never leave the athlete without an active program on partial failure.
+        await prisma.$transaction([
+            prisma.program.updateMany({
+                where: { athleteId, status: 'active', id: { not: programId } },
+                data: { status: 'completed' }
+            }),
+            prisma.program.update({
+                where: { id: programId },
+                data: { status: 'active', athleteId } // Ensuring it belongs to them
+            })
+        ]);
 
         // Fetch fresh athlete data mapping for the frontend wrapper
         const updatedAthlete = await prisma.athlete.findUnique({

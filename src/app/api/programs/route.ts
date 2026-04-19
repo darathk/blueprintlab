@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
+import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
 import { getProgramsByAthlete } from '@/lib/storage';
 import { requireAuth, requireAccessToAthlete, requireCoach } from '@/lib/api-auth';
@@ -63,29 +64,39 @@ export async function POST(request: Request) {
         const access = await requireAccessToAthlete(program.athleteId);
         if ('error' in access) return access.error;
 
-        const newProgram = await prisma.program.create({
-            data: {
-                id: program.id || undefined, // Prisma auto-generates uuid if undefined
-                athleteId: program.athleteId,
-                name: program.name,
-                startDate: program.startDate || new Date().toISOString(),
-                endDate: program.endDate || null,
-                weeks: program.weeks,
-                status: program.status || 'active'
-            }
-        });
+        // Create the new program; if it's active, deactivate previously-active programs
+        // for the same athlete in the same transaction so we never have two actives
+        // or leave the athlete with zero active programs on partial failure.
+        const status = program.status || 'active';
+        const createData = {
+            id: program.id || undefined, // Prisma auto-generates uuid if undefined
+            athleteId: program.athleteId,
+            name: program.name,
+            startDate: program.startDate || new Date().toISOString(),
+            endDate: program.endDate || null,
+            weeks: program.weeks,
+            status
+        };
 
-        // Set all other programs for this athlete to completed if a new active one is pushed
-        if (newProgram.status === 'active') {
-            await prisma.program.updateMany({
+        // Deactivate first (before create) so the new program is never caught by the updateMany.
+        const ops: any[] = [];
+        if (status === 'active') {
+            ops.push(prisma.program.updateMany({
                 where: {
                     athleteId: program.athleteId,
-                    id: { not: newProgram.id },
                     status: 'active'
                 },
                 data: { status: 'completed' }
-            });
+            }));
         }
+        ops.push(prisma.program.create({ data: createData }));
+
+        const results = await prisma.$transaction(ops);
+        const newProgram = results[results.length - 1];
+
+        // Invalidate the athlete's dashboard so a redirect after Save & Assign
+        // gets fresh program data without needing a client-side router.refresh().
+        revalidatePath(`/dashboard/athletes/${program.athleteId}`);
 
         return NextResponse.json(newProgram, { status: 201 });
     } catch (error) {
@@ -127,6 +138,10 @@ export async function PUT(request: Request) {
             }
         });
 
+        // Invalidate the athlete dashboard cache so post-edit redirects don't
+        // need a client-side router.refresh() to see the latest program state.
+        revalidatePath(`/dashboard/athletes/${existing.athleteId}`);
+
         return NextResponse.json(updatedProgram, { status: 200 });
     } catch (error) {
         console.error(error);
@@ -157,11 +172,13 @@ export async function DELETE(request: Request) {
         const access = await requireAccessToAthlete(existing.athleteId);
         if ('error' in access) return access.error;
 
-        // First delete associated logs due to foreign key constraints
-        await prisma.log.deleteMany({ where: { programId: id } });
-
-        // Then delete the program
-        await prisma.program.delete({ where: { id } });
+        // Transactionally delete associated logs (FK constraint) and detach any
+        // Readiness check-ins that referenced this program so they aren't orphaned.
+        await prisma.$transaction([
+            prisma.log.deleteMany({ where: { programId: id } }),
+            prisma.readiness.updateMany({ where: { programId: id }, data: { programId: null } }),
+            prisma.program.delete({ where: { id } })
+        ]);
 
         return NextResponse.json({ success: true });
     } catch (error) {

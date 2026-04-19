@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
@@ -16,6 +16,43 @@ const StressMatrix = dynamic(() => import('@/components/program-builder/StressMa
 
 // Helper to generate IDs
 const generateId = () => Math.random().toString(36).substr(2, 9);
+
+const CATEGORY_COLORS: Record<string, string> = {
+    'Knee': '#EAB308',
+    'Hip': '#EF4444',
+    'Horizontal Push': '#22C55E',
+    'Vertical Push': '#F59E0B',
+    'Horizontal Pull': '#06B6D4',
+    'Vertical Pull': '#3B82F6',
+    'Isolation (Upper)': '#A78BFA',
+    'Isolation (Lower)': '#F472B6',
+    'Isolation/Accessory': '#8B5CF6'
+};
+
+function formatSetsSummary(sets: any[]) {
+    if (!Array.isArray(sets) || sets.length === 0) return '';
+    const parts: string[] = [];
+    let i = 0;
+    while (i < sets.length) {
+        const s = sets[i];
+        const reps = s.reps || '';
+        const rpe = s.rpe || '';
+        const weight = s.weight || '';
+        let count = 1;
+        while (i + count < sets.length) {
+            const next = sets[i + count];
+            if (String(next.reps) === String(reps) && String(next.rpe) === String(rpe) && String(next.weight) === String(weight)) {
+                count++;
+            } else break;
+        }
+        let part = count > 1 ? `${count}x${reps}` : `x${reps}`;
+        if (rpe) part += ` @${rpe}`;
+        if (weight && String(weight).includes('%')) part += ` @${weight}`;
+        parts.push(part);
+        i += count;
+    }
+    return parts.join(', ');
+}
 
 // Snap a date string to the preceding Sunday (or same day if already Sunday)
 // This ensures program weeks align with the calendar's Sun-Sat grid.
@@ -106,10 +143,39 @@ const BuilderExerciseCard = ({ exercise, onUpdate, onRemove, onDragStart, onDrag
                     </span>
                 </div>
                 <button
-                    onClick={(e) => { e.stopPropagation(); onRemove(); }}
-                    style={{ background: 'transparent', border: 'none', color: 'var(--error)', cursor: 'pointer', fontSize: '1.2rem' }}
+                    type="button"
+                    title={`Delete ${exercise.name}`}
+                    aria-label={`Delete ${exercise.name}`}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm(`Delete "${exercise.name}" from this session?`)) {
+                            onRemove();
+                        }
+                    }}
+                    style={{
+                        background: 'rgba(239, 68, 68, 0.12)',
+                        border: '1px solid rgba(239, 68, 68, 0.4)',
+                        color: 'var(--error, #ef4444)',
+                        cursor: 'pointer',
+                        fontSize: '0.75rem',
+                        fontWeight: 700,
+                        padding: '4px 10px',
+                        borderRadius: '6px',
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        transition: 'background 0.15s, border-color 0.15s',
+                    }}
+                    onMouseOver={e => {
+                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.25)';
+                        e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.8)';
+                    }}
+                    onMouseOut={e => {
+                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.12)';
+                        e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+                    }}
                 >
-                    ×
+                    🗑 Delete
                 </button>
             </div>
 
@@ -359,6 +425,10 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
         }]
     }]);
     const [isSaving, setIsSaving] = useState(false);
+    // useTransition tracks the in-flight router.push so the "Saving..." button
+    // stays disabled until the destination page has finished streaming —
+    // otherwise the button flashes back and the user sees nothing happen.
+    const [isNavigating, startNavigation] = useTransition();
     const [autoSaveStatus, setAutoSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
     const savedProgramIdRef = useRef<string | null>(initialData?.id || null);
     const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -458,6 +528,9 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
     // Duplicate-to-date modal state: stores source {weekIndex, sessionIndex} or null
     const [duplicateSource, setDuplicateSource] = useState<{ weekIndex: number; sessionIndex: number } | null>(null);
     const [duplicateTargetDate, setDuplicateTargetDate] = useState('');
+
+    // Week overview drawer
+    const [weekOverviewIndex, setWeekOverviewIndex] = useState<number | null>(null);
 
     // Reference panel: read-only view of a ghost session from an existing program
     const [referenceSession, setReferenceSession] = useState<any | null>(null);
@@ -808,9 +881,19 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
     };
 
     const removeExercise = (weekIndex, sessionIndex, exerciseIndex) => {
-        const newWeeks = [...weeks];
-        newWeeks[weekIndex].sessions[sessionIndex].exercises.splice(exerciseIndex, 1);
-        setWeeks(newWeeks);
+        // Immutable update so memoized children (BuilderExerciseCard) re-render
+        // correctly and StrictMode double-invocation can't splice the same array twice.
+        setWeeks(prev => prev.map((w, wi) =>
+            wi !== weekIndex ? w : {
+                ...w,
+                sessions: w.sessions.map((s, si) =>
+                    si !== sessionIndex ? s : {
+                        ...s,
+                        exercises: s.exercises.filter((_, ei) => ei !== exerciseIndex),
+                    }
+                ),
+            }
+        ));
     };
 
     // --- Exercise Drag & Drop ---
@@ -998,17 +1081,24 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
             });
 
             if (res.ok) {
-                router.push(`/dashboard/athletes/${selectedAthleteId}`);
-                router.refresh();
-            } else {
-                alert('Failed to save');
+                // POST/PUT call revalidatePath() server-side, so the destination
+                // already has fresh data — no router.refresh() needed. Wrapping
+                // push() in startNavigation keeps isNavigating true until the
+                // athlete page finishes streaming, so the button stays in its
+                // disabled "Saving…" state instead of flashing back.
+                startNavigation(() => {
+                    router.push(`/dashboard/athletes/${selectedAthleteId}`);
+                });
+                // Don't reset isSaving — the component is unmounting.
+                return;
             }
+            alert('Failed to save');
         } catch (e) {
             console.error(e);
             alert('Error');
-        } finally {
-            setIsSaving(false);
         }
+        // Only reach here on error — reset so user can retry.
+        setIsSaving(false);
     };
 
     // ... (previous state)
@@ -1571,8 +1661,8 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                 </span>
                             )}
 
-                            <button onClick={handleSave} className="btn btn-primary" disabled={isSaving}>
-                                {isSaving ? 'Saving...' : 'Save & Assign'}
+                            <button onClick={handleSave} className="btn btn-primary" disabled={isSaving || isNavigating}>
+                                {isSaving ? 'Saving...' : isNavigating ? 'Loading dashboard...' : 'Save & Assign'}
                             </button>
                         </div>
 
@@ -1870,6 +1960,160 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                     </div>
                 </div>
             )}
+            {/* Week Overview toggle */}
+            <button
+                onClick={() => setWeekOverviewIndex(prev => prev !== null ? null : 0)}
+                title="Week Overview"
+                style={{
+                    position: 'fixed', bottom: 24, right: 24, zIndex: 800,
+                    width: 48, height: 48, borderRadius: '50%',
+                    background: weekOverviewIndex !== null ? 'var(--primary)' : 'var(--card-bg)',
+                    border: `2px solid ${weekOverviewIndex !== null ? 'var(--primary)' : 'var(--card-border)'}`,
+                    color: weekOverviewIndex !== null ? '#000' : 'var(--foreground)',
+                    cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: '0 4px 16px rgba(0,0,0,0.3)', transition: 'all 0.2s',
+                    fontSize: 20,
+                }}
+            >
+                {weekOverviewIndex !== null ? '✕' : '📅'}
+            </button>
+
+            {/* Week Overview Drawer Backdrop */}
+            {weekOverviewIndex !== null && (
+                <div
+                    onClick={() => setWeekOverviewIndex(null)}
+                    style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.6)', zIndex: 950, transition: 'opacity 0.3s ease' }}
+                />
+            )}
+
+            {/* Week Overview Drawer */}
+            <div style={{
+                position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 951,
+                transform: weekOverviewIndex !== null ? 'translateY(0)' : 'translateY(100%)',
+                transition: 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
+                maxHeight: '85vh', overflowY: 'auto',
+                background: 'var(--background)',
+                borderTop: '2px solid var(--primary)',
+                borderRadius: '16px 16px 0 0',
+                padding: '0 0 2rem 0',
+            }}>
+                {/* Handle */}
+                <div onClick={() => setWeekOverviewIndex(null)} style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 8px 0', cursor: 'pointer' }}>
+                    <div style={{ width: 40, height: 4, borderRadius: 2, background: 'var(--card-border)' }} />
+                </div>
+
+                {/* Header */}
+                <div style={{ textAlign: 'center', padding: '0 1rem 1rem 1rem', borderBottom: '1px solid var(--card-border)' }}>
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--foreground)', margin: 0 }}>
+                        Week Overview
+                    </h2>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--secondary-foreground)', margin: '4px 0 0 0' }}>
+                        {programName || 'Untitled Program'}
+                    </p>
+                </div>
+
+                {/* Week tabs */}
+                {weeks.length > 1 && (
+                    <div style={{ display: 'flex', gap: 6, padding: '12px 1rem', overflowX: 'auto', flexShrink: 0 }}>
+                        {weeks.map((w, i) => (
+                            <button
+                                key={w.id}
+                                onClick={() => setWeekOverviewIndex(i)}
+                                style={{
+                                    padding: '6px 16px', borderRadius: 20, border: 'none', cursor: 'pointer',
+                                    fontSize: '0.8rem', fontWeight: 600, whiteSpace: 'nowrap', transition: 'all 0.15s',
+                                    background: weekOverviewIndex === i ? 'var(--primary)' : 'rgba(255,255,255,0.06)',
+                                    color: weekOverviewIndex === i ? '#000' : 'var(--secondary-foreground)',
+                                }}
+                            >
+                                Week {w.weekNumber}
+                            </button>
+                        ))}
+                    </div>
+                )}
+
+                {/* Sessions & exercises */}
+                {weekOverviewIndex !== null && weeks[weekOverviewIndex] && (
+                    <div style={{ padding: '1rem' }}>
+                        {weeks[weekOverviewIndex].sessions.length === 0 ? (
+                            <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--secondary-foreground)', fontSize: '0.9rem' }}>
+                                No sessions in this week yet.
+                            </div>
+                        ) : (
+                            weeks[weekOverviewIndex].sessions
+                                .slice()
+                                .sort((a, b) => a.day - b.day)
+                                .map((sess) => {
+                                    const sessIndex = weeks[weekOverviewIndex!].sessions.indexOf(sess);
+                                    return (
+                                        <div key={sess.id} style={{ marginBottom: '1.25rem' }}>
+                                            {/* Session label */}
+                                            <div
+                                                onClick={() => {
+                                                    setWeekOverviewIndex(null);
+                                                    setEditingSession({ w: weekOverviewIndex!, s: sessIndex });
+                                                }}
+                                                style={{
+                                                    fontSize: '0.75rem', fontWeight: 700, letterSpacing: '0.05em', textTransform: 'uppercase',
+                                                    color: 'var(--primary)', marginBottom: '0.5rem',
+                                                    display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer',
+                                                }}
+                                            >
+                                                Day {sess.day} — {sess.name}
+                                                <span style={{
+                                                    fontSize: '0.65rem', background: 'rgba(6,182,212,0.15)', color: 'var(--primary)',
+                                                    padding: '2px 8px', borderRadius: 9999, fontWeight: 600, textTransform: 'none',
+                                                }}>Edit</span>
+                                            </div>
+
+                                            {/* Exercise cards */}
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                                {(sess.exercises || []).map((ex, exIdx) => {
+                                                    const category = ex.category || getExerciseCategory(ex.name);
+                                                    const color = CATEGORY_COLORS[category] || '#94A3B8';
+                                                    const summary = formatSetsSummary(ex.sets);
+
+                                                    return (
+                                                        <div key={ex.id || exIdx} style={{
+                                                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                                            padding: '0.75rem 1rem', background: 'var(--card-bg)',
+                                                            border: `1px solid ${color}30`, borderRadius: 8,
+                                                        }}>
+                                                            <div style={{ flex: 1, minWidth: 0 }}>
+                                                                <div style={{ fontSize: '0.95rem', fontWeight: 600, color, marginBottom: 2 }}>
+                                                                    {ex.name}
+                                                                </div>
+                                                                {summary && (
+                                                                    <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', opacity: 0.8 }}>
+                                                                        {summary}
+                                                                    </div>
+                                                                )}
+                                                                {ex.notes && (
+                                                                    <div style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', fontStyle: 'italic', marginTop: 2 }}>
+                                                                        {ex.notes}
+                                                                    </div>
+                                                                )}
+                                                            </div>
+                                                            <div style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', marginLeft: 12, flexShrink: 0 }}>
+                                                                {Array.isArray(ex.sets) ? `${ex.sets.length} sets` : ''}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                                {(!sess.exercises || sess.exercises.length === 0) && (
+                                                    <div style={{ padding: '0.75rem 1rem', fontSize: '0.85rem', color: 'var(--secondary-foreground)', fontStyle: 'italic' }}>
+                                                        No exercises yet
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })
+                        )}
+                    </div>
+                )}
+            </div>
+
             {duplicateSource && (
                 <div
                     onClick={() => { setDuplicateSource(null); setDuplicateTargetDate(''); }}

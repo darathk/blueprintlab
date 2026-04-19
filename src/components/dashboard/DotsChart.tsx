@@ -135,6 +135,16 @@ export default function DotsChart({ athleteId, logs, programs = [], initialGende
         return 0;
     };
 
+    // Walk forward through ALL data to find the first-ever logged value per lift.
+    // Used as the baseline for the "% change since first session" delta shown on each stat card.
+    const firstLiftAll = (key: 'squat' | 'bench' | 'deadlift' | 'totalLbs') => {
+        for (let i = 0; i < allData.length; i++) {
+            const val = allData[i][key];
+            if (val != null && val > 0) return val;
+        }
+        return 0;
+    };
+
     // Walk backwards through FILTERED data for the chart's own latest total
     // (kept separate so the chart still respects the active timeline filter).
     const latestLift = (key: 'squat' | 'bench' | 'deadlift' | 'totalLbs') => {
@@ -157,6 +167,24 @@ export default function DotsChart({ athleteId, logs, programs = [], initialGende
         if (totalKg <= 0) return 0;
         return calculateDots(totalKg, wc, genderKey);
     }, [genderKey, wc, allData]);
+
+    // Symmetric "first DOTs" — computed from each lift's earliest logged value so the
+    // % change card reflects total progression since training began.
+    const firstDots = useMemo(() => {
+        if (!genderKey || wc <= 0) return 0;
+        const sqLbs = firstLiftAll('squat');
+        const bnLbs = firstLiftAll('bench');
+        const dlLbs = firstLiftAll('deadlift');
+        const totalKg = lbsToKg(sqLbs) + lbsToKg(bnLbs) + lbsToKg(dlLbs);
+        if (totalKg <= 0) return 0;
+        return calculateDots(totalKg, wc, genderKey);
+    }, [genderKey, wc, allData]);
+
+    // Percentage change helper — returns null when we don't have a valid baseline yet.
+    const pctChange = (first: number, last: number): number | null => {
+        if (first <= 0 || last <= 0) return null;
+        return ((last - first) / first) * 100;
+    };
 
     const toggleLine = (key: keyof typeof activeLines) =>
         setActiveLines(prev => ({ ...prev, [key]: !prev[key] }));
@@ -237,35 +265,52 @@ export default function DotsChart({ athleteId, logs, programs = [], initialGende
             </div>
 
             {/* Stats Summary */}
-            {allData.length > 0 && (
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                    {[
-                        { label: 'Latest DOTs', value: latestDots > 0 ? latestDots.toFixed(1) : '—', color: CHART_COLORS.dots },
-                        {
-                            label: 'Total E1RM',
-                            value: (latestLiftAll('squat') + latestLiftAll('bench') + latestLiftAll('deadlift')) > 0
-                                ? `${Math.round(latestLiftAll('squat') + latestLiftAll('bench') + latestLiftAll('deadlift'))} lbs`
-                                : '—',
-                            color: CHART_COLORS.totalLbs,
-                        },
-                        { label: 'Latest Squat E1RM', value: latestLiftAll('squat') > 0 ? `${latestLiftAll('squat')} lbs` : '—', color: CHART_COLORS.squat },
-                        { label: 'Latest Bench E1RM', value: latestLiftAll('bench') > 0 ? `${latestLiftAll('bench')} lbs` : '—', color: CHART_COLORS.bench },
-                        { label: 'Latest Deadlift E1RM', value: latestLiftAll('deadlift') > 0 ? `${latestLiftAll('deadlift')} lbs` : '—', color: CHART_COLORS.deadlift },
-                    ].map(s => (
-                        <div key={s.label} style={{ flex: '1 1 110px', background: 'rgba(15,23,42,0.5)', border: `1px solid ${s.color}33`, borderRadius: 10, padding: '12px 16px' }}>
-                            <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{s.label}</div>
-                            <div style={{ fontSize: 22, fontWeight: 800, color: s.color, marginTop: 4 }}>{s.value}</div>
-                        </div>
-                    ))}
-                </div>
-            )}
+            {allData.length > 0 && (() => {
+                const squatLatest = latestLiftAll('squat');
+                const benchLatest = latestLiftAll('bench');
+                const deadliftLatest = latestLiftAll('deadlift');
+                const squatFirst = firstLiftAll('squat');
+                const benchFirst = firstLiftAll('bench');
+                const deadliftFirst = firstLiftAll('deadlift');
+                const totalLatest = squatLatest + benchLatest + deadliftLatest;
+                const totalFirst = squatFirst + benchFirst + deadliftFirst;
+
+                const cards = [
+                    { label: 'Latest DOTs', value: latestDots > 0 ? latestDots.toFixed(1) : '—', color: CHART_COLORS.dots, pct: pctChange(firstDots, latestDots) },
+                    { label: 'Total E1RM', value: totalLatest > 0 ? `${Math.round(totalLatest)} lbs` : '—', color: CHART_COLORS.totalLbs, pct: pctChange(totalFirst, totalLatest) },
+                    { label: 'Latest Squat E1RM', value: squatLatest > 0 ? `${squatLatest} lbs` : '—', color: CHART_COLORS.squat, pct: pctChange(squatFirst, squatLatest) },
+                    { label: 'Latest Bench E1RM', value: benchLatest > 0 ? `${benchLatest} lbs` : '—', color: CHART_COLORS.bench, pct: pctChange(benchFirst, benchLatest) },
+                    { label: 'Latest Deadlift E1RM', value: deadliftLatest > 0 ? `${deadliftLatest} lbs` : '—', color: CHART_COLORS.deadlift, pct: pctChange(deadliftFirst, deadliftLatest) },
+                ];
+
+                return (
+                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                        {cards.map(s => {
+                            const pctColor = s.pct == null ? 'var(--secondary-foreground)'
+                                : s.pct > 0 ? '#10b981'
+                                : s.pct < 0 ? '#ef4444'
+                                : 'var(--secondary-foreground)';
+                            const arrow = s.pct == null ? '' : s.pct > 0 ? '↑' : s.pct < 0 ? '↓' : '→';
+                            return (
+                                <div key={s.label} style={{ flex: '1 1 110px', background: 'rgba(15,23,42,0.5)', border: `1px solid ${s.color}33`, borderRadius: 10, padding: '12px 16px' }}>
+                                    <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{s.label}</div>
+                                    <div style={{ fontSize: 22, fontWeight: 800, color: s.color, marginTop: 4 }}>{s.value}</div>
+                                    <div style={{ fontSize: 11, fontWeight: 600, color: pctColor, marginTop: 3, minHeight: 14 }}>
+                                        {s.pct == null ? '' : `${arrow} ${Math.abs(s.pct).toFixed(1)}% since first session`}
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                );
+            })()}
 
             {/* Chart */}
             {data.length === 0 ? (
                 <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--secondary-foreground)', fontSize: 14, background: 'rgba(15,23,42,0.3)', borderRadius: 12, border: '1px dashed rgba(255,255,255,0.08)' }}>
                     <div style={{ fontSize: 32, marginBottom: 10 }}>🏋️</div>
                     <div style={{ fontWeight: 600, marginBottom: 5 }}>No competition lift data {timeline !== 'ALL' ? `in the last ${timeline}` : 'yet'}</div>
-                    <div style={{ fontSize: 12, opacity: 0.7 }}>Sessions with <strong>Squat</strong>, <strong>Bench Press</strong>, or <strong>Deadlift</strong> logged with weight &amp; reps will appear here.</div>
+                    <div style={{ fontSize: 12, opacity: 0.7 }}>Sessions with <strong>Squat</strong>, <strong>Competition Bench</strong>, or <strong>Deadlift</strong> logged with weight &amp; reps will appear here.</div>
                 </div>
             ) : (
                 <div style={{ background: 'rgba(15,23,42,0.4)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.07)', padding: '16px 8px 8px' }}>

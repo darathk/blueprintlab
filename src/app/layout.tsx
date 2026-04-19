@@ -8,6 +8,10 @@ const PushNotificationManager = dynamic(
   () => import("@/components/notifications/PushNotificationManager")
 );
 
+const GlobalUploadStatus = dynamic(
+  () => import("@/components/chat/GlobalUploadStatus")
+);
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -57,6 +61,7 @@ export default function RootLayout({
       <html lang="en">
         <body className={geistSans.variable}>
           <PushNotificationManager />
+          <GlobalUploadStatus />
           {children}
           <footer style={{ marginTop: '4rem', padding: '1rem', textAlign: 'center', color: '#666', fontSize: '0.8rem', borderTop: '1px solid #333' }}>
             Athlete Analytics Tool v2.0 (Meta-Engine Active)
