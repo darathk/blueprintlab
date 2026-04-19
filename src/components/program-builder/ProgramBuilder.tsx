@@ -9,6 +9,7 @@ import ImportProgram from '@/components/programs/ImportProgram';
 import ProgramCalendarGrid from './ProgramCalendarGrid';
 import { calculateStress } from '@/lib/stress-index';
 import { getExerciseCategory } from '@/lib/exercise-db';
+import { StickyNote, Pin, Calendar as CalendarIcon, X, Trash2, Copy, CalendarPlus, BookOpen } from 'lucide-react';
 
 const StressMatrix = dynamic(() => import('@/components/program-builder/StressMatrix'), {
     loading: () => <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="pulse">Loading stress charts...</div>
@@ -175,7 +176,8 @@ const BuilderExerciseCard = ({ exercise, onUpdate, onRemove, onDragStart, onDrag
                         e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.4)';
                     }}
                 >
-                    🗑 Delete
+                    <Trash2 size={12} />
+                    Delete
                 </button>
             </div>
 
@@ -1760,15 +1762,16 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                 <button
                                     onClick={() => setNotesOpen(o => !o)}
                                     style={{
-                                        display: 'flex', alignItems: 'center', gap: 6,
-                                        background: notesOpen ? 'rgba(168,85,247,0.2)' : 'rgba(255,255,255,0.07)',
-                                        border: `1px solid ${notesOpen ? '#a855f7' : 'var(--card-border)'}`,
+                                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                                        background: notesOpen ? 'rgba(125,135,210,0.15)' : 'rgba(255,255,255,0.07)',
+                                        border: `1px solid ${notesOpen ? 'var(--primary)' : 'var(--card-border)'}`,
                                         borderRadius: 'var(--radius)', padding: '0.5rem 1rem',
-                                        color: notesOpen ? '#a855f7' : 'var(--secondary-foreground)',
+                                        color: notesOpen ? 'var(--primary)' : 'var(--secondary-foreground)',
                                         fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
                                     }}
                                 >
-                                    📝 Notes{coachNotes.length > 0 ? ` (${coachNotes.length})` : ''}
+                                    <StickyNote size={14} />
+                                    Notes{coachNotes.length > 0 ? ` (${coachNotes.length})` : ''}
                                 </button>
                             )}
                             <button onClick={handleSave} className="btn btn-primary" disabled={isSaving || isNavigating}>
@@ -1846,23 +1849,23 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                             <button
                                 onClick={() => { duplicateSession(editingSession.w, editingSession.s); }}
                                 title="Duplicate Session"
-                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1rem' }}
+                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--secondary-foreground)', padding: 6, display: 'flex', alignItems: 'center' }}
                             >
-                                ❐
+                                <Copy size={16} />
                             </button>
                             <button
                                 onClick={() => { setDuplicateSource({ weekIndex: editingSession.w, sessionIndex: editingSession.s }); setDuplicateTargetDate(''); }}
                                 title="Duplicate to Date..."
-                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--accent)' }}
+                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--accent)', padding: 6, display: 'flex', alignItems: 'center' }}
                             >
-                                ❐→
+                                <CalendarPlus size={16} />
                             </button>
                             <button
                                 onClick={() => { const w = editingSession.w; const s = editingSession.s; closeEditor(); removeSession(w, s); }}
                                 title="Delete Session"
-                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1rem', color: 'var(--error)' }}
+                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--error)', padding: 6, display: 'flex', alignItems: 'center' }}
                             >
-                                🗑️
+                                <Trash2 size={16} />
                             </button>
                             <button onClick={closeEditor} className="btn btn-primary" style={{ marginLeft: '0.5rem' }}>Done</button>
                         </div>
@@ -1960,8 +1963,9 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                     {/* Header */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid var(--card-border)', background: 'rgba(148, 163, 184, 0.06)', flexShrink: 0 }}>
                         <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>
-                                📎 Reference — {referenceSession.programName}
+                            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                <BookOpen size={11} />
+                                Reference — {referenceSession.programName}
                             </div>
                             <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--foreground)' }}>
                                 {referenceSession.sessionName}
@@ -2095,9 +2099,10 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                             </div>
                             <button
                                 onClick={() => setNotesOpen(false)}
-                                style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', padding: 4, fontSize: 18, lineHeight: 1 }}
+                                title="Close"
+                                style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center' }}
                             >
-                                ×
+                                <X size={16} />
                             </button>
                         </div>
 
@@ -2126,32 +2131,36 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                                     <span style={{
                                                         fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase',
                                                         letterSpacing: '0.06em', color: cat.color,
+                                                        display: 'inline-flex', alignItems: 'center', gap: 4,
                                                     }}>
-                                                        {note.pinned ? '📌 ' : ''}{cat.label}
+                                                        {note.pinned && <Pin size={10} style={{ fill: 'currentColor' }} />}
+                                                        {cat.label}
                                                     </span>
-                                                    <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                                                    <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
                                                         <button
                                                             onClick={() => togglePinNote(note)}
                                                             title={note.pinned ? 'Unpin' : 'Pin'}
                                                             style={{
-                                                                background: 'none', border: 'none', cursor: 'pointer', padding: 2,
-                                                                color: note.pinned ? '#a855f7' : 'rgba(255,255,255,0.2)',
-                                                                fontSize: 13, lineHeight: 1, transition: 'color 0.15s',
+                                                                background: 'none', border: 'none', cursor: 'pointer', padding: 4,
+                                                                color: note.pinned ? 'var(--primary)' : 'rgba(255,255,255,0.25)',
+                                                                display: 'flex', alignItems: 'center', transition: 'color 0.15s',
                                                             }}
+                                                            onMouseEnter={e => { if (!note.pinned) e.currentTarget.style.color = 'var(--secondary-foreground)'; }}
+                                                            onMouseLeave={e => { if (!note.pinned) e.currentTarget.style.color = 'rgba(255,255,255,0.25)'; }}
                                                         >
-                                                            📌
+                                                            <Pin size={13} style={note.pinned ? { fill: 'currentColor' } : undefined} />
                                                         </button>
                                                         <button
                                                             onClick={() => { if (confirm('Delete this note?')) deleteNote(note.id); }}
                                                             title="Delete"
                                                             style={{
-                                                                background: 'none', border: 'none', cursor: 'pointer', padding: 2,
-                                                                color: 'rgba(255,255,255,0.2)', fontSize: 13, lineHeight: 1, transition: 'color 0.15s',
+                                                                background: 'none', border: 'none', cursor: 'pointer', padding: 4,
+                                                                color: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', transition: 'color 0.15s',
                                                             }}
                                                             onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
-                                                            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.2)')}
+                                                            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.25)')}
                                                         >
-                                                            ×
+                                                            <Trash2 size={13} />
                                                         </button>
                                                     </div>
                                                 </div>
@@ -2171,7 +2180,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                         {/* Quick-add form */}
                         <div style={{
                             padding: '1rem', borderTop: '1px solid var(--card-border)', flexShrink: 0,
-                            background: 'rgba(168,85,247,0.04)',
+                            background: 'rgba(125,135,210,0.04)',
                         }}>
                             <textarea
                                 value={newNoteContent}
@@ -2184,7 +2193,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                     padding: '0.6rem 0.75rem', resize: 'none', minHeight: 72, outline: 'none',
                                     boxSizing: 'border-box',
                                 }}
-                                onFocus={e => (e.target.style.borderColor = '#a855f7')}
+                                onFocus={e => (e.target.style.borderColor = 'var(--primary)')}
                                 onBlur={e => (e.target.style.borderColor = 'var(--card-border)')}
                             />
                             <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center' }}>
@@ -2204,18 +2213,15 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                 <button
                                     onClick={addNote}
                                     disabled={notesSaving || !newNoteContent.trim()}
+                                    className="btn btn-primary"
                                     style={{
-                                        background: '#a855f7', border: 'none', borderRadius: 'var(--radius)',
-                                        color: '#fff', fontSize: '0.8rem', fontWeight: 600, padding: '0.4rem 1rem',
+                                        fontSize: '0.8rem', padding: '0.4rem 1rem', flexShrink: 0,
+                                        opacity: notesSaving || !newNoteContent.trim() ? 0.5 : 1,
                                         cursor: notesSaving || !newNoteContent.trim() ? 'not-allowed' : 'pointer',
-                                        opacity: notesSaving || !newNoteContent.trim() ? 0.5 : 1, flexShrink: 0,
                                     }}
                                 >
-                                    {notesSaving ? '...' : 'Add'}
+                                    {notesSaving ? 'Saving...' : 'Add'}
                                 </button>
-                            </div>
-                            <div style={{ fontSize: '0.65rem', color: 'rgba(255,255,255,0.2)', marginTop: 6 }}>
-                                ⌘↵ to add
                             </div>
                         </div>
                     </div>
@@ -2237,7 +2243,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                     fontSize: 20,
                 }}
             >
-                {weekOverviewIndex !== null ? '✕' : '📅'}
+                {weekOverviewIndex !== null ? <X size={20} /> : <CalendarIcon size={20} />}
             </button>
 
             {/* Week Overview Drawer Backdrop */}
