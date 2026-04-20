@@ -32,8 +32,8 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'Message not found' }, { status: 404 });
         }
 
-        // Verify the requester is a participant
-        if (message.senderId !== auth.user.id && message.receiverId !== auth.user.id && !auth.isCoach) {
+        // Verify the requester is a participant in this message
+        if (message.senderId !== auth.user.id && message.receiverId !== auth.user.id) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
