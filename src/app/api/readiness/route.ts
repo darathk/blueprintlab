@@ -56,7 +56,7 @@ export async function GET(request: Request) {
 
     // Without athleteId: coaches see all their athletes' readiness, athletes see their own
     if (auth.isCoach) {
-        const logs = await getReadiness();
+        const logs = await getReadiness(auth.user.id);
         return NextResponse.json(logs);
     }
 

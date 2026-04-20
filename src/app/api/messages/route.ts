@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { supabase } from '@/lib/supabase';
 import webpush from 'web-push';
-import { requireAuth } from '@/lib/api-auth';
+import { requireAuth, requireAccessToAthlete } from '@/lib/api-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,20 +19,26 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'athleteId is required' }, { status: 400 });
         }
 
-        // User must be a participant in this conversation
-        if (auth.user.id !== athleteId && !auth.isCoach) {
-            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        // Coaches can only access messages for their own athletes; athletes can only access their own
+        if (auth.user.id !== athleteId) {
+            const access = await requireAccessToAthlete(athleteId);
+            if ('error' in access) return access.error;
         }
 
         // Optional: only fetch messages newer than a timestamp (for incremental polling)
         const since = searchParams.get('since');
 
-        const whereClause: any = {
-            OR: [
+        // Coaches: only show messages between themselves and this athlete
+        // Athletes: show all their messages (with their coach)
+        const whereClause: any = auth.isCoach
+            ? { OR: [
+                { senderId: athleteId, receiverId: auth.user.id },
+                { senderId: auth.user.id, receiverId: athleteId }
+            ] }
+            : { OR: [
                 { senderId: athleteId },
                 { receiverId: athleteId }
-            ]
-        };
+            ] };
 
         if (since) {
             whereClause.createdAt = { gt: new Date(since) };
@@ -74,6 +80,17 @@ export async function POST(request: Request) {
         // Verify the sender is the authenticated user
         if (senderId !== auth.user.id) {
             return NextResponse.json({ error: 'Cannot send messages as another user' }, { status: 403 });
+        }
+
+        // Coaches can only message their own athletes; athletes can only message their coach
+        if (auth.isCoach) {
+            const access = await requireAccessToAthlete(receiverId);
+            if ('error' in access) return access.error;
+        } else {
+            const sender = await prisma.athlete.findUnique({ where: { id: senderId }, select: { coachId: true } });
+            if (!sender || sender.coachId !== receiverId) {
+                return NextResponse.json({ error: 'You can only message your coach' }, { status: 403 });
+            }
         }
 
         // Validate content length
