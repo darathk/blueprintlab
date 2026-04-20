@@ -36,7 +36,6 @@ model Athlete {
   coachNotes        CoachNote[]        @relation("CoachNotes")
   athleteNotes      CoachNote[]        @relation("AthleteNotes")
   travelEvents      TravelEvent[]
-  customExercises   CustomExercise[]   @relation("CoachCustomExercises")
 
   @@index([coachId])
 }
