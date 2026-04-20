@@ -435,6 +435,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
     const savedProgramIdRef = useRef<string | null>(initialData?.id || null);
     const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
     const initialLoadRef = useRef(true);
+    const [resumedFromDraft, setResumedFromDraft] = useState<boolean>(initialData?.status === 'draft');
 
     // Load initial data if provided (Edit Mode)
     useEffect(() => {
@@ -1137,7 +1138,9 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
         }
     }, [buildPayload, selectedAthleteId]);
 
-    // Debounced auto-save: trigger 2s after any change
+    // Debounced auto-save: trigger 1s after any change. Kept short so an
+    // accidental navigation away loses at most ~1s of work rather than several
+    // seconds of edits.
     useEffect(() => {
         // Skip auto-save on initial load
         if (initialLoadRef.current) {
@@ -1152,7 +1155,8 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
         setAutoSaveStatus('idle');
         autoSaveTimerRef.current = setTimeout(() => {
             performAutoSave();
-        }, 2000);
+            autoSaveTimerRef.current = null;
+        }, 1000);
 
         return () => {
             if (autoSaveTimerRef.current) {
@@ -1160,6 +1164,43 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
             }
         };
     }, [weeks, programName, startDate, selectedAthleteId, performAutoSave]);
+
+    // Flush any pending debounced save on page unload or component unmount.
+    // Without this, a coach who closes the tab or navigates away within the
+    // debounce window loses their most recent edits. Using fetch with
+    // keepalive:true lets the request complete even after the page is gone.
+    const buildPayloadRef = useRef(buildPayload);
+    useEffect(() => { buildPayloadRef.current = buildPayload; });
+
+    useEffect(() => {
+        const flushPendingSave = () => {
+            if (!autoSaveTimerRef.current) return;
+            clearTimeout(autoSaveTimerRef.current);
+            autoSaveTimerRef.current = null;
+            const payload = buildPayloadRef.current();
+            if (!payload.athleteId) return;
+            if (!savedProgramIdRef.current) {
+                (payload as any).status = 'draft';
+            }
+            const method = savedProgramIdRef.current ? 'PUT' : 'POST';
+            try {
+                fetch('/api/programs', {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                    keepalive: true,
+                }).catch(() => {});
+            } catch {
+                // ignore
+            }
+        };
+
+        window.addEventListener('beforeunload', flushPendingSave);
+        return () => {
+            window.removeEventListener('beforeunload', flushPendingSave);
+            flushPendingSave();
+        };
+    }, []);
 
     const handleSave = async () => {
         // Cancel any pending auto-save
@@ -1745,6 +1786,22 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1rem' }}>
                         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                             {/* View Toggle removed for streamlined Calendar UI */}
+
+                            {resumedFromDraft && autoSaveStatus === 'idle' && (
+                                <span
+                                    title="This program was auto-saved as a draft. Click Save & Assign to publish it."
+                                    style={{
+                                        fontSize: '0.75rem',
+                                        color: 'var(--secondary-foreground)',
+                                        background: 'rgba(125,135,210,0.10)',
+                                        border: '1px solid var(--card-border)',
+                                        padding: '3px 8px', borderRadius: 999,
+                                        whiteSpace: 'nowrap',
+                                    }}
+                                >
+                                    Resumed draft
+                                </span>
+                            )}
 
                             {autoSaveStatus !== 'idle' && (
                                 <span style={{
