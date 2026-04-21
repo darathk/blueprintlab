@@ -952,6 +952,22 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
 
                                                             {exOpen && (
                                                                 <div style={{ padding: '0 8px 16px 8px' }}>
+                                                                    {/* Coach's notes — surfaced first so the athlete reads any
+                                                                        prescribed cues/instructions before seeing the protocol. */}
+                                                                    <div style={{ display: 'flex', padding: '12px 0 8px 0', alignItems: 'flex-start' }}>
+                                                                        <textarea
+                                                                            value={exerciseData.notes || ''}
+                                                                            onChange={e => updateNotes(sKey, exIdx, e.target.value, program.id)}
+                                                                            onBlur={() => triggerAutoSave(sKey, program.id)}
+                                                                            onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
+                                                                            placeholder="Coach's notes:"
+                                                                            style={{
+                                                                                flex: 1, minHeight: 60, padding: '8px 12px', border: '1px solid var(--card-border)',
+                                                                                borderRadius: 4, background: 'var(--background)', fontSize: '0.9rem',
+                                                                                color: 'var(--foreground)', resize: 'vertical', outlineColor: 'var(--primary)',
+                                                                            }}
+                                                                        />
+                                                                    </div>
                                                                     {(() => {
                                                                         const prevForHeader = getPrevSets(exerciseData.name || ex.name, sKey);
                                                                         const prevDateLabel = (() => { const raw = prevForHeader?.date; if (!raw) return null; const d = new Date(raw.slice(0, 10)); return isNaN(d.getTime()) ? null : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); })();
@@ -1044,20 +1060,6 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                             <span>Peripheral: <span style={{ fontWeight: 'normal' }}>{exStress.peripheral.toFixed(2)}</span></span>
                                                                             <span>Central: <span style={{ fontWeight: 'normal' }}>{exStress.central.toFixed(2)}</span></span>
                                                                         </div>
-                                                                    </div>
-                                                                    <div style={{ display: 'flex', padding: '12px 0', alignItems: 'flex-start' }}>
-                                                                        <textarea
-                                                                            value={exerciseData.notes || ''}
-                                                                            onChange={e => updateNotes(sKey, exIdx, e.target.value, program.id)}
-                                                                            onBlur={() => triggerAutoSave(sKey, program.id)}
-                                                                            onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
-                                                                            placeholder="Coach's notes:"
-                                                                            style={{
-                                                                                flex: 1, minHeight: 60, padding: '8px 12px', border: '1px solid var(--card-border)',
-                                                                                borderRadius: 4, background: 'var(--background)', fontSize: '0.9rem',
-                                                                                color: 'var(--foreground)', resize: 'vertical', outlineColor: 'var(--primary)',
-                                                                            }}
-                                                                        />
                                                                     </div>
                                                                     <ExerciseFeedback
                                                                         athleteId={athleteId}
@@ -1503,6 +1505,20 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                         {/* Exercise body / Input rows */}
                                                                         {exOpen && (
                                                                             <div style={{ padding: '0 8px 16px 8px' }}>
+                                                                                {/* Coach's notes — surfaced first so the athlete reads any
+                                                                                    prescribed cues/instructions before seeing the protocol. */}
+                                                                                <div style={{ display: 'flex', padding: '12px 0 8px 0', alignItems: 'flex-start' }}>
+                                                                                    <textarea
+                                                                                        value={exerciseData.notes || ''}
+                                                                                        onChange={e => updateNotes(sKey, exIdx, e.target.value, program.id)}
+                                                                                        onBlur={() => triggerAutoSave(sKey, program.id)}
+                                                                                        onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
+                                                                                        placeholder="Coach's notes:"
+                                                                                        style={{
+                                                                                            flex: 1, minHeight: 60, padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: 4, background: 'var(--background)', fontSize: '0.9rem', color: 'var(--foreground)', resize: 'vertical', outlineColor: 'var(--primary)'
+                                                                                        }}
+                                                                                    />
+                                                                                </div>
                                                                                 {/* Target / Actual Header */}
                                                                                 <div style={{ display: 'flex', borderBottom: '1px dashed #cbd5e1', marginBottom: 8 }}>
                                                                                     {(() => {
@@ -1598,20 +1614,6 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                         <span>Peripheral: <span style={{ fontWeight: 'normal' }}>{exStress.peripheral.toFixed(2)}</span></span>
                                                                                         <span>Central: <span style={{ fontWeight: 'normal' }}>{exStress.central.toFixed(2)}</span></span>
                                                                                     </div>
-                                                                                </div>
-
-                                                                                {/* Notes field */}
-                                                                                <div style={{ display: 'flex', padding: '12px 0', alignItems: 'flex-start' }}>
-                                                                                    <textarea
-                                                                                        value={exerciseData.notes || ''}
-                                                                                        onChange={e => updateNotes(sKey, exIdx, e.target.value, program.id)}
-                                                                                        onBlur={() => triggerAutoSave(sKey, program.id)}
-                                                                                        onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
-                                                                                        placeholder="Coach's notes:"
-                                                                                        style={{
-                                                                                            flex: 1, minHeight: 60, padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: 4, background: 'var(--background)', fontSize: '0.9rem', color: 'var(--foreground)', resize: 'vertical', outlineColor: 'var(--primary)'
-                                                                                        }}
-                                                                                    />
                                                                                 </div>
 
                                                                                 {/* Send Feedback */}
