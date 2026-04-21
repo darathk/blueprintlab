@@ -713,6 +713,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
 
         newWeeks[weekIndex].sessions.push(newSession);
         setWeeks(newWeeks);
+        showToast(`Duplicated "${originalSession.name}"`);
     };
 
     const duplicateSessionToDate = (sourceWeekIndex: number, sourceSessionIndex: number, targetDateStr: string) => {
@@ -779,6 +780,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
         setWeeks(newWeeks);
         setDuplicateSource(null);
         setDuplicateTargetDate('');
+        showToast(`Duplicated to ${targetDateStr}`);
     };
 
     const duplicateSessionToNextWeek = (weekNum: number, dayNum: number) => {
@@ -828,6 +830,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
 
         newWeeks[targetWeekIdx].sessions.push(clonedSession);
         setWeeks(newWeeks);
+        showToast(`Duplicated session to Week ${targetWeekNum}`);
     };
 
     const duplicateWeekToNextWeek = (weekNum: number) => {
@@ -880,6 +883,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
 
         newWeeks[targetWeekIdx].sessions.push(...clonedSessions);
         setWeeks(newWeeks);
+        showToast(`Duplicated Week ${weekNum} → Week ${targetWeekNum}`);
     };
 
 
@@ -941,6 +945,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
 
         newWeeks.push(newWeek);
         setWeeks(newWeeks);
+        showToast(`Duplicated Week ${weekIndex + 1} → Week ${newWeek.weekNumber}`);
     };
 
     const addExerciseToActiveSession = (exerciseOrName) => {
@@ -1087,6 +1092,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
     const copyWeek = (weekIndex) => {
         const weekData = weeks[weekIndex];
         setClipboard({ type: 'week', data: weekData });
+        showToast(`Copied Week ${weekIndex + 1} to clipboard`);
     };
 
     const pasteWeek = (targetWeekIndex) => {
@@ -1110,6 +1116,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
         // Replace target week's sessions
         newWeeks[targetWeekIndex].sessions = clonedSessions;
         setWeeks(newWeeks);
+        showToast(`Pasted week into Week ${targetWeekIndex + 1}`);
     };
 
     const buildPayload = useCallback(() => {
@@ -1562,8 +1569,14 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
         }
     };
 
-    // Helper for toast (simplified - no-op in production)
-    const showToast = (_msg) => { };
+    // Lightweight toast notification for copy/duplicate/move operations
+    const [toast, setToast] = useState<{ message: string; key: number } | null>(null);
+    const toastTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const showToast = (msg: string) => {
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+        setToast({ message: msg, key: Date.now() });
+        toastTimerRef.current = setTimeout(() => setToast(null), 2000);
+    };
 
     const closeEditor = () => {
         if (editingSession) {
@@ -2536,6 +2549,26 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                     </div>
                 </div>
             )}
+
+            {/* Action toast — brief confirmation for copy/duplicate/move operations */}
+            {toast && (
+                <div
+                    key={toast.key}
+                    style={{
+                        position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)',
+                        background: 'var(--card-bg)', border: '1px solid var(--primary)',
+                        borderRadius: '8px', padding: '10px 20px', zIndex: 1200,
+                        display: 'flex', alignItems: 'center', gap: '8px',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+                        animation: 'toast-in 0.2s ease-out',
+                        fontSize: '0.9rem', fontWeight: 500, color: 'var(--foreground)',
+                    }}
+                >
+                    <span style={{ color: 'var(--primary)', fontSize: '1.1rem' }}>&#10003;</span>
+                    {toast.message}
+                </div>
+            )}
+            <style>{`@keyframes toast-in { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }`}</style>
 
             {/* Progression View: full-width matrix of the same session slot across every week */}
             {progressionSession && (
