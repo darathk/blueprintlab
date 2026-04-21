@@ -9,7 +9,7 @@ import ImportProgram from '@/components/programs/ImportProgram';
 import ProgramCalendarGrid from './ProgramCalendarGrid';
 import { calculateStress } from '@/lib/stress-index';
 import { getExerciseCategory } from '@/lib/exercise-db';
-import { StickyNote, Pin, Calendar as CalendarIcon, X, Trash2, Copy, CalendarPlus, BookOpen } from 'lucide-react';
+import { StickyNote, Pin, Calendar as CalendarIcon, X, Trash2, Copy, CalendarPlus, BookOpen, LayoutGrid } from 'lucide-react';
 
 const StressMatrix = dynamic(() => import('@/components/program-builder/StressMatrix'), {
     loading: () => <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="pulse">Loading stress charts...</div>
@@ -978,6 +978,29 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
         setWeeks(newWeeks);
     };
 
+    // Immutable set-level update used by the Progression Matrix overlay so every
+    // edited cell re-renders without mutating the shared weeks reference.
+    const updateProgressionSet = (weekIndex: number, sessionIndex: number, exerciseIndex: number, setIndex: number, field: string, value: string) => {
+        setWeeks(prev => prev.map((w, wi) =>
+            wi !== weekIndex ? w : {
+                ...w,
+                sessions: w.sessions.map((s, si) =>
+                    si !== sessionIndex ? s : {
+                        ...s,
+                        exercises: s.exercises.map((ex, ei) =>
+                            ei !== exerciseIndex ? ex : {
+                                ...ex,
+                                sets: ex.sets.map((set: any, li: number) =>
+                                    li !== setIndex ? set : { ...set, [field]: value }
+                                ),
+                            }
+                        ),
+                    }
+                ),
+            }
+        ));
+    };
+
     const removeExercise = (weekIndex, sessionIndex, exerciseIndex) => {
         // Immutable update so memoized children (BuilderExerciseCard) re-render
         // correctly and StrictMode double-invocation can't splice the same array twice.
@@ -1241,6 +1264,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
 
     // ... (previous state)
     const [editingSession, setEditingSession] = useState<{ w: number, s: number } | null>(null);
+    const [progressionSession, setProgressionSession] = useState<{ day: number, name: string } | null>(null);
 
     // ... (helpers)
 
@@ -1904,6 +1928,17 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                         />
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
                             <button
+                                onClick={() => {
+                                    const s = weeks[editingSession.w].sessions[editingSession.s];
+                                    setProgressionSession({ day: s.day, name: s.name });
+                                }}
+                                title="Progression View — edit sets/reps/RPE across all weeks"
+                                style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(59, 130, 246, 0.12)', border: '1px solid rgba(59, 130, 246, 0.4)', color: 'var(--primary)', cursor: 'pointer', padding: '4px 10px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600 }}
+                            >
+                                <LayoutGrid size={14} />
+                                Progression
+                            </button>
+                            <button
                                 onClick={() => { duplicateSession(editingSession.w, editingSession.s); }}
                                 title="Duplicate Session"
                                 style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--secondary-foreground)', padding: 6, display: 'flex', alignItems: 'center' }}
@@ -2497,6 +2532,115 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                             >
                                 Duplicate
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Progression View: full-width matrix of the same session slot across every week */}
+            {progressionSession && (
+                <div
+                    style={{
+                        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)',
+                        zIndex: 1100, display: 'flex', flexDirection: 'column',
+                    }}
+                    onClick={(e) => { if (e.target === e.currentTarget) setProgressionSession(null); }}
+                >
+                    <div style={{
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                        padding: '1rem 1.5rem', borderBottom: '1px solid var(--card-border)',
+                        background: 'var(--card-bg)', flexShrink: 0,
+                    }}>
+                        <div>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>
+                                Progression View
+                            </div>
+                            <div style={{ fontSize: '1.1rem', fontWeight: 600 }}>{progressionSession.name}</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', marginTop: 2 }}>
+                                Edit weight, reps & RPE across every week. Scroll horizontally →
+                            </div>
+                        </div>
+                        <button onClick={() => setProgressionSession(null)} className="btn btn-primary">Done</button>
+                    </div>
+
+                    <div style={{ flex: 1, overflow: 'auto', padding: '1.5rem', background: 'var(--background)' }}>
+                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', minHeight: '100%' }}>
+                            {weeks.map((week, wi) => {
+                                const sIdx = week.sessions.findIndex((s: any) => s.day === progressionSession.day);
+                                const session: any = sIdx >= 0 ? week.sessions[sIdx] : null;
+                                return (
+                                    <div key={week.id} style={{
+                                        minWidth: '340px', maxWidth: '340px', flexShrink: 0,
+                                        background: 'var(--card-bg)', border: '1px solid var(--card-border)',
+                                        borderRadius: 'var(--radius)', overflow: 'hidden',
+                                    }}>
+                                        <div style={{
+                                            padding: '0.6rem 0.9rem', background: 'rgba(255,255,255,0.05)',
+                                            borderBottom: '1px solid var(--card-border)',
+                                            fontWeight: 600, fontSize: '0.9rem',
+                                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                        }}>
+                                            <span>Week {wi + 1}</span>
+                                            {session && (
+                                                <span style={{ fontSize: '0.7rem', color: 'var(--secondary-foreground)', fontWeight: 400 }}>
+                                                    {session.exercises.length} ex
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div style={{ padding: '0.6rem' }}>
+                                            {!session ? (
+                                                <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--secondary-foreground)', fontSize: '0.8rem', fontStyle: 'italic' }}>
+                                                    No session this week
+                                                </div>
+                                            ) : session.exercises.length === 0 ? (
+                                                <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--secondary-foreground)', fontSize: '0.8rem', fontStyle: 'italic' }}>
+                                                    No exercises
+                                                </div>
+                                            ) : (
+                                                session.exercises.map((ex: any, ei: number) => (
+                                                    <div key={ex.id} style={{ marginBottom: '0.65rem', border: '1px solid var(--card-border)', borderRadius: '4px', overflow: 'hidden' }}>
+                                                        <div style={{ padding: '0.35rem 0.6rem', background: 'rgba(255,255,255,0.04)', fontSize: '0.82rem', fontWeight: 600, color: 'var(--primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={ex.name}>
+                                                            {ex.name}
+                                                        </div>
+                                                        <div style={{ padding: '0.4rem 0.5rem' }}>
+                                                            <div style={{ display: 'grid', gridTemplateColumns: '20px 1fr 44px 44px', gap: '4px', fontSize: '0.65rem', color: 'var(--secondary-foreground)', marginBottom: '3px', textAlign: 'center' }}>
+                                                                <div>#</div>
+                                                                <div>Weight</div>
+                                                                <div>Reps</div>
+                                                                <div>RPE</div>
+                                                            </div>
+                                                            {(ex.sets || []).map((set: any, si: number) => (
+                                                                <div key={set.id} style={{ display: 'grid', gridTemplateColumns: '20px 1fr 44px 44px', gap: '4px', alignItems: 'center', marginBottom: '3px' }}>
+                                                                    <div style={{ fontSize: '0.7rem', color: 'var(--secondary-foreground)', textAlign: 'center' }}>{si + 1}</div>
+                                                                    <input
+                                                                        className="input"
+                                                                        placeholder="—"
+                                                                        value={set.weight || ''}
+                                                                        onChange={e => updateProgressionSet(wi, sIdx, ei, si, 'weight', e.target.value)}
+                                                                        style={{ padding: '3px 4px', fontSize: '0.78rem', textAlign: 'center' }}
+                                                                    />
+                                                                    <input
+                                                                        className="input"
+                                                                        value={set.reps || ''}
+                                                                        onChange={e => updateProgressionSet(wi, sIdx, ei, si, 'reps', e.target.value)}
+                                                                        style={{ padding: '3px 4px', fontSize: '0.78rem', textAlign: 'center' }}
+                                                                    />
+                                                                    <input
+                                                                        className="input"
+                                                                        value={set.rpe || ''}
+                                                                        onChange={e => updateProgressionSet(wi, sIdx, ei, si, 'rpe', e.target.value)}
+                                                                        style={{ padding: '3px 4px', fontSize: '0.78rem', textAlign: 'center' }}
+                                                                    />
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>
