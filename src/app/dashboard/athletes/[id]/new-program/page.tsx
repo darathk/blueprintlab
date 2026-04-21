@@ -27,10 +27,28 @@ export default async function NewProgramPage({ params }: { params: Promise<{ id:
             select: { id: true, name: true, startDate: true, endDate: true, weeks: true, status: true, createdAt: true }
         }),
     ]);
+
+    // Only resume a draft if it has actual content (at least one exercise).
+    // Drafts with empty weeks/sessions are indistinguishable from "no draft"
+    // and would otherwise leak stale weeks into a fresh new-program view.
+    const draftHasContent = latestDraft && Array.isArray(latestDraft.weeks)
+        && (latestDraft.weeks as any[]).some(w =>
+            Array.isArray(w?.sessions) && w.sessions.some((s: any) =>
+                Array.isArray(s?.exercises) && s.exercises.length > 0
+            )
+        );
+
+    // Clean up any empty drafts so they don't accumulate.
+    if (latestDraft && !draftHasContent) {
+        await prisma.program.deleteMany({
+            where: { athleteId: id, status: 'draft' },
+        }).catch(() => {});
+    }
+
     return (
         <ProgramBuilder
             athleteId={id}
-            initialData={latestDraft || null}
+            initialData={draftHasContent ? latestDraft : null}
             initialExercises={initialExercises}
             athleteLiftTargets={athlete?.liftTargets}
             athleteTrainingSchedule={athlete?.trainingSchedule}
