@@ -203,10 +203,11 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
                 }
 
                 // Advance if:
-                // 1. Current is complete
-                // 2. OR Athlete has already started the next one (has logs)
-                // 3. OR Current is expired AND next has started by date
-                const shouldAdvance = isComplete || nextHasLogs || (currentExpired && nextDateStarted);
+                // 1. Current is complete (all sessions logged)
+                // 2. OR Current program's status is 'completed' (coach explicitly ended it by assigning a new one)
+                // 3. OR Athlete has already started the next one (has logs)
+                // 4. OR Current is expired AND next has started by date
+                const shouldAdvance = isComplete || prog.status === 'completed' || nextHasLogs || (currentExpired && nextDateStarted);
 
                 if (!shouldAdvance) {
                     break;
@@ -309,8 +310,11 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
             if (activeProgId) {
                 const progObj = programs.find((p: any) => p.id === activeProgId);
                 if (progObj && progObj.startDate) {
+                    // Use full weeks array length for expiry, not just weeks-with-sessions.
+                    // A coach may leave trailing empty weeks intentionally as deload/rest.
+                    const programWeekCount = Array.isArray(progObj.weeks) ? progObj.weeks.length : totalWeeks;
                     const expiryData = parseLocalDateStr(progObj.startDate);
-                    expiryData.setDate(expiryData.getDate() + totalWeeks * 7);
+                    expiryData.setDate(expiryData.getDate() + programWeekCount * 7);
 
                     const now = new Date();
                     now.setHours(0, 0, 0, 0);
