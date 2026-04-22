@@ -127,7 +127,23 @@ export async function PUT(request: Request) {
         const access = await requireAccessToAthlete(existing.athleteId);
         if ('error' in access) return access.error;
 
-        const updatedProgram = await prisma.program.update({
+        // When promoting a draft (or any program) to 'active', deactivate the
+        // athlete's other active programs first — same as the POST handler.
+        // Without this, "Save & Assign" on an auto-saved draft leaves stale
+        // active programs in the DB, which confuses the dashboard "needs update"
+        // filter and auto-advance logic.
+        const ops: any[] = [];
+        if (program.status === 'active') {
+            ops.push(prisma.program.updateMany({
+                where: {
+                    athleteId: existing.athleteId,
+                    status: 'active',
+                    id: { not: program.id },
+                },
+                data: { status: 'completed' },
+            }));
+        }
+        ops.push(prisma.program.update({
             where: { id: program.id },
             data: {
                 name: program.name !== undefined ? program.name : undefined,
@@ -136,7 +152,10 @@ export async function PUT(request: Request) {
                 weeks: program.weeks !== undefined ? program.weeks : undefined,
                 status: program.status !== undefined ? program.status : undefined,
             }
-        });
+        }));
+
+        const results = await prisma.$transaction(ops);
+        const updatedProgram = results[results.length - 1];
 
         // Invalidate the athlete dashboard cache so post-edit redirects don't
         // need a client-side router.refresh() to see the latest program state.

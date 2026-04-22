@@ -833,6 +833,55 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
         showToast(`Duplicated session to Week ${targetWeekNum}`);
     };
 
+    // Check whether a given program-week number is free of sessions from other
+    // already-assigned programs. This prevents duplicates from landing on dates
+    // that already have training scheduled.
+    const isWeekOccupiedByExisting = (weekNum: number): boolean => {
+        if (!startDate || !existingPrograms?.length) return false;
+        const [sy, sm, sd] = startDate.split('-').map(Number);
+        const progStart = new Date(sy, sm - 1, sd);
+        progStart.setHours(0, 0, 0, 0);
+
+        for (let d = 0; d < 7; d++) {
+            const date = new Date(progStart);
+            date.setDate(date.getDate() + (weekNum - 1) * 7 + d);
+            const ds = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
+            for (const prog of existingPrograms) {
+                if (!prog.startDate) continue;
+                const ps = String(prog.startDate).split('T')[0];
+                const [py, pm, pd] = ps.split('-').map(Number);
+                const pStart = new Date(py, pm - 1, pd);
+                pStart.setHours(0, 0, 0, 0);
+                const parsedWeeks = Array.isArray(prog.weeks) ? prog.weeks : [];
+                for (const w of parsedWeeks) {
+                    const wn = w.weekNumber || 1;
+                    for (const s of (w.sessions || [])) {
+                        const sDay = s.day || 1;
+                        const sDate = new Date(pStart);
+                        sDate.setDate(sDate.getDate() + (wn - 1) * 7 + (sDay - 1));
+                        const sDs = `${sDate.getFullYear()}-${String(sDate.getMonth() + 1).padStart(2, '0')}-${String(sDate.getDate()).padStart(2, '0')}`;
+                        if (sDs === ds) return true;
+                    }
+                }
+            }
+        }
+        return false;
+    };
+
+    const findNextEmptyWeek = (afterWeekNum: number): number => {
+        let candidate = afterWeekNum + 1;
+        const maxSearch = candidate + 52;
+        while (candidate < maxSearch) {
+            const existingWeek = weeks.find(w => w.weekNumber === candidate);
+            const currentHasSessions = existingWeek && existingWeek.sessions.length > 0;
+            const externallyOccupied = isWeekOccupiedByExisting(candidate);
+            if (!currentHasSessions && !externallyOccupied) return candidate;
+            candidate++;
+        }
+        return afterWeekNum + 1;
+    };
+
     const duplicateWeekToNextWeek = (weekNum: number) => {
         const newWeeks = [...weeks];
         const sourceWeekIdx = newWeeks.findIndex(w => w.weekNumber === weekNum);
@@ -841,7 +890,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
 
         if (sourceWeek.sessions.length === 0) return;
 
-        const targetWeekNum = weekNum + 1;
+        const targetWeekNum = findNextEmptyWeek(weekNum);
 
         let targetWeekIdx = newWeeks.findIndex(w => w.weekNumber === targetWeekNum);
         if (targetWeekIdx === -1) {
@@ -855,23 +904,13 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
             targetWeekIdx = newWeeks.findIndex(w => w.weekNumber === targetWeekNum);
         }
 
-        const occupiedDays = sourceWeek.sessions.map(s => s.day).filter(d => 
-             newWeeks[targetWeekIdx].sessions.some(ts => ts.day === d)
-        );
-
-        if (occupiedDays.length > 0) {
-            if (!confirm(`This will overwrite existing sessions in Week ${targetWeekNum}. Proceed?`)) {
-                return;
-            }
-            newWeeks[targetWeekIdx].sessions = newWeeks[targetWeekIdx].sessions.filter(ts => !occupiedDays.includes(ts.day));
-        }
-
+        const weekOffset = targetWeekNum - weekNum;
         const clonedSessions = sourceWeek.sessions.map(sourceSession => ({
             ...sourceSession,
             id: generateId(),
             scheduledDate: sourceSession.scheduledDate ? (() => {
                  const d = new Date(sourceSession.scheduledDate);
-                 d.setDate(d.getDate() + 7);
+                 d.setDate(d.getDate() + weekOffset * 7);
                  return d.toISOString().split('T')[0];
             })() : '',
             exercises: (sourceSession.exercises || []).map(e => ({
@@ -917,16 +956,18 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
     const duplicateWeek = (weekIndex) => {
         const newWeeks = [...weeks];
         const originalWeek = newWeeks[weekIndex];
+        const targetWeekNum = findNextEmptyWeek(originalWeek.weekNumber);
+        const weekOffset = targetWeekNum - originalWeek.weekNumber;
 
         const newWeek = {
             ...originalWeek,
             id: generateId(),
-            weekNumber: weeks.length + 1,
+            weekNumber: targetWeekNum,
             sessions: originalWeek.sessions.map(s => {
                 let newDate = '';
                 if (s.scheduledDate) {
                     const date = new Date(s.scheduledDate);
-                    date.setDate(date.getDate() + 7); // Shift by 7 days
+                    date.setDate(date.getDate() + weekOffset * 7);
                     newDate = date.toISOString().split('T')[0];
                 }
 
@@ -943,9 +984,17 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
             })
         };
 
+        // Fill in any gap weeks so the calendar stays contiguous
+        const maxWeek = newWeeks.reduce((m, w) => Math.max(m, w.weekNumber), 0);
+        for (let i = maxWeek + 1; i < targetWeekNum; i++) {
+            if (!newWeeks.find(w => w.weekNumber === i)) {
+                newWeeks.push({ id: generateId(), weekNumber: i, sessions: [] });
+            }
+        }
         newWeeks.push(newWeek);
+        newWeeks.sort((a, b) => a.weekNumber - b.weekNumber);
         setWeeks(newWeeks);
-        showToast(`Duplicated Week ${weekIndex + 1} → Week ${newWeek.weekNumber}`);
+        showToast(`Duplicated Week ${originalWeek.weekNumber} → Week ${targetWeekNum}`);
     };
 
     const addExerciseToActiveSession = (exerciseOrName) => {
@@ -1909,6 +1958,19 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                             }}
                             onDuplicateSessionToNextWeek={duplicateSessionToNextWeek}
                             onDuplicateWeekToNextWeek={duplicateWeekToNextWeek}
+                            onClearWeek={(weekNum: number) => {
+                                const wIdx = weeks.findIndex(w => w.weekNumber === weekNum);
+                                if (wIdx === -1) return;
+                                if (!confirm(`Delete all sessions in Week ${weekNum}?`)) return;
+                                const newWeeks = [...weeks];
+                                newWeeks[wIdx] = { ...newWeeks[wIdx], sessions: [] };
+                                // Remove empty weeks and re-index
+                                const cleanedWeeks = newWeeks.filter(w => w.sessions.length > 0).map((w, i) => ({ ...w, weekNumber: i + 1 }));
+                                setWeeks(cleanedWeeks.length > 0 ? cleanedWeeks : [{ id: generateId(), weekNumber: 1, sessions: [{ id: generateId(), day: 1, name: 'Session 1', exercises: [], scheduledDate: '', warmupDrills: '' }] }]);
+                                setEditingSession(null);
+                                setActiveLocation({ w: 0, s: 0 });
+                                showToast(`Cleared Week ${weekNum}`);
+                            }}
                             existingPrograms={existingPrograms}
                             onGhostSessionClick={(ghost: any) => setReferenceSession(ghost)}
                         />
