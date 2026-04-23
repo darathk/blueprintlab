@@ -285,50 +285,53 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
 
         if (currentProgram && progress.totalSessions > 0) {
             const sessionsRemaining = progress.totalSessions - progress.completedSessions;
-            // Estimate sessions per week
-            const totalWeeks = progress.totalWeeks || 1;
-            const sessionsPerWeek = Math.ceil(progress.totalSessions / totalWeeks);
 
             // Check if any assigned program hasn't been started yet (queued for the future)
             if (activeProgId) {
                  hasNextBlockReady = activeSorted.some(p => {
-                      if (p.id === activeProgId) return false; // skip current program
-                      // Check if athlete has logged any sessions for this program
+                      if (p.id === activeProgId) return false;
                       const pLogs = athleteLogs.filter(l => l.programId === p.id);
-                      if (pLogs.length > 0) return false; // already started, not queued
-                      // Check if the program actually has sessions
+                      if (pLogs.length > 0) return false;
                       let pSessions = 0;
                       (p.weeks || []).forEach((w: any) => pSessions += (w.sessions?.length || 0));
-                      return pSessions > 0; // has sessions but no logs = future program
+                      return pSessions > 0;
                  });
             }
 
-            // Needs update: athlete is within 1 week of sessions remaining in this block (logs)
-            // OR the program is entering its last 7 days based on the start date (time)
             let isEndingSoonByTime = false;
             let isExpired = false;
             if (activeProgId) {
                 const progObj = programs.find((p: any) => p.id === activeProgId);
                 if (progObj && progObj.startDate) {
-                    // Use full weeks array length for expiry, not just weeks-with-sessions.
-                    // A coach may leave trailing empty weeks intentionally as deload/rest.
-                    const programWeekCount = Array.isArray(progObj.weeks) ? progObj.weeks.length : totalWeeks;
-                    const expiryData = parseLocalDateStr(progObj.startDate);
-                    expiryData.setDate(expiryData.getDate() + programWeekCount * 7);
+                    const programWeekCount = Array.isArray(progObj.weeks) ? progObj.weeks.length : (progress.totalWeeks || 1);
+                    const expiryDate = parseLocalDateStr(progObj.startDate);
+                    expiryDate.setDate(expiryDate.getDate() + programWeekCount * 7);
 
                     const now = new Date();
                     now.setHours(0, 0, 0, 0);
 
-                    if (now >= expiryData) isExpired = true;
+                    if (now >= expiryDate) isExpired = true;
 
-                    const oneWeekBeforeExpiry = new Date(expiryData);
-                    oneWeekBeforeExpiry.setDate(oneWeekBeforeExpiry.getDate() - 7);
+                    // Use the last 25% of the program's duration (min 3 days) as
+                    // the "ending soon" window — a fixed 7-day window covers the
+                    // entire duration of 1-week programs, creating false positives.
+                    const totalDays = programWeekCount * 7;
+                    const warningDays = Math.max(3, Math.floor(totalDays * 0.25));
+                    const warningDate = new Date(expiryDate);
+                    warningDate.setDate(warningDate.getDate() - warningDays);
 
-                    if (now >= oneWeekBeforeExpiry) isEndingSoonByTime = true;
+                    if (now >= warningDate) isEndingSoonByTime = true;
                 }
             }
 
-            needsUpdate = ((sessionsRemaining > 0 && sessionsRemaining <= sessionsPerWeek) || isEndingSoonByTime || isExpired) && !hasNextBlockReady;
+            // Flag as "needs update" when the athlete has completed >= 80% of
+            // sessions OR the program is ending soon by date OR already expired.
+            // The old heuristic (sessionsRemaining <= sessionsPerWeek) was always
+            // true for 1-week programs, flagging athletes at 50% as "finishing soon."
+            const sessionsLow = progress.totalSessions > 0
+                && progress.completedSessions >= progress.totalSessions * 0.8;
+
+            needsUpdate = (sessionsLow || isEndingSoonByTime || isExpired) && !hasNextBlockReady;
         }
 
         return {
