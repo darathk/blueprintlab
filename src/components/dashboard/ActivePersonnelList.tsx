@@ -215,6 +215,30 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
             }
         }
 
+        // Post-loop safety net: if the resolved program is expired but a newer
+        // non-draft program exists for this athlete, switch to the newest one.
+        // This handles legacy DB data where old programs kept status:'active'
+        // before the PUT-handler deactivation fix was deployed.
+        {
+            const resolvedProg = activeSorted.find(p => p.id === activeProgId);
+            if (resolvedProg && resolvedProg.startDate) {
+                const wkCount = Array.isArray(resolvedProg.weeks) ? resolvedProg.weeks.length : 1;
+                const expCheck = parseLocalDateStr(resolvedProg.startDate);
+                expCheck.setDate(expCheck.getDate() + wkCount * 7);
+                const nowCheck = new Date();
+                nowCheck.setHours(0, 0, 0, 0);
+                if (nowCheck >= expCheck) {
+                    // Current program is expired — find the newest non-draft program
+                    // that started after it (unstarted or already in progress).
+                    const curStartMs = parseLocalDateStr(resolvedProg.startDate).getTime();
+                    const newerProg = activeSorted
+                        .filter(p => p.id !== activeProgId && parseLocalDateStr(p.startDate || p.createdAt).getTime() > curStartMs)
+                        .sort((a, b) => parseLocalDateStr(b.startDate || b.createdAt).getTime() - parseLocalDateStr(a.startDate || a.createdAt).getTime())[0];
+                    if (newerProg) activeProgId = newerProg.id;
+                }
+            }
+        }
+
         const currentProgram = programs.find(p => p.id === activeProgId);
 
         let progress = {
@@ -286,12 +310,14 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
         if (currentProgram && progress.totalSessions > 0) {
             const sessionsRemaining = progress.totalSessions - progress.completedSessions;
 
-            // Check if any assigned program hasn't been started yet (queued for the future)
+            // Check if any assigned program hasn't been started yet (queued for the future).
+            // Include drafts-with-content so athletes with in-progress builds don't
+            // trigger the "needs new program" alert.
             if (activeProgId) {
-                 hasNextBlockReady = activeSorted.some(p => {
+                 hasNextBlockReady = athletePrograms.some(p => {
                       if (p.id === activeProgId) return false;
                       const pLogs = athleteLogs.filter(l => l.programId === p.id);
-                      if (pLogs.length > 0) return false;
+                      if (pLogs.length > 0) return false; // already started
                       let pSessions = 0;
                       (p.weeks || []).forEach((w: any) => pSessions += (w.sessions?.length || 0));
                       return pSessions > 0;
