@@ -129,18 +129,25 @@ interface Message {
     reactions?: Record<string, string[]> | null; // { emoji: [userIds] }
 }
 
-// Helper to fix missing MIME types on iOS/native uploads
+// Helper to fix missing or generic MIME types on iOS/Android/native uploads.
+// Android often sends video files as 'application/octet-stream'; iOS MOV files
+// sometimes arrive with no type at all. We fall back to the file extension.
 const fixFileMimeType = (f: File): File => {
-    if (!f.type) {
+    const isGeneric = !f.type || f.type === 'application/octet-stream' || f.type === 'application/x-www-form-urlencoded';
+    if (isGeneric) {
         const name = f.name.toLowerCase();
         let type = '';
         if (name.endsWith('.mov')) type = 'video/quicktime';
         else if (name.endsWith('.mp4')) type = 'video/mp4';
         else if (name.endsWith('.webm')) type = 'video/webm';
+        else if (name.endsWith('.3gp')) type = 'video/3gpp';
         else if (name.endsWith('.jpg') || name.endsWith('.jpeg')) type = 'image/jpeg';
         else if (name.endsWith('.png')) type = 'image/png';
+        else if (name.endsWith('.gif')) type = 'image/gif';
+        else if (name.endsWith('.heic')) type = 'image/heic';
         else if (name.endsWith('.m4a')) type = 'audio/mp4';
-        
+        else if (name.endsWith('.ogg')) type = 'audio/ogg';
+
         if (type) {
             return new File([f], f.name, { type, lastModified: f.lastModified });
         }
@@ -994,6 +1001,9 @@ export default function ChatInterface({
         const trimmed = newContent.trim();
         if (!trimmed) return;
 
+        // Capture original so we can revert on failure
+        const originalMsg = messages.find(m => m.id === msgId);
+
         // Optimistic update
         setMessages(prev => prev.map(m => m.id === msgId ? { ...m, content: trimmed } : m));
         setEditingMessage(null);
@@ -1005,11 +1015,18 @@ export default function ChatInterface({
                 body: JSON.stringify({ messageId: msgId, content: trimmed })
             });
             if (!res.ok) {
-                console.error('Edit failed:', res.status);
-                alert('Failed to edit message.');
+                const errBody = await res.json().catch(() => ({}));
+                console.error('Edit failed:', res.status, errBody);
+                // Revert optimistic update
+                if (originalMsg) setMessages(prev => prev.map(m => m.id === msgId ? originalMsg : m));
+                alert(errBody?.error || 'Failed to edit message.');
+            } else {
+                const updated = await res.json().catch(() => null);
+                if (updated) setMessages(prev => prev.map(m => m.id === msgId ? updated : m));
             }
         } catch (e) {
             console.error('Edit error:', e);
+            if (originalMsg) setMessages(prev => prev.map(m => m.id === msgId ? originalMsg : m));
         }
     };
 
