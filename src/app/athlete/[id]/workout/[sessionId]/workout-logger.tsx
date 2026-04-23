@@ -561,6 +561,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                             weekNum={weekNum}
                                             dayNum={dayNum}
                                             blockName={blockName}
+                                            sessionId={sessionId}
                                             sets={ex.sets}
                                         />
                                     </div>

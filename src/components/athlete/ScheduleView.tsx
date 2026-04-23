@@ -1068,6 +1068,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                         weekNum={weekDisplayNum}
                                                                         dayNum={sessionNum}
                                                                         blockName={program.name}
+                                                                        sessionId={sKey}
                                                                         unit={unit}
                                                                         sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any, i: number) => ({ setNumber: i + 1, actual: s.actual || { weight: '', reps: '', rpe: '' } }))}
                                                                     />
@@ -1624,6 +1625,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                     weekNum={weekDisplayNum}
                                                                                     dayNum={sessionNum}
                                                                                     blockName={program.name}
+                                                                                    sessionId={sKey}
                                                                                     unit={unit}
                                                                                     sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any, i: number) => ({ setNumber: i + 1, actual: s.actual || { weight: '', reps: '', rpe: '' } }))}
                                                                                 />

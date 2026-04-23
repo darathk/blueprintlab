@@ -27,6 +27,8 @@ export async function GET(request: Request) {
 
         // Optional: only fetch messages newer than a timestamp (for incremental polling)
         const since = searchParams.get('since');
+        // Optional: filter to a specific session's messages (for session video review)
+        const sessionId = searchParams.get('sessionId');
 
         // Coaches: only show messages between themselves and this athlete
         // Athletes: show all their messages (with their coach)
@@ -43,12 +45,16 @@ export async function GET(request: Request) {
         if (since) {
             whereClause.createdAt = { gt: new Date(since) };
         }
+        if (sessionId) {
+            whereClause.sessionId = sessionId;
+        }
 
         const all = await prisma.message.findMany({
             where: whereClause,
             select: {
                 id: true, senderId: true, receiverId: true, content: true,
                 mediaUrl: true, mediaType: true, createdAt: true, read: true, replyToId: true, reactions: true,
+                sessionId: true,
                 sender: { select: { id: true, name: true, email: true } },
                 receiver: { select: { id: true, name: true, email: true } },
                 replyTo: { select: { id: true, content: true, mediaUrl: true, mediaType: true, sender: { select: { name: true } } } }
@@ -71,7 +77,7 @@ export async function POST(request: Request) {
 
     try {
         const body = await request.json();
-        const { senderId, receiverId, content, mediaUrl, mediaType, replyToId } = body;
+        const { senderId, receiverId, content, mediaUrl, mediaType, replyToId, sessionId } = body;
 
         if (!senderId || !receiverId || (content === undefined && !mediaUrl)) {
             return NextResponse.json({ error: 'senderId, receiverId, and content or mediaUrl are required' }, { status: 400 });
@@ -99,10 +105,10 @@ export async function POST(request: Request) {
         }
 
         const message = await prisma.message.create({
-            data: { senderId, receiverId, content: content || '', mediaUrl: mediaUrl || null, mediaType: mediaType || null, replyToId: replyToId || null },
+            data: { senderId, receiverId, content: content || '', mediaUrl: mediaUrl || null, mediaType: mediaType || null, replyToId: replyToId || null, sessionId: sessionId || null },
             select: {
                 id: true, senderId: true, receiverId: true, content: true,
-                mediaUrl: true, mediaType: true, createdAt: true, read: true, replyToId: true, reactions: true,
+                mediaUrl: true, mediaType: true, createdAt: true, read: true, replyToId: true, reactions: true, sessionId: true,
                 sender: { select: { id: true, name: true, email: true, role: true } },
                 receiver: { select: { id: true, name: true, email: true, role: true } },
                 replyTo: { select: { id: true, content: true, mediaUrl: true, mediaType: true, sender: { select: { name: true } } } }

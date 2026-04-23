@@ -123,10 +123,12 @@ model Message {
   replyTo    Message?  @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
   replies    Message[] @relation("MessageReplies")
   reactions  Json?     // Storing emoji reactions as map: { emoji: [userIds] }
+  sessionId  String?   // programId_wX_dY — set when message originates from ExerciseFeedback
 
   @@index([senderId, createdAt])
   @@index([receiverId, createdAt])
   @@index([receiverId, read])
+  @@index([sessionId])
 }
 
 model PushSubscription {
