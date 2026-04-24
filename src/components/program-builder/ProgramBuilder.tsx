@@ -1963,10 +1963,10 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                 if (wIdx === -1) return;
                                 if (!confirm(`Delete all sessions in Week ${weekNum}?`)) return;
                                 const newWeeks = [...weeks];
+                                // Clear sessions but keep weekNumber intact so other weeks
+                                // don't shift their calendar positions.
                                 newWeeks[wIdx] = { ...newWeeks[wIdx], sessions: [] };
-                                // Remove empty weeks and re-index
-                                const cleanedWeeks = newWeeks.filter(w => w.sessions.length > 0).map((w, i) => ({ ...w, weekNumber: i + 1 }));
-                                setWeeks(cleanedWeeks.length > 0 ? cleanedWeeks : [{ id: generateId(), weekNumber: 1, sessions: [{ id: generateId(), day: 1, name: 'Session 1', exercises: [], scheduledDate: '', warmupDrills: '' }] }]);
+                                setWeeks(newWeeks);
                                 setEditingSession(null);
                                 setActiveLocation({ w: 0, s: 0 });
                                 showToast(`Cleared Week ${weekNum}`);
