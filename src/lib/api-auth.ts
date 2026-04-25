@@ -48,9 +48,15 @@ export async function requireCoach() {
 /**
  * Checks if the authenticated user can access data for the given athleteId.
  * Coaches can access their own athletes; athletes can only access themselves.
+ *
+ * Pass an already-resolved `auth` to skip the redundant Clerk + DB round-trip
+ * when the caller has already authenticated (significant perf win for chat).
  */
-export async function requireAccessToAthlete(athleteId: string) {
-    const result = await requireAuth();
+export async function requireAccessToAthlete(
+    athleteId: string,
+    auth?: Awaited<ReturnType<typeof requireAuth>>
+) {
+    const result = auth ?? await requireAuth();
     if ('error' in result) return result;
 
     if (result.isCoach) {

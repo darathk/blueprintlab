@@ -21,7 +21,7 @@ export async function GET(request: Request) {
 
         // Coaches can only access messages for their own athletes; athletes can only access their own
         if (auth.user.id !== athleteId) {
-            const access = await requireAccessToAthlete(athleteId);
+            const access = await requireAccessToAthlete(athleteId, auth);
             if ('error' in access) return access.error;
         }
 
@@ -90,7 +90,7 @@ export async function POST(request: Request) {
 
         // Coaches can only message their own athletes; athletes can only message their coach
         if (auth.isCoach) {
-            const access = await requireAccessToAthlete(receiverId);
+            const access = await requireAccessToAthlete(receiverId, auth);
             if ('error' in access) return access.error;
         } else {
             const sender = await prisma.athlete.findUnique({ where: { id: senderId }, select: { coachId: true } });

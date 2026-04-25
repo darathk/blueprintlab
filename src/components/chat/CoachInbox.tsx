@@ -162,7 +162,7 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                 <div style={{ flex: 1, overflowY: 'auto' }}>
                     {filteredConvos.length === 0 && <div style={{ textAlign: 'center', padding: 32, fontSize: 12, color: 'var(--secondary-foreground)' }}>{searchTerm ? 'No athletes match your search' : 'No conversations'}</div>}
                     {filteredConvos.map(c => (
-                        <button key={c.athleteId} onClick={() => {
+                        <div key={c.athleteId} role="button" tabIndex={0} onClick={() => {
                             setSelectedId(c.athleteId);
                             setShowProgram(false);
                             // Immediately clear unread count in sidebar
@@ -208,7 +208,7 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                                 </div>
                                 <div style={{ fontSize: 11, color: c.unreadCount > 0 ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.25)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const, marginTop: 1 }}>{c.lastMessage || 'No messages yet'}</div>
                             </div>
-                        </button>
+                        </div>
                     ))}
                 </div>
             </div>
