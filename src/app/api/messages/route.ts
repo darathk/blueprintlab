@@ -45,16 +45,16 @@ export async function GET(request: Request) {
         if (since) {
             whereClause.createdAt = { gt: new Date(since) };
         }
-        if (sessionId) {
-            whereClause.sessionId = sessionId;
-        }
+        // sessionId filter disabled until `prisma db push` adds the column
+        // if (sessionId) {
+        //     whereClause.sessionId = sessionId;
+        // }
 
         const all = await prisma.message.findMany({
             where: whereClause,
             select: {
                 id: true, senderId: true, receiverId: true, content: true,
                 mediaUrl: true, mediaType: true, createdAt: true, read: true, replyToId: true, reactions: true,
-                sessionId: true,
                 sender: { select: { id: true, name: true, email: true } },
                 receiver: { select: { id: true, name: true, email: true } },
                 replyTo: { select: { id: true, content: true, mediaUrl: true, mediaType: true, sender: { select: { name: true } } } }
@@ -105,10 +105,10 @@ export async function POST(request: Request) {
         }
 
         const message = await prisma.message.create({
-            data: { senderId, receiverId, content: content || '', mediaUrl: mediaUrl || null, mediaType: mediaType || null, replyToId: replyToId || null, sessionId: sessionId || null },
+            data: { senderId, receiverId, content: content || '', mediaUrl: mediaUrl || null, mediaType: mediaType || null, replyToId: replyToId || null },
             select: {
                 id: true, senderId: true, receiverId: true, content: true,
-                mediaUrl: true, mediaType: true, createdAt: true, read: true, replyToId: true, reactions: true, sessionId: true,
+                mediaUrl: true, mediaType: true, createdAt: true, read: true, replyToId: true, reactions: true,
                 sender: { select: { id: true, name: true, email: true, role: true } },
                 receiver: { select: { id: true, name: true, email: true, role: true } },
                 replyTo: { select: { id: true, content: true, mediaUrl: true, mediaType: true, sender: { select: { name: true } } } }
