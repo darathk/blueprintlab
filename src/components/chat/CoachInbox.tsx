@@ -45,6 +45,13 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
 
     const markAsUnread = async (athleteId: string, e: React.MouseEvent) => {
         e.stopPropagation();
+        e.preventDefault();
+        // Mark this conversation as "manually unread" so a stray inbox refetch
+        // (e.g. the chat's mount-time PATCH dispatching unread-refresh) can't
+        // flip the badge back to read.
+        manuallyUnreadRef.current.add(athleteId);
+        // Clear after 10s — by then any in-flight reads have settled.
+        setTimeout(() => manuallyUnreadRef.current.delete(athleteId), 10000);
         try {
             await fetch('/api/messages/mark-unread', {
                 method: 'POST',
@@ -72,10 +79,24 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
         return () => window.removeEventListener('resize', check);
     }, []);
 
+    // Conversations the user just manually marked unread — preserve their unread
+    // state across refetches in case the inbox query races and returns 0.
+    const manuallyUnreadRef = useRef<Set<string>>(new Set());
+
     // Fetch lightweight conversation list
     const fetchConvos = useCallback(async () => {
         const r = await fetch(`/api/messages/inbox?coachId=${coachId}`);
-        if (r.ok) setConvos(await r.json());
+        if (!r.ok) return;
+        const data: ConvSummary[] = await r.json();
+        // If a conversation was just manually marked unread but the server still
+        // reports 0 (e.g. read-replica lag, no athlete message to flip), keep the
+        // optimistic count so the badge doesn't flicker back to read.
+        const merged = data.map(c =>
+            manuallyUnreadRef.current.has(c.athleteId) && c.unreadCount === 0
+                ? { ...c, unreadCount: 1 }
+                : c
+        );
+        setConvos(merged);
     }, [coachId]);
 
     // Debounced fetch — coalesces rapid events (realtime + mark-read + send) into a single API call
@@ -189,6 +210,7 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, marginLeft: 6 }}>
                                         {c.unreadCount === 0 && (
                                             <button
+                                                type="button"
                                                 onClick={(e) => markAsUnread(c.athleteId, e)}
                                                 title="Mark as unread"
                                                 className="mark-unread-btn"
