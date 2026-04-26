@@ -60,18 +60,44 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Program not accessible' }, { status: 403 });
         }
 
-        // Transactionally deactivate old programs and activate the new one so we
-        // never leave the athlete without an active program on partial failure.
-        await prisma.$transaction([
-            prisma.program.updateMany({
-                where: { athleteId, status: 'active', id: { not: programId } },
-                data: { status: 'completed' }
-            }),
-            prisma.program.update({
-                where: { id: programId },
-                data: { status: 'active', athleteId } // Ensuring it belongs to them
+        // Only deactivate programs that are OLDER than the one being assigned.
+        // If a coach assigns a past program (e.g. a retroactive pivot block),
+        // we must NOT deactivate programs with a later startDate — those are the
+        // athlete's current or future blocks.
+        const assignedProgram = await prisma.program.findUnique({
+            where: { id: programId },
+            select: { startDate: true }
+        });
+        const assignedStart = assignedProgram?.startDate || null;
+
+        // Fetch all other active programs for this athlete
+        const otherActive = await prisma.program.findMany({
+            where: { athleteId, status: 'active', id: { not: programId } },
+            select: { id: true, startDate: true }
+        });
+
+        // Only deactivate programs with an earlier or same startDate (or no startDate).
+        // Programs with a later startDate stay active — they're future/current blocks.
+        const toDeactivate = otherActive
+            .filter(p => {
+                if (!assignedStart) return true; // no date on new → deactivate all older
+                if (!p.startDate) return true;    // no date on old → treat as older
+                return p.startDate <= assignedStart;
             })
-        ]);
+            .map(p => p.id);
+
+        const ops: any[] = [];
+        if (toDeactivate.length > 0) {
+            ops.push(prisma.program.updateMany({
+                where: { id: { in: toDeactivate } },
+                data: { status: 'completed' }
+            }));
+        }
+        ops.push(prisma.program.update({
+            where: { id: programId },
+            data: { status: 'active', athleteId }
+        }));
+        await prisma.$transaction(ops);
 
         // Fetch fresh athlete data mapping for the frontend wrapper
         const updatedAthlete = await prisma.athlete.findUnique({

@@ -206,8 +206,9 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
                 // 1. Current is complete (all sessions logged)
                 // 2. OR Current program's status is 'completed' (coach explicitly ended it by assigning a new one)
                 // 3. OR Athlete has already started the next one (has logs)
-                // 4. OR Current is expired by date (no reason to wait for next program's start date)
-                const shouldAdvance = isComplete || prog.status === 'completed' || nextHasLogs || currentExpired;
+                // 4. OR Current is expired by date
+                // 5. OR Next program's start date has arrived (handles current programs with no date/weeks data)
+                const shouldAdvance = isComplete || prog.status === 'completed' || nextHasLogs || currentExpired || nextDateStarted;
 
                 if (!shouldAdvance) {
                     break;
