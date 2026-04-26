@@ -62,7 +62,7 @@ export default function MeetDataTable({ athletes, coachId }: Props) {
 
     // New entry form
     const [newEntry, setNewEntry] = useState({
-        athleteId: '', category: '', weightClass: '', bodyweight: '', meetDate: '', meetName: '', gender: 'male',
+        athleteId: '', manualAthleteName: '', category: '', weightClass: '', bodyweight: '', meetDate: '', meetName: '', gender: 'male',
         sq1: '', sq2: '', sq3: '', sq1g: true, sq2g: true, sq3g: true,
         bp1: '', bp2: '', bp3: '', bp1g: true, bp2g: true, bp3g: true,
         dl1: '', dl2: '', dl3: '', dl1g: true, dl2g: true, dl3g: true,
@@ -211,20 +211,21 @@ export default function MeetDataTable({ athletes, coachId }: Props) {
     };
 
     const handleAdd = () => {
-        if (!newEntry.athleteId || !newEntry.meetName) return;
-        const athlete = athletes.find(a => a.id === newEntry.athleteId);
-        if (!athlete) return;
+        const hasAthlete = newEntry.athleteId || newEntry.manualAthleteName.trim();
+        if (!hasAthlete || !newEntry.meetName) return;
+        const athlete = newEntry.athleteId ? athletes.find(a => a.id === newEntry.athleteId) : null;
+        const athleteName = athlete ? athlete.name : newEntry.manualAthleteName.trim();
 
         const entry: MeetEntry = {
             id: Math.random().toString(36).substring(7),
-            athleteId: newEntry.athleteId,
-            athleteName: athlete.name,
+            athleteId: newEntry.athleteId || `manual_${Date.now()}`,
+            athleteName,
             category: newEntry.category,
-            weightClass: parseFloat(newEntry.weightClass) || athlete.weightClass || 0,
+            weightClass: parseFloat(newEntry.weightClass) || athlete?.weightClass || 0,
             bodyweight: parseFloat(newEntry.bodyweight) || 0,
             meetDate: newEntry.meetDate,
             meetName: newEntry.meetName,
-            gender: newEntry.gender || athlete.gender || 'male',
+            gender: newEntry.gender || athlete?.gender || 'male',
             referencePreviousTotal: parseFloat(newEntry.referencePreviousTotal) || undefined,
             isFirstMeetExplicit: newEntry.isFirstMeetExplicit,
             squat: [Math.abs(parseFloat(newEntry.sq1) || 0), Math.abs(parseFloat(newEntry.sq2) || 0), Math.abs(parseFloat(newEntry.sq3) || 0)],
@@ -491,10 +492,13 @@ export default function MeetDataTable({ athletes, coachId }: Props) {
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '0.75rem' }}>
                         <div>
                             <label style={labelStyle}>Athlete *</label>
-                            <select className="input" value={newEntry.athleteId} onChange={e => setNewEntry({ ...newEntry, athleteId: e.target.value })} style={{ width: '100%' }}>
-                                <option value="">Select...</option>
+                            <select className="input" value={newEntry.athleteId} onChange={e => setNewEntry({ ...newEntry, athleteId: e.target.value, manualAthleteName: '' })} style={{ width: '100%' }}>
+                                <option value="">Select or type below...</option>
                                 {athletes.map(a => <option key={a.id} value={a.id}>{a.name}</option>)}
                             </select>
+                            {!newEntry.athleteId && (
+                                <input className="input" placeholder="Or type name manually" value={newEntry.manualAthleteName} onChange={e => setNewEntry({ ...newEntry, manualAthleteName: e.target.value })} style={{ width: '100%', marginTop: '0.35rem' }} />
+                            )}
                         </div>
                         <div>
                             <label style={labelStyle}>Category</label>
