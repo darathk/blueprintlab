@@ -186,7 +186,8 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                 <div style={{ flex: 1, overflowY: 'auto' }}>
                     {filteredConvos.length === 0 && <div style={{ textAlign: 'center', padding: 32, fontSize: 12, color: 'var(--secondary-foreground)' }}>{searchTerm ? 'No athletes match your search' : 'No conversations'}</div>}
                     {filteredConvos.map(c => (
-                        <div key={c.athleteId} role="button" tabIndex={0} onClick={() => {
+                        <div key={c.athleteId} role="button" tabIndex={0} onClick={(e) => {
+                            if ((e.target as HTMLElement).closest('.mark-unread-btn')) return;
                             setSelectedId(c.athleteId);
                             setShowProgram(false);
                             // User is actively opening this chat — clear any manual-unread
