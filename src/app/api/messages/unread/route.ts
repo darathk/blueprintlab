@@ -22,9 +22,26 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
-        const count = await prisma.message.count({
-            where: { receiverId: userId, read: false }
+        const user = await prisma.athlete.findUnique({
+            where: { id: userId },
+            select: { role: true }
         });
+
+        let count: number;
+        if (user?.role === 'coach') {
+            // Coaches: only count unread messages from their current athletes
+            count = await prisma.message.count({
+                where: {
+                    receiverId: userId,
+                    read: false,
+                    sender: { coachId: userId }
+                }
+            });
+        } else {
+            count = await prisma.message.count({
+                where: { receiverId: userId, read: false }
+            });
+        }
 
         return NextResponse.json({ unread: count });
     } catch (error) {
