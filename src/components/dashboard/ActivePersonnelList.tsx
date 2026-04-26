@@ -216,24 +216,31 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
             }
         }
 
-        // Post-loop safety net: if the resolved program is expired but a newer
-        // non-draft program exists for this athlete, switch to the newest one.
-        // This handles legacy DB data where old programs kept status:'active'
-        // before the PUT-handler deactivation fix was deployed.
+        // Post-loop safety net: if the resolved program is expired or stale,
+        // switch to a newer program. Handles legacy DB data where programs
+        // were incorrectly marked completed by the old assignment logic.
         {
             const resolvedProg = activeSorted.find(p => p.id === activeProgId);
-            if (resolvedProg && resolvedProg.startDate) {
-                const wkCount = Array.isArray(resolvedProg.weeks) ? resolvedProg.weeks.length : 1;
-                const expCheck = parseLocalDateStr(resolvedProg.startDate);
-                expCheck.setDate(expCheck.getDate() + wkCount * 7);
+            if (resolvedProg) {
+                let isStale = false;
                 const nowCheck = new Date();
                 nowCheck.setHours(0, 0, 0, 0);
-                if (nowCheck >= expCheck) {
-                    // Current program is expired — find the newest non-draft program
-                    // that started after it (unstarted or already in progress).
-                    const curStartMs = parseLocalDateStr(resolvedProg.startDate).getTime();
+
+                if (resolvedProg.startDate) {
+                    const wkCount = Array.isArray(resolvedProg.weeks) ? resolvedProg.weeks.length : 1;
+                    const expCheck = parseLocalDateStr(resolvedProg.startDate);
+                    expCheck.setDate(expCheck.getDate() + wkCount * 7);
+                    if (nowCheck >= expCheck) isStale = true;
+                } else {
+                    let totalSess = 0;
+                    (resolvedProg.weeks || []).forEach((w: any) => totalSess += (w.sessions?.length || 0));
+                    if (totalSess === 0) isStale = true;
+                }
+
+                if (isStale) {
+                    const curMs = parseLocalDateStr(resolvedProg.startDate || resolvedProg.createdAt).getTime();
                     const newerProg = activeSorted
-                        .filter(p => p.id !== activeProgId && parseLocalDateStr(p.startDate || p.createdAt).getTime() > curStartMs)
+                        .filter(p => p.id !== activeProgId && parseLocalDateStr(p.startDate || p.createdAt).getTime() > curMs)
                         .sort((a, b) => parseLocalDateStr(b.startDate || b.createdAt).getTime() - parseLocalDateStr(a.startDate || a.createdAt).getTime())[0];
                     if (newerProg) activeProgId = newerProg.id;
                 }

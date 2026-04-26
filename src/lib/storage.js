@@ -22,7 +22,7 @@ export const getAthletes = cache(async (coachId) => {
             meetAttempts: true,
             pastMeets: true,
             programs: {
-                where: { status: 'active' },
+                where: { status: { not: 'draft' } },
                 orderBy: { startDate: 'desc' },
                 select: { id: true, name: true, status: true, startDate: true, endDate: true, createdAt: true }
             }
@@ -31,10 +31,14 @@ export const getAthletes = cache(async (coachId) => {
 
     return athletes.map(a => {
         const { programs, ...rest } = a;
-        return {
-            ...rest,
-            currentProgramId: programs.length > 0 ? programs[0].id : null
-        };
+        const active = programs.filter(p => p.status === 'active');
+        let currentProgramId = null;
+        if (active.length > 0) {
+            currentProgramId = active[0].id;
+        } else if (programs.length > 0) {
+            currentProgramId = programs[0].id;
+        }
+        return { ...rest, currentProgramId };
     });
 });
 
@@ -200,18 +204,19 @@ export const getAthleteById = cache(async (id) => {
         where: { id },
         include: {
             programs: {
-                where: { status: 'active' },
-                orderBy: { createdAt: 'asc' },
-                select: { id: true }
+                where: { status: { not: 'draft' } },
+                orderBy: { startDate: 'desc' },
+                select: { id: true, status: true, startDate: true }
             }
         }
     });
     if (!athlete) return null;
     const { programs, ...rest } = athlete;
-    return {
-        ...rest, // includes weightClass, gender, and all other fields
-        currentProgramId: programs.length > 0 ? programs[0].id : null
-    };
+    const active = programs.filter(p => p.status === 'active');
+    const currentProgramId = active.length > 0
+        ? active[0].id
+        : (programs.length > 0 ? programs[0].id : null);
+    return { ...rest, currentProgramId };
 });
 
 export const getProgramsByAthlete = cache(async (athleteId) => {
