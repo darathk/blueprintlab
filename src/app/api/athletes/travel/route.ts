@@ -17,7 +17,7 @@ export async function GET(request: Request) {
     }
 
     // Auth check: only the athlete themselves or their coach can view travel events
-    const access = await requireAccessToAthlete(athleteId);
+    const access = await requireAccessToAthlete(athleteId, auth);
     if ('error' in access) return access.error;
 
     try {
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
         }
 
         // Only the athlete or their coach can toggle travel events.
-        const access = await requireAccessToAthlete(athleteId);
+        const access = await requireAccessToAthlete(athleteId, auth);
         if ('error' in access) return access.error;
 
         // Check if exists
@@ -68,8 +68,8 @@ export async function POST(request: Request) {
             });
             return NextResponse.json({ success: true, action: 'created', event });
         }
-    } catch (error) {
+    } catch (error: any) {
         console.error('POST /api/athletes/travel error:', error);
-        return NextResponse.json({ error: 'Failed to toggle travel event' }, { status: 500 });
+        return NextResponse.json({ error: error?.message || 'Failed to toggle travel event' }, { status: 500 });
     }
 }
