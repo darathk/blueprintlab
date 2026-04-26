@@ -247,6 +247,58 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
             }
         }
 
+        // Final decisive override: if any non-draft program's date range
+        // covers TODAY (startDate <= today < startDate + weeks*7), pick it.
+        // This wins over the auto-advance loop output, which can get stuck on
+        // expired-but-still-active programs when the newer program was wrongly
+        // marked 'completed' by legacy assignment logic.
+        {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const covering = activeSorted.filter(p => {
+                if (!p.startDate) return false;
+                const wkCount = Array.isArray(p.weeks) ? p.weeks.length : 0;
+                if (wkCount === 0) return false;
+                const start = parseLocalDateStr(p.startDate);
+                const end = parseLocalDateStr(p.startDate);
+                end.setDate(end.getDate() + wkCount * 7);
+                return today >= start && today < end;
+            });
+            if (covering.length > 0) {
+                covering.sort((a, b) =>
+                    parseLocalDateStr(b.startDate).getTime() - parseLocalDateStr(a.startDate).getTime()
+                );
+                activeProgId = covering[0].id;
+            }
+        }
+
+        // Truth signal: if a program has more recent log activity than the
+        // currently-resolved one, the athlete is actively using it. Use that
+        // as the final word — it survives any DB status confusion.
+        {
+            const programLastLog = new Map<string, number>();
+            for (const l of athleteLogs) {
+                if (!l.programId || !l.date) continue;
+                const t = new Date(l.date).getTime();
+                if (Number.isNaN(t)) continue;
+                const prev = programLastLog.get(l.programId) || 0;
+                if (t > prev) programLastLog.set(l.programId, t);
+            }
+            if (programLastLog.size > 0) {
+                let bestId = activeProgId;
+                let bestT = activeProgId ? (programLastLog.get(activeProgId) || 0) : 0;
+                for (const [pid, t] of programLastLog.entries()) {
+                    const prog = activeSorted.find(p => p.id === pid);
+                    if (!prog) continue;
+                    if (t > bestT) {
+                        bestT = t;
+                        bestId = pid;
+                    }
+                }
+                if (bestId) activeProgId = bestId;
+            }
+        }
+
         const currentProgram = programs.find(p => p.id === activeProgId);
 
         let progress = {

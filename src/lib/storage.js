@@ -286,7 +286,7 @@ export const getTravelEventsByAthlete = cache(async (athleteId) => {
     });
 });
 
-// Lightweight aggregate: returns [{programId, athleteId, sessionId}] with NO exercise payloads
+// Lightweight aggregate: returns [{programId, athleteId, sessionId, date}] with NO exercise payloads
 export const getLogSummariesForDashboard = cache(async (coachId) => {
     if (!coachId) return [];
     return prisma.log.findMany({
@@ -294,6 +294,7 @@ export const getLogSummariesForDashboard = cache(async (coachId) => {
         select: {
             sessionId: true,
             programId: true,
+            date: true,
             program: {
                 select: { athleteId: true }
             }
