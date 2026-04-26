@@ -46,29 +46,29 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
     const markAsUnread = async (athleteId: string, e: React.MouseEvent) => {
         e.stopPropagation();
         e.preventDefault();
-        // Mark this conversation as "manually unread" so a stray inbox refetch
-        // (e.g. the chat's mount-time PATCH dispatching unread-refresh) can't
-        // flip the badge back to read.
+        // Protect this conversation's unread badge from being wiped by a
+        // concurrent inbox refetch (e.g. ChatInterface mount PATCH).
+        // Cleared when the user explicitly opens the conversation to read it.
         manuallyUnreadRef.current.add(athleteId);
-        // Clear after 10s — by then any in-flight reads have settled.
-        setTimeout(() => manuallyUnreadRef.current.delete(athleteId), 10000);
         try {
-            await fetch('/api/messages/mark-unread', {
+            const res = await fetch('/api/messages/mark-unread', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ senderId: athleteId, receiverId: coachId })
             });
-            // Update local state immediately
+            if (!res.ok) {
+                manuallyUnreadRef.current.delete(athleteId);
+                return;
+            }
             setConvos(prev => prev.map(cv =>
                 cv.athleteId === athleteId ? { ...cv, unreadCount: Math.max(cv.unreadCount, 1) } : cv
             ));
-            // If this was the selected conversation, deselect so it shows as unread
             if (selectedId === athleteId) {
                 setSelectedId(null);
             }
-            window.dispatchEvent(new Event('unread-refresh'));
         } catch (err) {
             console.error('Failed to mark as unread:', err);
+            manuallyUnreadRef.current.delete(athleteId);
         }
     };
 
@@ -88,14 +88,17 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
         const r = await fetch(`/api/messages/inbox?coachId=${coachId}`);
         if (!r.ok) return;
         const data: ConvSummary[] = await r.json();
-        // If a conversation was just manually marked unread but the server still
-        // reports 0 (e.g. read-replica lag, no athlete message to flip), keep the
-        // optimistic count so the badge doesn't flicker back to read.
-        const merged = data.map(c =>
-            manuallyUnreadRef.current.has(c.athleteId) && c.unreadCount === 0
-                ? { ...c, unreadCount: 1 }
-                : c
-        );
+        const merged = data.map(c => {
+            if (!manuallyUnreadRef.current.has(c.athleteId)) return c;
+            // Server caught up — it now reports unread, so drop the override.
+            if (c.unreadCount > 0) {
+                manuallyUnreadRef.current.delete(c.athleteId);
+                return c;
+            }
+            // Server still reports 0 but user manually marked it unread.
+            // Keep the optimistic badge until they open the conversation.
+            return { ...c, unreadCount: 1 };
+        });
         setConvos(merged);
     }, [coachId]);
 
@@ -186,7 +189,9 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                         <div key={c.athleteId} role="button" tabIndex={0} onClick={() => {
                             setSelectedId(c.athleteId);
                             setShowProgram(false);
-                            // Immediately clear unread count in sidebar
+                            // User is actively opening this chat — clear any manual-unread
+                            // protection so subsequent inbox refetches reflect true read state.
+                            manuallyUnreadRef.current.delete(c.athleteId);
                             if (c.unreadCount > 0) {
                                 setConvos(prev => prev.map(cv => cv.athleteId === c.athleteId ? { ...cv, unreadCount: 0 } : cv));
                             }
