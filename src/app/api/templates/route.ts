@@ -46,10 +46,22 @@ export async function POST(request: Request) {
         if (programId) {
             const program = await prisma.program.findUnique({
                 where: { id: programId },
-                select: { name: true, weeks: true, athleteId: true },
+                select: {
+                    name: true,
+                    weeks: true,
+                    athleteId: true,
+                    athlete: { select: { coachId: true, id: true } },
+                },
             });
             if (!program) {
                 return NextResponse.json({ error: 'Program not found' }, { status: 404 });
+            }
+
+            // Prevent a coach from cloning another coach's program into a template.
+            // The program must belong either to one of this coach's athletes, or to the coach themselves.
+            const ownerCoachId = program.athlete?.coachId ?? program.athlete?.id;
+            if (ownerCoachId !== auth.user.id) {
+                return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
             }
 
             // Deep-clone weeks with fresh UUIDs

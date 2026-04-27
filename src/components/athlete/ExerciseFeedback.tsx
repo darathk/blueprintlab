@@ -12,6 +12,7 @@ interface Props {
     weekNum: number;
     dayNum: number;
     blockName: string;
+    sessionId?: string;
     unit?: 'kg' | 'lbs';
     sets: Array<{
         setNumber: number;
@@ -20,7 +21,7 @@ interface Props {
 }
 
 export default function ExerciseFeedback({
-    athleteId, coachId: coachIdProp, exerciseName, weekNum, dayNum, blockName, unit = 'lbs', sets
+    athleteId, coachId: coachIdProp, exerciseName, weekNum, dayNum, blockName, sessionId, unit = 'lbs', sets
 }: Props) {
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState('');
@@ -285,6 +286,7 @@ export default function ExerciseFeedback({
                         content: textContent,
                         mediaUrl: null,
                         mediaType: null,
+                        sessionId: sessionId || null,
                     }),
                 });
                 if (!res.ok) throw new Error('Failed to send text');
@@ -310,6 +312,7 @@ export default function ExerciseFeedback({
                             content: msgContent,
                             mediaUrl,
                             mediaType,
+                            sessionId: sessionId || null,
                         }),
                     });
 

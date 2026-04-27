@@ -15,7 +15,15 @@ export async function POST() {
     if ('error' in auth) return auth.error;
 
     try {
+        // Only operate on athletes owned by the requesting coach (plus the coach themselves)
+        // so one coach cannot see, merge, or steal another coach's athletes.
         const allAthletes = await prisma.athlete.findMany({
+            where: {
+                OR: [
+                    { coachId: auth.user.id },
+                    { id: auth.user.id },
+                ],
+            },
             select: { id: true, email: true, name: true, role: true, coachId: true },
             orderBy: { email: 'asc' },
         });
@@ -112,7 +120,14 @@ export async function POST() {
         }
 
         // Also lowercase any remaining emails that weren't part of a duplicate group
+        // (still scoped to this coach's athletes)
         const remaining = await prisma.athlete.findMany({
+            where: {
+                OR: [
+                    { coachId: auth.user.id },
+                    { id: auth.user.id },
+                ],
+            },
             select: { id: true, email: true },
         });
         let normalizedCount = 0;

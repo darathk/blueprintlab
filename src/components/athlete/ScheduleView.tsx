@@ -427,7 +427,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
     // Uses same logic as MasterProgramCalendar: Day 1 = program startDate,
     // Day 2 = startDate+1, etc. Week boundaries every 7 days from startDate.
     const sessionsByDate = useMemo(() => {
-        const map: Record<string, { program: any; weekNum: number; weekDisplayNum: number; session: any; sKey: string; isActive: boolean; sessionNum: number }[]> = {};
+        const map: Record<string, { program: any; weekNum: number; weekDisplayNum: number; session: any; sKey: string; isActive: boolean; isCurrent: boolean; sessionNum: number }[]> = {};
         if (!Array.isArray(programs)) return map;
 
         programs.forEach(program => {
@@ -438,6 +438,15 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
             const startSunday = new Date(start);
             startSunday.setDate(startSunday.getDate() - startSunday.getDay());
             const isActive = program.status === 'active';
+
+            // Date-based check: a program whose date range hasn't fully passed
+            // should never show as "past", regardless of its DB status.
+            const weeksArr: any[] = Array.isArray(program.weeks) ? program.weeks : [];
+            const programEnd = new Date(start);
+            programEnd.setDate(programEnd.getDate() + Math.max(weeksArr.length, 1) * 7);
+            const todayCheck = new Date();
+            todayCheck.setHours(0, 0, 0, 0);
+            const isCurrent = isActive || todayCheck < programEnd;
 
             const weeks: any[] = Array.isArray(program.weeks) ? program.weeks : [];
             // Collect all sessions with their computed dates to determine sequential week display
@@ -478,7 +487,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                     // sessionNum is the 1-based position of this session in the week (sorted by day)
                     const sessionNum = sortedSessions.findIndex((s: any) => (s?.day || 1) === day) + 1;
                     if (!map[ds]) map[ds] = [];
-                    map[ds].push({ program, weekNum: wn, weekDisplayNum: weekDisplayNum || 1, session, sKey, isActive, sessionNum });
+                    map[ds].push({ program, weekNum: wn, weekDisplayNum: weekDisplayNum || 1, session, sKey, isActive, isCurrent, sessionNum });
                 });
             });
         });
@@ -500,7 +509,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                 dateStr: ds,
                 isToday: i === 0,
                 hasSession: sessions.length > 0,
-                hasActiveSession: sessions.some(s => s.isActive),
+                hasActiveSession: sessions.some(s => s.isCurrent),
                 isMeet: ds === nextMeetDate,
             });
         }
@@ -719,7 +728,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                         </div>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                            {selectedDateSessions.map(({ program, weekNum, weekDisplayNum, session, sKey, isActive, sessionNum }) => {
+                            {selectedDateSessions.map(({ program, weekNum, weekDisplayNum, session, sKey, isActive, isCurrent, sessionNum }) => {
                                 const exercises: any[] = Array.isArray(session.exercises) ? session.exercises : [];
                                 const log = Array.isArray(logs) ? logs.find(l => l.sessionId === sKey && l.programId === program.id) : undefined;
                                 const progress = sessionProgress(exercises, log, editState[sKey]);
@@ -738,7 +747,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                         opacity: 1,
                                     }}>
                                         {/* Past program label */}
-                                        {!isActive && (
+                                        {!isCurrent && (
                                             <div style={{
                                                 padding: '4px 16px',
                                                 background: 'rgba(255,255,255,0.02)',
@@ -952,6 +961,22 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
 
                                                             {exOpen && (
                                                                 <div style={{ padding: '0 8px 16px 8px' }}>
+                                                                    {/* Coach's notes — surfaced first so the athlete reads any
+                                                                        prescribed cues/instructions before seeing the protocol. */}
+                                                                    <div style={{ display: 'flex', padding: '12px 0 8px 0', alignItems: 'flex-start' }}>
+                                                                        <textarea
+                                                                            value={exerciseData.notes || ''}
+                                                                            onChange={e => updateNotes(sKey, exIdx, e.target.value, program.id)}
+                                                                            onBlur={() => triggerAutoSave(sKey, program.id)}
+                                                                            onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
+                                                                            placeholder="Coach's notes:"
+                                                                            style={{
+                                                                                flex: 1, minHeight: 60, padding: '8px 12px', border: '1px solid var(--card-border)',
+                                                                                borderRadius: 4, background: 'var(--background)', fontSize: '0.9rem',
+                                                                                color: 'var(--foreground)', resize: 'vertical', outlineColor: 'var(--primary)',
+                                                                            }}
+                                                                        />
+                                                                    </div>
                                                                     {(() => {
                                                                         const prevForHeader = getPrevSets(exerciseData.name || ex.name, sKey);
                                                                         const prevDateLabel = (() => { const raw = prevForHeader?.date; if (!raw) return null; const d = new Date(raw.slice(0, 10)); return isNaN(d.getTime()) ? null : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); })();
@@ -1045,20 +1070,6 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                             <span>Central: <span style={{ fontWeight: 'normal' }}>{exStress.central.toFixed(2)}</span></span>
                                                                         </div>
                                                                     </div>
-                                                                    <div style={{ display: 'flex', padding: '12px 0', alignItems: 'flex-start' }}>
-                                                                        <textarea
-                                                                            value={exerciseData.notes || ''}
-                                                                            onChange={e => updateNotes(sKey, exIdx, e.target.value, program.id)}
-                                                                            onBlur={() => triggerAutoSave(sKey, program.id)}
-                                                                            onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
-                                                                            placeholder="Coach's notes:"
-                                                                            style={{
-                                                                                flex: 1, minHeight: 60, padding: '8px 12px', border: '1px solid var(--card-border)',
-                                                                                borderRadius: 4, background: 'var(--background)', fontSize: '0.9rem',
-                                                                                color: 'var(--foreground)', resize: 'vertical', outlineColor: 'var(--primary)',
-                                                                            }}
-                                                                        />
-                                                                    </div>
                                                                     <ExerciseFeedback
                                                                         athleteId={athleteId}
                                                                         coachId={coachId || ''}
@@ -1066,6 +1077,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                         weekNum={weekDisplayNum}
                                                                         dayNum={sessionNum}
                                                                         blockName={program.name}
+                                                                        sessionId={sKey}
                                                                         unit={unit}
                                                                         sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any, i: number) => ({ setNumber: i + 1, actual: s.actual || { weight: '', reps: '', rpe: '' } }))}
                                                                     />
@@ -1503,6 +1515,20 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                         {/* Exercise body / Input rows */}
                                                                         {exOpen && (
                                                                             <div style={{ padding: '0 8px 16px 8px' }}>
+                                                                                {/* Coach's notes — surfaced first so the athlete reads any
+                                                                                    prescribed cues/instructions before seeing the protocol. */}
+                                                                                <div style={{ display: 'flex', padding: '12px 0 8px 0', alignItems: 'flex-start' }}>
+                                                                                    <textarea
+                                                                                        value={exerciseData.notes || ''}
+                                                                                        onChange={e => updateNotes(sKey, exIdx, e.target.value, program.id)}
+                                                                                        onBlur={() => triggerAutoSave(sKey, program.id)}
+                                                                                        onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
+                                                                                        placeholder="Coach's notes:"
+                                                                                        style={{
+                                                                                            flex: 1, minHeight: 60, padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: 4, background: 'var(--background)', fontSize: '0.9rem', color: 'var(--foreground)', resize: 'vertical', outlineColor: 'var(--primary)'
+                                                                                        }}
+                                                                                    />
+                                                                                </div>
                                                                                 {/* Target / Actual Header */}
                                                                                 <div style={{ display: 'flex', borderBottom: '1px dashed #cbd5e1', marginBottom: 8 }}>
                                                                                     {(() => {
@@ -1600,20 +1626,6 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                     </div>
                                                                                 </div>
 
-                                                                                {/* Notes field */}
-                                                                                <div style={{ display: 'flex', padding: '12px 0', alignItems: 'flex-start' }}>
-                                                                                    <textarea
-                                                                                        value={exerciseData.notes || ''}
-                                                                                        onChange={e => updateNotes(sKey, exIdx, e.target.value, program.id)}
-                                                                                        onBlur={() => triggerAutoSave(sKey, program.id)}
-                                                                                        onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
-                                                                                        placeholder="Coach's notes:"
-                                                                                        style={{
-                                                                                            flex: 1, minHeight: 60, padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: 4, background: 'var(--background)', fontSize: '0.9rem', color: 'var(--foreground)', resize: 'vertical', outlineColor: 'var(--primary)'
-                                                                                        }}
-                                                                                    />
-                                                                                </div>
-
                                                                                 {/* Send Feedback */}
                                                                                 <ExerciseFeedback
                                                                                     athleteId={athleteId}
@@ -1622,6 +1634,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                     weekNum={weekDisplayNum}
                                                                                     dayNum={sessionNum}
                                                                                     blockName={program.name}
+                                                                                    sessionId={sKey}
                                                                                     unit={unit}
                                                                                     sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any, i: number) => ({ setNumber: i + 1, actual: s.actual || { weight: '', reps: '', rpe: '' } }))}
                                                                                 />

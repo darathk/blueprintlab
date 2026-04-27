@@ -39,6 +39,11 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
+        // A coach can only create an announcement for themselves
+        if (coachId !== auth.user.id) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        }
+
         // Delete any existing announcements for this coach, then create fresh
         await prisma.announcement.deleteMany({ where: { coachId } });
 
@@ -60,6 +65,11 @@ export async function DELETE(req: NextRequest) {
 
     const coachId = req.nextUrl.searchParams.get('coachId');
     if (!coachId) return NextResponse.json({ error: 'Missing coachId' }, { status: 400 });
+
+    // A coach can only delete their own announcements
+    if (coachId !== auth.user.id) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     await prisma.announcement.deleteMany({ where: { coachId } });
     return NextResponse.json({ ok: true });

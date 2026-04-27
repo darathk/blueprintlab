@@ -6,7 +6,7 @@ export default async function EditProgramPage({ params }: { params: Promise<{ id
     const { id, programId } = await params;
 
     // Server-side fetch
-    const [program, initialExercises, athlete, existingPrograms] = await Promise.all([
+    const [program, initialExercises, athlete, existingPrograms, initialCoachNotes] = await Promise.all([
         prisma.program.findUnique({
             where: { id: programId },
             select: { id: true, athleteId: true, name: true, startDate: true, endDate: true, weeks: true, status: true }
@@ -20,10 +20,14 @@ export default async function EditProgramPage({ params }: { params: Promise<{ id
             where: { athleteId: id, status: { not: 'draft' }, id: { not: programId } },
             orderBy: { startDate: 'desc' },
             select: { id: true, name: true, startDate: true, weeks: true, status: true }
+        }),
+        prisma.coachNote.findMany({
+            where: { athleteId: id },
+            orderBy: [{ pinned: 'desc' }, { updatedAt: 'desc' }],
         })
     ]);
 
     if (!program) return <div style={{ padding: '2rem' }}>Program not found.</div>;
 
-    return <ProgramBuilder athleteId={id} initialData={program} initialExercises={initialExercises} athleteLiftTargets={athlete?.liftTargets} athleteTrainingSchedule={athlete?.trainingSchedule} athleteName={athlete?.name} existingPrograms={existingPrograms} />;
+    return <ProgramBuilder athleteId={id} initialData={program} initialExercises={initialExercises} athleteLiftTargets={athlete?.liftTargets} athleteTrainingSchedule={athlete?.trainingSchedule} athleteName={athlete?.name} existingPrograms={existingPrograms} initialCoachNotes={initialCoachNotes as any} />;
 }

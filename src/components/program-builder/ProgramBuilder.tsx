@@ -9,6 +9,7 @@ import ImportProgram from '@/components/programs/ImportProgram';
 import ProgramCalendarGrid from './ProgramCalendarGrid';
 import { calculateStress } from '@/lib/stress-index';
 import { getExerciseCategory } from '@/lib/exercise-db';
+import { StickyNote, Pin, Calendar as CalendarIcon, X, Trash2, Copy, CalendarPlus, BookOpen, LayoutGrid } from 'lucide-react';
 
 const StressMatrix = dynamic(() => import('@/components/program-builder/StressMatrix'), {
     loading: () => <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="pulse">Loading stress charts...</div>
@@ -175,7 +176,8 @@ const BuilderExerciseCard = ({ exercise, onUpdate, onRemove, onDragStart, onDrag
                         e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.4)';
                     }}
                 >
-                    🗑 Delete
+                    <Trash2 size={12} />
+                    Delete
                 </button>
             </div>
 
@@ -271,7 +273,7 @@ const BuilderExerciseCard = ({ exercise, onUpdate, onRemove, onDragStart, onDrag
 
 
 
-export default function ProgramBuilder({ athleteId, initialData = null, athletes = [], initialExercises = null, athleteLiftTargets = null, athleteTrainingSchedule = null, athleteName = '', existingPrograms = [] }: { athleteId?: string, initialData?: any, athletes?: any[], initialExercises?: any, athleteLiftTargets?: any, athleteTrainingSchedule?: string | null, athleteName?: string, existingPrograms?: any[] }) {
+export default function ProgramBuilder({ athleteId, initialData = null, athletes = [], initialExercises = null, athleteLiftTargets = null, athleteTrainingSchedule = null, athleteName = '', existingPrograms = [], initialCoachNotes = null }: { athleteId?: string, initialData?: any, athletes?: any[], initialExercises?: any, athleteLiftTargets?: any, athleteTrainingSchedule?: string | null, athleteName?: string, existingPrograms?: any[], initialCoachNotes?: any[] | null }) {
     const router = useRouter();
     const [programName, setProgramName] = useState('');
     const [startDate, setStartDate] = useState(() => snapToSunday(new Date().toISOString().split('T')[0]));
@@ -433,6 +435,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
     const savedProgramIdRef = useRef<string | null>(initialData?.id || null);
     const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
     const initialLoadRef = useRef(true);
+    const [resumedFromDraft, setResumedFromDraft] = useState<boolean>(initialData?.status === 'draft');
 
     // Load initial data if provided (Edit Mode)
     useEffect(() => {
@@ -532,6 +535,101 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
     // Week overview drawer
     const [weekOverviewIndex, setWeekOverviewIndex] = useState<number | null>(null);
 
+    // Coach Notes panel
+    const [notesOpen, setNotesOpen] = useState(false);
+    const [coachNotes, setCoachNotes] = useState<any[]>(initialCoachNotes || []);
+    const [notesLoading, setNotesLoading] = useState(false);
+    const notesFetchedRef = useRef<boolean>(!!initialCoachNotes);
+    const [newNoteContent, setNewNoteContent] = useState('');
+    const [newNoteCategory, setNewNoteCategory] = useState('general');
+    const [notesSaving, setNotesSaving] = useState(false);
+
+    const NOTE_CATEGORIES = [
+        { value: 'general', label: 'General', color: 'var(--secondary-foreground)' },
+        { value: 'injury', label: 'Injury', color: '#ef4444' },
+        { value: 'cues', label: 'Cues', color: '#f59e0b' },
+        { value: 'preferences', label: 'Prefs', color: '#a855f7' },
+    ];
+
+    const fetchNotes = async (showSpinner: boolean) => {
+        if (!athleteId) return;
+        if (showSpinner) setNotesLoading(true);
+        try {
+            const r = await fetch(`/api/coach-notes?athleteId=${athleteId}`);
+            if (r.ok) setCoachNotes(await r.json());
+        } catch { /* ignore */ }
+        notesFetchedRef.current = true;
+        if (showSpinner) setNotesLoading(false);
+    };
+
+    useEffect(() => {
+        if (notesOpen && athleteId && !notesFetchedRef.current) {
+            fetchNotes(true);
+        }
+    }, [notesOpen, athleteId]);
+
+    // Background prefetch on mount so the panel opens instantly the first time
+    useEffect(() => {
+        if (athleteId && !notesFetchedRef.current) {
+            fetchNotes(false);
+        }
+    }, [athleteId]);
+
+    const addNote = async () => {
+        if (!newNoteContent.trim() || !athleteId) return;
+        setNotesSaving(true);
+        try {
+            const r = await fetch('/api/coach-notes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ athleteId, content: newNoteContent.trim(), category: newNoteCategory }),
+            });
+            if (r.ok) {
+                const note = await r.json();
+                setCoachNotes(prev => [note, ...prev]);
+                setNewNoteContent('');
+            }
+        } catch { /* ignore */ }
+        setNotesSaving(false);
+    };
+
+    const togglePinNote = async (note: any) => {
+        try {
+            const r = await fetch('/api/coach-notes', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ id: note.id, pinned: !note.pinned }),
+            });
+            if (r.ok) {
+                setCoachNotes(prev => prev.map(n => n.id === note.id ? { ...n, pinned: !n.pinned } : n));
+            }
+        } catch { /* ignore */ }
+    };
+
+    const deleteNote = async (id: string) => {
+        try {
+            const r = await fetch(`/api/coach-notes?id=${id}`, { method: 'DELETE' });
+            if (r.ok) setCoachNotes(prev => prev.filter(n => n.id !== id));
+        } catch { /* ignore */ }
+    };
+
+    const fmtNoteDate = (s: string) => {
+        const d = new Date(s), n = new Date();
+        const diffMs = n.getTime() - d.getTime();
+        const diffDays = Math.floor(diffMs / 86400000);
+        if (diffDays === 0) return 'Today';
+        if (diffDays === 1) return 'Yesterday';
+        if (diffDays < 7) return `${diffDays}d ago`;
+        if (diffDays < 30) return `${Math.floor(diffDays / 7)}w ago`;
+        return d.toLocaleDateString([], { month: 'short', day: 'numeric' });
+    };
+
+    const sortedNotes = [...coachNotes].sort((a, b) => {
+        if (a.pinned && !b.pinned) return -1;
+        if (!a.pinned && b.pinned) return 1;
+        return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+    });
+
     // Reference panel: read-only view of a ghost session from an existing program
     const [referenceSession, setReferenceSession] = useState<any | null>(null);
 
@@ -615,6 +713,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
 
         newWeeks[weekIndex].sessions.push(newSession);
         setWeeks(newWeeks);
+        showToast(`Duplicated "${originalSession.name}"`);
     };
 
     const duplicateSessionToDate = (sourceWeekIndex: number, sourceSessionIndex: number, targetDateStr: string) => {
@@ -681,6 +780,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
         setWeeks(newWeeks);
         setDuplicateSource(null);
         setDuplicateTargetDate('');
+        showToast(`Duplicated to ${targetDateStr}`);
     };
 
     const duplicateSessionToNextWeek = (weekNum: number, dayNum: number) => {
@@ -730,6 +830,56 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
 
         newWeeks[targetWeekIdx].sessions.push(clonedSession);
         setWeeks(newWeeks);
+        showToast(`Duplicated session to Week ${targetWeekNum}`);
+    };
+
+    // Check whether a given program-week number is free of sessions from other
+    // already-assigned programs. This prevents duplicates from landing on dates
+    // that already have training scheduled.
+    const isWeekOccupiedByExisting = (weekNum: number): boolean => {
+        if (!startDate || !existingPrograms?.length) return false;
+        const [sy, sm, sd] = startDate.split('-').map(Number);
+        const progStart = new Date(sy, sm - 1, sd);
+        progStart.setHours(0, 0, 0, 0);
+
+        for (let d = 0; d < 7; d++) {
+            const date = new Date(progStart);
+            date.setDate(date.getDate() + (weekNum - 1) * 7 + d);
+            const ds = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+
+            for (const prog of existingPrograms) {
+                if (!prog.startDate) continue;
+                const ps = String(prog.startDate).split('T')[0];
+                const [py, pm, pd] = ps.split('-').map(Number);
+                const pStart = new Date(py, pm - 1, pd);
+                pStart.setHours(0, 0, 0, 0);
+                const parsedWeeks = Array.isArray(prog.weeks) ? prog.weeks : [];
+                for (const w of parsedWeeks) {
+                    const wn = w.weekNumber || 1;
+                    for (const s of (w.sessions || [])) {
+                        const sDay = s.day || 1;
+                        const sDate = new Date(pStart);
+                        sDate.setDate(sDate.getDate() + (wn - 1) * 7 + (sDay - 1));
+                        const sDs = `${sDate.getFullYear()}-${String(sDate.getMonth() + 1).padStart(2, '0')}-${String(sDate.getDate()).padStart(2, '0')}`;
+                        if (sDs === ds) return true;
+                    }
+                }
+            }
+        }
+        return false;
+    };
+
+    const findNextEmptyWeek = (afterWeekNum: number): number => {
+        let candidate = afterWeekNum + 1;
+        const maxSearch = candidate + 52;
+        while (candidate < maxSearch) {
+            const existingWeek = weeks.find(w => w.weekNumber === candidate);
+            const currentHasSessions = existingWeek && existingWeek.sessions.length > 0;
+            const externallyOccupied = isWeekOccupiedByExisting(candidate);
+            if (!currentHasSessions && !externallyOccupied) return candidate;
+            candidate++;
+        }
+        return afterWeekNum + 1;
     };
 
     const duplicateWeekToNextWeek = (weekNum: number) => {
@@ -740,7 +890,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
 
         if (sourceWeek.sessions.length === 0) return;
 
-        const targetWeekNum = weekNum + 1;
+        const targetWeekNum = findNextEmptyWeek(weekNum);
 
         let targetWeekIdx = newWeeks.findIndex(w => w.weekNumber === targetWeekNum);
         if (targetWeekIdx === -1) {
@@ -754,23 +904,13 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
             targetWeekIdx = newWeeks.findIndex(w => w.weekNumber === targetWeekNum);
         }
 
-        const occupiedDays = sourceWeek.sessions.map(s => s.day).filter(d => 
-             newWeeks[targetWeekIdx].sessions.some(ts => ts.day === d)
-        );
-
-        if (occupiedDays.length > 0) {
-            if (!confirm(`This will overwrite existing sessions in Week ${targetWeekNum}. Proceed?`)) {
-                return;
-            }
-            newWeeks[targetWeekIdx].sessions = newWeeks[targetWeekIdx].sessions.filter(ts => !occupiedDays.includes(ts.day));
-        }
-
+        const weekOffset = targetWeekNum - weekNum;
         const clonedSessions = sourceWeek.sessions.map(sourceSession => ({
             ...sourceSession,
             id: generateId(),
             scheduledDate: sourceSession.scheduledDate ? (() => {
                  const d = new Date(sourceSession.scheduledDate);
-                 d.setDate(d.getDate() + 7);
+                 d.setDate(d.getDate() + weekOffset * 7);
                  return d.toISOString().split('T')[0];
             })() : '',
             exercises: (sourceSession.exercises || []).map(e => ({
@@ -782,6 +922,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
 
         newWeeks[targetWeekIdx].sessions.push(...clonedSessions);
         setWeeks(newWeeks);
+        showToast(`Duplicated Week ${weekNum} → Week ${targetWeekNum}`);
     };
 
 
@@ -815,16 +956,18 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
     const duplicateWeek = (weekIndex) => {
         const newWeeks = [...weeks];
         const originalWeek = newWeeks[weekIndex];
+        const targetWeekNum = findNextEmptyWeek(originalWeek.weekNumber);
+        const weekOffset = targetWeekNum - originalWeek.weekNumber;
 
         const newWeek = {
             ...originalWeek,
             id: generateId(),
-            weekNumber: weeks.length + 1,
+            weekNumber: targetWeekNum,
             sessions: originalWeek.sessions.map(s => {
                 let newDate = '';
                 if (s.scheduledDate) {
                     const date = new Date(s.scheduledDate);
-                    date.setDate(date.getDate() + 7); // Shift by 7 days
+                    date.setDate(date.getDate() + weekOffset * 7);
                     newDate = date.toISOString().split('T')[0];
                 }
 
@@ -841,8 +984,17 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
             })
         };
 
+        // Fill in any gap weeks so the calendar stays contiguous
+        const maxWeek = newWeeks.reduce((m, w) => Math.max(m, w.weekNumber), 0);
+        for (let i = maxWeek + 1; i < targetWeekNum; i++) {
+            if (!newWeeks.find(w => w.weekNumber === i)) {
+                newWeeks.push({ id: generateId(), weekNumber: i, sessions: [] });
+            }
+        }
         newWeeks.push(newWeek);
+        newWeeks.sort((a, b) => a.weekNumber - b.weekNumber);
         setWeeks(newWeeks);
+        showToast(`Duplicated Week ${originalWeek.weekNumber} → Week ${targetWeekNum}`);
     };
 
     const addExerciseToActiveSession = (exerciseOrName) => {
@@ -878,6 +1030,29 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
         const newWeeks = [...weeks];
         newWeeks[weekIndex].sessions[sessionIndex].exercises[exerciseIndex][field] = value;
         setWeeks(newWeeks);
+    };
+
+    // Immutable set-level update used by the Progression Matrix overlay so every
+    // edited cell re-renders without mutating the shared weeks reference.
+    const updateProgressionSet = (weekIndex: number, sessionIndex: number, exerciseIndex: number, setIndex: number, field: string, value: string) => {
+        setWeeks(prev => prev.map((w, wi) =>
+            wi !== weekIndex ? w : {
+                ...w,
+                sessions: w.sessions.map((s, si) =>
+                    si !== sessionIndex ? s : {
+                        ...s,
+                        exercises: s.exercises.map((ex, ei) =>
+                            ei !== exerciseIndex ? ex : {
+                                ...ex,
+                                sets: ex.sets.map((set: any, li: number) =>
+                                    li !== setIndex ? set : { ...set, [field]: value }
+                                ),
+                            }
+                        ),
+                    }
+                ),
+            }
+        ));
     };
 
     const removeExercise = (weekIndex, sessionIndex, exerciseIndex) => {
@@ -966,6 +1141,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
     const copyWeek = (weekIndex) => {
         const weekData = weeks[weekIndex];
         setClipboard({ type: 'week', data: weekData });
+        showToast(`Copied Week ${weekIndex + 1} to clipboard`);
     };
 
     const pasteWeek = (targetWeekIndex) => {
@@ -989,6 +1165,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
         // Replace target week's sessions
         newWeeks[targetWeekIndex].sessions = clonedSessions;
         setWeeks(newWeeks);
+        showToast(`Pasted week into Week ${targetWeekIndex + 1}`);
     };
 
     const buildPayload = useCallback(() => {
@@ -1073,7 +1250,9 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
         }
     }, [buildPayload, selectedAthleteId]);
 
-    // Debounced auto-save: trigger 2s after any change
+    // Debounced auto-save: trigger 1s after any change. Kept short so an
+    // accidental navigation away loses at most ~1s of work rather than several
+    // seconds of edits.
     useEffect(() => {
         // Skip auto-save on initial load
         if (initialLoadRef.current) {
@@ -1088,7 +1267,8 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
         setAutoSaveStatus('idle');
         autoSaveTimerRef.current = setTimeout(() => {
             performAutoSave();
-        }, 2000);
+            autoSaveTimerRef.current = null;
+        }, 1000);
 
         return () => {
             if (autoSaveTimerRef.current) {
@@ -1096,6 +1276,43 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
             }
         };
     }, [weeks, programName, startDate, selectedAthleteId, performAutoSave]);
+
+    // Flush any pending debounced save on page unload or component unmount.
+    // Without this, a coach who closes the tab or navigates away within the
+    // debounce window loses their most recent edits. Using fetch with
+    // keepalive:true lets the request complete even after the page is gone.
+    const buildPayloadRef = useRef(buildPayload);
+    useEffect(() => { buildPayloadRef.current = buildPayload; });
+
+    useEffect(() => {
+        const flushPendingSave = () => {
+            if (!autoSaveTimerRef.current) return;
+            clearTimeout(autoSaveTimerRef.current);
+            autoSaveTimerRef.current = null;
+            const payload = buildPayloadRef.current();
+            if (!payload.athleteId) return;
+            if (!savedProgramIdRef.current) {
+                (payload as any).status = 'draft';
+            }
+            const method = savedProgramIdRef.current ? 'PUT' : 'POST';
+            try {
+                fetch('/api/programs', {
+                    method,
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload),
+                    keepalive: true,
+                }).catch(() => {});
+            } catch {
+                // ignore
+            }
+        };
+
+        window.addEventListener('beforeunload', flushPendingSave);
+        return () => {
+            window.removeEventListener('beforeunload', flushPendingSave);
+            flushPendingSave();
+        };
+    }, []);
 
     const handleSave = async () => {
         // Cancel any pending auto-save
@@ -1136,6 +1353,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
 
     // ... (previous state)
     const [editingSession, setEditingSession] = useState<{ w: number, s: number } | null>(null);
+    const [progressionSession, setProgressionSession] = useState<{ day: number, name: string } | null>(null);
 
     // ... (helpers)
 
@@ -1433,8 +1651,14 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
         }
     };
 
-    // Helper for toast (simplified - no-op in production)
-    const showToast = (_msg) => { };
+    // Lightweight toast notification for copy/duplicate/move operations
+    const [toast, setToast] = useState<{ message: string; key: number } | null>(null);
+    const toastTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const showToast = (msg: string) => {
+        if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
+        setToast({ message: msg, key: Date.now() });
+        toastTimerRef.current = setTimeout(() => setToast(null), 2000);
+    };
 
     const closeEditor = () => {
         if (editingSession) {
@@ -1454,7 +1678,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
     };
 
     return (
-        <div className="program-builder-layout" style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 3fr', gap: '1.5rem', height: 'calc(100vh - 100px)', paddingTop: '1.5rem' }}>
+        <div className="program-builder-layout" style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 3fr', gap: '1.5rem', height: 'calc(100vh - 100px)', paddingTop: '1.5rem', paddingLeft: notesOpen && athleteId ? 360 : 0, transition: 'padding-left 0.25s ease' }}>
 
             {/* LEFTSIDE BAR: Exercise Picker + Stress Index */}
             <div className="program-builder-sidebar" style={{ display: 'flex', flexDirection: 'column', gap: '0', height: '100%', overflow: 'hidden' }}>
@@ -1682,6 +1906,22 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                             {/* View Toggle removed for streamlined Calendar UI */}
 
+                            {resumedFromDraft && autoSaveStatus === 'idle' && (
+                                <span
+                                    title="This program was auto-saved as a draft. Click Save & Assign to publish it."
+                                    style={{
+                                        fontSize: '0.75rem',
+                                        color: 'var(--secondary-foreground)',
+                                        background: 'rgba(125,135,210,0.10)',
+                                        border: '1px solid var(--card-border)',
+                                        padding: '3px 8px', borderRadius: 999,
+                                        whiteSpace: 'nowrap',
+                                    }}
+                                >
+                                    Resumed draft
+                                </span>
+                            )}
+
                             {autoSaveStatus !== 'idle' && (
                                 <span style={{
                                     fontSize: '0.8rem',
@@ -1694,6 +1934,22 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                 </span>
                             )}
 
+                            {athleteId && (
+                                <button
+                                    onClick={() => setNotesOpen(o => !o)}
+                                    style={{
+                                        display: 'inline-flex', alignItems: 'center', gap: 6,
+                                        background: notesOpen ? 'rgba(125,135,210,0.15)' : 'rgba(255,255,255,0.07)',
+                                        border: `1px solid ${notesOpen ? 'var(--primary)' : 'var(--card-border)'}`,
+                                        borderRadius: 'var(--radius)', padding: '0.5rem 1rem',
+                                        color: notesOpen ? 'var(--primary)' : 'var(--secondary-foreground)',
+                                        fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
+                                    }}
+                                >
+                                    <StickyNote size={14} />
+                                    Notes{coachNotes.length > 0 ? ` (${coachNotes.length})` : ''}
+                                </button>
+                            )}
                             <button onClick={handleSave} className="btn btn-primary" disabled={isSaving || isNavigating}>
                                 {isSaving ? 'Saving...' : isNavigating ? 'Loading dashboard...' : 'Save & Assign'}
                             </button>
@@ -1735,6 +1991,19 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                             }}
                             onDuplicateSessionToNextWeek={duplicateSessionToNextWeek}
                             onDuplicateWeekToNextWeek={duplicateWeekToNextWeek}
+                            onClearWeek={(weekNum: number) => {
+                                const wIdx = weeks.findIndex(w => w.weekNumber === weekNum);
+                                if (wIdx === -1) return;
+                                if (!confirm(`Delete all sessions in Week ${weekNum}?`)) return;
+                                const newWeeks = [...weeks];
+                                // Clear sessions but keep weekNumber intact so other weeks
+                                // don't shift their calendar positions.
+                                newWeeks[wIdx] = { ...newWeeks[wIdx], sessions: [] };
+                                setWeeks(newWeeks);
+                                setEditingSession(null);
+                                setActiveLocation({ w: 0, s: 0 });
+                                showToast(`Cleared Week ${weekNum}`);
+                            }}
                             existingPrograms={existingPrograms}
                             onGhostSessionClick={(ghost: any) => setReferenceSession(ghost)}
                         />
@@ -1767,25 +2036,36 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                         />
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexShrink: 0 }}>
                             <button
+                                onClick={() => {
+                                    const s = weeks[editingSession.w].sessions[editingSession.s];
+                                    setProgressionSession({ day: s.day, name: s.name });
+                                }}
+                                title="Progression View — edit sets/reps/RPE across all weeks"
+                                style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(59, 130, 246, 0.12)', border: '1px solid rgba(59, 130, 246, 0.4)', color: 'var(--primary)', cursor: 'pointer', padding: '4px 10px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600 }}
+                            >
+                                <LayoutGrid size={14} />
+                                Progression
+                            </button>
+                            <button
                                 onClick={() => { duplicateSession(editingSession.w, editingSession.s); }}
                                 title="Duplicate Session"
-                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1rem' }}
+                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--secondary-foreground)', padding: 6, display: 'flex', alignItems: 'center' }}
                             >
-                                ❐
+                                <Copy size={16} />
                             </button>
                             <button
                                 onClick={() => { setDuplicateSource({ weekIndex: editingSession.w, sessionIndex: editingSession.s }); setDuplicateTargetDate(''); }}
                                 title="Duplicate to Date..."
-                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '0.75rem', color: 'var(--accent)' }}
+                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--accent)', padding: 6, display: 'flex', alignItems: 'center' }}
                             >
-                                ❐→
+                                <CalendarPlus size={16} />
                             </button>
                             <button
                                 onClick={() => { const w = editingSession.w; const s = editingSession.s; closeEditor(); removeSession(w, s); }}
                                 title="Delete Session"
-                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', fontSize: '1rem', color: 'var(--error)' }}
+                                style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--error)', padding: 6, display: 'flex', alignItems: 'center' }}
                             >
-                                🗑️
+                                <Trash2 size={16} />
                             </button>
                             <button onClick={closeEditor} className="btn btn-primary" style={{ marginLeft: '0.5rem' }}>Done</button>
                         </div>
@@ -1871,20 +2151,27 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                 </div>
             )}
 
-            {/* Reference Panel: Read-only view of a past program session */}
+            {/* Reference Panel: Read-only view of a past program session.
+                When the session editor is also open, this slides to the left of
+                the editor so both panels sit side by side. */}
             {referenceSession && (
                 <div style={{
-                    position: 'fixed', top: 'var(--header-height, 56px)', right: 0, bottom: 0,
+                    position: 'fixed', top: 'var(--header-height, 56px)',
+                    right: editingSession ? 'max(40vw, 480px)' : 0, bottom: 0,
                     width: '40vw', minWidth: '480px', maxWidth: '90vw',
-                    background: 'var(--background)', borderLeft: '2px solid rgba(148, 163, 184, 0.3)',
-                    zIndex: 900, display: 'flex', flexDirection: 'column',
-                    boxShadow: '-8px 0 30px rgba(0,0,0,0.5)',
+                    background: 'var(--background)',
+                    borderLeft: '2px solid rgba(148, 163, 184, 0.3)',
+                    borderRight: editingSession ? '1px solid var(--card-border)' : 'none',
+                    zIndex: 899, display: 'flex', flexDirection: 'column',
+                    boxShadow: editingSession ? 'none' : '-8px 0 30px rgba(0,0,0,0.5)',
+                    transition: 'right 0.25s ease',
                 }}>
                     {/* Header */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '1rem 1.25rem', borderBottom: '1px solid var(--card-border)', background: 'rgba(148, 163, 184, 0.06)', flexShrink: 0 }}>
                         <div style={{ flex: 1 }}>
-                            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>
-                                📎 Reference — {referenceSession.programName}
+                            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                                <BookOpen size={11} />
+                                Reference — {referenceSession.programName}
                             </div>
                             <div style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--foreground)' }}>
                                 {referenceSession.sessionName}
@@ -1993,6 +2280,160 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                     </div>
                 </div>
             )}
+            {/* Coach Notes Side Panel */}
+            {notesOpen && athleteId && (
+                <>
+                    <div style={{
+                        position: 'fixed', top: 'var(--header-height, 56px)', left: 0, bottom: 0, width: 360, zIndex: 850,
+                        background: 'var(--background)', borderRight: '1px solid var(--card-border)',
+                        display: 'flex', flexDirection: 'column', boxShadow: '4px 0 24px rgba(0,0,0,0.4)',
+                    }}>
+                        {/* Panel header */}
+                        <div style={{
+                            padding: '1rem 1.25rem', borderBottom: '1px solid var(--card-border)',
+                            display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0,
+                        }}>
+                            <div>
+                                <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--foreground)' }}>
+                                    Coach Notes
+                                </div>
+                                {athleteName && (
+                                    <div style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', marginTop: 2 }}>
+                                        {athleteName}
+                                    </div>
+                                )}
+                            </div>
+                            <button
+                                onClick={() => setNotesOpen(false)}
+                                title="Close"
+                                style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center' }}
+                            >
+                                <X size={16} />
+                            </button>
+                        </div>
+
+                        {/* Notes list */}
+                        <div style={{ flex: 1, overflowY: 'auto', padding: '0.75rem 1rem' }}>
+                            {notesLoading ? (
+                                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--secondary-foreground)', fontSize: '0.85rem' }}>
+                                    Loading...
+                                </div>
+                            ) : sortedNotes.length === 0 ? (
+                                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--secondary-foreground)', fontSize: '0.85rem' }}>
+                                    No notes yet. Add your first note below.
+                                </div>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                                    {sortedNotes.map(note => {
+                                        const cat = NOTE_CATEGORIES.find(c => c.value === note.category) || NOTE_CATEGORIES[0];
+                                        return (
+                                            <div key={note.id} style={{
+                                                background: 'var(--card-bg)', border: `1px solid var(--card-border)`,
+                                                borderLeft: `3px solid ${cat.color}`,
+                                                borderRadius: 'var(--radius)', padding: '0.75rem',
+                                                position: 'relative',
+                                            }}>
+                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: '0.4rem' }}>
+                                                    <span style={{
+                                                        fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase',
+                                                        letterSpacing: '0.06em', color: cat.color,
+                                                        display: 'inline-flex', alignItems: 'center', gap: 4,
+                                                    }}>
+                                                        {note.pinned && <Pin size={10} style={{ fill: 'currentColor' }} />}
+                                                        {cat.label}
+                                                    </span>
+                                                    <div style={{ display: 'flex', gap: 4, flexShrink: 0 }}>
+                                                        <button
+                                                            onClick={() => togglePinNote(note)}
+                                                            title={note.pinned ? 'Unpin' : 'Pin'}
+                                                            style={{
+                                                                background: 'none', border: 'none', cursor: 'pointer', padding: 4,
+                                                                color: note.pinned ? 'var(--primary)' : 'rgba(255,255,255,0.25)',
+                                                                display: 'flex', alignItems: 'center', transition: 'color 0.15s',
+                                                            }}
+                                                            onMouseEnter={e => { if (!note.pinned) e.currentTarget.style.color = 'var(--secondary-foreground)'; }}
+                                                            onMouseLeave={e => { if (!note.pinned) e.currentTarget.style.color = 'rgba(255,255,255,0.25)'; }}
+                                                        >
+                                                            <Pin size={13} style={note.pinned ? { fill: 'currentColor' } : undefined} />
+                                                        </button>
+                                                        <button
+                                                            onClick={() => { if (confirm('Delete this note?')) deleteNote(note.id); }}
+                                                            title="Delete"
+                                                            style={{
+                                                                background: 'none', border: 'none', cursor: 'pointer', padding: 4,
+                                                                color: 'rgba(255,255,255,0.25)', display: 'flex', alignItems: 'center', transition: 'color 0.15s',
+                                                            }}
+                                                            onMouseEnter={e => (e.currentTarget.style.color = '#ef4444')}
+                                                            onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.25)')}
+                                                        >
+                                                            <Trash2 size={13} />
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                                <div style={{ fontSize: '0.85rem', color: 'var(--foreground)', lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
+                                                    {note.content}
+                                                </div>
+                                                <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.25)', marginTop: '0.4rem' }}>
+                                                    {fmtNoteDate(note.updatedAt)}
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Quick-add form */}
+                        <div style={{
+                            padding: '1rem', borderTop: '1px solid var(--card-border)', flexShrink: 0,
+                            background: 'rgba(125,135,210,0.04)',
+                        }}>
+                            <textarea
+                                value={newNoteContent}
+                                onChange={e => setNewNoteContent(e.target.value)}
+                                placeholder="Add a note..."
+                                onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) addNote(); }}
+                                style={{
+                                    width: '100%', background: 'var(--card-bg)', border: '1px solid var(--card-border)',
+                                    borderRadius: 'var(--radius)', color: 'var(--foreground)', fontSize: '0.85rem',
+                                    padding: '0.6rem 0.75rem', resize: 'none', minHeight: 72, outline: 'none',
+                                    boxSizing: 'border-box',
+                                }}
+                                onFocus={e => (e.target.style.borderColor = 'var(--primary)')}
+                                onBlur={e => (e.target.style.borderColor = 'var(--card-border)')}
+                            />
+                            <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center' }}>
+                                <select
+                                    value={newNoteCategory}
+                                    onChange={e => setNewNoteCategory(e.target.value)}
+                                    style={{
+                                        flex: 1, background: 'var(--card-bg)', border: '1px solid var(--card-border)',
+                                        borderRadius: 'var(--radius)', color: 'var(--foreground)', fontSize: '0.8rem',
+                                        padding: '0.4rem 0.6rem', outline: 'none',
+                                    }}
+                                >
+                                    {NOTE_CATEGORIES.map(c => (
+                                        <option key={c.value} value={c.value}>{c.label}</option>
+                                    ))}
+                                </select>
+                                <button
+                                    onClick={addNote}
+                                    disabled={notesSaving || !newNoteContent.trim()}
+                                    className="btn btn-primary"
+                                    style={{
+                                        fontSize: '0.8rem', padding: '0.4rem 1rem', flexShrink: 0,
+                                        opacity: notesSaving || !newNoteContent.trim() ? 0.5 : 1,
+                                        cursor: notesSaving || !newNoteContent.trim() ? 'not-allowed' : 'pointer',
+                                    }}
+                                >
+                                    {notesSaving ? 'Saving...' : 'Add'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </>
+            )}
+
             {/* Week Overview toggle */}
             <button
                 onClick={() => setWeekOverviewIndex(prev => prev !== null ? null : 0)}
@@ -2008,7 +2449,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                     fontSize: 20,
                 }}
             >
-                {weekOverviewIndex !== null ? '✕' : '📅'}
+                {weekOverviewIndex !== null ? <X size={20} /> : <CalendarIcon size={20} />}
             </button>
 
             {/* Week Overview Drawer Backdrop */}
@@ -2199,6 +2640,135 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                             >
                                 Duplicate
                             </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Action toast — brief confirmation for copy/duplicate/move operations */}
+            {toast && (
+                <div
+                    key={toast.key}
+                    style={{
+                        position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)',
+                        background: 'var(--card-bg)', border: '1px solid var(--primary)',
+                        borderRadius: '8px', padding: '10px 20px', zIndex: 1200,
+                        display: 'flex', alignItems: 'center', gap: '8px',
+                        boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+                        animation: 'toast-in 0.2s ease-out',
+                        fontSize: '0.9rem', fontWeight: 500, color: 'var(--foreground)',
+                    }}
+                >
+                    <span style={{ color: 'var(--primary)', fontSize: '1.1rem' }}>&#10003;</span>
+                    {toast.message}
+                </div>
+            )}
+            <style>{`@keyframes toast-in { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }`}</style>
+
+            {/* Progression View: full-width matrix of the same session slot across every week */}
+            {progressionSession && (
+                <div
+                    style={{
+                        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)',
+                        zIndex: 1100, display: 'flex', flexDirection: 'column',
+                    }}
+                    onClick={(e) => { if (e.target === e.currentTarget) setProgressionSession(null); }}
+                >
+                    <div style={{
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                        padding: '1rem 1.5rem', borderBottom: '1px solid var(--card-border)',
+                        background: 'var(--card-bg)', flexShrink: 0,
+                    }}>
+                        <div>
+                            <div style={{ fontSize: '0.7rem', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>
+                                Progression View
+                            </div>
+                            <div style={{ fontSize: '1.1rem', fontWeight: 600 }}>{progressionSession.name}</div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', marginTop: 2 }}>
+                                Edit weight, reps & RPE across every week. Scroll horizontally →
+                            </div>
+                        </div>
+                        <button onClick={() => setProgressionSession(null)} className="btn btn-primary">Done</button>
+                    </div>
+
+                    <div style={{ flex: 1, overflow: 'auto', padding: '1.5rem', background: 'var(--background)' }}>
+                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start', minHeight: '100%' }}>
+                            {weeks.map((week, wi) => {
+                                const sIdx = week.sessions.findIndex((s: any) => s.day === progressionSession.day);
+                                const session: any = sIdx >= 0 ? week.sessions[sIdx] : null;
+                                return (
+                                    <div key={week.id} style={{
+                                        minWidth: '340px', maxWidth: '340px', flexShrink: 0,
+                                        background: 'var(--card-bg)', border: '1px solid var(--card-border)',
+                                        borderRadius: 'var(--radius)', overflow: 'hidden',
+                                    }}>
+                                        <div style={{
+                                            padding: '0.6rem 0.9rem', background: 'rgba(255,255,255,0.05)',
+                                            borderBottom: '1px solid var(--card-border)',
+                                            fontWeight: 600, fontSize: '0.9rem',
+                                            display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                        }}>
+                                            <span>Week {wi + 1}</span>
+                                            {session && (
+                                                <span style={{ fontSize: '0.7rem', color: 'var(--secondary-foreground)', fontWeight: 400 }}>
+                                                    {session.exercises.length} ex
+                                                </span>
+                                            )}
+                                        </div>
+                                        <div style={{ padding: '0.6rem' }}>
+                                            {!session ? (
+                                                <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--secondary-foreground)', fontSize: '0.8rem', fontStyle: 'italic' }}>
+                                                    No session this week
+                                                </div>
+                                            ) : session.exercises.length === 0 ? (
+                                                <div style={{ padding: '1rem', textAlign: 'center', color: 'var(--secondary-foreground)', fontSize: '0.8rem', fontStyle: 'italic' }}>
+                                                    No exercises
+                                                </div>
+                                            ) : (
+                                                session.exercises.map((ex: any, ei: number) => (
+                                                    <div key={ex.id} style={{ marginBottom: '0.65rem', border: '1px solid var(--card-border)', borderRadius: '4px', overflow: 'hidden' }}>
+                                                        <div style={{ padding: '0.35rem 0.6rem', background: 'rgba(255,255,255,0.04)', fontSize: '0.82rem', fontWeight: 600, color: 'var(--primary)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={ex.name}>
+                                                            {ex.name}
+                                                        </div>
+                                                        <div style={{ padding: '0.4rem 0.5rem' }}>
+                                                            <div style={{ display: 'grid', gridTemplateColumns: '20px 1fr 44px 44px', gap: '4px', fontSize: '0.65rem', color: 'var(--secondary-foreground)', marginBottom: '3px', textAlign: 'center' }}>
+                                                                <div>#</div>
+                                                                <div>Weight</div>
+                                                                <div>Reps</div>
+                                                                <div>RPE</div>
+                                                            </div>
+                                                            {(ex.sets || []).map((set: any, si: number) => (
+                                                                <div key={set.id} style={{ display: 'grid', gridTemplateColumns: '20px 1fr 44px 44px', gap: '4px', alignItems: 'center', marginBottom: '3px' }}>
+                                                                    <div style={{ fontSize: '0.7rem', color: 'var(--secondary-foreground)', textAlign: 'center' }}>{si + 1}</div>
+                                                                    <input
+                                                                        className="input"
+                                                                        placeholder="—"
+                                                                        value={set.weight || ''}
+                                                                        onChange={e => updateProgressionSet(wi, sIdx, ei, si, 'weight', e.target.value)}
+                                                                        style={{ padding: '3px 4px', fontSize: '0.78rem', textAlign: 'center' }}
+                                                                    />
+                                                                    <input
+                                                                        className="input"
+                                                                        value={set.reps || ''}
+                                                                        onChange={e => updateProgressionSet(wi, sIdx, ei, si, 'reps', e.target.value)}
+                                                                        style={{ padding: '3px 4px', fontSize: '0.78rem', textAlign: 'center' }}
+                                                                    />
+                                                                    <input
+                                                                        className="input"
+                                                                        value={set.rpe || ''}
+                                                                        onChange={e => updateProgressionSet(wi, sIdx, ei, si, 'rpe', e.target.value)}
+                                                                        style={{ padding: '3px 4px', fontSize: '0.78rem', textAlign: 'center' }}
+                                                                    />
+                                                                </div>
+                                                            ))}
+                                                        </div>
+                                                    </div>
+                                                ))
+                                            )}
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                     </div>
                 </div>

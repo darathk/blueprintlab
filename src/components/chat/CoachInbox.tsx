@@ -45,23 +45,30 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
 
     const markAsUnread = async (athleteId: string, e: React.MouseEvent) => {
         e.stopPropagation();
+        e.preventDefault();
+        // Protect this conversation's unread badge from being wiped by a
+        // concurrent inbox refetch (e.g. ChatInterface mount PATCH).
+        // Cleared when the user explicitly opens the conversation to read it.
+        manuallyUnreadRef.current.add(athleteId);
         try {
-            await fetch('/api/messages/mark-unread', {
+            const res = await fetch('/api/messages/mark-unread', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ senderId: athleteId, receiverId: coachId })
             });
-            // Update local state immediately
+            if (!res.ok) {
+                manuallyUnreadRef.current.delete(athleteId);
+                return;
+            }
             setConvos(prev => prev.map(cv =>
                 cv.athleteId === athleteId ? { ...cv, unreadCount: Math.max(cv.unreadCount, 1) } : cv
             ));
-            // If this was the selected conversation, deselect so it shows as unread
             if (selectedId === athleteId) {
                 setSelectedId(null);
             }
-            window.dispatchEvent(new Event('unread-refresh'));
         } catch (err) {
             console.error('Failed to mark as unread:', err);
+            manuallyUnreadRef.current.delete(athleteId);
         }
     };
 
@@ -72,10 +79,27 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
         return () => window.removeEventListener('resize', check);
     }, []);
 
+    // Conversations the user just manually marked unread — preserve their unread
+    // state across refetches in case the inbox query races and returns 0.
+    const manuallyUnreadRef = useRef<Set<string>>(new Set());
+
     // Fetch lightweight conversation list
     const fetchConvos = useCallback(async () => {
         const r = await fetch(`/api/messages/inbox?coachId=${coachId}`);
-        if (r.ok) setConvos(await r.json());
+        if (!r.ok) return;
+        const data: ConvSummary[] = await r.json();
+        const merged = data.map(c => {
+            if (!manuallyUnreadRef.current.has(c.athleteId)) return c;
+            // Server caught up — it now reports unread, so drop the override.
+            if (c.unreadCount > 0) {
+                manuallyUnreadRef.current.delete(c.athleteId);
+                return c;
+            }
+            // Server still reports 0 but user manually marked it unread.
+            // Keep the optimistic badge until they open the conversation.
+            return { ...c, unreadCount: 1 };
+        });
+        setConvos(merged);
     }, [coachId]);
 
     // Debounced fetch — coalesces rapid events (realtime + mark-read + send) into a single API call
@@ -162,10 +186,13 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                 <div style={{ flex: 1, overflowY: 'auto' }}>
                     {filteredConvos.length === 0 && <div style={{ textAlign: 'center', padding: 32, fontSize: 12, color: 'var(--secondary-foreground)' }}>{searchTerm ? 'No athletes match your search' : 'No conversations'}</div>}
                     {filteredConvos.map(c => (
-                        <button key={c.athleteId} onClick={() => {
+                        <div key={c.athleteId} role="button" tabIndex={0} onClick={(e) => {
+                            if ((e.target as HTMLElement).closest('.mark-unread-btn')) return;
                             setSelectedId(c.athleteId);
                             setShowProgram(false);
-                            // Immediately clear unread count in sidebar
+                            // User is actively opening this chat — clear any manual-unread
+                            // protection so subsequent inbox refetches reflect true read state.
+                            manuallyUnreadRef.current.delete(c.athleteId);
                             if (c.unreadCount > 0) {
                                 setConvos(prev => prev.map(cv => cv.athleteId === c.athleteId ? { ...cv, unreadCount: 0 } : cv));
                             }
@@ -189,6 +216,7 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, marginLeft: 6 }}>
                                         {c.unreadCount === 0 && (
                                             <button
+                                                type="button"
                                                 onClick={(e) => markAsUnread(c.athleteId, e)}
                                                 title="Mark as unread"
                                                 className="mark-unread-btn"
@@ -208,7 +236,7 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                                 </div>
                                 <div style={{ fontSize: 11, color: c.unreadCount > 0 ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.25)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const, marginTop: 1 }}>{c.lastMessage || 'No messages yet'}</div>
                             </div>
-                        </button>
+                        </div>
                     ))}
                 </div>
             </div>

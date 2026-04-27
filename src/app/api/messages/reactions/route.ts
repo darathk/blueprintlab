@@ -30,11 +30,17 @@ export async function POST(request: Request) {
         // Fetch current message reactions
         const message = await prisma.message.findUnique({
             where: { id: messageId },
-            select: { reactions: true }
+            select: { reactions: true, senderId: true, receiverId: true }
         });
 
         if (!message) {
             return NextResponse.json({ error: 'Message not found' }, { status: 404 });
+        }
+
+        // Only participants in the conversation may react — prevents a coach
+        // from reacting to another coach's messages.
+        if (message.senderId !== auth.user.id && message.receiverId !== auth.user.id) {
+            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
         let reactions = (message.reactions as Record<string, string[]>) || {};

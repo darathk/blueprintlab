@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { supabase } from '@/lib/supabase';
 import webpush from 'web-push';
-import { requireAuth } from '@/lib/api-auth';
+import { requireAuth, requireAccessToAthlete } from '@/lib/api-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,13 +19,16 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'athleteId is required' }, { status: 400 });
         }
 
-        // User must be a participant in this conversation
-        if (auth.user.id !== athleteId && !auth.isCoach) {
-            return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+        // Coaches can only access messages for their own athletes; athletes can only access their own
+        if (auth.user.id !== athleteId) {
+            const access = await requireAccessToAthlete(athleteId, auth);
+            if ('error' in access) return access.error;
         }
 
         // Optional: only fetch messages newer than a timestamp (for incremental polling)
         const since = searchParams.get('since');
+        // Optional: filter to a specific session's messages (for session video review)
+        const sessionId = searchParams.get('sessionId');
 
         // Scope messages to conversations where the authenticated user is a participant.
         // This prevents Coach B from seeing messages between Coach A and the athlete.
@@ -49,6 +52,10 @@ export async function GET(request: Request) {
         if (since) {
             whereClause.createdAt = { gt: new Date(since) };
         }
+        // sessionId filter disabled until `prisma db push` adds the column
+        // if (sessionId) {
+        //     whereClause.sessionId = sessionId;
+        // }
 
         const all = await prisma.message.findMany({
             where: whereClause,
@@ -77,7 +84,7 @@ export async function POST(request: Request) {
 
     try {
         const body = await request.json();
-        const { senderId, receiverId, content, mediaUrl, mediaType, replyToId } = body;
+        const { senderId, receiverId, content, mediaUrl, mediaType, replyToId, sessionId } = body;
 
         if (!senderId || !receiverId || (content === undefined && !mediaUrl)) {
             return NextResponse.json({ error: 'senderId, receiverId, and content or mediaUrl are required' }, { status: 400 });
@@ -86,6 +93,17 @@ export async function POST(request: Request) {
         // Verify the sender is the authenticated user
         if (senderId !== auth.user.id) {
             return NextResponse.json({ error: 'Cannot send messages as another user' }, { status: 403 });
+        }
+
+        // Coaches can only message their own athletes; athletes can only message their coach
+        if (auth.isCoach) {
+            const access = await requireAccessToAthlete(receiverId, auth);
+            if ('error' in access) return access.error;
+        } else {
+            const sender = await prisma.athlete.findUnique({ where: { id: senderId }, select: { coachId: true } });
+            if (!sender || sender.coachId !== receiverId) {
+                return NextResponse.json({ error: 'You can only message your coach' }, { status: 403 });
+            }
         }
 
         // Validate content length
@@ -238,6 +256,16 @@ export async function PATCH(request: Request) {
             where: { receiverId: readerId, senderId: athleteId, read: false },
             data: { read: true }
         });
+
+        // Clear any coach-side manual-unread flag for this athlete.
+        try {
+            await prisma.athlete.update({
+                where: { id: athleteId },
+                data: { coachMarkedUnread: false }
+            });
+        } catch {
+            // Field may not exist yet on prod — fail silently.
+        }
 
         return NextResponse.json({ success: true });
     } catch (error) {

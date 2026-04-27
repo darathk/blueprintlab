@@ -8,19 +8,18 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
     const params = await searchParams;
     const initialAthleteId = params?.athleteId;
 
-    // Use the currently authenticated user — NOT the hardcoded admin email
-    const user = await currentUser();
-    if (!user) redirect('/sign-in');
+    // Identify the authenticated coach from Clerk
+    const clerkUser = await currentUser();
+    if (!clerkUser) redirect('/sign-in');
 
-    const email = (user.primaryEmailAddress?.emailAddress || '').toLowerCase();
-    let coach = await prisma.athlete.findFirst({
-        where: { email: { equals: email, mode: 'insensitive' } },
+    const email = (clerkUser.primaryEmailAddress?.emailAddress || '').toLowerCase();
+    const coach = await prisma.athlete.findFirst({
+        where: { email: { equals: email, mode: 'insensitive' }, role: 'coach' },
         select: { id: true, name: true, email: true, role: true }
     });
 
     if (!coach) {
-        // Shouldn't happen — dashboard layout already guards this — but handle gracefully
-        redirect('/sign-in');
+        redirect('/dashboard');
     }
 
     // Pre-fetch in parallel: inbox list + initial athlete's messages (avoids a second round-trip on the client)

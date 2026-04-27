@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 
-export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, onSessionMove, onDuplicateSession, onDuplicateSessionToNextWeek, onDuplicateWeekToNextWeek, existingPrograms = [], onGhostSessionClick = null }) {
+export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, onSessionMove, onDuplicateSession, onDuplicateSessionToNextWeek, onDuplicateWeekToNextWeek, onClearWeek = null, existingPrograms = [], onGhostSessionClick = null }) {
     const [currentMonth, setCurrentMonth] = useState(() => {
         return startDate ? new Date(startDate) : new Date();
     });
@@ -254,9 +254,19 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
                                         <button
                                             className="duplicate-btn"
                                             onClick={(e) => { e.stopPropagation(); onDuplicateWeekToNextWeek(day.weekNum); }}
-                                            title="Duplicate Full Week to Next Week"
+                                            title="Duplicate Full Week to Next Empty Week"
                                         >
                                             ❐ Full Wk
+                                        </button>
+                                    )}
+                                    {onClearWeek && (
+                                        <button
+                                            className="duplicate-btn"
+                                            onClick={(e) => { e.stopPropagation(); onClearWeek(day.weekNum); }}
+                                            title="Delete All Sessions in This Week"
+                                            style={{ color: '#ef4444' }}
+                                        >
+                                            ✕ Clear Wk
                                         </button>
                                     )}
                                 </div>

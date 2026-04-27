@@ -72,36 +72,6 @@ export default function TopNavigation({ unreadCount = 0, userId }: { unreadCount
                     )}
                 </Link>
                 <Link
-                    href="/dashboard/programs/new"
-                    className="nav-link"
-                    style={{
-                        fontWeight: 600,
-                        fontSize: '0.85rem',
-                        color: isActive('/dashboard/programs/new') ? 'var(--primary)' : 'var(--secondary-foreground)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        transition: 'color 0.2s ease',
-                        textShadow: isActive('/dashboard/programs/new') ? '0 0 10px rgba(125, 135, 210,0.4)' : 'none'
-                    }}
-                >
-                    Program Builder
-                </Link>
-                <Link
-                    href="/dashboard/templates"
-                    className="nav-link"
-                    style={{
-                        fontWeight: 600,
-                        fontSize: '0.85rem',
-                        color: isActive('/dashboard/templates') ? 'var(--primary)' : 'var(--secondary-foreground)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        transition: 'color 0.2s ease',
-                        textShadow: isActive('/dashboard/templates') ? '0 0 10px rgba(125, 135, 210,0.4)' : 'none'
-                    }}
-                >
-                    Templates
-                </Link>
-                <Link
                     href="/dashboard/leaderboard"
                     className="nav-link"
                     style={{

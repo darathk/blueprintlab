@@ -119,7 +119,12 @@ export async function POST(request: Request) {
                 return NextResponse.json(athlete);
             }
 
-            // If they exist but belong to a different coach (or no coach), link them
+            // If already linked to a DIFFERENT coach, refuse — a coach cannot claim another coach's athlete
+            if (existingUser.coachId && existingUser.coachId !== coach.id) {
+                return NextResponse.json({ error: 'An athlete with that email already belongs to another coach' }, { status: 409 });
+            }
+
+            // Unclaimed athlete (no coachId) — safe to link to the requesting coach
             athlete = await prisma.athlete.update({
                 where: { id: existingUser.id },
                 data: {

@@ -34,17 +34,20 @@ export default function AthleteCalendarContainer({ programs, athleteId, currentP
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ athleteId, date })
             });
-            if (!res.ok) throw new Error('Failed to toggle travel');
-            router.refresh(); // Sync potential DB changes
-        } catch (err) {
-            console.error(err);
+            if (!res.ok) {
+                const body = await res.json().catch(() => ({}));
+                throw new Error(body.error || `Server error ${res.status}`);
+            }
+            router.refresh();
+        } catch (err: any) {
+            console.error('Travel toggle error:', err);
             // Rollback on error
             if (isCurrentlyTravel) {
                 setLocalTravelDates(prev => [...prev, date]);
             } else {
                 setLocalTravelDates(prev => prev.filter(d => d !== date));
             }
-            alert('Error updating travel status');
+            alert(err.message || 'Error updating travel status');
         }
     };
 

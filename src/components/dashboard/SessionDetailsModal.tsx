@@ -1,10 +1,29 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { calculateSimpleE1RM, calculateStress } from '@/lib/stress-index';
 
 export default function SessionDetailsModal({ session, programName, programId, sessionKey, onClose, athleteId, onSaveLog, existingLog }) {
     const [logData, setLogData] = useState({});
+    const [videoTab, setVideoTab] = useState(false);
+    const [sessionMessages, setSessionMessages] = useState<any[]>([]);
+    const [loadingVideos, setLoadingVideos] = useState(false);
+
+    const fetchSessionMedia = useCallback(async () => {
+        if (!athleteId || !sessionKey) return;
+        setLoadingVideos(true);
+        try {
+            const res = await fetch(`/api/messages?athleteId=${athleteId}&sessionId=${encodeURIComponent(sessionKey)}`);
+            if (res.ok) {
+                const data = await res.json();
+                setSessionMessages(data.filter((m: any) => m.mediaUrl || m.content));
+            }
+        } catch {
+            // silently fail — review panel is non-critical
+        } finally {
+            setLoadingVideos(false);
+        }
+    }, [athleteId, sessionKey]);
 
     // Initialize log data
     useEffect(() => {
@@ -247,6 +266,64 @@ export default function SessionDetailsModal({ session, programName, programId, s
                             </div>
                         );
                     })}
+                </div>
+
+                {/* Session Feedback & Videos */}
+                <div style={{ borderTop: '1px solid var(--card-border)', margin: '0 1.5rem' }}>
+                    <button
+                        onClick={() => { setVideoTab(v => !v); if (!videoTab) fetchSessionMedia(); }}
+                        style={{
+                            width: '100%', padding: '0.75rem 0', background: 'none', border: 'none',
+                            color: 'var(--primary)', cursor: 'pointer', fontSize: '0.85rem', fontWeight: 600,
+                            display: 'flex', alignItems: 'center', gap: 6, textAlign: 'left'
+                        }}
+                    >
+                        <span style={{ fontSize: 14 }}>{videoTab ? '▲' : '▼'}</span>
+                        Session Feedback &amp; Videos
+                    </button>
+
+                    {videoTab && (
+                        <div style={{ paddingBottom: '1rem' }}>
+                            {loadingVideos ? (
+                                <p style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', textAlign: 'center', padding: '1rem 0' }}>Loading…</p>
+                            ) : sessionMessages.length === 0 ? (
+                                <p style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', textAlign: 'center', padding: '1rem 0' }}>
+                                    No feedback sent for this session yet.
+                                </p>
+                            ) : (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                                    {sessionMessages.map((msg: any) => (
+                                        <div key={msg.id} style={{
+                                            background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
+                                            borderRadius: 8, padding: '10px 12px'
+                                        }}>
+                                            <div style={{ fontSize: '0.72rem', color: 'var(--secondary-foreground)', marginBottom: 6 }}>
+                                                {msg.sender?.name} · {new Date(msg.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                                            </div>
+                                            {msg.mediaUrl && msg.mediaType?.startsWith('video/') && (
+                                                <video
+                                                    src={msg.mediaUrl}
+                                                    controls
+                                                    playsInline
+                                                    style={{ width: '100%', maxHeight: 320, borderRadius: 6, background: '#000', display: 'block', marginBottom: msg.content ? 8 : 0 }}
+                                                />
+                                            )}
+                                            {msg.mediaUrl && msg.mediaType?.startsWith('image/') && (
+                                                <img
+                                                    src={msg.mediaUrl}
+                                                    alt=""
+                                                    style={{ width: '100%', maxHeight: 320, objectFit: 'contain', borderRadius: 6, display: 'block', marginBottom: msg.content ? 8 : 0 }}
+                                                />
+                                            )}
+                                            {msg.content && msg.content !== 'Video' && msg.content !== 'Photo' && (
+                                                <p style={{ margin: 0, fontSize: '0.82rem', color: 'var(--foreground)', whiteSpace: 'pre-wrap' }}>{msg.content}</p>
+                                            )}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
 
                 {/* Footer Actions */}
