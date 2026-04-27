@@ -220,7 +220,15 @@ export default function MeetDataTable({ athletes, coachId }: Props) {
 
     const handleAdd = () => {
         const hasAthlete = newEntry.athleteId || newEntry.manualAthleteName.trim();
-        if (!hasAthlete || !newEntry.meetName) return;
+        if (!hasAthlete) {
+            alert('Please select an athlete or type a manual name.');
+            return;
+        }
+        if (!newEntry.meetName) {
+            alert('Please enter a Meet Name.');
+            return;
+        }
+
         const athlete = newEntry.athleteId ? athletes.find(a => a.id === newEntry.athleteId) : null;
         const athleteName = athlete ? athlete.name : newEntry.manualAthleteName.trim();
 
