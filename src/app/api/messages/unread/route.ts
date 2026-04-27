@@ -22,9 +22,33 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
-        const count = await prisma.message.count({
-            where: { receiverId: userId, read: false }
+        // Check if this user is a coach — if so, only count messages from their
+        // assigned athletes to match what the inbox displays. This prevents phantom
+        // badges from orphaned messages or athletes reassigned to a different coach.
+        const user = await prisma.athlete.findUnique({
+            where: { id: userId },
+            select: { role: true, email: true }
         });
+
+        const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.ADMIN_EMAIL;
+        const isCoach = user?.role === 'coach' ||
+            (adminEmail && user?.email?.toLowerCase() === adminEmail.toLowerCase());
+
+        let count: number;
+        if (isCoach) {
+            // Only count unread messages from athletes assigned to this coach
+            count = await prisma.message.count({
+                where: {
+                    receiverId: userId,
+                    read: false,
+                    sender: { coachId: userId }
+                }
+            });
+        } else {
+            count = await prisma.message.count({
+                where: { receiverId: userId, read: false }
+            });
+        }
 
         return NextResponse.json({ unread: count });
     } catch (error) {
