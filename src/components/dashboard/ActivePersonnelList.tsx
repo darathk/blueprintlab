@@ -134,8 +134,8 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
 
         let activeProgId = athlete.currentProgramId;
 
-        // Auto-advance logic: ignore old "active" programs that are actually 100% complete
-        // OR if a newer active program's start date has already arrived.
+        // Auto-advance logic: ignore old programs that are actually 100% complete
+        // OR if a newer program's calendar start date has already arrived.
         let activeSorted: any[] = [];
         // Use rigorous parsing for date comparisons to prevent UTC boundary shifts
         const parseLocalDateStr = (dateStr: any) => {
@@ -153,15 +153,30 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
             return date;
         };
 
+        // Compute calendar start/end dates using weekNumber offsets (matches Program History UI)
+        const getCalendarDates = (prog: any) => {
+            const weeks = Array.isArray(prog.weeks) ? prog.weeks : [];
+            const nonEmpty = weeks.filter((w: any) => Array.isArray(w.sessions) && w.sessions.length > 0);
+            if (nonEmpty.length === 0 || !prog.startDate) return { calendarStart: parseLocalDateStr(prog.startDate), calendarEnd: parseLocalDateStr(prog.startDate) };
+            const start = parseLocalDateStr(prog.startDate);
+            const firstWn = Math.min(...nonEmpty.map((w: any) => w.weekNumber || 1));
+            const lastWn = Math.max(...nonEmpty.map((w: any) => w.weekNumber || 1));
+            const calendarStart = new Date(start);
+            calendarStart.setDate(calendarStart.getDate() + (firstWn - 1) * 7);
+            const calendarEnd = new Date(start);
+            calendarEnd.setDate(calendarEnd.getDate() + lastWn * 7); // day after last week ends
+            return { calendarStart, calendarEnd };
+        };
+
         if (athletePrograms.length > 0) {            activeSorted = [...athletePrograms]
-                .filter(p => p.status !== 'draft' && p.status !== 'completed')
+                .filter(p => p.status !== 'draft')
                 .sort((a, b) => {
-                    const aStart = parseLocalDateStr(a.startDate || a.createdAt).getTime();
-                    const bStart = parseLocalDateStr(b.startDate || b.createdAt).getTime();
-                    if (aStart === bStart) {
-                        return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
-                    }
-                    return aStart - bStart;
+                    // Sort by calendar start date (using weekNumber offsets), not raw startDate
+                    const aDates = getCalendarDates(a);
+                    const bDates = getCalendarDates(b);
+                    const diff = aDates.calendarStart.getTime() - bDates.calendarStart.getTime();
+                    if (diff !== 0) return diff;
+                    return new Date(a.createdAt || 0).getTime() - new Date(b.createdAt || 0).getTime();
                 });
             
             for (let i = 0; i < activeSorted.length; i++) {
@@ -182,31 +197,24 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
                 
                 const isComplete = totalSessions > 0 && uniqueSessions.size >= totalSessions;
 
-                // Check if next program has strictly started by date
+                // Check if next program has strictly started by calendar date
                 let nextDateStarted = false;
-                if (nextProg.startDate) {
-                    const nextStart = parseLocalDateStr(nextProg.startDate);
-                    const now = new Date();
-                    now.setHours(0, 0, 0, 0);
-                    if (now >= nextStart) nextDateStarted = true;
-                }
+                const nextDates = getCalendarDates(nextProg);
+                const now = new Date();
+                now.setHours(0, 0, 0, 0);
+                if (now >= nextDates.calendarStart) nextDateStarted = true;
 
-                // Check if current program is expired by date
+                // Check if current program is expired by calendar date
                 let currentExpired = false;
-                const totalWeeks = (prog.weeks?.length || 0);
-                if (prog.startDate && totalWeeks > 0) {
-                    const expiryDate = parseLocalDateStr(prog.startDate);
-                    expiryDate.setDate(expiryDate.getDate() + totalWeeks * 7);
-                    const now = new Date();
-                    now.setHours(0, 0, 0, 0);
-                    if (now >= expiryDate) currentExpired = true;
-                }
+                const progDates = getCalendarDates(prog);
+                if (now >= progDates.calendarEnd) currentExpired = true;
 
                 // Advance if:
-                // 1. Current is complete
+                // 1. Current is complete by sessions
                 // 2. OR Athlete has already started the next one (has logs)
-                // 3. OR Current is expired AND next has started by date
-                const shouldAdvance = isComplete || nextHasLogs || (currentExpired && nextDateStarted);
+                // 3. OR Current is expired by calendar AND next has started by calendar date
+                // 4. OR Current is explicitly marked completed
+                const shouldAdvance = isComplete || nextHasLogs || (currentExpired && nextDateStarted) || prog.status === 'completed';
 
                 if (!shouldAdvance) {
                     break;
@@ -284,14 +292,19 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
 
         if (currentProgram && progress.totalSessions > 0) {
             const sessionsRemaining = progress.totalSessions - progress.completedSessions;
-            // Estimate sessions per week
-            const totalWeeks = progress.totalWeeks || 1;
-            const sessionsPerWeek = Math.ceil(progress.totalSessions / totalWeeks);
+            // Estimate sessions per week from non-empty weeks only
+            const nonEmptyWeeks = (currentProgram.weeks || []).filter((w: any) => Array.isArray(w.sessions) && w.sessions.length > 0);
+            const activeWeekCount = nonEmptyWeeks.length || 1;
+            const sessionsPerWeek = Math.ceil(progress.totalSessions / activeWeekCount);
 
             // Check if any assigned program hasn't been started yet (queued for the future)
             if (activeProgId) {
                  hasNextBlockReady = activeSorted.some(p => {
                       if (p.id === activeProgId) return false; // skip current program
+                      // Only consider programs that come AFTER the current one by calendar date
+                      const pDates = getCalendarDates(p);
+                      const currentDates = getCalendarDates(currentProgram);
+                      if (pDates.calendarStart < currentDates.calendarStart) return false;
                       // Check if athlete has logged any sessions for this program
                       const pLogs = athleteLogs.filter(l => l.programId === p.id);
                       if (pLogs.length > 0) return false; // already started, not queued
@@ -302,26 +315,20 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
                  });
             }
 
-            // Needs update: athlete is within 1 week of sessions remaining in this block (logs)
-            // OR the program is entering its last 7 days based on the start date (time)
+            // Needs update: use calendar-based expiry (matching Program History dates)
             let isEndingSoonByTime = false;
             let isExpired = false;
-            if (activeProgId) {
-                const progObj = programs.find((p: any) => p.id === activeProgId);
-                if (progObj && progObj.startDate) {
-                    const expiryData = parseLocalDateStr(progObj.startDate);
-                    expiryData.setDate(expiryData.getDate() + totalWeeks * 7);
+            if (activeProgId && currentProgram) {
+                const { calendarEnd } = getCalendarDates(currentProgram);
+                const now = new Date();
+                now.setHours(0, 0, 0, 0);
 
-                    const now = new Date();
-                    now.setHours(0, 0, 0, 0);
+                if (now >= calendarEnd) isExpired = true;
 
-                    if (now >= expiryData) isExpired = true;
+                const oneWeekBeforeExpiry = new Date(calendarEnd);
+                oneWeekBeforeExpiry.setDate(oneWeekBeforeExpiry.getDate() - 7);
 
-                    const oneWeekBeforeExpiry = new Date(expiryData);
-                    oneWeekBeforeExpiry.setDate(oneWeekBeforeExpiry.getDate() - 7);
-
-                    if (now >= oneWeekBeforeExpiry) isEndingSoonByTime = true;
-                }
+                if (now >= oneWeekBeforeExpiry) isEndingSoonByTime = true;
             }
 
             needsUpdate = ((sessionsRemaining > 0 && sessionsRemaining <= sessionsPerWeek) || isEndingSoonByTime || isExpired) && !hasNextBlockReady;
