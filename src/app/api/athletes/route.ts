@@ -61,7 +61,7 @@ export async function POST(request: Request) {
                 select: { id: true, coachId: true }
             });
 
-            if (existingById && existingById.coachId === coach.id) {
+            if (existingById && (existingById.coachId === coach.id || existingById.id === coach.id)) {
                 // This is an update to an existing athlete (e.g. meet planner, block organizer)
                 athlete = await prisma.athlete.update({
                     where: { id },

@@ -11,16 +11,16 @@ export default async function MeetDataPage() {
     const email = (user.primaryEmailAddress?.emailAddress || '').toLowerCase();
     const coach = await prisma.athlete.findFirst({
         where: { email: { equals: email, mode: 'insensitive' } },
-        select: { id: true, role: true }
     });
 
     if (!coach || coach.role !== 'coach') redirect('/');
 
     const athletes = await getAthletes(coach.id);
+    const athletesWithCoach = [...athletes, coach];
 
     return (
         <div style={{ padding: '1.5rem 0' }}>
-            <MeetDataTable athletes={athletes} coachId={coach.id} />
+            <MeetDataTable athletes={athletesWithCoach} coachId={coach.id} />
         </div>
     );
 }

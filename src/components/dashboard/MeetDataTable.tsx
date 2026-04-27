@@ -44,7 +44,13 @@ export default function MeetDataTable({ athletes, coachId }: Props) {
             const meets = a.pastMeets || [];
             for (const m of meets) {
                 if (m._meetDataEntry) {
-                    entries.push({ ...m._meetDataEntry, athleteId: a.id, athleteName: a.name });
+                    const entry = m._meetDataEntry;
+                    const isManual = entry.athleteId?.startsWith('manual_');
+                    entries.push({
+                        ...entry,
+                        athleteId: isManual ? entry.athleteId : a.id,
+                        athleteName: isManual ? entry.athleteName : a.name
+                    });
                 }
             }
         }
@@ -170,12 +176,14 @@ export default function MeetDataTable({ athletes, coachId }: Props) {
         // Group entries by athlete and save to their pastMeets
         const byAthlete: Record<string, MeetEntry[]> = {};
         for (const e of updatedEntries) {
-            if (!byAthlete[e.athleteId]) byAthlete[e.athleteId] = [];
-            byAthlete[e.athleteId].push(e);
+            // Map manual entries (which have no athleteId in DB) to the coach's record
+            const targetId = e.athleteId.startsWith('manual_') ? coachId : e.athleteId;
+            if (!byAthlete[targetId]) byAthlete[targetId] = [];
+            byAthlete[targetId].push(e);
         }
 
-        for (const athleteId of Object.keys(byAthlete)) {
-            const athlete = athletes.find(a => a.id === athleteId);
+        for (const targetId of Object.keys(byAthlete)) {
+            const athlete = athletes.find(a => a.id === targetId);
             if (!athlete) continue;
 
             // Preserve existing pastMeets that don't have _meetDataEntry
@@ -202,7 +210,7 @@ export default function MeetDataTable({ athletes, coachId }: Props) {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    id: athleteId,
+                    id: targetId,
                     pastMeets: [...existingNonMeetData, ...meetDataEntries],
                 }),
             });
