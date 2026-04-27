@@ -1,20 +1,26 @@
 import { prisma } from '@/lib/prisma';
+import { currentUser } from '@clerk/nextjs/server';
+import { redirect } from 'next/navigation';
 import { CoachInbox } from '@/components/chat/ClientCoachInbox';
 import { getCoachInbox, getMessagesByAthlete } from '@/lib/storage';
 
 export default async function MessagesPage({ searchParams }: { searchParams: Promise<{ athleteId?: string }> }) {
     const params = await searchParams;
     const initialAthleteId = params?.athleteId;
-    // Look up coach's Athlete record for the inbox
-    const adminEmail = (process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.ADMIN_EMAIL || '').toLowerCase();
+
+    // Use the currently authenticated user — NOT the hardcoded admin email
+    const user = await currentUser();
+    if (!user) redirect('/sign-in');
+
+    const email = (user.primaryEmailAddress?.emailAddress || '').toLowerCase();
     let coach = await prisma.athlete.findFirst({
-        where: { email: { equals: adminEmail, mode: 'insensitive' } },
+        where: { email: { equals: email, mode: 'insensitive' } },
         select: { id: true, name: true, email: true, role: true }
     });
+
     if (!coach) {
-        coach = await prisma.athlete.create({ data: { name: 'Coach', email: adminEmail, role: 'coach' }, select: { id: true, name: true, email: true, role: true } });
-    } else if (coach.role !== 'coach') {
-        coach = await prisma.athlete.update({ where: { id: coach.id }, data: { role: 'coach', email: adminEmail }, select: { id: true, name: true, email: true, role: true } });
+        // Shouldn't happen — dashboard layout already guards this — but handle gracefully
+        redirect('/sign-in');
     }
 
     // Pre-fetch in parallel: inbox list + initial athlete's messages (avoids a second round-trip on the client)

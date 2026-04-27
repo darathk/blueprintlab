@@ -27,12 +27,24 @@ export async function GET(request: Request) {
         // Optional: only fetch messages newer than a timestamp (for incremental polling)
         const since = searchParams.get('since');
 
-        const whereClause: any = {
-            OR: [
-                { senderId: athleteId },
-                { receiverId: athleteId }
-            ]
-        };
+        // Scope messages to conversations where the authenticated user is a participant.
+        // This prevents Coach B from seeing messages between Coach A and the athlete.
+        const currentUserId = auth.user.id;
+        const whereClause: any = auth.isCoach && auth.user.id !== athleteId
+            ? {
+                // Coach viewing: only messages between this coach and the athlete
+                OR: [
+                    { senderId: currentUserId, receiverId: athleteId },
+                    { senderId: athleteId, receiverId: currentUserId }
+                ]
+            }
+            : {
+                // Athlete viewing their own messages (all conversations)
+                OR: [
+                    { senderId: athleteId },
+                    { receiverId: athleteId }
+                ]
+            };
 
         if (since) {
             whereClause.createdAt = { gt: new Date(since) };

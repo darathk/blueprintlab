@@ -22,13 +22,16 @@ export async function POST(request: Request) {
         }
 
         // Find the most recent message from that sender to this receiver and mark it unread
+        // Don't filter by read:true — the message might already be unread or the coach
+        // may have read everything; we still need a message to flip for the unread badge
         const lastMessage = await prisma.message.findFirst({
-            where: { senderId, receiverId, read: true },
+            where: { senderId, receiverId },
             orderBy: { createdAt: 'desc' },
-            select: { id: true }
+            select: { id: true, read: true }
         });
 
         if (lastMessage) {
+            // Always set to unread so the badge shows up
             await prisma.message.update({
                 where: { id: lastMessage.id },
                 data: { read: false }
