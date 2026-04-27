@@ -250,6 +250,16 @@ export async function PATCH(request: Request) {
             data: { read: true }
         });
 
+        // Clear any coach-side manual-unread flag for this athlete.
+        try {
+            await prisma.athlete.update({
+                where: { id: athleteId },
+                data: { coachMarkedUnread: false }
+            });
+        } catch {
+            // Field may not exist yet on prod — fail silently.
+        }
+
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error('PATCH /api/messages error:', error);

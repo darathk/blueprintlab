@@ -22,14 +22,15 @@ export async function GET(request: Request) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 
-        // Use a raw Postgres query to natively compute latest message grouping & unread sums
+        // Use a raw Postgres query to natively compute latest message grouping & unread sums.
+        // unreadCount = real unread message count + 1 if coach manually marked the convo unread.
         const sql = `
             SELECT
                 a.id AS "athleteId",
                 a.name AS "athleteName",
                 latest_msg.content AS "lastMessage",
                 COALESCE(latest_msg."createdAt", '1970-01-01T00:00:00Z') AS "lastMessageAt",
-                COALESCE(unread_count.count, 0)::int AS "unreadCount"
+                (COALESCE(unread_count.count, 0) + CASE WHEN COALESCE(a."coachMarkedUnread", false) THEN 1 ELSE 0 END)::int AS "unreadCount"
             FROM "Athlete" a
             LEFT JOIN (
                 SELECT DISTINCT ON (partner_id)
@@ -52,7 +53,7 @@ export async function GET(request: Request) {
                 GROUP BY "senderId"
             ) unread_count ON unread_count."senderId" = a.id
             WHERE a.id != $1 AND a."coachId" = $1
-            ORDER BY CASE WHEN COALESCE(unread_count.count, 0) > 0 THEN 1 ELSE 0 END DESC, "lastMessageAt" DESC;
+            ORDER BY (COALESCE(unread_count.count, 0) + CASE WHEN COALESCE(a."coachMarkedUnread", false) THEN 1 ELSE 0 END) DESC, "lastMessageAt" DESC;
         `;
 
         const results = await prisma.$queryRawUnsafe<any[]>(sql, coachId);

@@ -37,6 +37,15 @@ export async function GET(request: Request) {
                     sender: { coachId: userId }
                 }
             });
+            // Plus athletes the coach has manually marked unread
+            try {
+                const flagged = await prisma.athlete.count({
+                    where: { coachId: userId, coachMarkedUnread: true }
+                });
+                count += flagged;
+            } catch {
+                // Field may not exist on prod yet — ignore.
+            }
         } else {
             count = await prisma.message.count({
                 where: { receiverId: userId, read: false }

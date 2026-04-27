@@ -35,6 +35,19 @@ export async function POST(request: Request) {
             });
         }
 
+        // Also persist a coach-side "manually marked unread" flag on the athlete
+        // so the unread state survives even when no read messages exist to flip,
+        // and isn't wiped by a subsequent mark-as-read PATCH for the same convo.
+        try {
+            await prisma.athlete.update({
+                where: { id: senderId },
+                data: { coachMarkedUnread: true }
+            });
+        } catch {
+            // Field may not exist yet on prod — fail silently, the message-flip
+            // above is still the primary mechanism.
+        }
+
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error('POST /api/messages/mark-unread error:', error);
