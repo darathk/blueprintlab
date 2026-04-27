@@ -169,6 +169,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
     const [readySessions, setReadySessions] = useState<Set<string>>(new Set());
     const [readinessPopup, setReadinessPopup] = useState<string | null>(null); // session key of popup
     const [shakeKey, setShakeKey] = useState<string | null>(null); // exercise key to shake
+    const [activeTabs, setActiveTabs] = useState<Record<string, 'previous' | 'prescribed' | 'actual'>>({});
 
     const markSessionReady = useCallback((sKey: string) => {
         setReadySessions(prev => {
@@ -980,81 +981,123 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                     {(() => {
                                                                         const prevForHeader = getPrevSets(exerciseData.name || ex.name, sKey);
                                                                         const prevDateLabel = (() => { const raw = prevForHeader?.date; if (!raw) return null; const d = new Date(raw.slice(0, 10)); return isNaN(d.getTime()) ? null : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); })();
+                                                                        const hasPrev = !!prevForHeader;
+                                                                        const currentTab = activeTabs[exKey] || 'actual';
+                                                                        
                                                                         return (
-                                                                            <>
-                                                                                <div style={{ display: 'flex', borderBottom: '1px dashed var(--card-border)', marginBottom: 8 }}>
-                                                                                    <div style={{ width: '130px', textAlign: 'center', fontWeight: 'bold', fontSize: '0.85rem', color: prevDateLabel ? 'var(--secondary-foreground)' : 'var(--primary)', padding: '4px 0' }}>
-                                                                                        {prevDateLabel ? <span>🕐 {prevDateLabel}</span> : 'Prescribed'}
-                                                                                    </div>
-                                                                                    <div style={{ flex: 1, position: 'relative' }}>
-                                                                                        <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: 1, background: 'var(--card-border)' }} />
-                                                                                        <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '0.85rem', color: 'var(--primary)', padding: '4px 0', background: 'var(--card-bg)' }}>Actual</div>
-                                                                                    </div>
-                                                                                </div>
-                                                                                <div style={{ display: 'flex', marginBottom: 8, fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)' }}>
-                                                                                    <div style={{ display: 'flex', width: '130px', justifyContent: 'center', gap: 4 }}>
-                                                                                        <span style={{ flex: 1, textAlign: 'center' }}>Weight</span>
-                                                                                        <span style={{ flex: 1, textAlign: 'center' }}>Reps</span>
-                                                                                        <span style={{ flex: 1, textAlign: 'center' }}>RPE</span>
-                                                                                    </div>
-                                                                                    <div style={{ position: 'relative', width: 1, background: 'var(--card-border)', margin: '0 8px' }} />
-                                                                                    <div style={{ display: 'flex', flex: 1, justifyContent: 'center', gap: 4 }}>
-                                                                                        <span style={{ flex: 1, textAlign: 'center' }}>Weight</span>
-                                                                                        <span style={{ flex: 1, textAlign: 'center' }}>Reps</span>
-                                                                                        <span style={{ flex: 1, textAlign: 'center' }}>RPE</span>
-                                                                                    </div>
-                                                                                </div>
-                                                                            </>
+                                                                            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                                                                                <button
+                                                                                    onClick={() => { if (hasPrev) setActiveTabs(prev => ({ ...prev, [exKey]: 'previous' })); }}
+                                                                                    style={{
+                                                                                        flex: 1, padding: '8px 4px', borderRadius: '8px', border: '1px solid var(--card-border)',
+                                                                                        background: currentTab === 'previous' ? 'var(--primary)' : 'var(--card-bg)',
+                                                                                        color: currentTab === 'previous' ? '#fff' : (hasPrev ? 'var(--foreground)' : 'var(--secondary-foreground)'),
+                                                                                        opacity: hasPrev ? 1 : 0.5, cursor: hasPrev ? 'pointer' : 'not-allowed',
+                                                                                        fontWeight: 600, fontSize: '0.8rem', transition: 'all 0.2s'
+                                                                                    }}
+                                                                                >
+                                                                                    {prevDateLabel ? `Prev: ${prevDateLabel}` : 'Previous'}
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={() => setActiveTabs(prev => ({ ...prev, [exKey]: 'prescribed' }))}
+                                                                                    style={{
+                                                                                        flex: 1, padding: '8px 4px', borderRadius: '8px', border: '1px solid var(--card-border)',
+                                                                                        background: currentTab === 'prescribed' ? 'var(--primary)' : 'var(--card-bg)',
+                                                                                        color: currentTab === 'prescribed' ? '#fff' : 'var(--foreground)',
+                                                                                        cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem', transition: 'all 0.2s'
+                                                                                    }}
+                                                                                >
+                                                                                    Prescribed
+                                                                                </button>
+                                                                                <button
+                                                                                    onClick={() => setActiveTabs(prev => ({ ...prev, [exKey]: 'actual' }))}
+                                                                                    style={{
+                                                                                        flex: 1, padding: '8px 4px', borderRadius: '8px', border: '1px solid var(--card-border)',
+                                                                                        background: currentTab === 'actual' ? 'var(--primary)' : 'var(--card-bg)',
+                                                                                        color: currentTab === 'actual' ? '#fff' : 'var(--foreground)',
+                                                                                        cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem', transition: 'all 0.2s'
+                                                                                    }}
+                                                                                >
+                                                                                    Actual
+                                                                                </button>
+                                                                            </div>
                                                                         );
                                                                     })()}
+
+                                                                    <div style={{ display: 'flex', marginBottom: 8, fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)' }}>
+                                                                        <span style={{ flex: 1, textAlign: 'center' }}>Weight</span>
+                                                                        <span style={{ flex: 1, textAlign: 'center' }}>Reps</span>
+                                                                        <span style={{ flex: 1, textAlign: 'center' }}>RPE</span>
+                                                                        {(!activeTabs[exKey] || activeTabs[exKey] === 'actual') && <div style={{ width: '40px' }} />}
+                                                                    </div>
+
                                                                     {sets.map((set: any, setIdx: number) => {
                                                                         const target = isEdit ? set.target : set;
                                                                         const actual = isEdit ? set.actual : { weight: '', reps: '', rpe: '' };
                                                                         const prev = getPrevSets(exerciseData.name || ex.name, sKey);
                                                                         const prevSet = prev?.sets?.[setIdx];
+                                                                        const currentTab = activeTabs[exKey] || 'actual';
+
                                                                         return (
-                                                                            <div key={setIdx} style={{ display: 'flex', alignItems: 'center', padding: '6px 0', borderBottom: '1px dashed var(--card-border)' }}>
-                                                                                <div style={{ display: 'flex', width: '130px', justifyContent: 'center', gap: 4 }}>
-                                                                                    {(['weight', 'reps', 'rpe'] as const).map(f => {
-                                                                                        const prevVal = (prevSet && f === 'weight') ? toDisplay(prevSet.weight) : '';
-                                                                                        const targVal = f === 'weight' ? toDisplay(target[f]) : target[f];
-                                                                                        const displayVal = prevVal || targVal || '\u00A0';
-                                                                                        const isPrev = !!prevVal;
-                                                                                        return (
-                                                                                            <div key={f} style={{
-                                                                                                flex: 1, padding: '6px 4px',
-                                                                                                border: `1px solid ${isPrev ? 'rgba(125,135,210,0.35)' : 'var(--card-border)'}`,
-                                                                                                borderRadius: 4,
-                                                                                                background: isPrev ? 'rgba(125,135,210,0.08)' : 'var(--background)',
-                                                                                                textAlign: 'center', fontSize: '0.9rem',
-                                                                                                color: isPrev ? 'var(--primary)' : 'var(--secondary-foreground)',
-                                                                                                fontWeight: isPrev ? 600 : 400,
-                                                                                            }}>
-                                                                                                {displayVal}
+                                                                            <div key={setIdx} style={{ display: 'flex', alignItems: 'center', padding: '6px 0', gap: '8px', borderBottom: '1px dashed var(--card-border)' }}>
+                                                                                {currentTab === 'previous' && (
+                                                                                    <div style={{ display: 'flex', flex: 1, gap: '8px' }}>
+                                                                                        {(['weight', 'reps', 'rpe'] as const).map(f => (
+                                                                                            <div key={f} style={{ flex: 1, padding: '8px', border: '1px solid rgba(125,135,210,0.35)', borderRadius: '6px', background: 'rgba(125,135,210,0.08)', textAlign: 'center', color: 'var(--primary)', fontWeight: 600 }}>
+                                                                                                {prevSet ? (f === 'weight' ? toDisplay(prevSet.weight) : prevSet[f]) || '-' : '-'}
                                                                                             </div>
-                                                                                        );
-                                                                                    })}
-                                                                                </div>
-                                                                                <button
-                                                                                    onClick={() => setIdx > 0 ? copyPrevSet(sKey, exIdx, setIdx, program.id) : copyTargetToActual(sKey, exIdx, setIdx, program.id)}
-                                                                                    style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 8px', display: 'flex', alignItems: 'center' }}
-                                                                                >
-                                                                                    <ArrowRight size={18} color="var(--primary)" />
-                                                                                </button>
-                                                                                <div style={{ display: 'flex', flex: 1, alignItems: 'center', gap: 4 }}>
-                                                                                    {['weight', 'reps', 'rpe'].map(f => (
-                                                                                        <input key={f} type="number" inputMode="decimal"
-                                                                                            value={f === 'weight' ? toDisplay(actual[f]) : actual[f]}
-                                                                                            onChange={e => updateSet(sKey, exIdx, setIdx, f, e.target.value, program.id)}
-                                                                                            onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
-                                                                                            style={{
-                                                                                                flex: 1, padding: '6px 4px', border: '1px solid rgba(148,163,184,0.3)', borderRadius: 4,
-                                                                                                background: 'var(--background)', textAlign: 'center', fontSize: '0.9rem',
-                                                                                                color: 'var(--foreground)', width: '100%', outlineColor: 'var(--primary)',
-                                                                                            }}
-                                                                                        />
-                                                                                    ))}
-                                                                                </div>
+                                                                                        ))}
+                                                                                    </div>
+                                                                                )}
+                                                                                {currentTab === 'prescribed' && (
+                                                                                    <div style={{ display: 'flex', flex: 1, gap: '8px' }}>
+                                                                                        {(['weight', 'reps', 'rpe'] as const).map(f => (
+                                                                                            <div key={f} style={{ flex: 1, padding: '8px', border: '1px solid var(--card-border)', borderRadius: '6px', background: 'var(--card-bg)', textAlign: 'center', color: 'var(--foreground)' }}>
+                                                                                                {(f === 'weight' ? toDisplay(target[f]) : target[f]) || '-'}
+                                                                                            </div>
+                                                                                        ))}
+                                                                                    </div>
+                                                                                )}
+                                                                                {currentTab === 'actual' && (
+                                                                                    <>
+                                                                                        <div style={{ display: 'flex', flex: 1, alignItems: 'center', gap: '8px' }}>
+                                                                                            {['weight', 'reps', 'rpe'].map(f => {
+                                                                                                const placeholderVal = f === 'weight' ? toDisplay(target[f]) : target[f];
+                                                                                                return (
+                                                                                                    <input key={f} type="number" inputMode="decimal"
+                                                                                                        value={f === 'weight' ? toDisplay(actual[f]) : actual[f]}
+                                                                                                        onChange={e => updateSet(sKey, exIdx, setIdx, f, e.target.value, program.id)}
+                                                                                                        onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
+                                                                                                        placeholder={placeholderVal?.toString()}
+                                                                                                        style={{
+                                                                                                            flex: 1, padding: '8px', border: '1px solid rgba(148,163,184,0.3)', borderRadius: '6px',
+                                                                                                            background: 'var(--background)', textAlign: 'center', fontSize: '1rem',
+                                                                                                            color: 'var(--foreground)', width: '100%', outlineColor: 'var(--primary)'
+                                                                                                        }}
+                                                                                                    />
+                                                                                                );
+                                                                                            })}
+                                                                                        </div>
+                                                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '32px' }}>
+                                                                                            <button
+                                                                                                onClick={() => copyTargetToActual(sKey, exIdx, setIdx, program.id)}
+                                                                                                title="Copy Prescribed"
+                                                                                                style={{ background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px', fontSize: '0.7rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                                                            >
+                                                                                                🎯
+                                                                                            </button>
+                                                                                            {prevSet && (
+                                                                                                <button
+                                                                                                    onClick={() => copyPrevSet(sKey, exIdx, setIdx, program.id)}
+                                                                                                    title="Copy Previous"
+                                                                                                    style={{ background: 'var(--secondary-foreground)', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px', fontSize: '0.7rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                                                                >
+                                                                                                    🕒
+                                                                                                </button>
+                                                                                            )}
+                                                                                        </div>
+                                                                                    </>
+                                                                                )}
                                                                             </div>
                                                                         );
                                                                     })}
@@ -1529,31 +1572,58 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                         }}
                                                                                     />
                                                                                 </div>
-                                                                                {/* Target / Actual Header */}
-                                                                                <div style={{ display: 'flex', borderBottom: '1px dashed #cbd5e1', marginBottom: 8 }}>
-                                                                                    {(() => {
-                                                                                        const prevForHeader = getPrevSets(exerciseData.name || ex.name, sKey);
-                                                                                        const prevDateLabel = (() => { const raw = prevForHeader?.date; if (!raw) return null; const d = new Date(raw.slice(0, 10)); return isNaN(d.getTime()) ? null : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); })();
-                                                                                        return <div style={{ width: '130px', textAlign: 'center', fontWeight: 'bold', fontSize: '0.85rem', color: prevDateLabel ? 'var(--secondary-foreground)' : 'var(--primary)', padding: '4px 0' }}>{prevDateLabel ? <span>🕐 {prevDateLabel}</span> : 'Prescribed'}</div>;
-                                                                                    })()}
-                                                                                    <div style={{ flex: 1, position: 'relative' }}>
-                                                                                        <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: 1, background: 'var(--card-border)' }}></div>
-                                                                                        <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '0.85rem', color: 'var(--primary)', padding: '4px 0', background: 'var(--card-bg)' }}>Actual</div>
-                                                                                    </div>
-                                                                                </div>
+                                                                                {/* TAB BAR */}
+                                                                                {(() => {
+                                                                                    const prevForHeader = getPrevSets(exerciseData.name || ex.name, sKey);
+                                                                                    const prevDateLabel = (() => { const raw = prevForHeader?.date; if (!raw) return null; const d = new Date(raw.slice(0, 10)); return isNaN(d.getTime()) ? null : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); })();
+                                                                                    const hasPrev = !!prevForHeader;
+                                                                                    const currentTab = activeTabs[exKey] || 'actual';
+                                                                                    
+                                                                                    return (
+                                                                                        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                                                                                            <button
+                                                                                                onClick={() => { if (hasPrev) setActiveTabs(prev => ({ ...prev, [exKey]: 'previous' })); }}
+                                                                                                style={{
+                                                                                                    flex: 1, padding: '8px 4px', borderRadius: '8px', border: '1px solid var(--card-border)',
+                                                                                                    background: currentTab === 'previous' ? 'var(--primary)' : 'var(--card-bg)',
+                                                                                                    color: currentTab === 'previous' ? '#fff' : (hasPrev ? 'var(--foreground)' : 'var(--secondary-foreground)'),
+                                                                                                    opacity: hasPrev ? 1 : 0.5, cursor: hasPrev ? 'pointer' : 'not-allowed',
+                                                                                                    fontWeight: 600, fontSize: '0.8rem', transition: 'all 0.2s'
+                                                                                                }}
+                                                                                            >
+                                                                                                {prevDateLabel ? `Prev: ${prevDateLabel}` : 'Previous'}
+                                                                                            </button>
+                                                                                            <button
+                                                                                                onClick={() => setActiveTabs(prev => ({ ...prev, [exKey]: 'prescribed' }))}
+                                                                                                style={{
+                                                                                                    flex: 1, padding: '8px 4px', borderRadius: '8px', border: '1px solid var(--card-border)',
+                                                                                                    background: currentTab === 'prescribed' ? 'var(--primary)' : 'var(--card-bg)',
+                                                                                                    color: currentTab === 'prescribed' ? '#fff' : 'var(--foreground)',
+                                                                                                    cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem', transition: 'all 0.2s'
+                                                                                                }}
+                                                                                            >
+                                                                                                Prescribed
+                                                                                            </button>
+                                                                                            <button
+                                                                                                onClick={() => setActiveTabs(prev => ({ ...prev, [exKey]: 'actual' }))}
+                                                                                                style={{
+                                                                                                    flex: 1, padding: '8px 4px', borderRadius: '8px', border: '1px solid var(--card-border)',
+                                                                                                    background: currentTab === 'actual' ? 'var(--primary)' : 'var(--card-bg)',
+                                                                                                    color: currentTab === 'actual' ? '#fff' : 'var(--foreground)',
+                                                                                                    cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem', transition: 'all 0.2s'
+                                                                                                }}
+                                                                                            >
+                                                                                                Actual
+                                                                                            </button>
+                                                                                        </div>
+                                                                                    );
+                                                                                })()}
 
                                                                                 <div style={{ display: 'flex', marginBottom: 8, fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)' }}>
-                                                                                    <div style={{ display: 'flex', width: '130px', justifyContent: 'center', gap: 4 }}>
-                                                                                        <span style={{ flex: 1, textAlign: 'center' }}>Weight</span>
-                                                                                        <span style={{ flex: 1, textAlign: 'center' }}>Reps</span>
-                                                                                        <span style={{ flex: 1, textAlign: 'center' }}>RPE</span>
-                                                                                    </div>
-                                                                                    <div style={{ position: 'relative', width: 1, background: 'var(--card-border)', margin: '0 8px' }}></div>
-                                                                                    <div style={{ display: 'flex', flex: 1, justifyContent: 'center', gap: 4 }}>
-                                                                                        <span style={{ flex: 1, textAlign: 'center' }}>Weight</span>
-                                                                                        <span style={{ flex: 1, textAlign: 'center' }}>Reps</span>
-                                                                                        <span style={{ flex: 1, textAlign: 'center' }}>RPE</span>
-                                                                                    </div>
+                                                                                    <span style={{ flex: 1, textAlign: 'center' }}>Weight</span>
+                                                                                    <span style={{ flex: 1, textAlign: 'center' }}>Reps</span>
+                                                                                    <span style={{ flex: 1, textAlign: 'center' }}>RPE</span>
+                                                                                    {(!activeTabs[exKey] || activeTabs[exKey] === 'actual') && <div style={{ width: '40px' }} />}
                                                                                 </div>
 
                                                                                 {/* Set rows */}
@@ -1562,52 +1632,68 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                     const actual = isEdit ? set.actual : { weight: '', reps: '', rpe: '' };
                                                                                     const prev = getPrevSets(exerciseData.name || ex.name, sKey);
                                                                                     const prevSet = prev?.sets?.[setIdx];
+                                                                                    const currentTab = activeTabs[exKey] || 'actual';
+
                                                                                     return (
-                                                                                        <div key={setIdx} style={{ display: 'flex', alignItems: 'center', padding: '6px 0', borderBottom: '1px dashed #e2e8f0' }}>
-                                                                                            {/* Target side — shows prev logged if available, else coach target */}
-                                                                                            <div style={{ display: 'flex', width: '130px', justifyContent: 'center', gap: 4 }}>
-                                                                                                {(['weight', 'reps', 'rpe'] as const).map(f => {
-                                                                                                    const prevVal = (prevSet && f === 'weight') ? toDisplay(prevSet.weight) : '';
-                                                                                                    const targVal = f === 'weight' ? toDisplay(target[f]) : target[f];
-                                                                                                    const displayVal = prevVal || targVal || '\u00A0';
-                                                                                                    const isPrev = !!prevVal;
-                                                                                                    return (
-                                                                                                        <div key={f} style={{
-                                                                                                            flex: 1, padding: '6px 4px',
-                                                                                                            border: `1px solid ${isPrev ? 'rgba(125,135,210,0.35)' : '#cbd5e1'}`,
-                                                                                                            borderRadius: 4,
-                                                                                                            background: isPrev ? 'rgba(125,135,210,0.08)' : 'var(--background)',
-                                                                                                            textAlign: 'center', fontSize: '0.9rem',
-                                                                                                            color: isPrev ? 'var(--primary)' : 'var(--secondary-foreground)',
-                                                                                                            fontWeight: isPrev ? 600 : 400,
-                                                                                                        }}>
-                                                                                                            {displayVal}
+                                                                                        <div key={setIdx} style={{ display: 'flex', alignItems: 'center', padding: '6px 0', gap: '8px', borderBottom: '1px dashed #e2e8f0' }}>
+                                                                                            {currentTab === 'previous' && (
+                                                                                                <div style={{ display: 'flex', flex: 1, gap: '8px' }}>
+                                                                                                    {(['weight', 'reps', 'rpe'] as const).map(f => (
+                                                                                                        <div key={f} style={{ flex: 1, padding: '8px', border: '1px solid rgba(125,135,210,0.35)', borderRadius: '6px', background: 'rgba(125,135,210,0.08)', textAlign: 'center', color: 'var(--primary)', fontWeight: 600 }}>
+                                                                                                            {prevSet ? (f === 'weight' ? toDisplay(prevSet.weight) : prevSet[f]) || '-' : '-'}
                                                                                                         </div>
-                                                                                                    );
-                                                                                                })}
-                                                                                            </div>
-
-                                                                                            {/* Arrow */}
-                                                                                            <button
-                                                                                                onClick={() => setIdx > 0 ? copyPrevSet(sKey, exIdx, setIdx, program.id) : copyTargetToActual(sKey, exIdx, setIdx, program.id)}
-                                                                                                style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 8px', display: 'flex', alignItems: 'center' }}
-                                                                                            >
-                                                                                                <ArrowRight size={18} color="var(--primary)" />
-                                                                                            </button>
-
-                                                                                            {/* Actual side */}
-                                                                                            <div style={{ display: 'flex', flex: 1, alignItems: 'center', gap: 4 }}>
-                                                                                                {['weight', 'reps', 'rpe'].map(f => (
-                                                                                                    <input key={f} type="number" inputMode="decimal"
-                                                                                                        value={f === 'weight' ? toDisplay(actual[f]) : actual[f]}
-                                                                                                        onChange={e => updateSet(sKey, exIdx, setIdx, f, e.target.value, program.id)}
-                                                                                                        onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
-                                                                                                        style={{
-                                                                                                            flex: 1, padding: '6px 4px', border: '1px solid #94a3b8', borderRadius: 4, background: 'var(--background)', textAlign: 'center', fontSize: '0.9rem', color: 'var(--foreground)', width: '100%', outlineColor: 'var(--primary)'
-                                                                                                        }}
-                                                                                                    />
-                                                                                                ))}
-                                                                                            </div>
+                                                                                                    ))}
+                                                                                                </div>
+                                                                                            )}
+                                                                                            {currentTab === 'prescribed' && (
+                                                                                                <div style={{ display: 'flex', flex: 1, gap: '8px' }}>
+                                                                                                    {(['weight', 'reps', 'rpe'] as const).map(f => (
+                                                                                                        <div key={f} style={{ flex: 1, padding: '8px', border: '1px solid var(--card-border)', borderRadius: '6px', background: 'var(--card-bg)', textAlign: 'center', color: 'var(--foreground)' }}>
+                                                                                                            {(f === 'weight' ? toDisplay(target[f]) : target[f]) || '-'}
+                                                                                                        </div>
+                                                                                                    ))}
+                                                                                                </div>
+                                                                                            )}
+                                                                                            {currentTab === 'actual' && (
+                                                                                                <>
+                                                                                                    <div style={{ display: 'flex', flex: 1, alignItems: 'center', gap: '8px' }}>
+                                                                                                        {['weight', 'reps', 'rpe'].map(f => {
+                                                                                                            const placeholderVal = f === 'weight' ? toDisplay(target[f]) : target[f];
+                                                                                                            return (
+                                                                                                                <input key={f} type="number" inputMode="decimal"
+                                                                                                                    value={f === 'weight' ? toDisplay(actual[f]) : actual[f]}
+                                                                                                                    onChange={e => updateSet(sKey, exIdx, setIdx, f, e.target.value, program.id)}
+                                                                                                                    onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
+                                                                                                                    placeholder={placeholderVal?.toString()}
+                                                                                                                    style={{
+                                                                                                                        flex: 1, padding: '8px', border: '1px solid rgba(148,163,184,0.3)', borderRadius: '6px',
+                                                                                                                        background: 'var(--background)', textAlign: 'center', fontSize: '1rem',
+                                                                                                                        color: 'var(--foreground)', width: '100%', outlineColor: 'var(--primary)'
+                                                                                                                    }}
+                                                                                                                />
+                                                                                                            );
+                                                                                                        })}
+                                                                                                    </div>
+                                                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '32px' }}>
+                                                                                                        <button
+                                                                                                            onClick={() => copyTargetToActual(sKey, exIdx, setIdx, program.id)}
+                                                                                                            title="Copy Prescribed"
+                                                                                                            style={{ background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px', fontSize: '0.7rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                                                                        >
+                                                                                                            🎯
+                                                                                                        </button>
+                                                                                                        {prevSet && (
+                                                                                                            <button
+                                                                                                                onClick={() => copyPrevSet(sKey, exIdx, setIdx, program.id)}
+                                                                                                                title="Copy Previous"
+                                                                                                                style={{ background: 'var(--secondary-foreground)', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px', fontSize: '0.7rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                                                                            >
+                                                                                                                🕒
+                                                                                                            </button>
+                                                                                                        )}
+                                                                                                    </div>
+                                                                                                </>
+                                                                                            )}
                                                                                         </div>
                                                                                     );
                                                                                 })}

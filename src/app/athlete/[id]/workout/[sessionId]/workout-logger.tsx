@@ -58,6 +58,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
     const [lastSaved, setLastSaved] = useState(Date.now());
     const [weekDrawerOpen, setWeekDrawerOpen] = useState(false);
     const [warmupDrills, setWarmupDrills] = useState(initialLog?.warmupDrills || sessionWarmupDrills || '');
+    const [activeTabs, setActiveTabs] = useState({});
 
     // Initialize logs
     const [exerciseLogs, setExerciseLogs] = useState(() => {
@@ -432,87 +433,118 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
 
                                 {!ex.isCollapsed && (
                                     <div style={{ padding: '0 8px 16px 8px' }}>
-                                        {/* Target / Actual Header */}
-                                        <div style={{ display: 'flex', borderBottom: '1px dashed var(--card-border)', marginBottom: 8 }}>
-                                            <div style={{ width: '130px', textAlign: 'center', fontWeight: 'bold', fontSize: '0.85rem', color: 'rgba(6, 182, 212, 0.1)', padding: '8px 0 4px 0' }}>Target</div>
-                                            <div style={{ flex: 1, position: 'relative' }}>
-                                                <div style={{ position: 'absolute', top: 0, bottom: 0, left: 0, width: 1, background: 'var(--card-border)' }}></div>
-                                                <div style={{ textAlign: 'center', fontWeight: 'bold', fontSize: '0.85rem', color: 'rgba(6, 182, 212, 0.1)', padding: '8px 0 4px 0', background: 'var(--card-bg)' }}>Actual</div>
-                                            </div>
-                                        </div>
+                                                                        {/* TAB BAR */}
+                                                                        {(() => {
+                                                                            const currentTab = activeTabs[exIndex] || 'actual';
+                                                                            
+                                                                            return (
+                                                                                <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                                                                                    <button
+                                                                                        onClick={() => setActiveTabs(prev => ({ ...prev, [exIndex]: 'prescribed' }))}
+                                                                                        style={{
+                                                                                            flex: 1, padding: '8px 4px', borderRadius: '8px', border: '1px solid var(--card-border)',
+                                                                                            background: currentTab === 'prescribed' ? 'var(--primary)' : 'var(--card-bg)',
+                                                                                            color: currentTab === 'prescribed' ? '#fff' : 'var(--foreground)',
+                                                                                            cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem', transition: 'all 0.2s'
+                                                                                        }}
+                                                                                    >
+                                                                                        Prescribed
+                                                                                    </button>
+                                                                                    <button
+                                                                                        onClick={() => setActiveTabs(prev => ({ ...prev, [exIndex]: 'actual' }))}
+                                                                                        style={{
+                                                                                            flex: 1, padding: '8px 4px', borderRadius: '8px', border: '1px solid var(--card-border)',
+                                                                                            background: currentTab === 'actual' ? 'var(--primary)' : 'var(--card-bg)',
+                                                                                            color: currentTab === 'actual' ? '#fff' : 'var(--foreground)',
+                                                                                            cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem', transition: 'all 0.2s'
+                                                                                        }}
+                                                                                    >
+                                                                                        Actual
+                                                                                    </button>
+                                                                                </div>
+                                                                            );
+                                                                        })()}
 
-                                        <div style={{ display: 'flex', marginBottom: 8, fontSize: '0.8rem', fontWeight: 600, color: 'rgba(6, 182, 212, 0.1)' }}>
-                                            <div style={{ display: 'flex', width: '130px', justifyContent: 'center', gap: 4 }}>
-                                                <span style={{ flex: 1, textAlign: 'center' }}>Weight</span>
-                                                <span style={{ flex: 1, textAlign: 'center' }}>Reps</span>
-                                                <span style={{ flex: 1, textAlign: 'center' }}>RPE</span>
-                                            </div>
-                                            <div style={{ position: 'relative', width: 1, background: 'var(--card-border)', margin: '0 8px' }}></div>
-                                            <div style={{ display: 'flex', flex: 1, justifyContent: 'center', gap: 4 }}>
-                                                <span style={{ flex: 1, textAlign: 'center' }}>Weight</span>
-                                                <span style={{ flex: 1, textAlign: 'center' }}>Reps</span>
-                                                <span style={{ flex: 1, textAlign: 'center' }}>RPE</span>
-                                                <div style={{ width: 24 }}></div>
-                                            </div>
-                                        </div>
+                                                                        <div style={{ display: 'flex', marginBottom: 8, fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)' }}>
+                                                                            <span style={{ flex: 1, textAlign: 'center' }}>Weight</span>
+                                                                            <span style={{ flex: 1, textAlign: 'center' }}>Reps</span>
+                                                                            <span style={{ flex: 1, textAlign: 'center' }}>RPE</span>
+                                                                            {(!activeTabs[exIndex] || activeTabs[exIndex] === 'actual') && <div style={{ width: '40px' }} />}
+                                                                        </div>
 
-                                        {/* Set Rows */}
-                                        {ex.sets.map((set, sIndex) => {
-                                            const repsStr = String(set.target.reps);
-                                            const cleanReps = repsStr.includes('-') ? repsStr.split('-')[0] : repsStr;
+                                                                        {/* Set Rows */}
+                                                                        {ex.sets.map((set, sIndex) => {
+                                                                            const repsStr = String(set.target.reps);
+                                                                            const cleanReps = repsStr.includes('-') ? repsStr.split('-')[0] : repsStr;
+                                                                            const currentTab = activeTabs[exIndex] || 'actual';
 
-                                            return (
-                                                <div key={sIndex} style={{ display: 'flex', alignItems: 'center', padding: '6px 0', borderBottom: '1px dashed #e2e8f0' }}>
-                                                    {/* Target Side */}
-                                                    <div style={{ display: 'flex', width: '130px', justifyContent: 'center', gap: 4 }}>
-                                                        <div style={{ flex: 1, padding: '6px 4px', border: '1px solid var(--card-border)', borderRadius: 4, background: 'var(--background)', textAlign: 'center', fontSize: '0.9rem', color: 'var(--secondary-foreground)' }}>
-                                                            {set.target.weight || '\u00A0'}
-                                                        </div>
-                                                        <div style={{ flex: 1, padding: '6px 4px', border: '1px solid var(--card-border)', borderRadius: 4, background: 'var(--background)', textAlign: 'center', fontSize: '0.9rem', color: 'var(--secondary-foreground)' }}>
-                                                            {cleanReps || '\u00A0'}
-                                                        </div>
-                                                        <div style={{ flex: 1, padding: '6px 4px', border: '1px solid var(--card-border)', borderRadius: 4, background: 'var(--background)', textAlign: 'center', fontSize: '0.9rem', color: 'var(--secondary-foreground)' }}>
-                                                            {set.target.rpe || '\u00A0'}
-                                                        </div>
-                                                    </div>
-
-                                                    {/* Green Arrow Tool */}
-                                                    <button
-                                                        onClick={() => sIndex > 0 ? copyPreviousSet(exIndex, sIndex) : copyTargetToActual(exIndex, sIndex)}
-                                                        style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '0 8px', display: 'flex', alignItems: 'center' }}
-                                                    >
-                                                        <span style={{ color: 'var(--success)', fontSize: '1.4rem' }}>➞</span>
-                                                    </button>
-
-                                                    {/* Actual Side */}
-                                                    <div style={{ display: 'flex', flex: 1, alignItems: 'center', gap: 4 }}>
-                                                        <input
-                                                            type="number"
-                                                            inputMode="decimal"
-                                                            value={set.actual.weight}
-                                                            onChange={(e) => updateSet(exIndex, sIndex, 'weight', e.target.value)}
-                                                            style={{ flex: 1, padding: '6px 4px', border: '1px solid #94a3b8', borderRadius: 4, background: 'var(--background)', textAlign: 'center', fontSize: '0.9rem', color: 'var(--foreground)', width: '100%', outlineColor: 'var(--primary)' }}
-                                                        />
-                                                        <input
-                                                            type="number"
-                                                            inputMode="decimal"
-                                                            value={set.actual.reps}
-                                                            onChange={(e) => updateSet(exIndex, sIndex, 'reps', e.target.value)}
-                                                            style={{ flex: 1, padding: '6px 4px', border: '1px solid #94a3b8', borderRadius: 4, background: 'var(--background)', textAlign: 'center', fontSize: '0.9rem', color: 'var(--foreground)', width: '100%', outlineColor: 'var(--primary)' }}
-                                                        />
-                                                        <input
-                                                            type="number"
-                                                            inputMode="decimal"
-                                                            step="0.5"
-                                                            value={set.actual.rpe}
-                                                            onChange={(e) => updateSet(exIndex, sIndex, 'rpe', e.target.value)}
-                                                            style={{ flex: 1, padding: '6px 4px', border: '1px solid #94a3b8', borderRadius: 4, background: 'var(--background)', textAlign: 'center', fontSize: '0.9rem', color: 'var(--foreground)', width: '100%', outlineColor: 'var(--primary)' }}
-                                                        />
-                                                        <span style={{ color: 'var(--secondary-foreground)', fontSize: '1.2rem', padding: '0 4px', fontWeight: 'bold' }}>...</span>
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
+                                                                            return (
+                                                                                <div key={sIndex} style={{ display: 'flex', alignItems: 'center', padding: '6px 0', gap: '8px', borderBottom: '1px dashed #e2e8f0' }}>
+                                                                                    {currentTab === 'prescribed' && (
+                                                                                        <div style={{ display: 'flex', flex: 1, gap: '8px' }}>
+                                                                                            <div style={{ flex: 1, padding: '8px', border: '1px solid var(--card-border)', borderRadius: '6px', background: 'var(--card-bg)', textAlign: 'center', color: 'var(--foreground)' }}>
+                                                                                                {set.target.weight || '-'}
+                                                                                            </div>
+                                                                                            <div style={{ flex: 1, padding: '8px', border: '1px solid var(--card-border)', borderRadius: '6px', background: 'var(--card-bg)', textAlign: 'center', color: 'var(--foreground)' }}>
+                                                                                                {cleanReps || '-'}
+                                                                                            </div>
+                                                                                            <div style={{ flex: 1, padding: '8px', border: '1px solid var(--card-border)', borderRadius: '6px', background: 'var(--card-bg)', textAlign: 'center', color: 'var(--foreground)' }}>
+                                                                                                {set.target.rpe || '-'}
+                                                                                            </div>
+                                                                                        </div>
+                                                                                    )}
+                                                                                    {currentTab === 'actual' && (
+                                                                                        <>
+                                                                                            <div style={{ display: 'flex', flex: 1, alignItems: 'center', gap: '8px' }}>
+                                                                                                <input
+                                                                                                    type="number"
+                                                                                                    inputMode="decimal"
+                                                                                                    value={set.actual.weight}
+                                                                                                    onChange={(e) => updateSet(exIndex, sIndex, 'weight', e.target.value)}
+                                                                                                    placeholder={set.target.weight?.toString() || ''}
+                                                                                                    style={{ flex: 1, padding: '8px', border: '1px solid #94a3b8', borderRadius: '6px', background: 'var(--background)', textAlign: 'center', fontSize: '1rem', color: 'var(--foreground)', width: '100%', outlineColor: 'var(--primary)' }}
+                                                                                                />
+                                                                                                <input
+                                                                                                    type="number"
+                                                                                                    inputMode="decimal"
+                                                                                                    value={set.actual.reps}
+                                                                                                    onChange={(e) => updateSet(exIndex, sIndex, 'reps', e.target.value)}
+                                                                                                    placeholder={cleanReps?.toString() || ''}
+                                                                                                    style={{ flex: 1, padding: '8px', border: '1px solid #94a3b8', borderRadius: '6px', background: 'var(--background)', textAlign: 'center', fontSize: '1rem', color: 'var(--foreground)', width: '100%', outlineColor: 'var(--primary)' }}
+                                                                                                />
+                                                                                                <input
+                                                                                                    type="number"
+                                                                                                    inputMode="decimal"
+                                                                                                    step="0.5"
+                                                                                                    value={set.actual.rpe}
+                                                                                                    onChange={(e) => updateSet(exIndex, sIndex, 'rpe', e.target.value)}
+                                                                                                    placeholder={set.target.rpe?.toString() || ''}
+                                                                                                    style={{ flex: 1, padding: '8px', border: '1px solid #94a3b8', borderRadius: '6px', background: 'var(--background)', textAlign: 'center', fontSize: '1rem', color: 'var(--foreground)', width: '100%', outlineColor: 'var(--primary)' }}
+                                                                                                />
+                                                                                            </div>
+                                                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '32px' }}>
+                                                                                                <button
+                                                                                                    onClick={() => copyTargetToActual(exIndex, sIndex)}
+                                                                                                    title="Copy Prescribed"
+                                                                                                    style={{ background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px', fontSize: '0.7rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                                                                >
+                                                                                                    🎯
+                                                                                                </button>
+                                                                                                {sIndex > 0 && (
+                                                                                                    <button
+                                                                                                        onClick={() => copyPreviousSet(exIndex, sIndex)}
+                                                                                                        title="Copy Previous Set"
+                                                                                                        style={{ background: 'var(--secondary-foreground)', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px', fontSize: '0.7rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                                                                    >
+                                                                                                        🕒
+                                                                                                    </button>
+                                                                                                )}
+                                                                                            </div>
+                                                                                        </>
+                                                                                    )}
+                                                                                </div>
+                                                                            );
+                                                                        })}
 
                                         {/* Stats row */}
                                         <div style={{ padding: '12px 0 8px 0', borderBottom: '1px dashed var(--card-border)', fontSize: '0.85rem', color: 'var(--foreground)' }}>
