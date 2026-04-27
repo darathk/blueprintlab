@@ -994,17 +994,50 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
     const buildPayload = useCallback(() => {
         // Always snap startDate to Sunday to ensure week alignment
         const snappedStart = snapToSunday(startDate);
-        const start = new Date(snappedStart);
-        const durationDays = weeks.length * 7;
+
+        // ── Compact weeks: trim empty leading/trailing weeks and renumber from 1 ──
+        // This ensures Week 1 is always the first week with actual content,
+        // regardless of how far in the future the program was placed.
+        const firstNonEmptyIdx = weeks.findIndex(w => w.sessions && w.sessions.length > 0);
+        let lastNonEmptyIdx = -1;
+        for (let i = weeks.length - 1; i >= 0; i--) {
+            if (weeks[i].sessions && weeks[i].sessions.length > 0) { lastNonEmptyIdx = i; break; }
+        }
+
+        let compactedWeeks = weeks;
+        let adjustedStart = snappedStart;
+
+        if (firstNonEmptyIdx > 0) {
+            // Shift startDate forward by the number of empty leading weeks
+            const firstWeekNumber = weeks[firstNonEmptyIdx].weekNumber || (firstNonEmptyIdx + 1);
+            const [sy, sm, sd] = snappedStart.split('-').map(Number);
+            const shifted = new Date(sy, sm - 1, sd);
+            shifted.setDate(shifted.getDate() + (firstWeekNumber - 1) * 7);
+            adjustedStart = `${shifted.getFullYear()}-${String(shifted.getMonth() + 1).padStart(2, '0')}-${String(shifted.getDate()).padStart(2, '0')}`;
+        }
+
+        if (firstNonEmptyIdx >= 0 && lastNonEmptyIdx >= 0) {
+            // Slice to only include weeks from first to last non-empty, then renumber from 1
+            compactedWeeks = weeks.slice(firstNonEmptyIdx, lastNonEmptyIdx + 1).map((w, i) => ({
+                ...w,
+                weekNumber: i + 1
+            }));
+        }
+
+        const start = new Date(adjustedStart);
+        const maxWeekNum = compactedWeeks.length > 0
+            ? Math.max(...compactedWeeks.map(w => w.weekNumber))
+            : 0;
+        const durationDays = maxWeekNum * 7;
         start.setDate(start.getDate() + durationDays);
         const endDate = start.toISOString().split('T')[0];
         return {
             id: savedProgramIdRef.current || undefined,
             name: programName || 'Untitled Program',
             athleteId: selectedAthleteId,
-            startDate: snappedStart,
+            startDate: adjustedStart,
             endDate,
-            weeks,
+            weeks: compactedWeeks,
             status: undefined as string | undefined
         };
     }, [programName, startDate, weeks, selectedAthleteId]);
