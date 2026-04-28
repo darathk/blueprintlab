@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import { MessageSquare, Calendar as CalendarIcon, Search, X, MailOpen, LayoutDashboard } from 'lucide-react';
+import { MessageSquare, Calendar as CalendarIcon, Search, X, MailOpen, LayoutDashboard, Pencil } from 'lucide-react';
 import Link from 'next/link';
 import ChatInterface from './ChatInterface';
 import AthleteProgramPane from './AthleteProgramPane';
@@ -273,6 +273,19 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                                 >
                                     <LayoutDashboard size={14} />
                                     Dashboard
+                                </Link>
+                                <Link
+                                    href={`/dashboard/athletes/${selectedId}#programs`}
+                                    style={{
+                                        display: 'flex', alignItems: 'center', gap: 6,
+                                        background: 'rgba(125,135,210,0.2)',
+                                        border: '1px solid rgba(125,135,210,0.3)', borderRadius: 6, padding: '6px 10px',
+                                        color: 'var(--primary)', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                                        textDecoration: 'none', transition: 'background 0.2s',
+                                    }}
+                                >
+                                    <Pencil size={14} />
+                                    Edit Program
                                 </Link>
                                 <button
                                     onClick={() => setShowProgram(!showProgram)}
