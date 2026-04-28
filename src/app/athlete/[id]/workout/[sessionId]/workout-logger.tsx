@@ -528,7 +528,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                                                                                     title="Copy Prescribed"
                                                                                                     style={{ background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px', fontSize: '0.7rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                                                                                 >
-                                                                                                    🎯
+                                                                                                    Rx
                                                                                                 </button>
                                                                                                 {sIndex > 0 && (
                                                                                                     <button
@@ -536,7 +536,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                                                                                         title="Copy Previous Set"
                                                                                                         style={{ background: 'var(--secondary-foreground)', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px', fontSize: '0.7rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                                                                                     >
-                                                                                                        🕒
+                                                                                                        Prev
                                                                                                     </button>
                                                                                                 )}
                                                                                             </div>

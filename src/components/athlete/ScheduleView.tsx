@@ -1084,7 +1084,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                 title="Copy Prescribed"
                                                                                                 style={{ background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px', fontSize: '0.7rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                                                                             >
-                                                                                                🎯
+                                                                                                Rx
                                                                                             </button>
                                                                                             {prevSet && (
                                                                                                 <button
@@ -1092,7 +1092,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                     title="Copy Previous"
                                                                                                     style={{ background: 'var(--secondary-foreground)', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px', fontSize: '0.7rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                                                                                 >
-                                                                                                    🕒
+                                                                                                    Prev
                                                                                                 </button>
                                                                                             )}
                                                                                         </div>
@@ -1680,7 +1680,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                             title="Copy Prescribed"
                                                                                                             style={{ background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px', fontSize: '0.7rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                                                                                         >
-                                                                                                            🎯
+                                                                                                            Rx
                                                                                                         </button>
                                                                                                         {prevSet && (
                                                                                                             <button
@@ -1688,7 +1688,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                                 title="Copy Previous"
                                                                                                                 style={{ background: 'var(--secondary-foreground)', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px', fontSize: '0.7rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
                                                                                                             >
-                                                                                                                🕒
+                                                                                                                Prev
                                                                                                             </button>
                                                                                                         )}
                                                                                                     </div>
