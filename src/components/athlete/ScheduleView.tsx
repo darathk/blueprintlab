@@ -636,9 +636,9 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                 {d.date.getDate()}
                             </span>
                             {/* Session/Meet indicators */}
-                            <div style={{ display: 'flex', gap: '2px', alignItems: 'center' }}>
-                                {d.isMeet && <span style={{ fontSize: '0.65rem' }}>🏆</span>}
-                                <div style={{
+                            <div style={{ display: 'flex', gap: '2px', alignItems: 'center', justifyContent: 'center', width: '100%', minHeight: '14px' }}>
+                                {d.isMeet && <span style={{ fontSize: '0.65rem', lineHeight: 1, display: 'block', textAlign: 'center' }}>🏆</span>}
+                                {!d.isMeet && <div style={{
                                     width: 5,
                                     height: 5,
                                     borderRadius: '50%',
@@ -647,7 +647,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                             : d.hasActiveSession ? 'var(--accent)' : 'rgba(148, 163, 184, 0.4)'
                                         : 'transparent',
                                     transition: 'background 0.2s',
-                                }} />
+                                }} />}
                             </div>
                         </div>
                     );
@@ -1318,7 +1318,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                 color: 'var(--foreground)', cursor: 'pointer', fontSize: '1rem', fontWeight: 600
                                             }}
                                         >
-                                            <span>Week {weekDisplayNum} — {weekDateRangeFromDate(program.startDate, weekNum)} <span style={{ fontWeight: 400, color: 'var(--secondary-foreground)', fontSize: '0.85rem' }}>• {sessions.length} session{sessions.length !== 1 ? 's' : ''}</span></span>
+                                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Week {weekDisplayNum} — {weekDateRangeFromDate(program.startDate, weekNum)} <span style={{ fontWeight: 400, color: 'var(--secondary-foreground)', fontSize: '0.85rem' }}>• {sessions.length} session{sessions.length !== 1 ? 's' : ''}</span></span>
                                             <span style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', transition: 'transform 200ms', transform: weekOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
                                         </button>
                                         {/* Week Overview Button */}
