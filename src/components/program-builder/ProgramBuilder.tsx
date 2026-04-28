@@ -273,7 +273,7 @@ const BuilderExerciseCard = ({ exercise, onUpdate, onRemove, onDragStart, onDrag
 
 
 
-export default function ProgramBuilder({ athleteId, initialData = null, athletes = [], initialExercises = null, athleteLiftTargets = null, athleteTrainingSchedule = null, athleteName = '', existingPrograms = [], initialCoachNotes = null }: { athleteId?: string, initialData?: any, athletes?: any[], initialExercises?: any, athleteLiftTargets?: any, athleteTrainingSchedule?: string | null, athleteName?: string, existingPrograms?: any[], initialCoachNotes?: any[] | null }) {
+export default function ProgramBuilder({ athleteId, initialData = null, athletes = [], initialExercises = null, athleteLiftTargets = null, athleteTrainingSchedule = null, athleteName = '', existingPrograms = [], initialCoachNotes = null, isEmbedded = false }: { athleteId?: string, initialData?: any, athletes?: any[], initialExercises?: any, athleteLiftTargets?: any, athleteTrainingSchedule?: string | null, athleteName?: string, existingPrograms?: any[], initialCoachNotes?: any[] | null, isEmbedded?: boolean }) {
     const router = useRouter();
     const [programName, setProgramName] = useState('');
     const [startDate, setStartDate] = useState(() => snapToSunday(new Date().toISOString().split('T')[0]));
@@ -1331,6 +1331,13 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
             });
 
             if (res.ok) {
+                if (isEmbedded) {
+                    alert('Program saved successfully!');
+                    // In embedded mode, we don't redirect. The parent component will handle state if needed.
+                    setIsSaving(false);
+                    return;
+                }
+
                 // POST/PUT call revalidatePath() server-side, so the destination
                 // already has fresh data — no router.refresh() needed. Wrapping
                 // push() in startNavigation keeps isNavigating true until the
