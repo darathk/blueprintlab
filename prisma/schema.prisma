@@ -37,6 +37,9 @@ model Athlete {
   coachNotes        CoachNote[]        @relation("CoachNotes")
   athleteNotes      CoachNote[]        @relation("AthleteNotes")
   travelEvents      TravelEvent[]
+  personalRecords   PersonalRecord[]
+  plannedTopSets    PlannedTopSet[]  @relation("AthleteTopSets")
+  coachTopSets      PlannedTopSet[]  @relation("CoachTopSets")
 
   @@index([coachId])
 }
@@ -182,5 +185,52 @@ model Announcement {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([coachId])
+}
+
+model PersonalRecord {
+  id           String   @id @default(uuid())
+  athleteId    String
+  athlete      Athlete  @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  exerciseName String
+  weight       Float
+  reps         Int
+  rpe          Float?
+  unit         String   @default("lbs")
+  videoUrl     String?
+  videoType    String?
+  sessionId    String?  // programId_wX_dY
+  programName  String?
+  weekNum      Int?
+  dayNum       Int?
+  note         String?
+  date         String   // YYYY-MM-DD
+  createdAt    DateTime @default(now())
+
+  @@index([athleteId, date])
+}
+
+model PlannedTopSet {
+  id           String   @id @default(uuid())
+  athleteId    String
+  athlete      Athlete  @relation("AthleteTopSets", fields: [athleteId], references: [id], onDelete: Cascade)
+  coachId      String?
+  coach        Athlete? @relation("CoachTopSets", fields: [coachId], references: [id], onDelete: SetNull)
+  exerciseName String
+  weight       String?  // planned weight
+  reps         String?  // planned reps
+  rpe          String?  // planned RPE
+  unit         String   @default("lbs")
+  sessionId    String   // programId_wX_dY
+  programId    String
+  weekNum      Int
+  dayNum       Int
+  note         String?
+  date         String?  // YYYY-MM-DD target date
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@unique([athleteId, sessionId, exerciseName])
+  @@index([athleteId])
   @@index([coachId])
 }

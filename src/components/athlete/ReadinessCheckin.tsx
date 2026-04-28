@@ -361,20 +361,27 @@ export default function ReadinessCheckin({ athleteId, sessionKey, programId, onR
                 : '#ef4444'
         : 'var(--secondary-foreground)';
 
+    // Abbreviated labels for the submitted summary
+    const METRIC_ABBREVS: Record<string, string> = {
+        leg_soreness: 'Leg', push_soreness: 'Push', pull_soreness: 'Pull',
+        tiredness: 'Tired', recovery: 'Rec', motivation: 'Motive', training_load: 'Load',
+    };
+
     // Submitted summary bar
     if (submitted && !expanded) {
         return (
             <button
                 onClick={() => setExpanded(true)}
                 style={{
-                    width: '100%', display: 'flex', flexDirection: 'column', gap: 8,
-                    background: 'rgba(16, 185, 129, 0.08)', border: '1px solid rgba(16, 185, 129, 0.2)',
-                    borderRadius: 10, padding: '10px 12px', cursor: 'pointer', marginBottom: 12,
-                    boxSizing: 'border-box',
+                    width: '100%', display: 'flex', flexDirection: 'column', gap: 0,
+                    background: 'rgba(16, 185, 129, 0.06)',
+                    border: '1px solid rgba(16, 185, 129, 0.18)',
+                    borderRadius: 14, padding: 0, cursor: 'pointer', marginBottom: 12,
+                    boxSizing: 'border-box', overflow: 'hidden',
                 }}
             >
                 {/* Top row: icon + label + avg */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '12px 14px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <Activity size={15} style={{ color: '#10b981', flexShrink: 0 }} />
                         <span style={{ fontSize: 13, color: 'var(--foreground)', fontWeight: 600 }}>Readiness</span>
@@ -386,17 +393,24 @@ export default function ReadinessCheckin({ athleteId, sessionKey, programId, onR
                         <ChevronDown size={14} style={{ color: 'var(--secondary-foreground)' }} />
                     </div>
                 </div>
-                {/* Bottom row: score pills */}
-                <div style={{ display: 'flex', gap: 4, width: '100%', justifyContent: 'space-between' }}>
+                {/* Separator */}
+                <div style={{ height: 1, background: 'rgba(16, 185, 129, 0.12)', width: '100%' }} />
+                {/* Bottom row: score pills with labels */}
+                <div style={{ display: 'flex', gap: 6, width: '100%', justifyContent: 'space-between', padding: '10px 12px 12px' }}>
                     {METRICS.map(m => (
-                        <div key={m.id} style={{
-                            flex: 1, height: 22, borderRadius: 5, fontSize: 10, fontWeight: 700,
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            background: `${SCORE_COLORS[scores[m.id]] || '#555'}22`,
-                            color: SCORE_COLORS[scores[m.id]] || '#999',
-                            border: `1px solid ${SCORE_COLORS[scores[m.id]] || '#555'}44`,
-                        }}>
-                            {scores[m.id]}
+                        <div key={m.id} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, minWidth: 0 }}>
+                            <div style={{
+                                width: '100%', height: 28, borderRadius: 7, fontSize: 12, fontWeight: 800,
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                background: `${SCORE_COLORS[scores[m.id]] || '#555'}18`,
+                                color: SCORE_COLORS[scores[m.id]] || '#999',
+                                border: `1px solid ${SCORE_COLORS[scores[m.id]] || '#555'}33`,
+                            }}>
+                                {scores[m.id]}
+                            </div>
+                            <span style={{ fontSize: 8, fontWeight: 600, color: 'var(--secondary-foreground)', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
+                                {METRIC_ABBREVS[m.id] || m.label}
+                            </span>
                         </div>
                     ))}
                 </div>

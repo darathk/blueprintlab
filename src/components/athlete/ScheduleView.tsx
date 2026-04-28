@@ -10,6 +10,8 @@ import { getExerciseCategory } from '@/lib/exercise-db';
 const ExerciseFeedback = dynamic(() => import('@/components/athlete/ExerciseFeedback'), { ssr: false });
 const ReadinessCheckin = dynamic(() => import('@/components/athlete/ReadinessCheckin'), { ssr: false });
 const CelebrationScreen = dynamic(() => import('@/components/athlete/CelebrationScreen'), { ssr: false });
+const PRToggle = dynamic(() => import('@/components/athlete/PRToggle'), { ssr: false });
+const PlannedTopSetInput = dynamic(() => import('@/components/athlete/PlannedTopSetInput'), { ssr: false });
 
 /* ─────────── constants ─────────── */
 const CATEGORY_COLORS: Record<string, string> = {
@@ -889,6 +891,21 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                     </div>
                                                 )}
 
+                                                {/* Planned Top Set Input — visible even when session is locked */}
+                                                {!isCoachView && !readySessions.has(sKey) && (
+                                                    <div style={{ padding: '8px 12px' }}>
+                                                        <PlannedTopSetInput
+                                                            athleteId={athleteId}
+                                                            sessionId={sKey}
+                                                            programId={program.id}
+                                                            weekNum={weekNum}
+                                                            dayNum={session.day || 1}
+                                                            exercises={exercises.map((e: any) => ({ name: e.name }))}
+                                                            unit={unit}
+                                                        />
+                                                    </div>
+                                                )}
+
                                                 {(editState[sKey] || exercises).map((ex: any, exIdx: number) => {
                                                     const isEdit = !!editState[sKey];
                                                     const exerciseData = isEdit ? editState[sKey][exIdx] : ex;
@@ -1124,6 +1141,19 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                         unit={unit}
                                                                         sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any, i: number) => ({ setNumber: i + 1, actual: s.actual || { weight: '', reps: '', rpe: '' } }))}
                                                                     />
+                                                                    {!isCoachView && (
+                                                                        <PRToggle
+                                                                            athleteId={athleteId}
+                                                                            exerciseName={exerciseData.name || ex.name}
+                                                                            sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any) => (s.actual || { weight: '', reps: '', rpe: '' }))}
+                                                                            unit={unit}
+                                                                            sessionId={sKey}
+                                                                            programName={program.name}
+                                                                            weekNum={weekDisplayNum}
+                                                                            dayNum={sessionNum}
+                                                                            date={new Date().toISOString().split('T')[0]}
+                                                                        />
+                                                                    )}
                                                                 </div>
                                                             )}
                                                         </div>
@@ -1487,6 +1517,21 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                 </div>
                                                             )}
 
+                                                            {/* Planned Top Set Input — visible even when session is locked */}
+                                                            {!isCoachView && !readySessions.has(sKey) && (
+                                                                <div style={{ padding: '8px 12px' }}>
+                                                                    <PlannedTopSetInput
+                                                                        athleteId={athleteId}
+                                                                        sessionId={sKey}
+                                                                        programId={program.id}
+                                                                        weekNum={weekNum}
+                                                                        dayNum={session.day || 1}
+                                                                        exercises={exercises.map((e: any) => ({ name: e.name }))}
+                                                                        unit={unit}
+                                                                    />
+                                                                </div>
+                                                            )}
+
                                                             {(editState[sKey] || exercises).map((ex: any, exIdx: number) => {
                                                                 const isEdit = !!editState[sKey];
                                                                 const exerciseData = isEdit ? editState[sKey][exIdx] : ex;
@@ -1724,6 +1769,19 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                     unit={unit}
                                                                                     sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any, i: number) => ({ setNumber: i + 1, actual: s.actual || { weight: '', reps: '', rpe: '' } }))}
                                                                                 />
+                                                                                {!isCoachView && (
+                                                                                    <PRToggle
+                                                                                        athleteId={athleteId}
+                                                                                        exerciseName={exerciseData.name || ex.name}
+                                                                                        sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any) => (s.actual || { weight: '', reps: '', rpe: '' }))}
+                                                                                        unit={unit}
+                                                                                        sessionId={sKey}
+                                                                                        programName={program.name}
+                                                                                        weekNum={weekDisplayNum}
+                                                                                        dayNum={sessionNum}
+                                                                                        date={new Date().toISOString().split('T')[0]}
+                                                                                    />
+                                                                                )}
                                                                             </div>
                                                                         )}
                                                                     </div>

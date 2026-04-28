@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { calculateSimpleE1RM, calculateStress } from '@/lib/stress-index';
 import { getExerciseCategory } from '@/lib/exercise-db';
 import ExerciseFeedback from '@/components/athlete/ExerciseFeedback';
+import PRToggle from '@/components/athlete/PRToggle';
 
 // Category-based colors for exercise names
 const CATEGORY_COLORS = {
@@ -595,6 +596,17 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                             blockName={blockName}
                                             sessionId={sessionId}
                                             sets={ex.sets}
+                                        />
+                                        <PRToggle
+                                            athleteId={athleteId}
+                                            exerciseName={ex.name}
+                                            sets={ex.sets.map(s => (s.actual || { weight: '', reps: '', rpe: '' }))}
+                                            unit="lbs"
+                                            sessionId={sessionId}
+                                            programName={blockName}
+                                            weekNum={weekNum}
+                                            dayNum={dayNum}
+                                            date={new Date().toISOString().split('T')[0]}
                                         />
                                     </div>
                                 )}
