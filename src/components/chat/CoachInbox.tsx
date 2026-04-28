@@ -6,6 +6,7 @@ import { MessageSquare, Calendar as CalendarIcon, Search, X, MailOpen, LayoutDas
 import Link from 'next/link';
 import ChatInterface from './ChatInterface';
 import AthleteProgramPane from './AthleteProgramPane';
+import AthleteProgramEditPane from './AthleteProgramEditPane';
 
 interface Message {
     id: string; senderId: string; receiverId: string; content: string;
@@ -24,7 +25,8 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
     const [selectedId, setSelectedId] = useState<string | null>(initialAthleteId || null);
     const selectedConvo = convos.find(c => c.athleteId === selectedId);
     const [isMobile, setIsMobile] = useState(false);
-    const [showProgram, setShowProgram] = useState(false);
+    const [activeSidebar, setActiveSidebar] = useState<'view' | 'edit' | null>(null);
+    const [builderActive, setBuilderActive] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
 
     // Sort conversations: unread first, then by latest message
@@ -189,7 +191,8 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                         <div key={c.athleteId} role="button" tabIndex={0} onClick={(e) => {
                             if ((e.target as HTMLElement).closest('.mark-unread-btn')) return;
                             setSelectedId(c.athleteId);
-                            setShowProgram(false);
+                            setActiveSidebar(null);
+                            setBuilderActive(false);
                             // User is actively opening this chat — clear any manual-unread
                             // protection so subsequent inbox refetches reflect true read state.
                             manuallyUnreadRef.current.delete(c.athleteId);
@@ -275,34 +278,36 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                                     <LayoutDashboard size={14} />
                                     {!isMobile && 'Dashboard'}
                                 </Link>
-                                <Link
-                                    href={`/dashboard/athletes/${selectedId}#programs`}
-                                    title="Edit Program"
+                                <button
+                                    onClick={() => setActiveSidebar(activeSidebar === 'edit' ? null : 'edit')}
+                                    title={activeSidebar === 'edit' ? 'Close Editor' : 'Edit Program'}
                                     style={{
                                         display: 'flex', alignItems: 'center', gap: 5,
-                                        background: 'rgba(125,135,210,0.2)',
-                                        border: '1px solid rgba(125,135,210,0.3)', borderRadius: 6,
+                                        background: activeSidebar === 'edit' ? 'var(--primary)' : 'rgba(125,135,210,0.2)',
+                                        border: activeSidebar === 'edit' ? 'none' : '1px solid rgba(125,135,210,0.3)',
+                                        borderRadius: 6,
                                         padding: isMobile ? '6px 7px' : '6px 10px',
-                                        color: 'var(--primary)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                                        textDecoration: 'none', transition: 'background 0.2s', whiteSpace: 'nowrap',
+                                        color: activeSidebar === 'edit' ? '#fff' : 'var(--primary)',
+                                        fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                                        transition: 'background 0.2s', whiteSpace: 'nowrap',
                                     }}
                                 >
                                     <Pencil size={14} />
-                                    {!isMobile && 'Edit Program'}
-                                </Link>
+                                    {!isMobile && (activeSidebar === 'edit' ? 'Close Editor' : 'Edit Program')}
+                                </button>
                                 <button
-                                    onClick={() => setShowProgram(!showProgram)}
-                                    title={showProgram ? 'Hide Program' : 'View Program'}
+                                    onClick={() => setActiveSidebar(activeSidebar === 'view' ? null : 'view')}
+                                    title={activeSidebar === 'view' ? 'Hide Program' : 'View Program'}
                                     style={{
                                         display: 'flex', alignItems: 'center', gap: 5,
-                                        background: showProgram ? 'var(--primary)' : 'rgba(255,255,255,0.1)',
+                                        background: activeSidebar === 'view' ? 'var(--primary)' : 'rgba(255,255,255,0.1)',
                                         border: 'none', borderRadius: 6, padding: isMobile ? '7px 8px' : '6px 10px',
                                         color: '#fff', fontSize: 12, fontWeight: 500, cursor: 'pointer',
                                         transition: 'background 0.2s', whiteSpace: 'nowrap',
                                     }}
                                 >
                                     <CalendarIcon size={14} />
-                                    {!isMobile && (showProgram ? 'Hide Program' : 'View Program')}
+                                    {!isMobile && (activeSidebar === 'view' ? 'Hide Program' : 'View Program')}
                                 </button>
                             </div>
                         }
@@ -310,24 +315,35 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                 )}
             </div>
 
-            {/* Athlete Program Pane */}
-            {showProgram && selectedId && (
+            {/* Athlete Program Pane (View / Edit) */}
+            {activeSidebar && selectedId && (
                 <div style={{
                     position: isMobile ? 'absolute' : 'relative',
                     top: 0, right: 0, bottom: 0, zIndex: 50,
-                    width: isMobile ? '100%' : 400,
+                    width: isMobile ? '100%' : (builderActive ? '75vw' : 400),
+                    maxWidth: isMobile ? '100%' : (builderActive ? 1200 : 400),
                     flexShrink: 0,
                     borderLeft: isMobile ? 'none' : '1px solid rgba(255,255,255,0.08)',
                     display: 'flex',
                     flexDirection: 'column',
                     overflow: 'hidden',
-                    background: 'var(--background)'
+                    background: 'var(--background)',
+                    transition: 'width 0.3s ease, max-width 0.3s ease'
                 }}>
-                    <AthleteProgramPane
-                        athleteId={selectedId}
-                        coachId={coachId}
-                        onClose={() => setShowProgram(false)}
-                    />
+                    {activeSidebar === 'view' ? (
+                        <AthleteProgramPane
+                            athleteId={selectedId}
+                            coachId={coachId}
+                            onClose={() => setActiveSidebar(null)}
+                        />
+                    ) : (
+                        <AthleteProgramEditPane
+                            athleteId={selectedId}
+                            coachId={coachId}
+                            onClose={() => setActiveSidebar(null)}
+                            onBuilderActive={setBuilderActive}
+                        />
+                    )}
                 </div>
             )}
         </div>
