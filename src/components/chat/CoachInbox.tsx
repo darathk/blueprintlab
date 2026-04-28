@@ -318,17 +318,21 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
             {/* Athlete Program Pane (View / Edit) */}
             {activeSidebar && selectedId && (
                 <div style={{
-                    position: isMobile ? 'absolute' : 'relative',
-                    top: 0, right: 0, bottom: 0, zIndex: 50,
-                    width: isMobile ? '100%' : (builderActive ? '75vw' : 400),
-                    maxWidth: isMobile ? '100%' : (builderActive ? 1200 : 400),
+                    position: (isMobile || builderActive) ? 'absolute' : 'relative',
+                    top: 0, 
+                    right: 0, 
+                    bottom: 0, 
+                    left: builderActive ? 0 : 'auto',
+                    zIndex: 50,
+                    width: (isMobile || builderActive) ? '100%' : 400,
+                    maxWidth: '100%',
                     flexShrink: 0,
-                    borderLeft: isMobile ? 'none' : '1px solid rgba(255,255,255,0.08)',
+                    borderLeft: (isMobile || builderActive) ? 'none' : '1px solid rgba(255,255,255,0.08)',
                     display: 'flex',
                     flexDirection: 'column',
                     overflow: 'hidden',
                     background: 'var(--background)',
-                    transition: 'width 0.3s ease, max-width 0.3s ease'
+                    transition: 'all 0.3s ease'
                 }}>
                     {activeSidebar === 'view' ? (
                         <AthleteProgramPane
