@@ -240,7 +240,6 @@ export default function PRToggle({
                             ref={fileRef}
                             type="file"
                             accept="video/*"
-                            capture="environment"
                             onChange={handleVideoSelect}
                             style={{ display: 'none' }}
                             id={inputId}
