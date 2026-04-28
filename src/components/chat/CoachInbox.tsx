@@ -260,45 +260,49 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                         isEmbedded={true}
                         onBack={isMobile ? () => setSelectedId(null) : undefined}
                         headerActions={
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
                                 <Link
                                     href={`/dashboard/athletes/${selectedId}`}
+                                    title="Dashboard"
                                     style={{
-                                        display: 'flex', alignItems: 'center', gap: 6,
+                                        display: 'flex', alignItems: 'center', gap: 5,
                                         background: 'rgba(255,255,255,0.1)',
-                                        border: 'none', borderRadius: 6, padding: '6px 10px',
-                                        color: '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer',
-                                        textDecoration: 'none', transition: 'background 0.2s',
+                                        border: 'none', borderRadius: 6, padding: isMobile ? '7px 8px' : '6px 10px',
+                                        color: '#fff', fontSize: 12, fontWeight: 500, cursor: 'pointer',
+                                        textDecoration: 'none', transition: 'background 0.2s', whiteSpace: 'nowrap',
                                     }}
                                 >
                                     <LayoutDashboard size={14} />
-                                    Dashboard
+                                    {!isMobile && 'Dashboard'}
                                 </Link>
                                 <Link
                                     href={`/dashboard/athletes/${selectedId}#programs`}
+                                    title="Edit Program"
                                     style={{
-                                        display: 'flex', alignItems: 'center', gap: 6,
+                                        display: 'flex', alignItems: 'center', gap: 5,
                                         background: 'rgba(125,135,210,0.2)',
-                                        border: '1px solid rgba(125,135,210,0.3)', borderRadius: 6, padding: '6px 10px',
-                                        color: 'var(--primary)', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                                        textDecoration: 'none', transition: 'background 0.2s',
+                                        border: '1px solid rgba(125,135,210,0.3)', borderRadius: 6,
+                                        padding: isMobile ? '6px 7px' : '6px 10px',
+                                        color: 'var(--primary)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                                        textDecoration: 'none', transition: 'background 0.2s', whiteSpace: 'nowrap',
                                     }}
                                 >
                                     <Pencil size={14} />
-                                    Edit Program
+                                    {!isMobile && 'Edit Program'}
                                 </Link>
                                 <button
                                     onClick={() => setShowProgram(!showProgram)}
+                                    title={showProgram ? 'Hide Program' : 'View Program'}
                                     style={{
-                                        display: 'flex', alignItems: 'center', gap: 6,
+                                        display: 'flex', alignItems: 'center', gap: 5,
                                         background: showProgram ? 'var(--primary)' : 'rgba(255,255,255,0.1)',
-                                        border: 'none', borderRadius: 6, padding: '6px 10px',
-                                        color: '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer',
-                                        transition: 'background 0.2s',
+                                        border: 'none', borderRadius: 6, padding: isMobile ? '7px 8px' : '6px 10px',
+                                        color: '#fff', fontSize: 12, fontWeight: 500, cursor: 'pointer',
+                                        transition: 'background 0.2s', whiteSpace: 'nowrap',
                                     }}
                                 >
                                     <CalendarIcon size={14} />
-                                    {showProgram ? 'Hide Program' : 'View Program'}
+                                    {!isMobile && (showProgram ? 'Hide Program' : 'View Program')}
                                 </button>
                             </div>
                         }
