@@ -1095,24 +1095,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                 );
                                                                                             })}
                                                                                         </div>
-                                                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '32px' }}>
-                                                                                            <button
-                                                                                                onClick={() => copyTargetToActual(sKey, exIdx, setIdx, program.id)}
-                                                                                                title="Copy Prescribed"
-                                                                                                style={{ background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px', fontSize: '0.7rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                                                                            >
-                                                                                                Rx
-                                                                                            </button>
-                                                                                            {prevSet && (
-                                                                                                <button
-                                                                                                    onClick={() => copyPrevSet(sKey, exIdx, setIdx, program.id)}
-                                                                                                    title="Copy Previous"
-                                                                                                    style={{ background: 'var(--secondary-foreground)', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px', fontSize: '0.7rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                                                                                >
-                                                                                                    Prev
-                                                                                                </button>
-                                                                                            )}
-                                                                                        </div>
+
                                                                                     </>
                                                                                 )}
                                                                             </div>
@@ -1719,24 +1702,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                             );
                                                                                                         })}
                                                                                                     </div>
-                                                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', width: '32px' }}>
-                                                                                                        <button
-                                                                                                            onClick={() => copyTargetToActual(sKey, exIdx, setIdx, program.id)}
-                                                                                                            title="Copy Prescribed"
-                                                                                                            style={{ background: 'var(--primary)', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px', fontSize: '0.7rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                                                                                        >
-                                                                                                            Rx
-                                                                                                        </button>
-                                                                                                        {prevSet && (
-                                                                                                            <button
-                                                                                                                onClick={() => copyPrevSet(sKey, exIdx, setIdx, program.id)}
-                                                                                                                title="Copy Previous"
-                                                                                                                style={{ background: 'var(--secondary-foreground)', color: '#fff', border: 'none', borderRadius: '4px', cursor: 'pointer', padding: '4px', fontSize: '0.7rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                                                                                            >
-                                                                                                                Prev
-                                                                                                            </button>
-                                                                                                        )}
-                                                                                                    </div>
+
                                                                                                 </>
                                                                                             )}
                                                                                         </div>
