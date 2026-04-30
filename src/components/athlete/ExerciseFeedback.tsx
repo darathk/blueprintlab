@@ -29,6 +29,7 @@ export default function ExerciseFeedback({
     const [sent, setSent] = useState(false);
     const [error, setError] = useState('');
     const [resolvedCoachId, setResolvedCoachId] = useState(coachIdProp || '');
+    const [attachWarning, setAttachWarning] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
 
     // Media staging (same as chat)
@@ -89,6 +90,24 @@ export default function ExerciseFeedback({
         setOpen(o => !o);
         setSent(false);
         setError('');
+        setAttachWarning(false);
+    };
+
+    // Returns true if all sets that have any data filled in also have both reps AND rpe
+    const setsHaveRepsAndRpe = () => {
+        const filledSets = sets.filter(s => s.actual.weight || s.actual.reps || s.actual.rpe);
+        if (filledSets.length === 0) return false; // no data at all
+        return filledSets.every(s => s.actual.reps && s.actual.rpe);
+    };
+
+    const handleAttachClick = (e: React.MouseEvent) => {
+        if (!setsHaveRepsAndRpe()) {
+            e.preventDefault();
+            setAttachWarning(true);
+            return;
+        }
+        setAttachWarning(false);
+        fileRef.current?.click();
     };
 
     // --- Media handling (mirrors ChatInterface) ---
@@ -439,6 +458,33 @@ export default function ExerciseFeedback({
                         </div>
                     )}
 
+                    {/* Reps/RPE warning card */}
+                    {attachWarning && (
+                        <div style={{
+                            display: 'flex', alignItems: 'flex-start', gap: 10,
+                            background: 'rgba(251,191,36,0.08)',
+                            border: '1px solid rgba(251,191,36,0.4)',
+                            borderRadius: 10, padding: '12px 14px',
+                            animation: 'fadeIn 0.2s ease',
+                        }}>
+                            <div style={{ fontSize: 18, flexShrink: 0, lineHeight: 1.2 }}>⚠️</div>
+                            <div>
+                                <div style={{ fontSize: 13, fontWeight: 700, color: '#fbbf24', marginBottom: 2 }}>
+                                    Log your sets before attaching media
+                                </div>
+                                <div style={{ fontSize: 12, color: 'rgba(251,191,36,0.8)', lineHeight: 1.5 }}>
+                                    Please fill in both <strong>Reps</strong> and <strong>RPE</strong> for each set before you can attach a video or photo.
+                                </div>
+                            </div>
+                            <button
+                                onClick={() => setAttachWarning(false)}
+                                style={{ background: 'none', border: 'none', color: 'rgba(251,191,36,0.6)', cursor: 'pointer', padding: 0, marginLeft: 'auto', flexShrink: 0 }}
+                            >
+                                <X size={14} />
+                            </button>
+                        </div>
+                    )}
+
                     {/* Actions row */}
                     <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                         {/* File picker */}
@@ -451,8 +497,8 @@ export default function ExerciseFeedback({
                             style={{ display: 'none' }}
                             id={inputId}
                         />
-                        <label
-                            htmlFor={inputId}
+                        <button
+                            onClick={handleAttachClick}
                             style={{
                                 display: 'flex', alignItems: 'center', gap: 5,
                                 background: stagedFiles.length > 0 ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.06)',
@@ -464,7 +510,7 @@ export default function ExerciseFeedback({
                         >
                             <Paperclip size={14} />
                             {stagedFiles.length > 0 ? `${stagedFiles.length} file${stagedFiles.length > 1 ? 's' : ''}` : 'Attach'}
-                        </label>
+                        </button>
 
                         {/* Send */}
                         <button
