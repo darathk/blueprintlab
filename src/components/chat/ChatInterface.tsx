@@ -1562,13 +1562,14 @@ export default function ChatInterface({
                             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
                             onPaste={handlePaste}
                             placeholder="Type a message..."
-                            rows={1}
+                            rows={editingMessage ? 6 : 1}
                             disabled={uploading}
                             enterKeyHint="send"
                             style={{
                                 width: '100%', padding: '10px 0 8px', background: 'transparent', border: 'none',
                                 color: 'var(--foreground)', fontSize: 15, outline: 'none', opacity: uploading ? 0.5 : 1,
-                                resize: 'none', lineHeight: '1.5', maxHeight: 120, overflowY: 'auto', fontFamily: 'inherit'
+                                resize: editingMessage ? 'vertical' : 'none', lineHeight: '1.5',
+                                maxHeight: editingMessage ? 320 : 120, overflowY: 'auto', fontFamily: 'inherit'
                             }}
                         />
 
