@@ -307,15 +307,28 @@ export default function ReadinessCheckin({ athleteId, sessionKey, programId, onR
     useEffect(() => {
         (async () => {
             try {
-                const res = await fetch(`/api/readiness?athleteId=${athleteId}`);
+                // cache: 'no-store' prevents the browser from serving a stale
+                // response from a previously-viewed session on the same page.
+                const res = await fetch(`/api/readiness?athleteId=${athleteId}`, { cache: 'no-store' });
                 if (res.ok) {
                     const logs = await res.json();
-                    const sessionLog = logs.find((l: any) => l.scores?._sessionKey === sessionKey);
+                    // Guard: only match logs that actually have a _sessionKey stored.
+                    // Without this, old submissions saved before _sessionKey was added
+                    // (where scores._sessionKey === undefined) would falsely match any
+                    // session whose key also happened to be undefined.
+                    const sessionLog = logs.find(
+                        (l: any) => l.scores?._sessionKey != null && l.scores._sessionKey === sessionKey
+                    );
                     if (sessionLog?.scores) {
                         const { _sessionKey, ...restScores } = sessionLog.scores;
                         setScores(restScores);
                         setSubmitted(true);
                         onReadinessSubmit?.();
+                    } else {
+                        // No prior submission for this session — reset state so a
+                        // re-used component instance doesn't show last session's data.
+                        setScores({});
+                        setSubmitted(false);
                     }
                 }
             } catch { /* ignore */ }
