@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { cache } from 'react';
 import TopNavigation from '@/components/dashboard/TopNavigation';
 import MobileBottomNav, { NavItem } from '@/components/navigation/MobileBottomNav';
-import { Home, MessageSquare, Hammer, Dumbbell, Medal, Settings, ClipboardList, BookTemplate } from 'lucide-react';
+import { Home, MessageSquare, Hammer, Dumbbell, Medal, Settings, ClipboardList, BookTemplate, Star } from 'lucide-react';
 import { UserButton } from '@clerk/nextjs';
 
 // Cache the auth check so it only runs once per request lifecycle
@@ -69,8 +69,8 @@ export default async function DashboardLayout({
     const coachNavItems: NavItem[] = [
         { label: 'Home', href: '/dashboard', icon: <Home size={26} /> },
         { label: 'Messages', href: '/dashboard/messages', icon: <MessageSquare size={26} />, unreadCount },
+        { label: 'Highlights', href: '/dashboard/highlights', icon: <Star size={26} /> },
         { label: 'Board', href: '/dashboard/leaderboard', icon: <Medal size={26} /> },
-        { label: 'Meet Data', href: '/dashboard/meet-data', icon: <ClipboardList size={26} /> },
         { label: 'Loader', href: '/dashboard/plate-loader', icon: <Dumbbell size={26} /> }
     ];
 
