@@ -63,7 +63,9 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                 return;
             }
             setConvos(prev => prev.map(cv =>
-                cv.athleteId === athleteId ? { ...cv, unreadCount: Math.max(cv.unreadCount, 1) } : cv
+                cv.athleteId === athleteId
+                    ? { ...cv, unreadCount: Math.max(cv.unreadCount, 1), lastMessageAt: new Date().toISOString() }
+                    : cv
             ));
             if (selectedId === athleteId) {
                 setSelectedId(null);
