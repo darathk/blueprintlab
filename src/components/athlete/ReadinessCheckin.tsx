@@ -268,12 +268,20 @@ function ExpandedForm({
                     </button>
                 )}
                 {submitted && (
-                    <button onClick={onCollapse} style={{
-                        padding: '8px 20px', borderRadius: 8, border: '1px solid rgba(16,185,129,0.3)',
-                        background: 'rgba(16,185,129,0.1)', color: '#10b981', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                    }}>
-                        ✓ Submitted — Collapse
-                    </button>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                        <button onClick={() => setSubmitted(false)} style={{
+                            padding: '8px 20px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.2)',
+                            background: 'rgba(255,255,255,0.05)', color: 'var(--foreground)', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                        }}>
+                            Edit
+                        </button>
+                        <button onClick={onCollapse} style={{
+                            padding: '8px 20px', borderRadius: 8, border: '1px solid rgba(16,185,129,0.3)',
+                            background: 'rgba(16,185,129,0.1)', color: '#10b981', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                        }}>
+                            ✓ Submitted — Collapse
+                        </button>
+                    </div>
                 )}
                 {!isComplete && !submitted && avgScore && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>

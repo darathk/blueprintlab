@@ -181,7 +181,8 @@ export async function saveLog(logEntry) {
 export const getReadiness = cache(async (coachId) => {
     if (!coachId) return [];
     return prisma.readiness.findMany({
-        where: { athlete: { coachId } }
+        where: { athlete: { coachId } },
+        orderBy: { timestamp: 'desc' }
     });
 });
 
@@ -275,7 +276,8 @@ export const getLogsByAthlete = cache(async (athleteId) => {
 
 export const getReadinessByAthlete = cache(async (athleteId) => {
     return prisma.readiness.findMany({
-        where: { athleteId }
+        where: { athleteId },
+        orderBy: { timestamp: 'desc' }
     });
 });
 
