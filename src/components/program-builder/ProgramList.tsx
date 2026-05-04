@@ -250,19 +250,35 @@ export default function ProgramList({ athleteId, initialPrograms }: { athleteId:
         a.email.toLowerCase().includes(athleteSearch.toLowerCase())
     );
 
-    // Apply timeline filter and sort by date (newest first)
+    const getActualStartDate = (startDate: string, weeks: any[]) => {
+        if (!startDate) return 0;
+        if (!Array.isArray(weeks)) return new Date(startDate).getTime();
+        const nonEmpty = weeks.filter(w => Array.isArray(w.sessions) && w.sessions.length > 0);
+        if (nonEmpty.length === 0) return new Date(startDate).getTime();
+        const [sy, sm, sd] = startDate.split('T')[0].split('-').map(Number);
+        const start = new Date(sy, sm - 1, sd);
+        start.setHours(0, 0, 0, 0);
+        const firstWn = Math.min(...nonEmpty.map(w => w.weekNumber || 1));
+        const firstDay = new Date(start);
+        firstDay.setDate(firstDay.getDate() + (firstWn - 1) * 7);
+        return firstDay.getTime();
+    };
+
+    // Apply timeline filter and sort by active date (newest first)
     const filteredAndSortedPrograms = programs
         .filter((p: any) => {
             const days = TIMELINES[timeline];
             if (days === Infinity) return true;
-            if (!p.startDate) return true; // If no date, include it or exclude it? Let's include for safety
+            if (!p.startDate) return true;
+            const actualStart = getActualStartDate(p.startDate, p.weeks);
+            if (!actualStart) return true;
             const cutoff = new Date();
             cutoff.setDate(cutoff.getDate() - days);
-            return new Date(p.startDate) >= cutoff;
+            return actualStart >= cutoff.getTime();
         })
         .sort((a: any, b: any) => {
-            const dateA = a.startDate ? new Date(a.startDate).getTime() : 0;
-            const dateB = b.startDate ? new Date(b.startDate).getTime() : 0;
+            const dateA = getActualStartDate(a.startDate, a.weeks);
+            const dateB = getActualStartDate(b.startDate, b.weeks);
             return dateB - dateA; // descending
         });
 
