@@ -16,7 +16,16 @@ export default function ProgramList({ athleteId, initialPrograms }: { athleteId:
     const [athletes, setAthletes] = useState<any[]>([]);
     const [actionLoading, setActionLoading] = useState(false);
     const [actionError, setActionError] = useState('');
+    const [timeline, setTimeline] = useState<string>('ALL');
     const dropdownRef = useRef<HTMLDivElement>(null);
+
+    const TIMELINES: Record<string, number> = {
+        '1M': 30,
+        '3M': 90,
+        '6M': 180,
+        '1Y': 365,
+        'ALL': Infinity,
+    };
 
     useEffect(() => {
         if (initialPrograms) return; // Skip fetch if data was provided
@@ -241,11 +250,58 @@ export default function ProgramList({ athleteId, initialPrograms }: { athleteId:
         a.email.toLowerCase().includes(athleteSearch.toLowerCase())
     );
 
+    // Apply timeline filter and sort by date (newest first)
+    const filteredAndSortedPrograms = programs
+        .filter((p: any) => {
+            const days = TIMELINES[timeline];
+            if (days === Infinity) return true;
+            if (!p.startDate) return true; // If no date, include it or exclude it? Let's include for safety
+            const cutoff = new Date();
+            cutoff.setDate(cutoff.getDate() - days);
+            return new Date(p.startDate) >= cutoff;
+        })
+        .sort((a: any, b: any) => {
+            const dateA = a.startDate ? new Date(a.startDate).getTime() : 0;
+            const dateB = b.startDate ? new Date(b.startDate).getTime() : 0;
+            return dateB - dateA; // descending
+        });
+
     return (
         <div style={{ marginTop: '2rem' }}>
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: 'var(--primary)' }}>Assigned Programs</h2>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
-                {programs.map((p: any) => {
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
+                <h2 style={{ fontSize: '1.5rem', margin: 0, color: 'var(--primary)' }}>Assigned Programs</h2>
+                {/* Timeline Filter */}
+                <div style={{ display: 'flex', background: 'rgba(18, 18, 18, 0.6)', borderRadius: '8px', padding: '4px', border: '1px solid var(--card-border)' }}>
+                    {Object.keys(TIMELINES).map(tl => (
+                        <button
+                            key={tl}
+                            onClick={() => setTimeline(tl)}
+                            style={{
+                                padding: '0.4rem 1rem',
+                                background: timeline === tl ? 'var(--primary)' : 'transparent',
+                                color: timeline === tl ? 'white' : 'var(--foreground)',
+                                border: 'none',
+                                cursor: 'pointer',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                borderRadius: '6px',
+                                transition: 'all 0.2s',
+                                boxShadow: timeline === tl ? '0 0 10px rgba(6, 182, 212, 0.3)' : 'none'
+                            }}
+                        >
+                            {tl}
+                        </button>
+                    ))}
+                </div>
+            </div>
+            
+            {filteredAndSortedPrograms.length === 0 ? (
+                <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--secondary-foreground)', background: 'rgba(255,255,255,0.02)', borderRadius: 12, border: '1px dashed rgba(255,255,255,0.1)' }}>
+                    No programs found in the selected time range.
+                </div>
+            ) : (
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
+                    {filteredAndSortedPrograms.map((p: any) => {
                     const isTransferOpen = dropdownOpen?.programId === p.id && dropdownOpen?.mode === 'transfer';
                     const isCopyOpen = dropdownOpen?.programId === p.id && dropdownOpen?.mode === 'copy';
                     const isAnyDropdownOpen = isTransferOpen || isCopyOpen;
@@ -383,6 +439,7 @@ export default function ProgramList({ athleteId, initialPrograms }: { athleteId:
                     );
                 })}
             </div>
+            )}
         </div>
     );
 }
