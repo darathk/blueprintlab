@@ -305,16 +305,9 @@ export default function DotsChart({ athleteId, logs, programs = [], initialGende
                 );
             })()}
 
-            {/* Chart */}
-            {data.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--secondary-foreground)', fontSize: 14, background: 'rgba(15,23,42,0.3)', borderRadius: 12, border: '1px dashed rgba(255,255,255,0.08)' }}>
-                    <div style={{ fontSize: 32, marginBottom: 10 }}>🏋️</div>
-                    <div style={{ fontWeight: 600, marginBottom: 5 }}>No competition lift data {timeline !== 'ALL' ? `in the last ${timeline}` : 'yet'}</div>
-                    <div style={{ fontSize: 12, opacity: 0.7 }}>Sessions with <strong>Squat</strong>, <strong>Competition Bench</strong>, or <strong>Deadlift</strong> logged with weight &amp; reps will appear here.</div>
-                </div>
-            ) : (
-                <div style={{ background: 'rgba(15,23,42,0.4)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.07)', padding: '16px 8px 8px' }}>
-                    {/* Controls Row 1: Mission Filter and Timeline */}
+            {/* Chart Area */}
+            <div style={{ background: 'rgba(15,23,42,0.4)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.07)', padding: '16px 8px 8px' }}>
+                {/* Controls Row 1: Mission Filter and Timeline */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', paddingLeft: 12, paddingRight: 12 }}>
                         {/* Program Filter */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
@@ -387,7 +380,15 @@ export default function DotsChart({ athleteId, logs, programs = [], initialGende
                         </div>
                     </div>
 
-                    <ResponsiveContainer width="100%" height={300}>
+                    {data.length === 0 ? (
+                        <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--secondary-foreground)', fontSize: 14, background: 'rgba(15,23,42,0.3)', borderRadius: 12, border: '1px dashed rgba(255,255,255,0.08)', margin: '0 12px 12px' }}>
+                            <div style={{ fontSize: 32, marginBottom: 10 }}>🏋️</div>
+                            <div style={{ fontWeight: 600, marginBottom: 5 }}>No competition lift data {timeline !== 'ALL' ? `in the last ${timeline}` : 'yet'}</div>
+                            <div style={{ fontSize: 12, opacity: 0.7 }}>Sessions with <strong>Squat</strong>, <strong>Competition Bench</strong>, or <strong>Deadlift</strong> logged with weight &amp; reps will appear here.</div>
+                        </div>
+                    ) : (
+                        <>
+                            <ResponsiveContainer width="100%" height={300}>
                         <AreaChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
                             <defs>
                                 {Object.entries(CHART_COLORS).map(([key, color]) => (
@@ -410,13 +411,14 @@ export default function DotsChart({ athleteId, logs, programs = [], initialGende
                                 <Area yAxisId="dots" type="monotone" dataKey="dots" name="DOTs Score" stroke={CHART_COLORS.dots} strokeWidth={2.5} fill={`url(#dots-grad-dots)`} dot={{ r: 4, fill: CHART_COLORS.dots }} activeDot={{ r: 6 }} connectNulls />
                             )}
                         </AreaChart>
-                    </ResponsiveContainer>
+                            </ResponsiveContainer>
 
-                    <div style={{ textAlign: 'center', fontSize: 10, color: 'rgba(148,163,184,0.5)', marginTop: 4 }}>
-                        Each dot = a logged session · {data.length} session{data.length !== 1 ? 's' : ''} shown
-                    </div>
+                            <div style={{ textAlign: 'center', fontSize: 10, color: 'rgba(148,163,184,0.5)', marginTop: 4 }}>
+                                Each dot = a logged session · {data.length} session{data.length !== 1 ? 's' : ''} shown
+                            </div>
+                        </>
+                    )}
                 </div>
-            )}
         </div>
     );
 }
