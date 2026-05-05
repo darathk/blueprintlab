@@ -493,6 +493,7 @@ export default function ReadinessCheckin({ athleteId, sessionKey, programId, onR
                     onSelect={handleSelect}
                     onSubmit={handleSubmit}
                     onCollapse={() => setExpanded(false)}
+                    setSubmitted={setSubmitted}
                 />
             )}
         </div>
