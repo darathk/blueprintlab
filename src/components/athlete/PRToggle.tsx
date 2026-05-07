@@ -30,14 +30,15 @@ export default function PRToggle({
     const fileRef = useRef<HTMLInputElement>(null);
     const inputId = `pr-video-${useId()}`;
 
-    // Auto-select the heaviest set
+    // Auto-select the heaviest set that actually has data
     const getBestSetIndex = () => {
-        let best = 0, bestWeight = 0;
+        let best = -1, bestWeight = -1;
         sets.forEach((s, i) => {
+            if (!s.weight && !s.reps) return; // Skip empty sets
             const w = parseFloat(s.weight) || 0;
-            if (w > bestWeight) { bestWeight = w; best = i; }
+            if (w >= bestWeight) { bestWeight = w; best = i; }
         });
-        return best;
+        return best >= 0 ? best : 0;
     };
 
     const handleOpen = () => {
@@ -100,7 +101,14 @@ export default function PRToggle({
 
     const handleSubmit = async () => {
         const set = sets[selectedSet];
-        if (!set?.weight || !set?.reps) return;
+        if (!set || (!set.weight && !set.reps)) {
+            alert('Please select a set that has data.');
+            return;
+        }
+        if (!set.weight || !set.reps) {
+            alert('Please make sure both weight and reps are filled out for the selected set. Use 0 for bodyweight exercises.');
+            return;
+        }
 
         setSaving(true);
         setUploadProgress(0);
