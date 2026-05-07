@@ -80,7 +80,7 @@ interface Props {
 /* ── Lateral-scroll card form ── */
 function ExpandedForm({
     scores, submitted, saving, isComplete, avgScore, avgColor,
-    onSelect, onSubmit, onCollapse,
+    onSelect, onSubmit, onCollapse, setSubmitted,
 }: {
     scores: Record<string, number>;
     submitted: boolean;
@@ -91,6 +91,7 @@ function ExpandedForm({
     onSelect: (id: string, val: number) => void;
     onSubmit: () => void;
     onCollapse: () => void;
+    setSubmitted: (val: boolean) => void;
 }) {
     const scrollRef = useRef<HTMLDivElement>(null);
     const [activeIdx, setActiveIdx] = useState(0);
