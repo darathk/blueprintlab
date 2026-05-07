@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { Trophy, ChevronLeft, ChevronRight, Download, Play, User, Calendar, Dumbbell, X } from 'lucide-react';
+import { Trophy, ChevronLeft, ChevronRight, Download, Play, User, Calendar, Dumbbell, X, Trash2 } from 'lucide-react';
 
 interface PR {
     id: string;
@@ -43,6 +43,7 @@ export default function HighlightsClient() {
     const [prs, setPrs] = useState<PR[]>([]);
     const [loading, setLoading] = useState(true);
     const [expandedVideo, setExpandedVideo] = useState<string | null>(null);
+    const [deleting, setDeleting] = useState<string | null>(null);
 
     useEffect(() => {
         fetch('/api/prs?coachId=me')
@@ -85,6 +86,27 @@ export default function HighlightsClient() {
             URL.revokeObjectURL(a.href);
         } catch {
             window.open(url, '_blank');
+        }
+    }, []);
+
+    const handleDelete = useCallback(async (pr: PR) => {
+        const confirmed = window.confirm(
+            `Delete PR for ${pr.exerciseName} (${pr.weight} ${pr.unit} × ${pr.reps})?\n\nThis will also delete the attached video if any. This cannot be undone.`
+        );
+        if (!confirmed) return;
+
+        setDeleting(pr.id);
+        try {
+            const res = await fetch(`/api/prs?id=${pr.id}`, { method: 'DELETE' });
+            if (res.ok) {
+                setPrs(prev => prev.filter(p => p.id !== pr.id));
+            } else {
+                alert('Failed to delete PR. Please try again.');
+            }
+        } catch {
+            alert('Failed to delete PR. Please try again.');
+        } finally {
+            setDeleting(null);
         }
     }, []);
 
@@ -163,6 +185,8 @@ export default function HighlightsClient() {
                             background: 'var(--card-bg)', border: '1px solid var(--card-border)',
                             borderRadius: 14, overflow: 'hidden',
                             transition: 'transform 0.2s, box-shadow 0.2s',
+                            opacity: deleting === pr.id ? 0.5 : 1,
+                            pointerEvents: deleting === pr.id ? 'none' : 'auto',
                         }}>
                             {/* Video thumbnail or placeholder */}
                             {pr.videoUrl ? (
@@ -227,7 +251,7 @@ export default function HighlightsClient() {
                                     }}>
                                         {pr.athlete.name.charAt(0).toUpperCase()}
                                     </div>
-                                    <div style={{ minWidth: 0 }}>
+                                    <div style={{ minWidth: 0, flex: 1 }}>
                                         <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--foreground)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                                             {pr.athlete.name}
                                         </div>
@@ -235,6 +259,23 @@ export default function HighlightsClient() {
                                             {new Date(pr.date + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                                         </div>
                                     </div>
+                                    {/* Delete button */}
+                                    <button
+                                        onClick={() => handleDelete(pr)}
+                                        title="Delete PR"
+                                        style={{
+                                            background: 'rgba(239, 68, 68, 0.08)',
+                                            border: '1px solid rgba(239, 68, 68, 0.2)',
+                                            borderRadius: 8, width: 32, height: 32, cursor: 'pointer',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            color: '#ef4444', flexShrink: 0,
+                                            transition: 'all 0.15s',
+                                        }}
+                                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'; }}
+                                        onMouseLeave={e => { e.currentTarget.style.background = 'rgba(239, 68, 68, 0.08)'; }}
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
                                 </div>
 
                                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, marginBottom: 4 }}>

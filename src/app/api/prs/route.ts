@@ -1,7 +1,16 @@
 import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 import { prisma } from '@/lib/prisma';
+import { supabase } from '@/lib/supabase';
 import { requireAuth, requireAccessToAthlete } from '@/lib/api-auth';
+
+function extractStoragePath(publicUrl: string): string | null {
+    if (!publicUrl) return null;
+    const marker = '/storage/v1/object/public/lift-videos/';
+    const idx = publicUrl.indexOf(marker);
+    if (idx === -1) return null;
+    return publicUrl.substring(idx + marker.length).split('#')[0];
+}
 
 export async function POST(request: Request) {
     const auth = await requireAuth();
@@ -101,6 +110,14 @@ export async function DELETE(request: Request) {
         // Verify access
         const access = await requireAccessToAthlete(pr.athleteId, auth);
         if ('error' in access) return access.error;
+
+        // Clean up video from Supabase storage if present
+        if (pr.videoUrl) {
+            const path = extractStoragePath(pr.videoUrl);
+            if (path) {
+                await supabase.storage.from('lift-videos').remove([path]);
+            }
+        }
 
         await prisma.personalRecord.delete({ where: { id } });
         return NextResponse.json({ success: true });

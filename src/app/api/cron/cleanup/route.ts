@@ -23,58 +23,102 @@ export async function GET(request: Request) {
             return new NextResponse('Unauthorized', { status: 401 });
         }
 
-        // Calculate 101 days ago
-        const cutoffDate = new Date();
-        cutoffDate.setDate(cutoffDate.getDate() - 101);
+        let messagesDeleted = 0;
+        let messageMediaDeleted = 0;
+        let prsDeleted = 0;
+        let prVideosDeleted = 0;
 
-        // 1. Find all messages older than 101 days
+        // ═══ 1. MESSAGE CLEANUP (older than 101 days) ═══
+        const messageCutoff = new Date();
+        messageCutoff.setDate(messageCutoff.getDate() - 101);
+
         const oldMessages = await prisma.message.findMany({
-            where: { createdAt: { lt: cutoffDate } },
+            where: { createdAt: { lt: messageCutoff } },
             select: { id: true, mediaUrl: true }
         });
 
-        if (oldMessages.length === 0) {
-            return NextResponse.json({ success: true, message: 'No messages to clean up.' });
-        }
-
-        // 2. Extract media paths to delete from Supabase
-        const pathsToDelete: string[] = [];
-        for (const msg of oldMessages) {
-            if (msg.mediaUrl) {
-                const path = extractStoragePath(msg.mediaUrl);
-                if (path) pathsToDelete.push(path);
-            }
-        }
-
-        // 3. Delete media from Supabase bucket in chunks (if any)
-        if (pathsToDelete.length > 0) {
-            const chunkSize = 100;
-            for (let i = 0; i < pathsToDelete.length; i += chunkSize) {
-                const chunk = pathsToDelete.slice(i, i + chunkSize);
-                const { error } = await supabase.storage.from('lift-videos').remove(chunk);
-                if (error) {
-                    console.error('Failed to delete some media from Supabase:', error);
+        if (oldMessages.length > 0) {
+            // Extract media paths to delete from Supabase
+            const pathsToDelete: string[] = [];
+            for (const msg of oldMessages) {
+                if (msg.mediaUrl) {
+                    const path = extractStoragePath(msg.mediaUrl);
+                    if (path) pathsToDelete.push(path);
                 }
             }
+
+            // Delete media from Supabase bucket in chunks
+            if (pathsToDelete.length > 0) {
+                const chunkSize = 100;
+                for (let i = 0; i < pathsToDelete.length; i += chunkSize) {
+                    const chunk = pathsToDelete.slice(i, i + chunkSize);
+                    const { error } = await supabase.storage.from('lift-videos').remove(chunk);
+                    if (error) {
+                        console.error('Failed to delete some media from Supabase:', error);
+                    }
+                }
+                messageMediaDeleted = pathsToDelete.length;
+            }
+
+            // Delete messages from Prisma
+            const ids = oldMessages.map(m => m.id);
+
+            await prisma.message.updateMany({
+                where: { replyToId: { in: ids } },
+                data: { replyToId: null }
+            });
+
+            await prisma.message.deleteMany({
+                where: { id: { in: ids } }
+            });
+
+            messagesDeleted = ids.length;
         }
 
-        // 4. Delete messages from Prisma
-        // First delete all the child replies to avoid FK cascade errors if the DB didn't apply SetNull correctly
-        const ids = oldMessages.map(m => m.id);
+        // ═══ 2. PR / HIGHLIGHTS CLEANUP (older than 28 days) ═══
+        const prCutoff = new Date();
+        prCutoff.setDate(prCutoff.getDate() - 28);
+        const prCutoffStr = prCutoff.toISOString().split('T')[0]; // YYYY-MM-DD
 
-        await prisma.message.updateMany({
-            where: { replyToId: { in: ids } },
-            data: { replyToId: null }
+        const oldPRs = await prisma.personalRecord.findMany({
+            where: { date: { lt: prCutoffStr } },
+            select: { id: true, videoUrl: true }
         });
 
-        await prisma.message.deleteMany({
-            where: { id: { in: ids } }
-        });
+        if (oldPRs.length > 0) {
+            // Delete PR videos from Supabase
+            const prPaths: string[] = [];
+            for (const pr of oldPRs) {
+                if (pr.videoUrl) {
+                    const path = extractStoragePath(pr.videoUrl);
+                    if (path) prPaths.push(path);
+                }
+            }
+
+            if (prPaths.length > 0) {
+                const chunkSize = 100;
+                for (let i = 0; i < prPaths.length; i += chunkSize) {
+                    const chunk = prPaths.slice(i, i + chunkSize);
+                    const { error } = await supabase.storage.from('lift-videos').remove(chunk);
+                    if (error) {
+                        console.error('Failed to delete PR videos from Supabase:', error);
+                    }
+                }
+                prVideosDeleted = prPaths.length;
+            }
+
+            // Delete PR records from Prisma
+            await prisma.personalRecord.deleteMany({
+                where: { id: { in: oldPRs.map(p => p.id) } }
+            });
+
+            prsDeleted = oldPRs.length;
+        }
 
         return NextResponse.json({
             success: true,
-            deletedCount: ids.length,
-            mediaDeletedCount: pathsToDelete.length
+            messages: { deleted: messagesDeleted, mediaDeleted: messageMediaDeleted },
+            prs: { deleted: prsDeleted, videosDeleted: prVideosDeleted },
         });
 
     } catch (error) {
