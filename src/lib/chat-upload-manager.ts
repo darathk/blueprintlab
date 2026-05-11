@@ -68,6 +68,7 @@ class ChatUploadManager {
     private preJobs = new Map<string, PreUploadJob>();
     private listeners = new Set<() => void>();
     private cachedSnapshot: ChatUploadJob[] = [];
+    private cachedPreSnapshot: PreUploadJob[] = [];
 
     getJobs(): ChatUploadJob[] {
         return this.cachedSnapshot;
@@ -408,13 +409,14 @@ class ChatUploadManager {
     }
 
     getPreUploadSnapshot(): PreUploadJob[] {
-        return Array.from(this.preJobs.values());
+        return this.cachedPreSnapshot;
     }
 
     private notify() {
-        // Rebuild the snapshot once per change — useSyncExternalStore needs
+        // Rebuild snapshots once per change — useSyncExternalStore needs
         // a stable reference between calls when nothing changed.
         this.cachedSnapshot = Array.from(this.jobs.values());
+        this.cachedPreSnapshot = Array.from(this.preJobs.values());
         this.listeners.forEach(l => l());
     }
 }
