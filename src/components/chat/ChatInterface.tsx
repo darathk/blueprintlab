@@ -2,7 +2,8 @@
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
-import { chatUploadManager, useChatUploadJobsForConversation, type UploadCompleteDetail } from '@/lib/chat-upload-manager';
+import { chatUploadManager, useChatUploadJobsForConversation, usePreUploadJobs, type UploadCompleteDetail } from '@/lib/chat-upload-manager';
+
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { Mic, MoreVertical, Reply, Copy, Download, Paperclip, X, Send, Search, Scissors, Pencil, Play, Maximize, Plus } from 'lucide-react';
@@ -199,6 +200,19 @@ export default function ChatInterface({
 
     // Trim metadata per staged file index (from VideoCropper)
     const [stagedTrimData, setStagedTrimData] = useState<Record<number, { start: number; end: number }>>({});
+
+    // Pre-upload job IDs per staged file index — upload starts immediately on staging
+    const [stagedPreUploadIds, setStagedPreUploadIds] = useState<Record<number, string>>({});
+    // Subscribe to pre-upload progress so thumbnails update live
+    const preUploadJobs = usePreUploadJobs();
+    // Helper: get pre-upload progress (0-100) for a staged file index
+    const getPreProgress = (index: number): { progress: number; status: string } | null => {
+        const jobId = stagedPreUploadIds[index];
+        if (!jobId) return null;
+        const job = preUploadJobs.find(j => j.id === jobId);
+        if (!job) return null;
+        return { progress: job.progress, status: job.status };
+    };
 
     // Upload progress per message (tempId → 0-100), driven by the global
     // chat-upload manager so that uploads (and their progress UI) survive
@@ -513,10 +527,11 @@ export default function ChatInterface({
             return;
         }
 
-        // Copy the files and clear UI state immediately
+        // Clear UI state immediately
         const filesToSend = [...stagedFiles];
         const urlsToSend = [...stagedFileUrls];
         const trimDataToSend = { ...stagedTrimData };
+        const preUploadIdsToSend = { ...stagedPreUploadIds };
 
         setNewMessage('');
         setReplyingTo(null);
@@ -524,6 +539,7 @@ export default function ChatInterface({
         setStagedFileUrls([]);
         setStagedPosters({});
         setStagedTrimData({});
+        setStagedPreUploadIds({});
         if (fileRef.current) fileRef.current.value = '';
 
         // Create optimistic messages
@@ -581,12 +597,10 @@ export default function ChatInterface({
                     alert('Failed to send message. Please try again.');
                 }
             } else {
-                // Hand each file off to the module-level upload manager and
-                // return immediately — uploads will continue running even if
-                // the user navigates away from this chat. ChatInterface stays
-                // synced via the `chat-upload-complete` window event below
-                // (when still mounted) and the global GlobalUploadStatus
-                // banner shows progress wherever the user is in the app.
+                // For each file, check if a pre-upload has already finished.
+                // If so, we can save the message record immediately using the
+                // ready public URL. Otherwise, fall back to the full
+                // startUpload() path which handles upload + message creation.
                 filesToSend.forEach((file, i) => {
                     const tempId = optimisticMessages[i].id;
                     const isVid = file.type.startsWith('video/');
@@ -595,24 +609,58 @@ export default function ChatInterface({
                         ? text
                         : isAudio ? 'Voice Message' : isVid ? 'Video' : 'Photo';
                     const replyToId = i === 0 ? (replyingTo?.id || null) : null;
+                    const preJobId = preUploadIdsToSend[i];
+                    const preResult = preJobId ? chatUploadManager.getPreUploadResult(preJobId) : null;
 
-                    chatUploadManager.startUpload({
-                        file,
-                        tempMessageId: tempId,
-                        athleteId,
-                        currentUserId,
-                        otherUserId,
-                        content,
-                        replyToId,
-                        trim: trimDataToSend[i],
-                    });
+                    if (preResult) {
+                        // Upload already done — just save the message record
+                        const mediaUrl = trimDataToSend[i]
+                            ? `${preResult.publicUrl}#t=${trimDataToSend[i].start},${trimDataToSend[i].end}`
+                            : preResult.publicUrl;
+
+                        fetch('/api/messages', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({
+                                senderId: currentUserId,
+                                receiverId: otherUserId,
+                                content,
+                                mediaUrl,
+                                mediaType: preResult.mime,
+                                replyToId,
+                            }),
+                        }).then(async r => {
+                            if (r.ok) {
+                                const real = await r.json();
+                                setMessages(prev => prev.map(m => {
+                                    if (m.id !== tempId) return m;
+                                    if (m.mediaUrl?.startsWith('blob:')) try { URL.revokeObjectURL(m.mediaUrl); } catch {}
+                                    return real;
+                                }));
+                                window.dispatchEvent(new Event('inbox-refresh'));
+                            } else {
+                                setMessages(prev => prev.filter(m => m.id !== tempId));
+                            }
+                        }).catch(() => setMessages(prev => prev.filter(m => m.id !== tempId)));
+
+                        // Dismiss the pre-upload job now that we've consumed it
+                        chatUploadManager.dismissPreJob(preJobId);
+                    } else {
+                        // Still uploading or no pre-upload — use the full upload manager path
+                        chatUploadManager.startUpload({
+                            file,
+                            tempMessageId: tempId,
+                            athleteId,
+                            currentUserId,
+                            otherUserId,
+                            content,
+                            replyToId,
+                            trim: trimDataToSend[i],
+                        });
+                        // The pre-job (if any) is now superseded; dismiss it
+                        if (preJobId) chatUploadManager.dismissPreJob(preJobId);
+                    }
                 });
-
-                // The optimistic <img>/<video> previews already reference the
-                // local object URLs in `urlsToSend`. We keep them alive until
-                // each upload completes (the `chat-upload-complete` handler
-                // revokes them then). If the chat unmounts before that, the
-                // browser cleans them up at page tear-down.
             }
         } catch (e: any) {
             console.error('[Send] Failed:', e);
@@ -727,10 +775,18 @@ export default function ChatInterface({
         }
         if (validFiles.length === 0) return;
 
-        // Go straight to staging (user can optionally trim videos from the staging overlay)
         const startIndex = stagedFiles.length;
         setStagedFiles(prev => [...prev, ...validFiles]);
         setStagedFileUrls(prev => [...prev, ...validFiles.map(f => URL.createObjectURL(f))]);
+
+        // Start background pre-uploads immediately — so by the time the user
+        // hits Send, the file may already be in Supabase Storage.
+        validFiles.forEach((f, i) => {
+            if (!f.type.startsWith('audio/')) { // voice memos skip pre-upload (tiny, negligible)
+                const preJobId = chatUploadManager.preUpload(f, athleteId);
+                setStagedPreUploadIds(prev => ({ ...prev, [startIndex + i]: preJobId }));
+            }
+        });
 
         // Generate poster thumbnails for videos (iOS won't show preview otherwise)
         validFiles.forEach((f, i) => {
@@ -830,8 +886,12 @@ export default function ChatInterface({
             URL.revokeObjectURL(stagedFileUrls[index]);
             setStagedFiles(prev => prev.filter((_, i) => i !== index));
             setStagedFileUrls(prev => prev.filter((_, i) => i !== index));
-            
-            // Re-map indices for posters and trim data to prevent corruption
+
+            // Dismiss the pre-upload job for the removed file
+            const preJobId = stagedPreUploadIds[index];
+            if (preJobId) chatUploadManager.dismissPreJob(preJobId);
+
+            // Re-map indices for posters, trim data, and pre-upload IDs
             setStagedPosters(prev => {
                 const n: Record<number, string> = {};
                 Object.entries(prev).forEach(([key, val]) => {
@@ -850,12 +910,24 @@ export default function ChatInterface({
                 });
                 return n;
             });
+            setStagedPreUploadIds(prev => {
+                const n: Record<number, string> = {};
+                Object.entries(prev).forEach(([key, val]) => {
+                    const k = parseInt(key);
+                    if (k < index) n[k] = val;
+                    else if (k > index) n[k - 1] = val;
+                });
+                return n;
+            });
         } else {
             stagedFileUrls.forEach(url => URL.revokeObjectURL(url));
+            // Dismiss all pre-upload jobs
+            Object.values(stagedPreUploadIds).forEach(id => chatUploadManager.dismissPreJob(id));
             setStagedFiles([]);
             setStagedFileUrls([]);
             setStagedPosters({});
             setStagedTrimData({});
+            setStagedPreUploadIds({});
         }
         if (fileRef.current) fileRef.current.value = '';
     };
@@ -1734,6 +1806,41 @@ export default function ChatInterface({
                                         ) : (
                                             <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: i === stagedPreviewIndex ? 1 : 0.5 }} />
                                         )}
+                                        {/* Pre-upload progress bar */}
+                                        {(() => {
+                                            const pre = getPreProgress(i);
+                                            if (!pre) return null;
+                                            if (pre.status === 'done') {
+                                                return (
+                                                    <div style={{
+                                                        position: 'absolute', bottom: 0, left: 0, right: 0,
+                                                        height: 3, background: '#22c55e', borderRadius: '0 0 6px 6px',
+                                                    }} />
+                                                );
+                                            }
+                                            if (pre.status === 'error') {
+                                                return (
+                                                    <div style={{
+                                                        position: 'absolute', bottom: 0, left: 0, right: 0,
+                                                        height: 3, background: '#ef4444', borderRadius: '0 0 6px 6px',
+                                                    }} />
+                                                );
+                                            }
+                                            return (
+                                                <div style={{
+                                                    position: 'absolute', bottom: 0, left: 0, right: 0,
+                                                    height: 3, background: 'rgba(255,255,255,0.15)', borderRadius: '0 0 6px 6px', overflow: 'hidden',
+                                                }}>
+                                                    <div style={{
+                                                        height: '100%',
+                                                        width: `${pre.progress}%`,
+                                                        background: 'var(--primary)',
+                                                        borderRadius: '0 0 6px 6px',
+                                                        transition: 'width 0.3s ease',
+                                                    }} />
+                                                </div>
+                                            );
+                                        })()}
                                         <button onClick={(e) => { e.stopPropagation(); clearStagedMedia(i); if (stagedPreviewIndex >= stagedFiles.length - 1) setStagedPreviewIndex(Math.max(0, stagedFiles.length - 2)); }}
                                             style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(0,0,0,0.7)', border: 'none', borderRadius: '50%', color: '#fff', width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                                             <X size={10} />
@@ -1764,15 +1871,44 @@ export default function ChatInterface({
                                     onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
                                 />
                             </div>
-                            <button onClick={() => handleSend()} disabled={uploading}
-                                style={{
-                                    width: 52, height: 52, borderRadius: '50%', background: 'var(--primary)',
-                                    border: 'none', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    cursor: 'pointer', opacity: uploading ? 0.3 : 1,
-                                    boxShadow: '0 2px 4px rgba(0,0,0,0.3)', flexShrink: 0
-                                }}>
-                                <Send size={24} />
-                            </button>
+                            {(() => {
+                                // Show the primary file's pre-upload progress on the Send button
+                                const pre = getPreProgress(stagedPreviewIndex);
+                                const isPreUploading = pre && pre.status === 'uploading';
+                                const pct = pre?.progress ?? 0;
+                                // SVG circle stroke-dashoffset for progress ring
+                                const r = 20, circ = 2 * Math.PI * r;
+                                const dash = circ - (pct / 100) * circ;
+                                return (
+                                    <button
+                                        onClick={() => handleSend()}
+                                        disabled={uploading}
+                                        title={isPreUploading ? `Uploading ${pct}% — tap to send anyway` : 'Send'}
+                                        style={{
+                                            width: 52, height: 52, borderRadius: '50%',
+                                            background: isPreUploading ? 'rgba(6,182,212,0.15)' : 'var(--primary)',
+                                            border: isPreUploading ? '2px solid var(--primary)' : 'none',
+                                            color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            cursor: 'pointer', position: 'relative',
+                                            boxShadow: '0 2px 4px rgba(0,0,0,0.3)', flexShrink: 0,
+                                            transition: 'background 0.3s',
+                                        }}
+                                    >
+                                        {isPreUploading ? (
+                                            <>
+                                                <svg width={52} height={52} style={{ position: 'absolute', top: 0, left: 0, transform: 'rotate(-90deg)' }}>
+                                                    <circle cx={26} cy={26} r={r} fill="none" stroke="var(--primary)" strokeWidth={3}
+                                                        strokeDasharray={circ} strokeDashoffset={dash}
+                                                        style={{ transition: 'stroke-dashoffset 0.3s ease' }} />
+                                                </svg>
+                                                <Send size={20} color="var(--primary)" />
+                                            </>
+                                        ) : (
+                                            <Send size={24} />
+                                        )}
+                                    </button>
+                                );
+                            })()}
                         </div>
                     </div>
                 </div>

@@ -32,6 +32,19 @@ export interface ChatUploadJob {
     startedAt: number;
 }
 
+/** Lightweight pre-upload job — storage only, no message creation yet. */
+export interface PreUploadJob {
+    id: string;
+    athleteId: string;
+    filename: string;
+    mime: string;
+    progress: number;      // 0-100
+    status: 'uploading' | 'done' | 'error';
+    publicUrl?: string;    // available when status === 'done'
+    error?: string;
+    startedAt: number;
+}
+
 export interface StartUploadPayload {
     file: File;
     tempMessageId: string;
@@ -52,6 +65,7 @@ const isBrowser = typeof window !== 'undefined';
 
 class ChatUploadManager {
     private jobs = new Map<string, ChatUploadJob>();
+    private preJobs = new Map<string, PreUploadJob>();
     private listeners = new Set<() => void>();
     private cachedSnapshot: ChatUploadJob[] = [];
 
@@ -84,6 +98,138 @@ class ChatUploadManager {
             }
         }
         if (changed) this.notify();
+    }
+
+    /**
+     * Kick off a storage-only pre-upload as soon as a file is staged.
+     * Returns a pre-upload job ID the caller can use to check progress
+     * and retrieve the public URL before the user hits Send.
+     */
+    preUpload(file: File, athleteId: string): string {
+        const id = `pre-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+        const mime = this.resolveMime(file);
+        const job: PreUploadJob = {
+            id,
+            athleteId,
+            filename: file.name,
+            mime,
+            progress: 0,
+            status: 'uploading',
+            startedAt: Date.now(),
+        };
+        this.preJobs.set(id, job);
+        this.notify();
+        this.runPreUpload(id, file, athleteId, mime).catch(err => {
+            console.error('[chat-upload-manager] pre-upload error', err);
+            this.updatePre(id, { status: 'error', error: err?.message || 'Upload failed' });
+        });
+        return id;
+    }
+
+    /** Returns the pre-upload result for a given job ID, or null if still in progress / not found. */
+    getPreUploadResult(id: string): { publicUrl: string; mime: string } | null {
+        const j = this.preJobs.get(id);
+        if (!j || j.status !== 'done' || !j.publicUrl) return null;
+        return { publicUrl: j.publicUrl, mime: j.mime };
+    }
+
+    /** Returns 0-100 progress for a pre-upload job, or null if not found. */
+    getPreUploadProgress(id: string): { progress: number; status: PreUploadJob['status'] } | null {
+        const j = this.preJobs.get(id);
+        if (!j) return null;
+        return { progress: j.progress, status: j.status };
+    }
+
+    dismissPreJob(id: string) {
+        if (this.preJobs.delete(id)) this.notify();
+    }
+
+    private async runPreUpload(id: string, file: File, athleteId: string, mime: string) {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+        if (!supabaseUrl || !supabaseKey) {
+            this.updatePre(id, { status: 'error', error: 'Supabase not configured' });
+            return;
+        }
+
+        let blob: Blob = file;
+
+        // Image compression (non-blocking)
+        if (file.type.startsWith('image/')) {
+            this.updatePre(id, { status: 'uploading' });
+            try {
+                const imageCompression = (await import('browser-image-compression')).default;
+                const compressed = await (imageCompression as any)(file, {
+                    maxSizeMB: 0.5,
+                    maxWidthOrHeight: 1280,
+                    useWebWorker: true,
+                });
+                blob = compressed;
+                mime = compressed.type || mime;
+            } catch {
+                /* fall back to original */
+            }
+        }
+
+        const ext = this.mimeToExt(mime);
+        const uploadPath = `${athleteId}/${Date.now()}-${id}${ext}`;
+
+        const publicUrl = await new Promise<string>((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            const url = `${supabaseUrl}/storage/v1/object/lift-videos/${uploadPath}`;
+            xhr.upload.onprogress = (e) => {
+                if (e.lengthComputable) {
+                    this.updatePre(id, { progress: Math.round((e.loaded / e.total) * 100) });
+                }
+            };
+            xhr.onload = () => {
+                if (xhr.status >= 200 && xhr.status < 300) {
+                    const { data: u } = supabase.storage.from('lift-videos').getPublicUrl(uploadPath);
+                    resolve(u.publicUrl);
+                } else {
+                    reject(new Error(`Pre-upload failed: ${xhr.status} ${xhr.responseText}`));
+                }
+            };
+            xhr.onerror = () => reject(new Error('Network error during pre-upload'));
+            xhr.ontimeout = () => reject(new Error('Pre-upload timed out'));
+            xhr.timeout = 300000;
+            xhr.open('POST', url, true);
+            xhr.setRequestHeader('Authorization', `Bearer ${supabaseKey}`);
+            xhr.setRequestHeader('apikey', supabaseKey);
+            xhr.setRequestHeader('Content-Type', mime);
+            xhr.setRequestHeader('Cache-Control', '604800');
+            xhr.setRequestHeader('x-upsert', 'true');
+            xhr.send(blob);
+        }).catch((err: Error) => {
+            this.updatePre(id, { status: 'error', error: err.message, progress: 0 });
+            throw err;
+        });
+
+        this.updatePre(id, { status: 'done', progress: 100, publicUrl, mime });
+    }
+
+    private resolveMime(file: File): string {
+        let mime = file.type;
+        if (!mime || mime === 'application/octet-stream') {
+            const name = file.name.toLowerCase();
+            if (name.endsWith('.mp4')) mime = 'video/mp4';
+            else if (name.endsWith('.mov')) mime = 'video/quicktime';
+            else if (name.endsWith('.webm')) mime = 'video/webm';
+            else if (name.endsWith('.m4a')) mime = 'audio/mp4';
+            else if (name.endsWith('.jpg') || name.endsWith('.jpeg')) mime = 'image/jpeg';
+            else if (name.endsWith('.png')) mime = 'image/png';
+            else mime = 'application/octet-stream';
+        }
+        return mime;
+    }
+
+    private mimeToExt(mime: string): string {
+        if (mime.includes('png')) return '.png';
+        if (mime.includes('jpeg') || mime.includes('jpg')) return '.jpg';
+        if (mime.includes('quicktime')) return '.mov';
+        if (mime.includes('webm')) return '.webm';
+        if (mime.includes('audio')) return '.m4a';
+        return '.mp4';
     }
 
     /**
@@ -254,6 +400,17 @@ class ChatUploadManager {
         this.notify();
     }
 
+    private updatePre(id: string, patch: Partial<PreUploadJob>) {
+        const j = this.preJobs.get(id);
+        if (!j) return;
+        Object.assign(j, patch);
+        this.notify();
+    }
+
+    getPreUploadSnapshot(): PreUploadJob[] {
+        return Array.from(this.preJobs.values());
+    }
+
     private notify() {
         // Rebuild the snapshot once per change — useSyncExternalStore needs
         // a stable reference between calls when nothing changed.
@@ -265,6 +422,7 @@ class ChatUploadManager {
 export const chatUploadManager = new ChatUploadManager();
 
 const EMPTY: ChatUploadJob[] = [];
+const EMPTY_PRE: PreUploadJob[] = [];
 
 /** React hook: subscribes to all jobs (re-renders on any change). */
 export function useChatUploadJobs(): ChatUploadJob[] {
@@ -272,6 +430,15 @@ export function useChatUploadJobs(): ChatUploadJob[] {
         cb => chatUploadManager.subscribe(cb),
         () => chatUploadManager.getJobs(),
         () => EMPTY,
+    );
+}
+
+/** React hook: subscribes to all pre-upload jobs. */
+export function usePreUploadJobs(): PreUploadJob[] {
+    return useSyncExternalStore(
+        cb => chatUploadManager.subscribe(cb),
+        () => chatUploadManager.getPreUploadSnapshot(),
+        () => EMPTY_PRE,
     );
 }
 
