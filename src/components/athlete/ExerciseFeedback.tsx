@@ -31,6 +31,7 @@ export default function ExerciseFeedback({
     const [resolvedCoachId, setResolvedCoachId] = useState(coachIdProp || '');
     const [attachWarning, setAttachWarning] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
+    const [uploadPhase, setUploadPhase] = useState<'idle' | 'uploading' | 'saving'>('idle');
 
     // Media staging (same as chat)
     const [stagedFiles, setStagedFiles] = useState<File[]>([]);
@@ -289,6 +290,7 @@ export default function ExerciseFeedback({
         setSending(true);
         setError('');
         setUploadProgress(0);
+        setUploadPhase('idle');
 
         try {
             const filesToSend = stagedFiles.length > 0 ? [...stagedFiles] : [];
@@ -312,7 +314,11 @@ export default function ExerciseFeedback({
             } else {
                 // Upload all files and send multiple messages sequentially
                 for (let i = 0; i < filesToSend.length; i++) {
+                    setUploadPhase('uploading');
                     const result = await uploadFile(filesToSend[i], i);
+                    // File is uploaded — now saving the message record
+                    setUploadPhase('saving');
+                    setUploadProgress(100);
                     // Append media fragment URI for trimmed videos
                     const trim = stagedTrimData[i];
                     const mediaUrl = trim ? `${result.url}#t=${trim.start},${trim.end}` : result.url;
@@ -346,9 +352,11 @@ export default function ExerciseFeedback({
                 setMessage('');
                 clearStagedMedia();
                 setUploadProgress(0);
+                setUploadPhase('idle');
             }, 1800);
         } catch (e: any) {
             setError('Send failed — please try again.');
+            setUploadPhase('idle');
             console.error(e);
         } finally {
             setSending(false);
@@ -446,14 +454,17 @@ export default function ExerciseFeedback({
                         </div>
                     )}
 
-                    {/* Upload progress */}
-                    {sending && uploadProgress > 0 && uploadProgress < 100 && (
+                    {/* Upload progress bar */}
+                    {sending && uploadPhase !== 'idle' && (
                         <div style={{ width: '100%', background: 'rgba(255,255,255,0.08)', borderRadius: 4, height: 6, overflow: 'hidden' }}>
                             <div style={{
                                 height: '100%', borderRadius: 4,
-                                background: 'linear-gradient(90deg, #6366f1, #a855f7)',
-                                transition: 'width 200ms',
-                                width: `${uploadProgress}%`,
+                                background: uploadPhase === 'saving'
+                                    ? 'linear-gradient(90deg, #10b981, #34d399)'
+                                    : 'linear-gradient(90deg, #6366f1, #a855f7)',
+                                transition: 'width 200ms, background 400ms',
+                                width: uploadPhase === 'saving' ? '100%' : `${uploadProgress}%`,
+                                animation: uploadPhase === 'saving' ? 'pulse 1s ease-in-out infinite' : 'none',
                             }} />
                         </div>
                     )}
@@ -529,7 +540,11 @@ export default function ExerciseFeedback({
                             {sent
                                 ? <><CheckCircle size={14} /> Sent!</>
                                 : sending
-                                    ? uploadProgress > 0 ? `Uploading ${uploadProgress}%` : 'Sending…'
+                                    ? uploadPhase === 'saving'
+                                        ? 'Saving…'
+                                        : uploadProgress > 0
+                                            ? `Uploading ${uploadProgress}%`
+                                            : 'Sending…'
                                     : <><Send size={13} /> Send to Coach</>
                             }
                         </button>
