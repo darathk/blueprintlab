@@ -928,27 +928,19 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
 
     const removeSession = (weekIndex, sessionIndex) => {
         if (!confirm('Are you sure you want to delete this session?')) return;
-        const newWeeks = [...weeks];
-        newWeeks[weekIndex].sessions.splice(sessionIndex, 1);
 
-        // Filter out empty weeks and re-index
-        const cleanedWeeks = newWeeks.filter(w => w.sessions.length > 0).map((w, i) => ({
-            ...w,
-            weekNumber: i + 1
-        }));
-
-        setWeeks(cleanedWeeks);
-
-        // Clear active/editing state if needed (simple reset if structure changes)
-        if (cleanedWeeks.length !== weeks.length) {
-            setActiveLocation({ w: 0, s: 0 });
-            setEditingSession(null);
-        } else if (activeLocation.w === weekIndex && activeLocation.s === sessionIndex) {
-            setActiveLocation({ w: 0, s: 0 });
-            if (editingSession && editingSession.w === weekIndex && editingSession.s === sessionIndex) {
-                setEditingSession(null);
+        // Immutable update — splice only the target session, leave week numbering
+        // intact so calendar positions don't shift for any other sessions.
+        setWeeks(prev => prev.map((w, wi) =>
+            wi !== weekIndex ? w : {
+                ...w,
+                sessions: w.sessions.filter((_, si) => si !== sessionIndex),
             }
-        }
+        ));
+
+        // Reset editor/active location if the deleted session was selected
+        setEditingSession(null);
+        setActiveLocation({ w: 0, s: 0 });
     };
 
 
@@ -1074,6 +1066,8 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
     // --- Exercise Drag & Drop ---
     const [dragExercise, setDragExercise] = useState<{ w: number, s: number, e: number } | null>(null);
     const [dropTarget, setDropTarget] = useState<{ w: number, s: number, e: number } | null>(null);
+    // Tracks which session row is hovered in the cross-session drop overlay
+    const [crossSessionHover, setCrossSessionHover] = useState<{ w: number, s: number } | null>(null);
 
     const handleExerciseDragStart = (w: number, s: number, e: number) => {
         setDragExercise({ w, s, e });
@@ -1670,15 +1664,14 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
     const closeEditor = () => {
         if (editingSession) {
             const { w, s } = editingSession;
-            // Check if session exists and is empty
-            if (weeks[w] && weeks[w].sessions[s]) {
-                const session = weeks[w].sessions[s];
-                if (session.exercises.length === 0) {
-                    // Auto-remove empty session to prevent "ghost" sessions from accidental clicks
-                    const newWeeks = [...weeks];
-                    newWeeks[w].sessions.splice(s, 1);
-                    setWeeks(newWeeks);
-                }
+            // Auto-remove empty session to prevent "ghost" sessions from accidental clicks
+            if (weeks[w] && weeks[w].sessions[s] && weeks[w].sessions[s].exercises.length === 0) {
+                setWeeks(prev => prev.map((week, wi) =>
+                    wi !== w ? week : {
+                        ...week,
+                        sessions: week.sessions.filter((_, si) => si !== s),
+                    }
+                ));
             }
         }
         setEditingSession(null);
@@ -2154,6 +2147,123 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                 </div>
                             )}
                         </div>
+
+                        {/* Cross-session drag target overlay — visible while an exercise is being dragged */}
+                        {dragExercise && (() => {
+                            // Flatten all sessions across all weeks for the picker list
+                            const allSessionTargets: { w: number; s: number; weekNum: number; name: string; exerciseCount: number }[] = [];
+                            weeks.forEach((week, wi) => {
+                                week.sessions.forEach((sess, si) => {
+                                    // Exclude the session the exercise is currently in
+                                    if (wi === dragExercise.w && si === dragExercise.s) return;
+                                    allSessionTargets.push({
+                                        w: wi,
+                                        s: si,
+                                        weekNum: week.weekNumber,
+                                        name: sess.name,
+                                        exerciseCount: sess.exercises.length,
+                                    });
+                                });
+                            });
+
+                            if (allSessionTargets.length === 0) return null;
+
+                            return (
+                                <div
+                                    style={{
+                                        position: 'sticky',
+                                        bottom: 0,
+                                        left: 0,
+                                        right: 0,
+                                        background: 'rgba(10,10,10,0.96)',
+                                        backdropFilter: 'blur(12px)',
+                                        WebkitBackdropFilter: 'blur(12px)',
+                                        borderTop: '1px solid var(--primary)',
+                                        padding: '0.75rem 1.25rem',
+                                        zIndex: 10,
+                                        boxShadow: '0 -8px 24px rgba(0,0,0,0.5)',
+                                        animation: 'slideUpIn 0.18s ease',
+                                        marginTop: '1rem',
+                                    }}
+                                >
+                                    <div style={{
+                                        fontSize: '0.7rem',
+                                        fontWeight: 700,
+                                        textTransform: 'uppercase',
+                                        letterSpacing: '0.08em',
+                                        color: 'var(--primary)',
+                                        marginBottom: '0.5rem',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '0.4rem',
+                                    }}>
+                                        <span style={{ fontSize: '0.9rem' }}>⇩</span>
+                                        Drop onto another session
+                                    </div>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+                                        {allSessionTargets.map(({ w, s, weekNum, name, exerciseCount }) => {
+                                            const isHovered = crossSessionHover?.w === w && crossSessionHover?.s === s;
+                                            return (
+                                                <div
+                                                    key={`${w}-${s}`}
+                                                    onDragOver={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        setCrossSessionHover({ w, s });
+                                                    }}
+                                                    onDragLeave={() => setCrossSessionHover(null)}
+                                                    onDrop={(e) => {
+                                                        e.preventDefault();
+                                                        e.stopPropagation();
+                                                        if (!dragExercise) return;
+                                                        const { w: srcW, s: srcS, e: srcE } = dragExercise;
+                                                        // Move exercise to end of target session
+                                                        const newWeeks = [...weeks];
+                                                        const [moved] = newWeeks[srcW].sessions[srcS].exercises.splice(srcE, 1);
+                                                        newWeeks[w].sessions[s].exercises.push(moved);
+                                                        setWeeks(newWeeks);
+                                                        setDragExercise(null);
+                                                        setDropTarget(null);
+                                                        setCrossSessionHover(null);
+                                                        showToast(`Moved to ${name}`);
+                                                    }}
+                                                    style={{
+                                                        padding: '0.4rem 0.75rem',
+                                                        borderRadius: '6px',
+                                                        border: isHovered
+                                                            ? '2px solid var(--primary)'
+                                                            : '1px solid var(--card-border)',
+                                                        background: isHovered
+                                                            ? 'rgba(6, 182, 212, 0.15)'
+                                                            : 'rgba(255,255,255,0.04)',
+                                                        cursor: 'copy',
+                                                        transition: 'all 0.12s',
+                                                        transform: isHovered ? 'scale(1.04)' : 'none',
+                                                        boxShadow: isHovered ? '0 0 12px rgba(6,182,212,0.35)' : 'none',
+                                                    }}
+                                                >
+                                                    <div style={{ fontSize: '0.65rem', color: 'var(--secondary-foreground)', fontWeight: 600 }}>
+                                                        Wk {weekNum}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: isHovered ? 'var(--primary)' : 'var(--foreground)' }}>
+                                                        {name}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.65rem', color: 'var(--secondary-foreground)' }}>
+                                                        {exerciseCount} exercise{exerciseCount !== 1 ? 's' : ''}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+                                    <style>{`
+                                        @keyframes slideUpIn {
+                                            from { opacity: 0; transform: translateY(10px); }
+                                            to   { opacity: 1; transform: translateY(0); }
+                                        }
+                                    `}</style>
+                                </div>
+                            );
+                        })()}
                     </div>
                 </div>
             )}
