@@ -148,7 +148,7 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
     };
 
     return (
-        <div className={isMobile && selectedId ? 'chat-full-screen' : 'glass-panel'} style={{ display: 'flex', height: isMobile && selectedId ? undefined : (isMobile ? 'calc(100dvh - 120px)' : 1092), overflow: 'hidden', borderRadius: isMobile && selectedId ? 0 : 12 }}>
+        <div className={isMobile && selectedId ? 'chat-full-screen' : 'glass-panel'} style={{ display: 'flex', height: isMobile && selectedId ? undefined : (isMobile ? 'calc(100dvh - 120px)' : 874), overflow: 'hidden', borderRadius: isMobile && selectedId ? 0 : 12 }}>
             {/* Sidebar */}
             <div style={{ width: isMobile ? '100%' : 260, flexShrink: 0, borderRight: isMobile ? 'none' : '1px solid rgba(255,255,255,0.08)', display: isMobile && selectedId ? 'none' : 'flex', flexDirection: 'column', background: 'rgba(18, 18, 18, 0.5)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
                 <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
