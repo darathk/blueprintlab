@@ -2934,9 +2934,10 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                     <div
                         onClick={e => e.stopPropagation()}
                         style={{
-                            background: 'var(--card-bg)', border: '1px solid var(--card-border)',
+                            background: 'var(--background)', border: '1px solid var(--card-border)',
                             borderRadius: 'var(--radius)', padding: '1.5rem', minWidth: '320px',
                             display: 'flex', flexDirection: 'column', gap: '1rem',
+                            boxShadow: '0 8px 32px rgba(0,0,0,0.7)',
                         }}
                     >
                         <div style={{ fontWeight: 700, fontSize: '1rem' }}>
