@@ -2,11 +2,14 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { GripVertical } from 'lucide-react';
 
 export default function PeriodizationPlanner({ athlete }) {
     const router = useRouter();
     const [blocks, setBlocks] = useState(athlete?.periodization || []);
     const [isEditing, setIsEditing] = useState(false);
+    const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+    const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
     // Merged Competition Tracker State
     const [meetName, setMeetName] = useState(athlete.nextMeetName || '');
@@ -256,32 +259,54 @@ export default function PeriodizationPlanner({ athlete }) {
             newBlocks[index].name = `${value} Block`;
         }
 
-        // --- Smart Duration Balancing ---
-        // If we changed 'weeks' and it's a valid number, try to balance the total duration
-        if (field === 'weeks' && typeof value === 'number' && typeof oldWeeks === 'number' && value !== oldWeeks) {
-            const delta = value - oldWeeks;
-
-            // Find a target Development block to absorb the change
-            // We prefer the earliest Development block that ISN'T the current one
-            // and has enough weeks to absorb the change (if we are increasing current block)
-            const targetIndex = newBlocks.findIndex((b, i) => {
-                if (i === index) return false; // Don't change self
-                if (b.type !== 'Development') return false; // Only adjust Development blocks
-
-                // If we are ADDING weeks (delta > 0), target must have enough weeks to give up
-                // We assume a block needs at least 1 week minimum.
-                if (delta > 0 && b.weeks <= delta) return false;
-
-                return true;
-            });
-
-            if (targetIndex !== -1) {
-                // Adjust the target block
-                newBlocks[targetIndex].weeks -= delta;
-            }
-        }
+        // Removed smart duration balancing to allow spreadsheet-like tinkering
 
         setBlocks(newBlocks);
+    };
+
+    const updateStartDate = (index, newStartDateStr) => {
+        const s = schedule[index];
+        if (!s || !newStartDateStr) return;
+        
+        const newStart = new Date(newStartDateStr);
+        // We ensure we calculate using midday to avoid timezone edge cases
+        newStart.setHours(12, 0, 0, 0); 
+        const end = new Date(s.endDate);
+        end.setHours(12, 0, 0, 0);
+        
+        const diffMs = end.getTime() - newStart.getTime();
+        let newWeeks = Math.round(diffMs / (1000 * 60 * 60 * 24 * 7));
+        if (newWeeks < 1) newWeeks = 1;
+        
+        const oldWeeks = blocks[index].weeks;
+        const delta = newWeeks - oldWeeks;
+        
+        if (delta === 0) return;
+        
+        const newBlocks = [...blocks];
+        newBlocks[index].weeks = newWeeks;
+        
+        // We do NOT adjust the preceding block. 
+        // This allows the timeline to simply expand/contract backwards from this point,
+        // giving the user exact control like a spreadsheet.
+        setBlocks(newBlocks);
+    };
+
+    const updateEndDate = (index, newEndDateStr) => {
+        if (!newEndDateStr) return;
+        if (index === blocks.length - 1) {
+            setMeetDate(newEndDateStr);
+        } else {
+            updateStartDate(index + 1, newEndDateStr);
+        }
+    };
+
+    const formatDateForInput = (date) => {
+        const d = new Date(date);
+        const month = '' + (d.getMonth() + 1);
+        const day = '' + d.getDate();
+        const year = d.getFullYear();
+        return [year, month.padStart(2, '0'), day.padStart(2, '0')].join('-');
     };
 
     const removeBlock = (index) => {
@@ -297,6 +322,16 @@ export default function PeriodizationPlanner({ athlete }) {
         newBlocks[index] = newBlocks[index + direction];
         newBlocks[index + direction] = temp;
         setBlocks(newBlocks);
+    };
+
+    const handleDrop = (dropIndex) => {
+        if (draggedIndex === null || draggedIndex === dropIndex) return;
+        const newBlocks = [...blocks];
+        const [draggedItem] = newBlocks.splice(draggedIndex, 1);
+        newBlocks.splice(dropIndex, 0, draggedItem);
+        setBlocks(newBlocks);
+        setDraggedIndex(null);
+        setDragOverIndex(null);
     };
 
     const handleSave = async () => {
@@ -339,14 +374,14 @@ export default function PeriodizationPlanner({ athlete }) {
             {/* Header */}
             <div className="planner-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '1rem' }}>
                 <div>
-                    <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--primary)', letterSpacing: '-0.02em' }} className="neon-text">Meet Planner</h2>
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--foreground)' }}>Meet Planner</h2>
                     <p style={{ color: 'var(--secondary-foreground)', fontSize: '0.9rem' }}>Mapping the roadmap to {meetName || 'Victory'}</p>
                 </div>
 
                 {/* Days Out Counter */}
                 {daysOutData && (
-                    <div className="glass-panel" style={{ textAlign: 'center', padding: '1rem' }}>
-                        <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--primary)', lineHeight: 1 }} className="neon-text">
+                    <div className="glass-panel" style={{ textAlign: 'center', padding: '0.75rem 1.25rem' }}>
+                        <div style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--primary)', lineHeight: 1 }}>
                             {Math.abs(daysOutData.totalDays)}
                         </div>
                         <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--secondary-foreground)' }}>
@@ -367,7 +402,7 @@ export default function PeriodizationPlanner({ athlete }) {
             {isEditing && (
                 <div style={{ marginBottom: '2rem', padding: '1.5rem', background: 'var(--card-bg)', borderRadius: '2rem', border: '1px solid var(--card-border)' }}>
 
-                    <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', color: 'var(--primary)', borderLeft: '3px solid var(--primary)', paddingLeft: '0.75rem' }}>Mission Parameters</h3>
+                    <h3 style={{ fontSize: '1rem', marginBottom: '1.25rem', color: 'var(--foreground)', fontWeight: 600 }}>Mission Parameters</h3>
                     <div className="flex-mobile-col" style={{ display: 'flex', gap: '1.5rem', marginBottom: '2rem' }}>
                         <div style={{ flex: 1 }}>
                             <label className="label">Target Objective (Meet Name)</label>
@@ -380,8 +415,8 @@ export default function PeriodizationPlanner({ athlete }) {
                     </div>
 
                     {/* Auto-Generator */}
-                    <div style={{ marginBottom: '2rem', padding: '1.5rem', background: 'rgba(6, 182, 212, 0.05)', borderRadius: '2rem', border: '1px dashed var(--primary)' }}>
-                        <h4 style={{ fontSize: '0.95rem', marginBottom: '1rem', color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>⚡ Auto-Sequence Generator</h4>
+                    <div style={{ marginBottom: '2rem', padding: '1.25rem', background: 'var(--card-bg)', borderRadius: '12px', border: '1px solid var(--card-border)' }}>
+                        <h4 style={{ fontSize: '0.9rem', marginBottom: '1rem', color: 'var(--foreground)', fontWeight: 500 }}>Auto-Sequence Generator</h4>
                         <div className="flex-mobile-col" style={{ display: 'flex', gap: '1rem', alignItems: 'end' }}>
                             <div>
                                 <label className="label">Peak Duration (Weeks)</label>
@@ -400,35 +435,53 @@ export default function PeriodizationPlanner({ athlete }) {
                         </div>
                     </div>
 
-                    <h3 style={{ fontSize: '1.1rem', marginBottom: '1.5rem', color: 'var(--primary)', borderLeft: '3px solid var(--accent)', paddingLeft: '0.75rem' }}>Block Configuration</h3>
+                    <h3 style={{ fontSize: '1rem', marginBottom: '1.25rem', color: 'var(--foreground)', fontWeight: 600 }}>Block Configuration</h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                         {blocks.map((block, index) => (
                             <div
                                 key={block.id}
+                                draggable
+                                onDragStart={(e) => {
+                                    setDraggedIndex(index);
+                                    e.dataTransfer.effectAllowed = 'move';
+                                }}
+                                onDragOver={(e) => {
+                                    e.preventDefault();
+                                    e.dataTransfer.dropEffect = 'move';
+                                    setDragOverIndex(index);
+                                }}
+                                onDragLeave={() => setDragOverIndex(null)}
+                                onDrop={(e) => {
+                                    e.preventDefault();
+                                    handleDrop(index);
+                                }}
+                                onDragEnd={() => {
+                                    setDraggedIndex(null);
+                                    setDragOverIndex(null);
+                                }}
                                 style={{
                                     display: 'flex',
                                     flexDirection: 'column',
                                     gap: '0.75rem',
-                                    background: hexToRgba(block.color, 0.1), // Subtle tint
+                                    background: 'var(--card-bg)',
                                     padding: '1rem',
-                                    borderRadius: '1rem',
-                                    border: `1px solid ${hexToRgba(block.color, 0.3)}`,
+                                    borderRadius: '12px',
+                                    border: '1px solid var(--card-border)',
+                                    borderLeft: `3px solid ${block.color}`,
                                     position: 'relative',
-                                    overflow: 'hidden'
+                                    overflow: 'hidden',
+                                    opacity: draggedIndex === index ? 0.4 : 1,
+                                    transform: dragOverIndex === index ? 'translateY(4px)' : 'none',
+                                    transition: 'transform 0.2s, opacity 0.2s',
+                                    boxShadow: dragOverIndex === index ? `0 -4px 0 ${block.color}` : 'none'
                                 }}
                             >
-                                {/* Decorative Glow */}
-                                <div style={{
-                                    position: 'absolute', top: 0, left: 0, width: '4px', height: '100%',
-                                    background: block.color,
-                                    boxShadow: `0 0 10px ${block.color}`
-                                }} />
+                                {/* Removed Glow */}
 
                                 {/* Top Row: Controls */}
                                 <div className="block-controls" style={{ display: 'flex', gap: '1rem', alignItems: 'center', paddingLeft: '0.5rem' }}>
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                                        <button onClick={() => moveBlock(index, -1)} disabled={index === 0} style={{ color: 'var(--primary)', opacity: 0.7, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>▲</button>
-                                        <button onClick={() => moveBlock(index, 1)} disabled={index === blocks.length - 1} style={{ color: 'var(--primary)', opacity: 0.7, background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}>▼</button>
+                                    <div style={{ display: 'flex', alignItems: 'center', cursor: 'grab', color: 'var(--secondary-foreground)', opacity: 0.7 }}>
+                                        <GripVertical size={20} />
                                     </div>
                                     <select
                                         value={block.type}
@@ -500,22 +553,40 @@ export default function PeriodizationPlanner({ athlete }) {
                                     </button>
                                 </div>
 
-                                {/* Bottom Row: Notes */}
-                                <div style={{ width: '100%', paddingLeft: '3rem' }}>
+                                {/* Bottom Row: Notes & Dates */}
+                                <div style={{ width: '100%', paddingLeft: '3.5rem', display: 'flex', gap: '1rem', alignItems: 'center', justifyContent: 'space-between' }}>
                                     <input
                                         value={block.notes || ''}
                                         onChange={(e) => updateBlock(index, 'notes', e.target.value)}
                                         style={{
-                                            width: '100%',
+                                            flex: 1,
                                             background: 'transparent',
                                             border: 'none',
                                             color: 'rgba(255,255,255,0.7)',
                                             fontSize: '0.85rem',
                                             padding: '0',
-                                            fontStyle: 'italic'
+                                            fontStyle: 'italic',
+                                            outline: 'none'
                                         }}
                                         placeholder="Add operational notes..."
                                     />
+                                    {schedule[index] && schedule[index].startDate && (
+                                        <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', color: 'var(--primary)', fontFamily: 'monospace', fontWeight: 500, background: 'rgba(6, 182, 212, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>
+                                            <input 
+                                                type="date" 
+                                                value={formatDateForInput(schedule[index].startDate)}
+                                                onChange={(e) => updateStartDate(index, e.target.value)}
+                                                style={{ background: 'transparent', border: 'none', color: 'inherit', fontFamily: 'inherit', outline: 'none', cursor: 'pointer' }}
+                                            />
+                                            <span style={{ opacity: 0.5 }}>-</span>
+                                            <input 
+                                                type="date" 
+                                                value={formatDateForInput(schedule[index].endDate)}
+                                                onChange={(e) => updateEndDate(index, e.target.value)}
+                                                style={{ background: 'transparent', border: 'none', color: 'inherit', fontFamily: 'inherit', outline: 'none', cursor: 'pointer' }}
+                                            />
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                         ))}
@@ -541,6 +612,7 @@ export default function PeriodizationPlanner({ athlete }) {
                                 <th style={{ padding: '1rem', textAlign: 'left', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.75rem' }}>Timeline</th>
                                 <th style={{ padding: '1rem', textAlign: 'left', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.75rem' }}>Date</th>
                                 <th style={{ padding: '1rem', textAlign: 'left', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.75rem' }}>Phase Objective</th>
+                                <th style={{ padding: '1rem', textAlign: 'left', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.75rem' }}>Notes</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -559,57 +631,65 @@ export default function PeriodizationPlanner({ athlete }) {
 
                                     {/* Merged Cell Logic for Block Name */}
                                     {row.isFirstInBlock && (
-                                        <td
-                                            rowSpan={row.blockSpan}
-                                            style={{
-                                                padding: '0.25rem', // Slight padding for card separation
-                                                verticalAlign: 'top',
-                                                height: '1px'
-                                            }}
-                                        >
-                                            <div style={{
-                                                background: `linear-gradient(135deg, ${row.blockColor} 0%, ${hexToRgba(row.blockColor, 0.8)} 100%)`, // Gradient for depth
-                                                color: 'white',
-                                                height: '100%',
-                                                minHeight: '60px',
-                                                padding: '0.75rem',
-                                                display: 'flex',
-                                                flexDirection: 'column',
-                                                justifyContent: 'center',
-                                                alignItems: 'flex-start',
-                                                borderRadius: '1rem',
-                                                boxShadow: `0 4px 6px -1px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255,255,255,0.2)`,
-                                                position: 'relative',
-                                                overflow: 'hidden'
-                                            }}>
-                                                <div style={{ fontSize: '0.95rem', fontWeight: 700, letterSpacing: '0.01em', textShadow: '0 1px 2px rgba(0,0,0,0.3)' }}>{row.blockName}</div>
-                                                <div style={{ fontSize: '0.75rem', fontWeight: 500, opacity: 0.9, marginTop: '2px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                    <span style={{ background: 'rgba(255,255,255,0.2)', padding: '1px 6px', borderRadius: '4px' }}>{row.blockSpan} WEEKS</span>
-                                                </div>
-                                                {row.blockNotes && (
-                                                    <div style={{
-                                                        marginTop: '0.4rem',
-                                                        fontSize: '0.8rem',
-                                                        fontWeight: 400,
-                                                        color: 'rgba(255,255,255,0.9)',
-                                                        lineHeight: 1.3
-                                                    }}>
-                                                        {row.blockNotes}
+                                        <>
+                                            <td
+                                                rowSpan={row.blockSpan}
+                                                style={{
+                                                    padding: '0.25rem', // Slight padding for card separation
+                                                    verticalAlign: 'top',
+                                                    height: '1px'
+                                                }}
+                                            >
+                                                <div style={{
+                                                    background: 'var(--card-bg)',
+                                                    border: '1px solid var(--card-border)',
+                                                    borderLeft: `3px solid ${row.blockColor}`,
+                                                    color: 'var(--foreground)',
+                                                    height: '100%',
+                                                    minHeight: '60px',
+                                                    padding: '0.75rem',
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    justifyContent: 'center',
+                                                    alignItems: 'flex-start',
+                                                    borderRadius: '8px',
+                                                    position: 'relative',
+                                                    overflow: 'hidden'
+                                                }}>
+                                                    <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{row.blockName}</div>
+                                                    <div style={{ fontSize: '0.7rem', fontWeight: 500, color: 'var(--secondary-foreground)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                        <span style={{ background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '4px' }}>{row.blockSpan} WEEKS</span>
                                                     </div>
-                                                )}
-                                            </div>
-                                        </td>
+                                                </div>
+                                            </td>
+                                            {/* Notes Column */}
+                                            <td
+                                                rowSpan={row.blockSpan}
+                                                style={{
+                                                    padding: '0.75rem 1rem',
+                                                    verticalAlign: 'top',
+                                                    color: 'rgba(255,255,255,0.8)',
+                                                    fontSize: '0.85rem',
+                                                    lineHeight: 1.4,
+                                                    fontStyle: 'italic',
+                                                    borderLeft: '1px solid rgba(148, 163, 184, 0.1)',
+                                                    whiteSpace: 'pre-wrap'
+                                                }}
+                                            >
+                                                {row.blockNotes || <span style={{ opacity: 0.3 }}>No notes</span>}
+                                            </td>
+                                        </>
                                     )}
                                 </tr>
                             ))}
                             {/* Meet Row */}
-                            <tr style={{ background: 'rgba(6, 182, 212, 0.05)' }}>
-                                <td style={{ padding: '1.5rem 1rem', fontWeight: 700, color: 'var(--primary)', letterSpacing: '0.05em' }}>MEET WEEK</td>
-                                <td style={{ padding: '1.5rem 1rem', fontWeight: 700, fontFamily: 'monospace', color: 'var(--primary)' }}>
+                            <tr style={{ background: 'var(--card-bg)' }}>
+                                <td style={{ padding: '1.25rem 1rem', fontWeight: 600, color: 'var(--foreground)', fontSize: '0.85rem' }}>MEET WEEK</td>
+                                <td style={{ padding: '1.25rem 1rem', fontWeight: 500, fontFamily: 'monospace', color: 'var(--secondary-foreground)' }}>
                                     {new Date(meetDate).toLocaleDateString(undefined, { month: '2-digit', day: '2-digit', year: '2-digit' })}
                                 </td>
-                                <td style={{ padding: '1.5rem 1rem', color: 'var(--primary)', fontWeight: 800, textAlign: 'center', textTransform: 'uppercase', letterSpacing: '0.1em' }} className="neon-text">
-                                    🏆 COMPETITION DAY
+                                <td colSpan={2} style={{ padding: '1.25rem 1rem', color: 'var(--primary)', fontWeight: 600, textAlign: 'center', fontSize: '0.85rem', letterSpacing: '0.05em' }}>
+                                    COMPETITION DAY
                                 </td>
                             </tr>
                         </tbody>

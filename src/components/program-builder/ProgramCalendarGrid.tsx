@@ -231,7 +231,7 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
                                         📋
                                     </div>
                                 </div>
-                                <div className="duplicate-actions" style={{ position: 'absolute', top: 2, right: 2, display: 'none', gap: '2px', zIndex: 2 }}>
+                                <div className="duplicate-actions">
                                     {onDuplicateSession && (
                                         <button
                                             className="duplicate-btn"
@@ -352,16 +352,29 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
                 .calendar-cell:hover .duplicate-actions {
                     display: flex !important;
                 }
+                .duplicate-actions {
+                    position: absolute;
+                    top: 4px;
+                    right: 4px;
+                    display: none;
+                    flex-direction: column;
+                    align-items: flex-end;
+                    gap: 4px;
+                    z-index: 10;
+                }
                 .duplicate-btn {
                     background: var(--card-bg);
+                    backdrop-filter: blur(8px);
                     border: 1px solid var(--card-border);
                     border-radius: 4px;
                     color: var(--accent);
                     cursor: pointer;
                     font-size: 0.65rem;
-                    padding: 2px 6px;
-                    line-height: 1;
+                    padding: 4px 8px;
+                    line-height: 1.2;
                     transition: all 0.15s;
+                    white-space: nowrap;
+                    box-shadow: 0 2px 6px rgba(0,0,0,0.4);
                 }
                 .duplicate-btn:hover {
                     background: var(--accent);

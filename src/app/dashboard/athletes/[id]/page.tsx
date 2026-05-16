@@ -9,6 +9,7 @@ import AthleteCalendarContainer from '@/components/dashboard/AthleteCalendarCont
 import CollapsibleSection from '@/components/ui/CollapsibleSection';
 import dynamic from 'next/dynamic';
 import CoachNotes from '@/components/dashboard/CoachNotes';
+import RecentWorkoutLogs from '@/components/dashboard/RecentWorkoutLogs';
 
 import { MessageSquare } from 'lucide-react';
 
@@ -68,7 +69,7 @@ async function AthleteData({ id }: { id: string }) {
                 <FatigueChart readinessLogs={readiness} />
             </CollapsibleSection>
 
-            <CollapsibleSection title="Training Calendar" defaultOpen={false}>
+            <CollapsibleSection title="Training Calendar" defaultOpen={true}>
                 <AthleteCalendarContainer
                     programs={programs}
                     athleteId={id}

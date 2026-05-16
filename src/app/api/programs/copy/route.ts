@@ -49,8 +49,8 @@ export async function POST(request: Request) {
             data: {
                 athleteId: targetAthleteId,
                 name: isDuplicate ? `${program.name} (Copy)` : program.name,
-                startDate: program.startDate,
-                endDate: program.endDate,
+                startDate: isDuplicate ? new Date().toISOString().split('T')[0] : program.startDate,
+                endDate: isDuplicate ? null : program.endDate,
                 weeks: clonedWeeks,
                 status: 'completed', // Don't auto-activate the copy
             }

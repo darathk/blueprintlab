@@ -48,13 +48,6 @@ const SCORE_DESCRIPTIONS: Record<string, Record<number, string>> = {
         4: 'I somewhat do not want to train.',
         5: 'I do not want to train.',
     },
-    training_load: {
-        1: 'No training / recovery training only.',
-        2: 'Low training load.',
-        3: 'Normal / moderate training load.',
-        4: 'High training load.',
-        5: 'Very high training load.',
-    },
 };
 
 const METRICS = [
@@ -64,7 +57,6 @@ const METRICS = [
     { id: 'tiredness', label: 'Tiredness', emoji: '⚡' },
     { id: 'recovery', label: 'Perceived Recovery', emoji: '🔋' },
     { id: 'motivation', label: 'Motivation to Train', emoji: '🔥' },
-    { id: 'training_load', label: 'Perceived Training Load', emoji: '🏋️' },
 ];
 
 // 1 = green (best), 5 = red (worst)
@@ -386,7 +378,7 @@ export default function ReadinessCheckin({ athleteId, sessionKey, programId, onR
     // Abbreviated labels for the submitted summary
     const METRIC_ABBREVS: Record<string, string> = {
         leg_soreness: 'Leg', push_soreness: 'Push', pull_soreness: 'Pull',
-        tiredness: 'Tired', recovery: 'Rec', motivation: 'Motive', training_load: 'Load',
+        tiredness: 'Tired', recovery: 'Rec', motivation: 'Motive',
     };
 
     // Submitted summary bar

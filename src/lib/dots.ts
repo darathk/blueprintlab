@@ -15,8 +15,9 @@ const COMPETITION_LIFT_NAMES: Record<'squat' | 'bench' | 'deadlift', string[]> =
 
 // Official DOTs formula coefficients
 const DOTS_COEFFICIENTS = {
-    male: [-307.75076, 24.0900756, -0.1918759221, 0.0009878769, -2.3334613884e-7, 4.6938560833e-10],
-    female: [-57.96288, 13.6175032, -0.1126655495, 0.0005158568, -1.0706390e-7, 9.793927979e-10],
+    // [a0, a1, a2, a3, a4, a5] where denominator = a0 + a1*bw + a2*bw^2 + a3*bw^3 + a4*bw^4 + a5*bw^5
+    male: [-307.75076, 24.0900756, -0.1918759221, 0.0007391293, -0.000001093, 0],
+    female: [-57.96288, 13.6175032, -0.1126655495, 0.0005158568, -0.0000010706, 0],
 };
 
 /**

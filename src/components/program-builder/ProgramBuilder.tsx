@@ -9,7 +9,9 @@ import ImportProgram from '@/components/programs/ImportProgram';
 import ProgramCalendarGrid from './ProgramCalendarGrid';
 import { calculateStress } from '@/lib/stress-index';
 import { getExerciseCategory } from '@/lib/exercise-db';
-import { StickyNote, Pin, Calendar as CalendarIcon, X, Trash2, Copy, CalendarPlus, BookOpen, LayoutGrid } from 'lucide-react';
+import { StickyNote, Pin, Calendar as CalendarIcon, X, Trash2, Copy, CalendarPlus, BookOpen, LayoutGrid, MessageSquare } from 'lucide-react';
+import { useUser } from '@clerk/nextjs';
+import ChatInterface from '@/components/chat/ChatInterface';
 
 const StressMatrix = dynamic(() => import('@/components/program-builder/StressMatrix'), {
     loading: () => <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="pulse">Loading stress charts...</div>
@@ -279,6 +281,10 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
     const [startDate, setStartDate] = useState(() => snapToSunday(new Date().toISOString().split('T')[0]));
     // State for selected athlete in assigning mode
     const [selectedAthleteId, setSelectedAthleteId] = useState(athleteId || '');
+    
+    // Tab Navigation State
+    const [activeView, setActiveView] = useState<'builder' | 'history'>('builder');
+    const [selectedHistoryProgram, setSelectedHistoryProgram] = useState<any | null>(null);
 
     // Lift targets state (only used when building from athlete dashboard)
     const DEFAULT_LIFTS = ['Squat', 'Bench', 'Deadlift'];
@@ -537,6 +543,8 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
 
     // Coach Notes panel
     const [notesOpen, setNotesOpen] = useState(false);
+    const [chatOpen, setChatOpen] = useState(false);
+    const { user } = useUser();
     const [coachNotes, setCoachNotes] = useState<any[]>(initialCoachNotes || []);
     const [notesLoading, setNotesLoading] = useState(false);
     const notesFetchedRef = useRef<boolean>(!!initialCoachNotes);
@@ -1678,7 +1686,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
     };
 
     return (
-        <div className="program-builder-layout" style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 3fr', gap: '1.5rem', height: 'calc(100vh - 100px)', paddingTop: '1.5rem', paddingLeft: notesOpen && athleteId ? 360 : 0, transition: 'padding-left 0.25s ease' }}>
+        <div className="program-builder-layout" style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 3fr', gap: '1.5rem', height: 'calc(100vh - 100px)', paddingTop: '1.5rem', paddingLeft: (notesOpen || chatOpen) && athleteId ? 360 : 0, transition: 'padding-left 0.25s ease' }}>
 
             {/* LEFTSIDE BAR: Exercise Picker + Stress Index */}
             <div className="program-builder-sidebar" style={{ display: 'flex', flexDirection: 'column', gap: '0', height: '100%', overflow: 'hidden' }}>
@@ -1935,20 +1943,46 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                             )}
 
                             {athleteId && (
-                                <button
-                                    onClick={() => setNotesOpen(o => !o)}
-                                    style={{
-                                        display: 'inline-flex', alignItems: 'center', gap: 6,
-                                        background: notesOpen ? 'rgba(125,135,210,0.15)' : 'rgba(255,255,255,0.07)',
-                                        border: `1px solid ${notesOpen ? 'var(--primary)' : 'var(--card-border)'}`,
-                                        borderRadius: 'var(--radius)', padding: '0.5rem 1rem',
-                                        color: notesOpen ? 'var(--primary)' : 'var(--secondary-foreground)',
-                                        fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
-                                    }}
-                                >
-                                    <StickyNote size={14} />
-                                    Notes{coachNotes.length > 0 ? ` (${coachNotes.length})` : ''}
-                                </button>
+                                <>
+                                    <button
+                                        onClick={() => {
+                                            setChatOpen(o => {
+                                                if (!o) setNotesOpen(false);
+                                                return !o;
+                                            });
+                                        }}
+                                        style={{
+                                            display: 'inline-flex', alignItems: 'center', gap: 6,
+                                            background: chatOpen ? 'rgba(125,135,210,0.15)' : 'rgba(255,255,255,0.07)',
+                                            border: `1px solid ${chatOpen ? 'var(--primary)' : 'var(--card-border)'}`,
+                                            borderRadius: 'var(--radius)', padding: '0.5rem 1rem',
+                                            color: chatOpen ? 'var(--primary)' : 'var(--secondary-foreground)',
+                                            fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
+                                        }}
+                                    >
+                                        <MessageSquare size={14} />
+                                        Chat
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setNotesOpen(o => {
+                                                if (!o) setChatOpen(false);
+                                                return !o;
+                                            });
+                                        }}
+                                        style={{
+                                            display: 'inline-flex', alignItems: 'center', gap: 6,
+                                            background: notesOpen ? 'rgba(125,135,210,0.15)' : 'rgba(255,255,255,0.07)',
+                                            border: `1px solid ${notesOpen ? 'var(--primary)' : 'var(--card-border)'}`,
+                                            borderRadius: 'var(--radius)', padding: '0.5rem 1rem',
+                                            color: notesOpen ? 'var(--primary)' : 'var(--secondary-foreground)',
+                                            fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
+                                        }}
+                                    >
+                                        <StickyNote size={14} />
+                                        Notes{coachNotes.length > 0 ? ` (${coachNotes.length})` : ''}
+                                    </button>
+                                </>
                             )}
                             <button onClick={handleSave} className="btn btn-primary" disabled={isSaving || isNavigating}>
                                 {isSaving ? 'Saving...' : isNavigating ? 'Loading dashboard...' : 'Save & Assign'}
@@ -1973,43 +2007,167 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
 
                 {/* SCROLLABLE CONTENT */}
                 <div style={{ overflowY: 'auto', paddingRight: '1rem', flex: 1 }}>
-
-                    {/* CALENDAR VIEW (Primary) */}
-                    <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-                        <ProgramCalendarGrid
-                            weeks={weeks}
-                            startDate={startDate}
-                            onSelectDate={handleSelectDate}
-                            onSessionMove={handleSessionMove}
-                            onDuplicateSession={(weekNum, dayNum) => {
-                                const wIdx = weeks.findIndex(w => w.weekNumber === weekNum);
-                                if (wIdx === -1) return;
-                                const sIdx = weeks[wIdx].sessions.findIndex(s => s.day === dayNum);
-                                if (sIdx === -1) return;
-                                setDuplicateSource({ weekIndex: wIdx, sessionIndex: sIdx });
-                                setDuplicateTargetDate('');
+                    
+                    {/* Tab Navigation */}
+                    <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '0.5rem', maxWidth: '1200px', margin: '0 auto 1.5rem auto' }}>
+                        <button
+                            onClick={() => setActiveView('builder')}
+                            style={{
+                                background: activeView === 'builder' ? 'var(--primary)' : 'transparent',
+                                color: activeView === 'builder' ? '#000' : 'var(--secondary-foreground)',
+                                border: 'none',
+                                borderRadius: '4px',
+                                padding: '6px 16px',
+                                fontSize: '0.85rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
                             }}
-                            onDuplicateSessionToNextWeek={duplicateSessionToNextWeek}
-                            onDuplicateWeekToNextWeek={duplicateWeekToNextWeek}
-                            onClearWeek={(weekNum: number) => {
-                                const wIdx = weeks.findIndex(w => w.weekNumber === weekNum);
-                                if (wIdx === -1) return;
-                                if (!confirm(`Delete all sessions in Week ${weekNum}?`)) return;
-                                const newWeeks = [...weeks];
-                                // Clear sessions but keep weekNumber intact so other weeks
-                                // don't shift their calendar positions.
-                                newWeeks[wIdx] = { ...newWeeks[wIdx], sessions: [] };
-                                setWeeks(newWeeks);
-                                setEditingSession(null);
-                                setActiveLocation({ w: 0, s: 0 });
-                                showToast(`Cleared Week ${weekNum}`);
+                        >
+                            Current Program
+                        </button>
+                        <button
+                            onClick={() => { setActiveView('history'); setSelectedHistoryProgram(null); }}
+                            style={{
+                                background: activeView === 'history' ? 'var(--primary)' : 'transparent',
+                                color: activeView === 'history' ? '#000' : 'var(--secondary-foreground)',
+                                border: 'none',
+                                borderRadius: '4px',
+                                padding: '6px 16px',
+                                fontSize: '0.85rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                transition: 'all 0.2s'
                             }}
-                            existingPrograms={existingPrograms}
-                            onGhostSessionClick={(ghost: any) => setReferenceSession(ghost)}
-                        />
+                        >
+                            Program History
+                        </button>
                     </div>
 
-
+                    {activeView === 'builder' ? (
+                        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+                            <ProgramCalendarGrid
+                                weeks={weeks}
+                                startDate={startDate}
+                                onSelectDate={handleSelectDate}
+                                onSessionMove={handleSessionMove}
+                                onDuplicateSession={(weekNum, dayNum) => {
+                                    const wIdx = weeks.findIndex(w => w.weekNumber === weekNum);
+                                    if (wIdx === -1) return;
+                                    const sIdx = weeks[wIdx].sessions.findIndex(s => s.day === dayNum);
+                                    if (sIdx === -1) return;
+                                    setDuplicateSource({ weekIndex: wIdx, sessionIndex: sIdx });
+                                    setDuplicateTargetDate('');
+                                }}
+                                onDuplicateSessionToNextWeek={duplicateSessionToNextWeek}
+                                onDuplicateWeekToNextWeek={duplicateWeekToNextWeek}
+                                onClearWeek={(weekNum: number) => {
+                                    const wIdx = weeks.findIndex(w => w.weekNumber === weekNum);
+                                    if (wIdx === -1) return;
+                                    if (!confirm(`Delete all sessions in Week ${weekNum}?`)) return;
+                                    const newWeeks = [...weeks];
+                                    // Clear sessions but keep weekNumber intact so other weeks
+                                    // don't shift their calendar positions.
+                                    newWeeks[wIdx] = { ...newWeeks[wIdx], sessions: [] };
+                                    setWeeks(newWeeks);
+                                    setEditingSession(null);
+                                    setActiveLocation({ w: 0, s: 0 });
+                                    showToast(`Cleared Week ${weekNum}`);
+                                }}
+                                existingPrograms={existingPrograms}
+                                onGhostSessionClick={(ghost: any) => setReferenceSession(ghost)}
+                            />
+                        </div>
+                    ) : (
+                        <div style={{ maxWidth: '1200px', margin: '0 auto', paddingBottom: '2rem' }}>
+                            {!selectedHistoryProgram ? (
+                                <div>
+                                    <h3 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--foreground)' }}>Previous Programs</h3>
+                                    {(!existingPrograms || existingPrograms.length === 0) ? (
+                                        <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--secondary-foreground)', background: 'var(--card-bg)', borderRadius: 'var(--radius)', border: '1px solid var(--card-border)' }}>
+                                            No previous programs found for this athlete.
+                                        </div>
+                                    ) : (
+                                        <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
+                                            {existingPrograms.map((prog: any) => (
+                                                <div 
+                                                    key={prog.id} 
+                                                    onClick={() => setSelectedHistoryProgram(prog)}
+                                                    style={{ 
+                                                        background: 'var(--card-bg)', 
+                                                        border: '1px solid var(--card-border)', 
+                                                        borderRadius: 'var(--radius)', 
+                                                        padding: '1rem',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s',
+                                                    }}
+                                                    onMouseOver={e => e.currentTarget.style.borderColor = 'var(--primary)'}
+                                                    onMouseOut={e => e.currentTarget.style.borderColor = 'var(--card-border)'}
+                                                >
+                                                    <div style={{ fontWeight: 600, color: 'var(--foreground)', marginBottom: '0.25rem', fontSize: '1rem' }}>{prog.name || 'Untitled Program'}</div>
+                                                    <div style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', marginBottom: '0.5rem' }}>
+                                                        {prog.weeks?.length || 0} Weeks
+                                                    </div>
+                                                    <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>
+                                                        Created: {new Date(prog.createdAt).toLocaleDateString()}
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+                                </div>
+                            ) : (
+                                <div>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+                                        <button 
+                                            onClick={() => setSelectedHistoryProgram(null)}
+                                            style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}
+                                        >
+                                            ← Back to List
+                                        </button>
+                                        <h3 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0, color: 'var(--primary)' }}>
+                                            {selectedHistoryProgram.name || 'Untitled Program'}
+                                        </h3>
+                                    </div>
+                                    
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                        {(selectedHistoryProgram.weeks || []).map((week: any) => (
+                                            <div key={week.id} style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
+                                                <div style={{ padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid var(--card-border)', fontWeight: 700, color: 'var(--foreground)' }}>
+                                                    Week {week.weekNumber}
+                                                </div>
+                                                <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                                    {(!week.sessions || week.sessions.length === 0) ? (
+                                                        <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', fontStyle: 'italic' }}>No sessions in this week.</div>
+                                                    ) : (
+                                                        [...week.sessions].sort((a, b) => a.day - b.day).map((session: any) => (
+                                                            <div key={session.id} style={{ borderLeft: '2px solid var(--primary)', paddingLeft: '1rem' }}>
+                                                                <div style={{ fontWeight: 600, color: 'var(--foreground)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
+                                                                    {session.name}
+                                                                </div>
+                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                                                                    {(session.exercises || []).map((ex: any) => (
+                                                                        <div key={ex.id} style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)' }}>
+                                                                            <span style={{ fontWeight: 600, color: 'var(--foreground)' }}>{ex.name}</span>
+                                                                            {ex.sets && ex.sets.length > 0 && (
+                                                                                <span style={{ marginLeft: '0.5rem' }}>
+                                                                                    ({ex.sets.length} sets: {ex.sets.map((s: any) => `${s.weight ? s.weight + 'x' : ''}${s.reps}@${s.rpe}`).join(', ')})
+                                                                                </span>
+                                                                            )}
+                                                                        </div>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
+                                                        ))
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
 
@@ -2147,118 +2305,135 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                                 </div>
                             )}
                         </div>
-
+                                
                         {/* Cross-session drag target overlay — visible while an exercise is being dragged */}
                         {dragExercise && (() => {
-                            // Flatten all sessions across all weeks for the picker list
-                            const allSessionTargets: { w: number; s: number; weekNum: number; name: string; exerciseCount: number }[] = [];
+                            // Group all eligible drop targets by week, and sort chronologically within the week
+                            const targetsByWeek: Record<number, { w: number; s: number; weekNum: number; day: number; name: string; exerciseCount: number }[]> = {};
+                            let hasTargets = false;
+                            
                             weeks.forEach((week, wi) => {
-                                week.sessions.forEach((sess, si) => {
-                                    // Exclude the session the exercise is currently in
-                                    if (wi === dragExercise.w && si === dragExercise.s) return;
-                                    allSessionTargets.push({
+                                const validSessions = week.sessions
+                                    .map((sess, si) => ({
                                         w: wi,
                                         s: si,
                                         weekNum: week.weekNumber,
+                                        day: sess.day,
                                         name: sess.name,
                                         exerciseCount: sess.exercises.length,
-                                    });
-                                });
+                                    }))
+                                    .filter(t => !(t.w === dragExercise.w && t.s === dragExercise.s))
+                                    .sort((a, b) => a.day - b.day);
+
+                                if (validSessions.length > 0) {
+                                    targetsByWeek[week.weekNumber] = validSessions;
+                                    hasTargets = true;
+                                }
                             });
 
-                            if (allSessionTargets.length === 0) return null;
+                            if (!hasTargets) return null;
 
                             return (
                                 <div
                                     style={{
-                                        position: 'sticky',
+                                        position: 'fixed',
+                                        top: 'var(--header-height, 56px)',
+                                        right: 'max(40vw, 480px)', 
                                         bottom: 0,
-                                        left: 0,
-                                        right: 0,
-                                        background: 'rgba(10,10,10,0.96)',
-                                        backdropFilter: 'blur(12px)',
-                                        WebkitBackdropFilter: 'blur(12px)',
-                                        borderTop: '1px solid var(--primary)',
-                                        padding: '0.75rem 1.25rem',
-                                        zIndex: 10,
-                                        boxShadow: '0 -8px 24px rgba(0,0,0,0.5)',
-                                        animation: 'slideUpIn 0.18s ease',
-                                        marginTop: '1rem',
+                                        width: '30vw',
+                                        minWidth: '320px',
+                                        background: 'var(--background)',
+                                        borderLeft: '1px solid var(--card-border)',
+                                        borderRight: '1px solid var(--card-border)',
+                                        zIndex: 899,
+                                        boxShadow: '-8px 0 30px rgba(0,0,0,0.5)',
+                                        animation: 'slideRightIn 0.2s ease',
+                                        display: 'flex',
+                                        flexDirection: 'column',
                                     }}
                                 >
                                     <div style={{
-                                        fontSize: '0.7rem',
+                                        padding: '1.25rem 1.25rem 1rem 1.25rem',
+                                        borderBottom: '1px solid var(--card-border)',
+                                        background: 'rgba(148, 163, 184, 0.06)',
+                                        fontSize: '0.75rem',
                                         fontWeight: 700,
                                         textTransform: 'uppercase',
                                         letterSpacing: '0.08em',
                                         color: 'var(--primary)',
-                                        marginBottom: '0.5rem',
                                         display: 'flex',
                                         alignItems: 'center',
-                                        gap: '0.4rem',
+                                        gap: '0.5rem',
+                                        flexShrink: 0,
                                     }}>
-                                        <span style={{ fontSize: '0.9rem' }}>⇩</span>
-                                        Drop onto another session
+                                        <span style={{ fontSize: '1.1rem' }}>⇦</span>
+                                        Drop into another session
                                     </div>
-                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                                        {allSessionTargets.map(({ w, s, weekNum, name, exerciseCount }) => {
-                                            const isHovered = crossSessionHover?.w === w && crossSessionHover?.s === s;
-                                            return (
-                                                <div
-                                                    key={`${w}-${s}`}
-                                                    onDragOver={(e) => {
-                                                        e.preventDefault();
-                                                        e.stopPropagation();
-                                                        setCrossSessionHover({ w, s });
-                                                    }}
-                                                    onDragLeave={() => setCrossSessionHover(null)}
-                                                    onDrop={(e) => {
-                                                        e.preventDefault();
-                                                        e.stopPropagation();
-                                                        if (!dragExercise) return;
-                                                        const { w: srcW, s: srcS, e: srcE } = dragExercise;
-                                                        // Move exercise to end of target session
-                                                        const newWeeks = [...weeks];
-                                                        const [moved] = newWeeks[srcW].sessions[srcS].exercises.splice(srcE, 1);
-                                                        newWeeks[w].sessions[s].exercises.push(moved);
-                                                        setWeeks(newWeeks);
-                                                        setDragExercise(null);
-                                                        setDropTarget(null);
-                                                        setCrossSessionHover(null);
-                                                        showToast(`Moved to ${name}`);
-                                                    }}
-                                                    style={{
-                                                        padding: '0.4rem 0.75rem',
-                                                        borderRadius: '6px',
-                                                        border: isHovered
-                                                            ? '2px solid var(--primary)'
-                                                            : '1px solid var(--card-border)',
-                                                        background: isHovered
-                                                            ? 'rgba(6, 182, 212, 0.15)'
-                                                            : 'rgba(255,255,255,0.04)',
-                                                        cursor: 'copy',
-                                                        transition: 'all 0.12s',
-                                                        transform: isHovered ? 'scale(1.04)' : 'none',
-                                                        boxShadow: isHovered ? '0 0 12px rgba(6,182,212,0.35)' : 'none',
-                                                    }}
-                                                >
-                                                    <div style={{ fontSize: '0.65rem', color: 'var(--secondary-foreground)', fontWeight: 600 }}>
-                                                        Wk {weekNum}
+                                    <div style={{ flex: 1, overflowY: 'auto', padding: '1rem 1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                        {Object.keys(targetsByWeek)
+                                            .sort((a, b) => Number(a) - Number(b))
+                                            .map((weekNumStr) => {
+                                                const weekTargets = targetsByWeek[Number(weekNumStr)];
+                                                return (
+                                                    <div key={weekNumStr}>
+                                                        <div style={{ fontSize: '0.65rem', color: 'var(--secondary-foreground)', marginBottom: '0.4rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                            Week {weekNumStr}
+                                                        </div>
+                                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
+                                                            {weekTargets.map(({ w, s, name, exerciseCount }) => {
+                                                                const isHovered = crossSessionHover?.w === w && crossSessionHover?.s === s;
+                                                                return (
+                                                                    <div
+                                                                        key={`${w}-${s}`}
+                                                                        onDragOver={(e) => {
+                                                                            e.preventDefault();
+                                                                            e.stopPropagation();
+                                                                            setCrossSessionHover({ w, s });
+                                                                        }}
+                                                                        onDragLeave={() => setCrossSessionHover(null)}
+                                                                        onDrop={(e) => {
+                                                                            e.preventDefault();
+                                                                            e.stopPropagation();
+                                                                            if (!dragExercise) return;
+                                                                            const { w: srcW, s: srcS, e: srcE } = dragExercise;
+                                                                            const newWeeks = [...weeks];
+                                                                            const [moved] = newWeeks[srcW].sessions[srcS].exercises.splice(srcE, 1);
+                                                                            newWeeks[w].sessions[s].exercises.push(moved);
+                                                                            setWeeks(newWeeks);
+                                                                            setDragExercise(null);
+                                                                            setDropTarget(null);
+                                                                            setCrossSessionHover(null);
+                                                                            showToast(`Moved to ${name}`);
+                                                                        }}
+                                                                        style={{
+                                                                            padding: '0.5rem 0.75rem',
+                                                                            borderRadius: '6px',
+                                                                            border: isHovered
+                                                                                ? '2px solid var(--primary)'
+                                                                                : '1px solid var(--card-border)',
+                                                                            background: isHovered
+                                                                                ? 'rgba(6, 182, 212, 0.15)'
+                                                                                : 'rgba(255,255,255,0.04)',
+                                                                            cursor: 'copy',
+                                                                            transition: 'all 0.12s',
+                                                                            transform: isHovered ? 'scale(1.04)' : 'none',
+                                                                            boxShadow: isHovered ? '0 0 12px rgba(6,182,212,0.35)' : 'none',
+                                                                        }}
+                                                                    >
+                                                                        <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--foreground)' }}>{name}</div>
+                                                                        <div style={{ fontSize: '0.65rem', color: 'var(--secondary-foreground)' }}>{exerciseCount} exercises</div>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
                                                     </div>
-                                                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: isHovered ? 'var(--primary)' : 'var(--foreground)' }}>
-                                                        {name}
-                                                    </div>
-                                                    <div style={{ fontSize: '0.65rem', color: 'var(--secondary-foreground)' }}>
-                                                        {exerciseCount} exercise{exerciseCount !== 1 ? 's' : ''}
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
+                                                );
+                                            })}
                                     </div>
                                     <style>{`
-                                        @keyframes slideUpIn {
-                                            from { opacity: 0; transform: translateY(10px); }
-                                            to   { opacity: 1; transform: translateY(0); }
+                                        @keyframes slideRightIn {
+                                            from { opacity: 0; transform: translateX(20px); }
+                                            to   { opacity: 1; transform: translateX(0); }
                                         }
                                     `}</style>
                                 </div>
@@ -2549,6 +2724,49 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                         </div>
                     </div>
                 </>
+            )}
+
+            {/* Coach Chat Side Panel */}
+            {chatOpen && athleteId && (
+                <div style={{
+                    position: 'fixed', top: 'var(--header-height, 56px)', left: 0, bottom: 0, width: 360, zIndex: 850,
+                    background: 'var(--background)', borderRight: '1px solid var(--card-border)',
+                    display: 'flex', flexDirection: 'column', boxShadow: '4px 0 24px rgba(0,0,0,0.4)',
+                }}>
+                    <div style={{
+                        padding: '1rem 1.25rem', borderBottom: '1px solid var(--card-border)',
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0,
+                    }}>
+                        <div>
+                            <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--foreground)' }}>
+                                Chat
+                            </div>
+                            {athleteName && (
+                                <div style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', marginTop: 2 }}>
+                                    {athleteName}
+                                </div>
+                            )}
+                        </div>
+                        <button
+                            onClick={() => setChatOpen(false)}
+                            title="Close"
+                            style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center' }}
+                        >
+                            <X size={16} />
+                        </button>
+                    </div>
+                    
+                    <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', paddingBottom: '1rem' }}>
+                        <ChatInterface
+                            currentUserId={user?.id || ''}
+                            otherUserId={athleteId}
+                            currentUserName={user?.fullName || user?.firstName || 'Coach'}
+                            otherUserName={athleteName || 'Athlete'}
+                            athleteId={athleteId}
+                            isEmbedded={true}
+                        />
+                    </div>
+                </div>
             )}
 
             {/* Week Overview toggle */}

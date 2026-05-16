@@ -7,6 +7,8 @@ import Link from 'next/link';
 import ChatInterface from './ChatInterface';
 import AthleteProgramPane from './AthleteProgramPane';
 import AthleteProgramEditPane from './AthleteProgramEditPane';
+import CoachNotesPane from './CoachNotesPane';
+import { StickyNote } from 'lucide-react';
 
 interface Message {
     id: string; senderId: string; receiverId: string; content: string;
@@ -25,7 +27,7 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
     const [selectedId, setSelectedId] = useState<string | null>(initialAthleteId || null);
     const selectedConvo = convos.find(c => c.athleteId === selectedId);
     const [isMobile, setIsMobile] = useState(false);
-    const [activeSidebar, setActiveSidebar] = useState<'view' | 'edit' | null>(null);
+    const [activeSidebar, setActiveSidebar] = useState<'view' | 'edit' | 'notes' | null>(null);
     const [builderActive, setBuilderActive] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
 
@@ -281,6 +283,20 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                                     {!isMobile && 'Dashboard'}
                                 </Link>
                                 <button
+                                    onClick={() => setActiveSidebar(activeSidebar === 'notes' ? null : 'notes')}
+                                    title={activeSidebar === 'notes' ? 'Close Notes' : 'Coach Notes'}
+                                    style={{
+                                        display: 'flex', alignItems: 'center', gap: 5,
+                                        background: activeSidebar === 'notes' ? 'var(--primary)' : 'rgba(255,255,255,0.1)',
+                                        border: 'none', borderRadius: 6, padding: isMobile ? '7px 8px' : '6px 10px',
+                                        color: activeSidebar === 'notes' ? '#000' : '#fff', fontSize: 12, fontWeight: 500, cursor: 'pointer',
+                                        transition: 'background 0.2s', whiteSpace: 'nowrap',
+                                    }}
+                                >
+                                    <StickyNote size={14} />
+                                    {!isMobile && (activeSidebar === 'notes' ? 'Close Notes' : 'Notes')}
+                                </button>
+                                <button
                                     onClick={() => setActiveSidebar(activeSidebar === 'edit' ? null : 'edit')}
                                     title={activeSidebar === 'edit' ? 'Close Editor' : 'Edit Program'}
                                     style={{
@@ -342,14 +358,20 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                             coachId={coachId}
                             onClose={() => setActiveSidebar(null)}
                         />
-                    ) : (
+                    ) : activeSidebar === 'edit' ? (
                         <AthleteProgramEditPane
                             athleteId={selectedId}
                             coachId={coachId}
                             onClose={() => setActiveSidebar(null)}
                             onBuilderActive={setBuilderActive}
                         />
-                    )}
+                    ) : activeSidebar === 'notes' ? (
+                        <CoachNotesPane
+                            athleteId={selectedId}
+                            athleteName={selectedConvo?.athleteName}
+                            onClose={() => setActiveSidebar(null)}
+                        />
+                    ) : null}
                 </div>
             )}
         </div>

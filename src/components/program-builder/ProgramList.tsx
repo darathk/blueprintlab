@@ -15,6 +15,7 @@ export default function ProgramList({ athleteId, initialPrograms }: { athleteId:
     const [dropdownOpen, setDropdownOpen] = useState<{ programId: string; mode: DropdownMode } | null>(null);
     const [athletes, setAthletes] = useState<any[]>([]);
     const [actionLoading, setActionLoading] = useState(false);
+    const [duplicatingId, setDuplicatingId] = useState<string | null>(null);
     const [actionError, setActionError] = useState('');
     const [timeline, setTimeline] = useState<string>('ALL');
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -169,6 +170,7 @@ export default function ProgramList({ athleteId, initialPrograms }: { athleteId:
         const programName = program ? (program as any).name : 'this program';
         if (!confirm(`Duplicate "${programName}"?`)) return;
 
+        setDuplicatingId(programId);
         try {
             const res = await fetch('/api/programs/copy', {
                 method: 'POST',
@@ -178,9 +180,9 @@ export default function ProgramList({ athleteId, initialPrograms }: { athleteId:
             if (!res.ok) {
                 const data = await res.json();
                 alert(data.error || 'Duplicate failed');
+                setDuplicatingId(null);
                 return;
             }
-            const result = await res.json();
             // Reload programs to show the new duplicate
             const listRes = await fetch(`/api/programs?athleteId=${athleteId}`);
             const listData = await listRes.json();
@@ -188,6 +190,7 @@ export default function ProgramList({ athleteId, initialPrograms }: { athleteId:
         } catch {
             alert('Network error');
         }
+        setDuplicatingId(null);
     };
 
     if (loading) return (
@@ -357,8 +360,8 @@ export default function ProgramList({ athleteId, initialPrograms }: { athleteId:
                                 >
                                     Edit
                                 </Link>
-                                <button onClick={() => handleDuplicate(p.id)} style={actionBtnStyle(false)}>
-                                    Duplicate
+                                <button disabled={duplicatingId === p.id} onClick={() => handleDuplicate(p.id)} style={{...actionBtnStyle(false), opacity: duplicatingId === p.id ? 0.5 : 1}}>
+                                    {duplicatingId === p.id ? 'Duplicating...' : 'Duplicate'}
                                 </button>
                                 <button onClick={() => openDropdown(p.id, 'copy')} style={actionBtnStyle(isCopyOpen)}>
                                     Copy
@@ -437,8 +440,13 @@ export default function ProgramList({ athleteId, initialPrograms }: { athleteId:
                                                         e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
                                                     }}
                                                 >
-                                                    <span>{a.name}</span>
-                                                    <span style={{ fontSize: '0.7rem', color: 'var(--secondary-foreground)' }}>{a.email}</span>
+                                                    <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                        {actionLoading && <div className="pulse" style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--primary)' }} />}
+                                                        {a.name}
+                                                    </span>
+                                                    <span style={{ fontSize: '0.7rem', color: 'var(--secondary-foreground)' }}>
+                                                        {actionLoading ? 'Processing...' : a.email}
+                                                    </span>
                                                 </button>
                                             ))}
                                         </div>
