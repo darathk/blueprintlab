@@ -112,18 +112,20 @@ export default function DotsChart({ athleteId, logs, programs = [], initialGende
         return result;
     }, [logs, timeline, selectedProgramId]);
 
-    // Compute data points — one per logged session that has a competition lift
+    // Compute data points — one per unique session (sessionId) with a competition lift.
+    // Programs are passed so each point uses the scheduled date (program start + wN_dN offset)
+    // rather than the logged date, keeping x-axis positions correct even for late-logged sessions.
     const data: CompetitionDataPoint[] = useMemo(
-        () => getCompetitionDataPoints(filteredLogs, wc, genderKey),
-        [filteredLogs, wc, genderKey]
+        () => getCompetitionDataPoints(filteredLogs, wc, genderKey, programs),
+        [filteredLogs, wc, genderKey, programs]
     );
 
     // Compute an unfiltered set across ALL logs for the stat cards.
     // This ensures "Latest DOTs", "Latest Squat E1RM", etc. always reflect
     // the true most-recent E1RM for each lift, regardless of timeline/program filter.
     const allData: CompetitionDataPoint[] = useMemo(
-        () => getCompetitionDataPoints(logs ?? [], wc, genderKey),
-        [logs, wc, genderKey]
+        () => getCompetitionDataPoints(logs ?? [], wc, genderKey, programs),
+        [logs, wc, genderKey, programs]
     );
 
     // Walk backwards through ALL data to find the most-recently logged value per lift.
