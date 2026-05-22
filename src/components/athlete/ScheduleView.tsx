@@ -11,6 +11,7 @@ const ExerciseFeedback = dynamic(() => import('@/components/athlete/ExerciseFeed
 const ReadinessCheckin = dynamic(() => import('@/components/athlete/ReadinessCheckin'), { ssr: false });
 const CelebrationScreen = dynamic(() => import('@/components/athlete/CelebrationScreen'), { ssr: false });
 const PRToggle = dynamic(() => import('@/components/athlete/PRToggle'), { ssr: false });
+const ClipCreator = dynamic(() => import('@/components/athlete/ClipCreator'), { ssr: false });
 const PlannedTopSetInput = dynamic(() => import('@/components/athlete/PlannedTopSetInput'), { ssr: false });
 
 /* ─────────── constants ─────────── */
@@ -1125,17 +1126,25 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                         sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any, i: number) => ({ setNumber: i + 1, actual: s.actual || { weight: '', reps: '', rpe: '' } }))}
                                                                     />
                                                                     {!isCoachView && (
-                                                                        <PRToggle
-                                                                            athleteId={athleteId}
-                                                                            exerciseName={exerciseData.name || ex.name}
-                                                                            sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any) => (s.actual || { weight: '', reps: '', rpe: '' }))}
-                                                                            unit={unit}
-                                                                            sessionId={sKey}
-                                                                            programName={program.name}
-                                                                            weekNum={weekDisplayNum}
-                                                                            dayNum={sessionNum}
-                                                                            date={new Date().toISOString().split('T')[0]}
-                                                                        />
+                                                                        <>
+                                                                            <PRToggle
+                                                                                athleteId={athleteId}
+                                                                                exerciseName={exerciseData.name || ex.name}
+                                                                                sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any) => (s.actual || { weight: '', reps: '', rpe: '' }))}
+                                                                                unit={unit}
+                                                                                sessionId={sKey}
+                                                                                programName={program.name}
+                                                                                weekNum={weekDisplayNum}
+                                                                                dayNum={sessionNum}
+                                                                                date={new Date().toISOString().split('T')[0]}
+                                                                            />
+                                                                            <ClipCreator
+                                                                                exerciseName={exerciseData.name || ex.name}
+                                                                                sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any) => (s.actual || { weight: '', reps: '', rpe: '' }))}
+                                                                                sessionLabel={`Week ${weekDisplayNum} · ${program.name}`}
+                                                                                athleteId={athleteId}
+                                                                            />
+                                                                        </>
                                                                     )}
                                                                 </div>
                                                             )}
@@ -1736,17 +1745,25 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                     sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any, i: number) => ({ setNumber: i + 1, actual: s.actual || { weight: '', reps: '', rpe: '' } }))}
                                                                                 />
                                                                                 {!isCoachView && (
-                                                                                    <PRToggle
-                                                                                        athleteId={athleteId}
-                                                                                        exerciseName={exerciseData.name || ex.name}
-                                                                                        sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any) => (s.actual || { weight: '', reps: '', rpe: '' }))}
-                                                                                        unit={unit}
-                                                                                        sessionId={sKey}
-                                                                                        programName={program.name}
-                                                                                        weekNum={weekDisplayNum}
-                                                                                        dayNum={sessionNum}
-                                                                                        date={new Date().toISOString().split('T')[0]}
-                                                                                    />
+                                                                                    <>
+                                                                                        <PRToggle
+                                                                                            athleteId={athleteId}
+                                                                                            exerciseName={exerciseData.name || ex.name}
+                                                                                            sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any) => (s.actual || { weight: '', reps: '', rpe: '' }))}
+                                                                                            unit={unit}
+                                                                                            sessionId={sKey}
+                                                                                            programName={program.name}
+                                                                                            weekNum={weekDisplayNum}
+                                                                                            dayNum={sessionNum}
+                                                                                            date={new Date().toISOString().split('T')[0]}
+                                                                                        />
+                                                                                        <ClipCreator
+                                                                                            exerciseName={exerciseData.name || ex.name}
+                                                                                            sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any) => (s.actual || { weight: '', reps: '', rpe: '' }))}
+                                                                                            sessionLabel={`Week ${weekDisplayNum} · ${program.name}`}
+                                                                                            athleteId={athleteId}
+                                                                                        />
+                                                                                    </>
                                                                                 )}
                                                                             </div>
                                                                         )}
