@@ -279,7 +279,6 @@ export default function VideoOverlayEditor({
             }
         };
 
-        recorder.start(100); // collect data every 100ms
         video.currentTime = 0;
         video.muted = true;
         video.loop = false; // Disable loop to let video.ended trigger
@@ -287,6 +286,23 @@ export default function VideoOverlayEditor({
         // Wait for seek before playing
         const onSeeked = () => {
             video.removeEventListener('seeked', onSeeked);
+            
+            // Manually draw the first frame to the canvas BEFORE starting the recorder
+            // This prevents a 1-frame black flash at the start of the video.
+            ctx.drawImage(video, 0, 0, vw, vh);
+            drawCardToCanvas({
+                ctx,
+                x: (pos.x - offsetX) * scaleFactor,
+                y: (pos.y - offsetY) * scaleFactor,
+                width: size.width * scaleFactor,
+                exerciseName,
+                sessionLabel,
+                set: sets[selectedSetIdx] ?? sets[0],
+                logoImage: logoImg,
+            });
+
+            recorder.start(100); // collect data every 100ms
+
             video.play().then(() => {
                 rafRef.current = requestAnimationFrame(drawFrame);
             }).catch(() => {
