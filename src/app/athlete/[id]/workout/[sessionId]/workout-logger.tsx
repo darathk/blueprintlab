@@ -588,33 +588,35 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                         </div>
 
                                         {/* Send Coach Feedback */}
-                                        <ExerciseFeedback
-                                            athleteId={athleteId}
-                                            coachId={coachId}
-                                            exerciseName={ex.name}
-                                            weekNum={weekNum}
-                                            dayNum={dayNum}
-                                            blockName={blockName}
-                                            sessionId={sessionId}
-                                            sets={ex.sets}
-                                        />
-                                        <PRToggle
-                                            athleteId={athleteId}
-                                            exerciseName={ex.name}
-                                            sets={ex.sets.map(s => (s.actual || { weight: '', reps: '', rpe: '' }))}
-                                            unit="lbs"
-                                            sessionId={sessionId}
-                                            programName={blockName}
-                                            weekNum={weekNum}
-                                            dayNum={dayNum}
-                                            date={new Date().toISOString().split('T')[0]}
-                                        />
-                                        <ClipCreator
-                                            exerciseName={ex.name}
-                                            sets={ex.sets.map(s => s.actual || { weight: '', reps: '', rpe: '' })}
-                                            sessionLabel={`Week ${weekNum} · ${blockName}`}
-                                            athleteId={athleteId}
-                                        />
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '8px 16px' }}>
+                                            <ExerciseFeedback
+                                                athleteId={athleteId}
+                                                coachId={coachId}
+                                                exerciseName={ex.name}
+                                                weekNum={weekNum}
+                                                dayNum={dayNum}
+                                                blockName={blockName}
+                                                sessionId={sessionId}
+                                                sets={ex.sets}
+                                            />
+                                            <PRToggle
+                                                athleteId={athleteId}
+                                                exerciseName={ex.name}
+                                                sets={ex.sets.map(s => (s.actual || { weight: '', reps: '', rpe: '' }))}
+                                                unit="lbs"
+                                                sessionId={sessionId}
+                                                programName={blockName}
+                                                weekNum={weekNum}
+                                                dayNum={dayNum}
+                                                date={new Date().toISOString().split('T')[0]}
+                                            />
+                                            <ClipCreator
+                                                exerciseName={ex.name}
+                                                sets={ex.sets.map(s => s.actual || { weight: '', reps: '', rpe: '' })}
+                                                sessionLabel={`Week ${weekNum} · ${blockName}`}
+                                                athleteId={athleteId}
+                                            />
+                                        </div>
                                     </div>
                                 )}
                             </div>

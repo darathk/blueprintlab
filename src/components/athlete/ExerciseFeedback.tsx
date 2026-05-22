@@ -364,7 +364,7 @@ export default function ExerciseFeedback({
     };
 
     return (
-        <div style={{ marginTop: 10 }}>
+        <div style={{ display: 'contents' }}>
             {/* Trigger button */}
             <button
                 onClick={handleOpen}
@@ -374,7 +374,7 @@ export default function ExerciseFeedback({
                     border: '1px solid rgba(99,102,241,0.35)',
                     borderRadius: 8, padding: '8px 14px', cursor: 'pointer',
                     color: '#818cf8', fontSize: 13, fontWeight: 600,
-                    transition: 'all 0.15s', width: '100%', justifyContent: 'center',
+                    transition: 'all 0.15s', flex: 1, justifyContent: 'center',
                 }}
             >
                 <MessageCircle size={15} />
@@ -384,7 +384,7 @@ export default function ExerciseFeedback({
             {/* Expandable panel */}
             {open && (
                 <div style={{
-                    marginTop: 8, background: 'rgba(15,23,42,0.6)',
+                    flexBasis: '100%', order: 10, background: 'rgba(15,23,42,0.6)',
                     border: '1px solid rgba(99,102,241,0.25)', borderRadius: 10,
                     padding: 14, display: 'flex', flexDirection: 'column', gap: 10,
                 }}>

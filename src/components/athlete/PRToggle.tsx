@@ -177,7 +177,7 @@ export default function PRToggle({
     }
 
     return (
-        <div style={{ padding: '4px 16px 8px' }}>
+        <div style={{ display: 'contents' }}>
             {/* Toggle button */}
             <button
                 onClick={handleOpen}
@@ -187,7 +187,7 @@ export default function PRToggle({
                     border: `1px solid rgba(251, 191, 36, ${open ? '0.35' : '0.15'})`,
                     borderRadius: 8, padding: '7px 12px', cursor: 'pointer',
                     color: '#fbbf24', fontSize: 12, fontWeight: 600,
-                    transition: 'all 0.15s', width: '100%', justifyContent: 'center',
+                    transition: 'all 0.15s', flex: 1, justifyContent: 'center',
                 }}
             >
                 <Trophy size={13} />
@@ -197,7 +197,7 @@ export default function PRToggle({
             {/* Expanded PR form */}
             {open && !saved && (
                 <div style={{
-                    marginTop: 8, padding: 12,
+                    flexBasis: '100%', order: 10, padding: 12,
                     background: 'rgba(251, 191, 36, 0.04)',
                     border: '1px solid rgba(251, 191, 36, 0.15)',
                     borderRadius: 10,

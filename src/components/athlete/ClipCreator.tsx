@@ -21,8 +21,7 @@ export default function ClipCreator({ exerciseName, sets, sessionLabel }: ClipCr
 
 
     return (
-        <>
-            <div style={{ padding: '4px 16px 8px' }}>
+        <div style={{ display: 'contents' }}>
                 <button
                     onClick={() => setEditorOpen(true)}
                     style={{
@@ -32,7 +31,7 @@ export default function ClipCreator({ exerciseName, sets, sessionLabel }: ClipCr
                         border: '1px solid rgba(6,182,212,0.18)',
                         borderRadius: 8, cursor: 'pointer',
                         color: 'rgba(6,182,212,0.85)',
-                        fontSize: 12, fontWeight: 600,
+                        fontSize: 12, fontWeight: 600, flex: 1,
                         transition: 'all 0.15s',
                         fontFamily: 'var(--font-geist-sans, system-ui)',
                     }}
@@ -48,8 +47,6 @@ export default function ClipCreator({ exerciseName, sets, sessionLabel }: ClipCr
                     <Clapperboard size={13} />
                     Create Clip
                 </button>
-            </div>
-
             <VideoOverlayEditor
                 isOpen={editorOpen}
                 onClose={() => setEditorOpen(false)}
@@ -57,6 +54,6 @@ export default function ClipCreator({ exerciseName, sets, sessionLabel }: ClipCr
                 sessionLabel={sessionLabel}
                 sets={clipSets}
             />
-        </>
+        </div>
     );
 }

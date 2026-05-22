@@ -142,8 +142,24 @@ export default function VideoOverlayEditor({
         const vh = video.videoHeight || container.offsetHeight;
         const previewW = container.offsetWidth;
         const previewH = container.offsetHeight;
-        const scaleX = vw / previewW;
-        const scaleY = vh / previewH;
+
+        // Calculate actual video dimensions inside the container (handling objectFit: 'contain' letterboxing)
+        const videoAR = vw / vh;
+        const containerAR = previewW / previewH;
+        let actualVideoW = previewW;
+        let actualVideoH = previewH;
+        let offsetX = 0;
+        let offsetY = 0;
+
+        if (videoAR > containerAR) {
+            actualVideoH = previewW / videoAR;
+            offsetY = (previewH - actualVideoH) / 2;
+        } else {
+            actualVideoW = previewH * videoAR;
+            offsetX = (previewW - actualVideoW) / 2;
+        }
+
+        const scaleFactor = vw / actualVideoW;
 
         const canvas = document.createElement('canvas');
         canvas.width = vw;
@@ -155,9 +171,9 @@ export default function VideoOverlayEditor({
 
         drawCardToCanvas({
             ctx,
-            x: pos.x * scaleX,
-            y: pos.y * scaleY,
-            width: size.width * scaleX,
+            x: (pos.x - offsetX) * scaleFactor,
+            y: (pos.y - offsetY) * scaleFactor,
+            width: size.width * scaleFactor,
             exerciseName,
             sessionLabel,
             set: sets[selectedSetIdx] ?? sets[0],
@@ -187,8 +203,24 @@ export default function VideoOverlayEditor({
         const vh = video.videoHeight || container.offsetHeight;
         const previewW = container.offsetWidth;
         const previewH = container.offsetHeight;
-        const scaleX = vw / previewW;
-        const scaleY = vh / previewH;
+
+        // Calculate actual video dimensions inside the container (handling objectFit: 'contain' letterboxing)
+        const videoAR = vw / vh;
+        const containerAR = previewW / previewH;
+        let actualVideoW = previewW;
+        let actualVideoH = previewH;
+        let offsetX = 0;
+        let offsetY = 0;
+
+        if (videoAR > containerAR) {
+            actualVideoH = previewW / videoAR;
+            offsetY = (previewH - actualVideoH) / 2;
+        } else {
+            actualVideoW = previewH * videoAR;
+            offsetX = (previewW - actualVideoW) / 2;
+        }
+
+        const scaleFactor = vw / actualVideoW;
 
         const canvas = document.createElement('canvas');
         canvas.width = vw;
@@ -228,9 +260,9 @@ export default function VideoOverlayEditor({
                 ctx.drawImage(video, 0, 0, vw, vh);
                 drawCardToCanvas({
                     ctx,
-                    x: pos.x * scaleX,
-                    y: pos.y * scaleY,
-                    width: size.width * scaleX,
+                    x: (pos.x - offsetX) * scaleFactor,
+                    y: (pos.y - offsetY) * scaleFactor,
+                    width: size.width * scaleFactor,
                     exerciseName,
                     sessionLabel,
                     set: sets[selectedSetIdx] ?? sets[0],
