@@ -15,15 +15,10 @@ interface ClipCreatorProps {
 export default function ClipCreator({ exerciseName, sets, sessionLabel }: ClipCreatorProps) {
     const [editorOpen, setEditorOpen] = useState(false);
 
-    // Only render if there's at least one set with data
-    const hasData = sets.some(s => s.weight && s.reps);
-    if (!hasData) return null;
+    const clipSets: ClipSetData[] = sets.length > 0
+        ? sets.map(s => ({ weight: s.weight, reps: s.reps, rpe: s.rpe }))
+        : [{ weight: '', reps: '', rpe: '' }];
 
-    const clipSets: ClipSetData[] = sets.map(s => ({
-        weight: s.weight,
-        reps: s.reps,
-        rpe: s.rpe,
-    }));
 
     return (
         <>
