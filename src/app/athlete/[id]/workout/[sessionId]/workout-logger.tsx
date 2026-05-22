@@ -511,7 +511,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                                                                                     inputMode="decimal"
                                                                                                     value={set.actual.reps}
                                                                                                     onChange={(e) => updateSet(exIndex, sIndex, 'reps', e.target.value)}
-                                                                                                    placeholder={cleanReps?.toString() || ''}
+                                                                                                    placeholder=""
                                                                                                     style={{ flex: 1, padding: '8px', border: '1px solid #94a3b8', borderRadius: '6px', background: 'var(--background)', textAlign: 'center', fontSize: '1rem', color: 'var(--foreground)', width: '100%', outlineColor: 'var(--primary)' }}
                                                                                                 />
                                                                                                 <input
@@ -520,7 +520,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                                                                                     step="0.5"
                                                                                                     value={set.actual.rpe}
                                                                                                     onChange={(e) => updateSet(exIndex, sIndex, 'rpe', e.target.value)}
-                                                                                                    placeholder={set.target.rpe?.toString() || ''}
+                                                                                                    placeholder=""
                                                                                                     style={{ flex: 1, padding: '8px', border: '1px solid #94a3b8', borderRadius: '6px', background: 'var(--background)', textAlign: 'center', fontSize: '1rem', color: 'var(--foreground)', width: '100%', outlineColor: 'var(--primary)' }}
                                                                                                 />
                                                                                             </div>

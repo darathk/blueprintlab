@@ -1080,7 +1080,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                     <>
                                                                                         <div style={{ display: 'flex', flex: 1, alignItems: 'center', gap: '8px' }}>
                                                                                             {['weight', 'reps', 'rpe'].map(f => {
-                                                                                                const placeholderVal = f === 'weight' ? toDisplay(target[f]) : target[f];
+                                                                                                const placeholderVal = f === 'weight' ? toDisplay(target[f]) : '';
                                                                                                 return (
                                                                                                     <input key={f} type="number" inputMode="decimal"
                                                                                                         value={f === 'weight' ? toDisplay(actual[f]) : actual[f]}
@@ -1697,7 +1697,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                 <>
                                                                                                     <div style={{ display: 'flex', flex: 1, alignItems: 'center', gap: '8px' }}>
                                                                                                         {['weight', 'reps', 'rpe'].map(f => {
-                                                                                                            const placeholderVal = f === 'weight' ? toDisplay(target[f]) : target[f];
+                                                                                                            const placeholderVal = f === 'weight' ? toDisplay(target[f]) : '';
                                                                                                             return (
                                                                                                                 <input key={f} type="number" inputMode="decimal"
                                                                                                                     value={f === 'weight' ? toDisplay(actual[f]) : actual[f]}

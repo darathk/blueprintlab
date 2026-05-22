@@ -501,7 +501,7 @@ export default function VideoOverlayEditor({
                             Card Size
                         </div>
                         <input
-                            type="range" min={160} max={440} value={size.width}
+                            type="range" min={80} max={440} value={size.width}
                             onChange={e => setSize({ width: Number(e.target.value) })}
                             style={{ width: '100%', accentColor: 'rgb(6,182,212)' }}
                         />
