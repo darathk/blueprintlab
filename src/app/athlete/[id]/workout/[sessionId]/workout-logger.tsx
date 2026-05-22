@@ -6,6 +6,7 @@ import { calculateSimpleE1RM, calculateStress } from '@/lib/stress-index';
 import { getExerciseCategory } from '@/lib/exercise-db';
 import ExerciseFeedback from '@/components/athlete/ExerciseFeedback';
 import PRToggle from '@/components/athlete/PRToggle';
+import ClipCreator from '@/components/athlete/ClipCreator';
 
 // Category-based colors for exercise names
 const CATEGORY_COLORS = {
@@ -607,6 +608,12 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                             weekNum={weekNum}
                                             dayNum={dayNum}
                                             date={new Date().toISOString().split('T')[0]}
+                                        />
+                                        <ClipCreator
+                                            exerciseName={ex.name}
+                                            sets={ex.sets.map(s => s.actual || { weight: '', reps: '', rpe: '' })}
+                                            sessionLabel={`Week ${weekNum} · ${blockName}`}
+                                            athleteId={athleteId}
                                         />
                                     </div>
                                 )}

@@ -460,11 +460,10 @@ export default function PeriodizationPlanner({ athlete }) {
                                     setDragOverIndex(null);
                                 }}
                                 style={{
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: '0.75rem',
+                                    display: 'grid',
+                                    gridTemplateColumns: '1fr 280px',
+                                    gap: '0',
                                     background: 'var(--card-bg)',
-                                    padding: '1rem',
                                     borderRadius: '12px',
                                     border: '1px solid var(--card-border)',
                                     borderLeft: `3px solid ${block.color}`,
@@ -476,85 +475,117 @@ export default function PeriodizationPlanner({ athlete }) {
                                     boxShadow: dragOverIndex === index ? `0 -4px 0 ${block.color}` : 'none'
                                 }}
                             >
-                                {/* Removed Glow */}
-
-                                {/* Top Row: Controls */}
-                                <div className="block-controls" style={{ display: 'flex', gap: '1rem', alignItems: 'center', paddingLeft: '0.5rem' }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', cursor: 'grab', color: 'var(--secondary-foreground)', opacity: 0.7 }}>
-                                        <GripVertical size={20} />
-                                    </div>
-                                    <select
-                                        value={block.type}
-                                        onChange={(e) => updateBlock(index, 'type', e.target.value)}
-                                        className="input"
-                                        style={{
-                                            width: '160px',
-                                            background: 'var(--card-bg)',
-                                            border: `1px solid ${hexToRgba(block.color, 0.5)}`,
-                                            color: block.color,
-                                            fontWeight: 600
-                                        }}
-                                    >
-                                        <option value="Development" style={{ color: '#38bdf8', background: '#141414' }}>Development</option>
-                                        <option value="Pivot/Deload" style={{ color: '#a855f7', background: '#141414' }}>Pivot/Deload</option>
-                                        <option value="Taper" style={{ color: '#fb7185', background: '#141414' }}>Taper</option>
-                                    </select>
-                                    <input
-                                        value={block.name}
-                                        onChange={(e) => updateBlock(index, 'name', e.target.value)}
-                                        className="input"
-                                        style={{
-                                            flex: 1,
-                                            background: 'transparent',
-                                            border: 'none',
-                                            borderBottom: '1px solid var(--card-border)',
-                                            borderRadius: 0,
-                                            padding: '0.4rem 0',
-                                            color: 'var(--primary)',
-                                            fontSize: '1rem',
-                                            fontWeight: 500
-                                        }}
-                                        placeholder="Block Name"
-                                    />
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(0,0,0,0.3)', padding: '0.4rem 0.8rem', borderRadius: '1rem', border: `1px solid ${hexToRgba(block.color, 0.2)}` }}>
-                                        <input
-                                            type="number"
-                                            value={block.weeks || ''}
-                                            onChange={(e) => updateBlock(index, 'weeks', e.target.value === '' ? '' : parseInt(e.target.value))}
+                                {/* LEFT COLUMN: Controls + Dates */}
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', padding: '0.75rem 1rem' }}>
+                                    {/* Controls Row */}
+                                    <div className="block-controls" style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', cursor: 'grab', color: 'var(--secondary-foreground)', opacity: 0.7, flexShrink: 0 }}>
+                                            <GripVertical size={20} />
+                                        </div>
+                                        <select
+                                            value={block.type}
+                                            onChange={(e) => updateBlock(index, 'type', e.target.value)}
+                                            className="input"
                                             style={{
-                                                width: '40px',
+                                                width: '150px',
+                                                flexShrink: 0,
+                                                background: 'var(--card-bg)',
+                                                border: `1px solid ${hexToRgba(block.color, 0.5)}`,
+                                                color: block.color,
+                                                fontWeight: 600
+                                            }}
+                                        >
+                                            <option value="Development" style={{ color: '#38bdf8', background: '#141414' }}>Development</option>
+                                            <option value="Pivot/Deload" style={{ color: '#a855f7', background: '#141414' }}>Pivot/Deload</option>
+                                            <option value="Taper" style={{ color: '#fb7185', background: '#141414' }}>Taper</option>
+                                        </select>
+                                        <input
+                                            value={block.name}
+                                            onChange={(e) => updateBlock(index, 'name', e.target.value)}
+                                            className="input"
+                                            style={{
+                                                flex: 1,
                                                 background: 'transparent',
                                                 border: 'none',
-                                                color: 'white',
-                                                textAlign: 'center',
-                                                fontWeight: 'bold',
-                                                fontSize: '1rem'
+                                                borderBottom: '1px solid var(--card-border)',
+                                                borderRadius: 0,
+                                                padding: '0.4rem 0',
+                                                color: 'var(--primary)',
+                                                fontSize: '1rem',
+                                                fontWeight: 500
                                             }}
-                                            min="1"
+                                            placeholder="Block Name"
                                         />
-                                        <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.75rem', textTransform: 'uppercase' }}>WKS</span>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(0,0,0,0.3)', padding: '0.4rem 0.8rem', borderRadius: '1rem', border: `1px solid ${hexToRgba(block.color, 0.2)}`, flexShrink: 0 }}>
+                                            <input
+                                                type="number"
+                                                value={block.weeks || ''}
+                                                onChange={(e) => updateBlock(index, 'weeks', e.target.value === '' ? '' : parseInt(e.target.value))}
+                                                style={{
+                                                    width: '40px',
+                                                    background: 'transparent',
+                                                    border: 'none',
+                                                    color: 'white',
+                                                    textAlign: 'center',
+                                                    fontWeight: 'bold',
+                                                    fontSize: '1rem'
+                                                }}
+                                                min="1"
+                                            />
+                                            <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.75rem', textTransform: 'uppercase' }}>WKS</span>
+                                        </div>
+                                        <button
+                                            onClick={() => removeBlock(index)}
+                                            style={{
+                                                background: 'rgba(239, 68, 68, 0.1)',
+                                                border: '1px solid rgba(239, 68, 68, 0.3)',
+                                                color: '#fb7185',
+                                                width: '28px',
+                                                height: '28px',
+                                                borderRadius: '1rem',
+                                                cursor: 'pointer',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                                fontSize: '1.2rem',
+                                                lineHeight: 1,
+                                                flexShrink: 0
+                                            }}
+                                        >
+                                            ×
+                                        </button>
                                     </div>
-                                    <button
-                                        onClick={() => removeBlock(index)}
-                                        style={{
-                                            background: 'rgba(239, 68, 68, 0.1)',
-                                            border: '1px solid rgba(239, 68, 68, 0.3)',
-                                            color: '#fb7185',
-                                            width: '28px',
-                                            height: '28px',
-                                            borderRadius: '1rem',
-                                            cursor: 'pointer',
-                                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            fontSize: '1.2rem',
-                                            lineHeight: 1
-                                        }}
-                                    >
-                                        ×
-                                    </button>
+
+                                    {/* Dates Row */}
+                                    {schedule[index] && schedule[index].startDate && (
+                                        <div style={{ paddingLeft: '1.75rem', display: 'flex', alignItems: 'center' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', color: 'var(--primary)', fontFamily: 'monospace', fontWeight: 500, background: 'rgba(6, 182, 212, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>
+                                                <input
+                                                    type="date"
+                                                    value={formatDateForInput(schedule[index].startDate)}
+                                                    onChange={(e) => updateStartDate(index, e.target.value)}
+                                                    style={{ background: 'transparent', border: 'none', color: 'inherit', fontFamily: 'inherit', outline: 'none', cursor: 'pointer' }}
+                                                />
+                                                <span style={{ opacity: 0.5 }}>-</span>
+                                                <input
+                                                    type="date"
+                                                    value={formatDateForInput(schedule[index].endDate)}
+                                                    onChange={(e) => updateEndDate(index, e.target.value)}
+                                                    style={{ background: 'transparent', border: 'none', color: 'inherit', fontFamily: 'inherit', outline: 'none', cursor: 'pointer' }}
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
 
-                                {/* Bottom Row: Notes & Dates */}
-                                <div style={{ width: '100%', paddingLeft: '3.5rem', display: 'flex', gap: '1rem', alignItems: 'center', justifyContent: 'space-between' }}>
+                                {/* RIGHT COLUMN: Notes */}
+                                <div style={{
+                                    borderLeft: '1px solid var(--card-border)',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    padding: '0.6rem 0.85rem',
+                                    gap: '0.25rem',
+                                    background: 'rgba(255,255,255,0.02)'
+                                }}>
+                                    <span style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--secondary-foreground)', opacity: 0.6, fontWeight: 600 }}>Notes</span>
                                     <input
                                         value={block.notes || ''}
                                         onChange={(e) => updateBlock(index, 'notes', e.target.value)}
@@ -562,33 +593,18 @@ export default function PeriodizationPlanner({ athlete }) {
                                             flex: 1,
                                             background: 'transparent',
                                             border: 'none',
-                                            color: 'rgba(255,255,255,0.7)',
+                                            color: 'rgba(255,255,255,0.75)',
                                             fontSize: '0.85rem',
                                             padding: '0',
                                             fontStyle: 'italic',
-                                            outline: 'none'
+                                            outline: 'none',
+                                            width: '100%'
                                         }}
                                         placeholder="Add operational notes..."
                                     />
-                                    {schedule[index] && schedule[index].startDate && (
-                                        <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.75rem', color: 'var(--primary)', fontFamily: 'monospace', fontWeight: 500, background: 'rgba(6, 182, 212, 0.1)', padding: '2px 6px', borderRadius: '4px' }}>
-                                            <input 
-                                                type="date" 
-                                                value={formatDateForInput(schedule[index].startDate)}
-                                                onChange={(e) => updateStartDate(index, e.target.value)}
-                                                style={{ background: 'transparent', border: 'none', color: 'inherit', fontFamily: 'inherit', outline: 'none', cursor: 'pointer' }}
-                                            />
-                                            <span style={{ opacity: 0.5 }}>-</span>
-                                            <input 
-                                                type="date" 
-                                                value={formatDateForInput(schedule[index].endDate)}
-                                                onChange={(e) => updateEndDate(index, e.target.value)}
-                                                style={{ background: 'transparent', border: 'none', color: 'inherit', fontFamily: 'inherit', outline: 'none', cursor: 'pointer' }}
-                                            />
-                                        </div>
-                                    )}
                                 </div>
                             </div>
+
                         ))}
                     </div>
                     <div className="planner-actions" style={{ marginTop: '2rem', display: 'flex', gap: '1rem', borderTop: '1px solid var(--card-border)', paddingTop: '1.5rem' }}>
