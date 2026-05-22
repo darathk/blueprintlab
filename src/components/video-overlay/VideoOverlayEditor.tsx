@@ -214,6 +214,7 @@ export default function VideoOverlayEditor({
 
         recorder.onstop = async () => {
             if (rafRef.current) cancelAnimationFrame(rafRef.current);
+            video.loop = true; // Restore loop after recording
             const blob = new Blob(chunks, { type: mimeType });
             const ext = fileExtFromMime(mimeType);
             const name = `${exerciseName.replace(/\s+/g, '_')}_clip${ext}`;
@@ -242,12 +243,14 @@ export default function VideoOverlayEditor({
                 setExportProgress(100);
                 recorder.stop();
                 video.pause();
+                video.loop = true; // Restore loop
             }
         };
 
         recorder.start(100); // collect data every 100ms
         video.currentTime = 0;
         video.muted = true;
+        video.loop = false; // Disable loop to let video.ended trigger
 
         // Wait for seek before playing
         const onSeeked = () => {
@@ -256,6 +259,7 @@ export default function VideoOverlayEditor({
                 rafRef.current = requestAnimationFrame(drawFrame);
             }).catch(() => {
                 recorder.stop();
+                video.loop = true;
                 setExportState('error');
             });
         };

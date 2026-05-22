@@ -79,31 +79,16 @@ export default function OverlayCard({
                 ...style,
             }}
         >
-            {/* Top row: session label + logo */}
+            {/* Top row: session label */}
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: gap }}>
                 <span style={{
                     fontSize: fs.label,
                     color: 'rgba(255,255,255,0.45)',
                     fontWeight: 500,
                     lineHeight: 1.3,
-                    maxWidth: '75%',
                 }}>
                     {sessionLabel}
                 </span>
-                {/* Blueprint logo */}
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                    src="/logo.png"
-                    alt="Blueprint"
-                    style={{
-                        height: fs.logoH,
-                        width: 'auto',
-                        objectFit: 'contain',
-                        opacity: 0.9,
-                        flexShrink: 0,
-                        marginLeft: gap,
-                    }}
-                />
             </div>
 
             {/* Exercise name */}
@@ -122,7 +107,6 @@ export default function OverlayCard({
                 fontSize: fs.weight,
                 fontWeight: 600,
                 color: 'rgba(255,255,255,0.88)',
-                marginBottom: Math.round(10 * scale),
                 display: 'flex',
                 alignItems: 'baseline',
                 flexWrap: 'wrap',
@@ -139,11 +123,6 @@ export default function OverlayCard({
                     </span>
                 )}
             </div>
-
-            {/* Plate visualization */}
-            {weightLbs > 0 && (
-                <PlateBar totalLbs={weightLbs} scale={scale * 0.92} />
-            )}
 
             {/* Resize handle (injected by editor) */}
             {resizeHandle}
@@ -184,9 +163,8 @@ export function drawCardToCanvas({
         label:  Math.round(14 * scale),
         name:   Math.round(28 * scale),
         weight: Math.round(22 * scale),
-        bar:    Math.round(40 * scale),
     };
-    const estHeight = pad * 2 + lineH.label + gap + lineH.name + 4 * scale + lineH.weight + 10 * scale + (weightLbs > 0 ? lineH.bar : 0);
+    const estHeight = pad * 2 + lineH.label + gap + lineH.name + 4 * scale + lineH.weight;
 
     // ── Background ────────────────────────────────────────────────────
     ctx.save();
@@ -208,15 +186,6 @@ export function drawCardToCanvas({
     ctx.fillText(sessionLabel, x + pad, curY + Math.round(11 * scale));
     ctx.restore();
 
-    // ── Logo (top right) ──────────────────────────────────────────────
-    if (logoImage) {
-        const logoH = Math.round(20 * scale);
-        const logoW = (logoImage.width / logoImage.height) * logoH;
-        ctx.save();
-        ctx.globalAlpha = 0.9;
-        ctx.drawImage(logoImage, x + width - pad - logoW, y + pad, logoW, logoH);
-        ctx.restore();
-    }
     curY += lineH.label + gap;
 
     // ── Exercise name ─────────────────────────────────────────────────
@@ -243,12 +212,6 @@ export function drawCardToCanvas({
         ctx.fillText(rpe, x + pad + mainW + Math.round(6 * scale), curY + Math.round(16 * scale));
     }
     ctx.restore();
-    curY += lineH.weight + Math.round(10 * scale);
-
-    // ── Plate visualization ───────────────────────────────────────────
-    if (weightLbs > 0) {
-        drawPlatesCanvas(ctx, x + pad, curY, weightLbs, scale);
-    }
 }
 
 // Draw plates on canvas (mirrors PlateBar JSX)
