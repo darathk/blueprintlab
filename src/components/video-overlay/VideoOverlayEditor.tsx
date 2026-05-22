@@ -61,6 +61,7 @@ export default function VideoOverlayEditor({
     const [selectedSetIdx, setSelectedSetIdx] = useState(0);
     const [exportState, setExportState] = useState<ExportState>('idle');
     const [exportProgress, setExportProgress] = useState(0);
+    const [finalBlob, setFinalBlob] = useState<{ blob: Blob; name: string } | null>(null);
     const [isDraggingFile, setIsDraggingFile] = useState(false);
     const [logoImg, setLogoImg] = useState<HTMLImageElement | null>(null);
 
@@ -244,15 +245,14 @@ export default function VideoOverlayEditor({
 
         recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
 
-        recorder.onstop = async () => {
+        recorder.onstop = () => {
             if (rafRef.current) cancelAnimationFrame(rafRef.current);
             video.loop = true; // Restore loop after recording
             const blob = new Blob(chunks, { type: mimeType });
             const ext = fileExtFromMime(mimeType);
             const name = `${exerciseName.replace(/\s+/g, '_')}_clip${ext}`;
-            await shareOrDownload(blob, name);
+            setFinalBlob({ blob, name });
             setExportState('done');
-            setTimeout(() => setExportState('idle'), 3000);
         };
 
         const drawFrame = () => {
@@ -567,7 +567,15 @@ export default function VideoOverlayEditor({
 
                         {/* Video export */}
                         <button
-                            onClick={exportVideo}
+                            onClick={async () => {
+                                if (exportState === 'done' && finalBlob) {
+                                    await shareOrDownload(finalBlob.blob, finalBlob.name);
+                                    setExportState('idle');
+                                    setFinalBlob(null);
+                                } else if (exportState === 'idle') {
+                                    exportVideo();
+                                }
+                            }}
                             disabled={!videoObjectUrl || exportState === 'recording'}
                             style={{
                                 width: '100%', padding: '11px 12px', borderRadius: 10,
@@ -593,9 +601,9 @@ export default function VideoOverlayEditor({
                             }}
                         >
                             {exportState === 'recording' && <Loader2 size={15} style={{ animation: 'spin 1s linear infinite' }} />}
-                            {exportState === 'done' && <CheckCircle2 size={15} />}
-                            {exportState === 'idle' || exportState === 'error' ? <Download size={15} /> : null}
-                            {exportState === 'recording' ? `Recording ${exportProgress}%` : exportState === 'done' ? 'Saved!' : 'Save Clip'}
+                            {exportState === 'done' && <Download size={15} />}
+                            {exportState === 'idle' || exportState === 'error' ? <Video size={15} /> : null}
+                            {exportState === 'recording' ? `Recording ${exportProgress}%` : exportState === 'done' ? 'Save to Photos' : 'Create Clip'}
                         </button>
 
                         <p style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', textAlign: 'center', lineHeight: 1.4, margin: 0 }}>
