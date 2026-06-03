@@ -61,6 +61,34 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
     const [weekDrawerOpen, setWeekDrawerOpen] = useState(false);
     const [warmupDrills, setWarmupDrills] = useState(initialLog?.warmupDrills || sessionWarmupDrills || '');
     const [activeTabs, setActiveTabs] = useState({});
+    
+    const [unit, setUnit] = useState<'kg' | 'lbs'>('lbs');
+
+    useEffect(() => {
+        const saved = localStorage.getItem('athlete-unit-pref');
+        if (saved === 'kg' || saved === 'lbs') setUnit(saved);
+    }, []);
+
+    const toggleUnit = (u: 'kg' | 'lbs') => {
+        setUnit(u);
+        localStorage.setItem('athlete-unit-pref', u);
+    };
+
+    const toDisplay = (val: any) => {
+        if (val === undefined || val === null || val === '') return '';
+        const num = parseFloat(val);
+        if (isNaN(num)) return val;
+        if (unit === 'lbs') return val.toString();
+        return (num * 0.45359237).toFixed(1).replace(/\.0$/, '');
+    };
+
+    const toInternal = (val: any) => {
+        if (val === undefined || val === null || val === '') return '';
+        const num = parseFloat(val);
+        if (isNaN(num)) return val;
+        if (unit === 'lbs') return val.toString();
+        return (num / 0.45359237).toFixed(1).replace(/\.0$/, '');
+    };
 
     // Initialize logs
     const [exerciseLogs, setExerciseLogs] = useState(() => {
@@ -324,9 +352,38 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                     alignItems: 'center'
                 }}>
                     <h2 style={{ fontSize: '1.2rem', margin: 0, fontWeight: 600 }}>Session {dayNum}</h2>
-                    <div style={{ fontSize: '0.8rem', opacity: 0.9, textAlign: 'right' }}>
-                        <div style={{ fontWeight: 600 }}>Stress: {sessionStats.total}</div>
-                        <div style={{ fontSize: '0.7rem', opacity: 0.8 }}>C: {sessionStats.central} | P: {sessionStats.peripheral}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                        {/* Unit toggle */}
+                        <div style={{
+                            display: 'flex',
+                            background: 'rgba(0,0,0,0.2)',
+                            borderRadius: '20px',
+                            padding: '2px'
+                        }}>
+                            {(['lbs', 'kg'] as const).map(u => (
+                                <button
+                                    key={u}
+                                    onClick={() => toggleUnit(u)}
+                                    style={{
+                                        padding: '2px 10px',
+                                        borderRadius: '16px',
+                                        fontSize: '11px',
+                                        fontWeight: 600,
+                                        border: 'none',
+                                        cursor: 'pointer',
+                                        background: unit === u ? 'var(--primary)' : 'transparent',
+                                        color: unit === u ? 'white' : 'rgba(255,255,255,0.7)',
+                                        transition: 'all 0.2s'
+                                    }}
+                                >
+                                    {u.toUpperCase()}
+                                </button>
+                            ))}
+                        </div>
+                        <div style={{ fontSize: '0.8rem', opacity: 0.9, textAlign: 'right' }}>
+                            <div style={{ fontWeight: 600 }}>Stress: {sessionStats.total}</div>
+                            <div style={{ fontSize: '0.7rem', opacity: 0.8 }}>C: {sessionStats.central} | P: {sessionStats.peripheral}</div>
+                        </div>
                     </div>
                 </div>
 
@@ -485,7 +542,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                                                                     {currentTab === 'prescribed' && (
                                                                                         <div style={{ display: 'flex', flex: 1, gap: '8px' }}>
                                                                                             <div style={{ flex: 1, padding: '8px', border: '1px solid var(--card-border)', borderRadius: '6px', background: 'var(--card-bg)', textAlign: 'center', color: 'var(--foreground)' }}>
-                                                                                                {set.target.weight || '-'}
+                                                                                                {set.target.weight ? `${toDisplay(set.target.weight)} ${unit}` : '-'}
                                                                                             </div>
                                                                                             <div style={{ flex: 1, padding: '8px', border: '1px solid var(--card-border)', borderRadius: '6px', background: 'var(--card-bg)', textAlign: 'center', color: 'var(--foreground)' }}>
                                                                                                 {cleanReps || '-'}
@@ -498,14 +555,17 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                                                                     {currentTab === 'actual' && (
                                                                                         <>
                                                                                             <div style={{ display: 'flex', flex: 1, alignItems: 'center', gap: '8px' }}>
-                                                                                                <input
-                                                                                                    type="number"
-                                                                                                    inputMode="decimal"
-                                                                                                    value={set.actual.weight}
-                                                                                                    onChange={(e) => updateSet(exIndex, sIndex, 'weight', e.target.value)}
-                                                                                                    placeholder={set.target.weight?.toString() || ''}
-                                                                                                    style={{ flex: 1, padding: '8px', border: '1px solid #94a3b8', borderRadius: '6px', background: 'var(--background)', textAlign: 'center', fontSize: '1rem', color: 'var(--foreground)', width: '100%', outlineColor: 'var(--primary)' }}
-                                                                                                />
+                                                                                                <div style={{ position: 'relative', flex: 1 }}>
+                                                                                                    <input
+                                                                                                        type="number"
+                                                                                                        inputMode="decimal"
+                                                                                                        value={toDisplay(set.actual.weight)}
+                                                                                                        onChange={(e) => updateSet(exIndex, sIndex, 'weight', toInternal(e.target.value))}
+                                                                                                        placeholder={set.target.weight ? toDisplay(set.target.weight).toString() : ''}
+                                                                                                        style={{ width: '100%', padding: '8px', paddingRight: '28px', border: '1px solid #94a3b8', borderRadius: '6px', background: 'var(--background)', textAlign: 'center', fontSize: '1rem', color: 'var(--foreground)', outlineColor: 'var(--primary)' }}
+                                                                                                    />
+                                                                                                    <span style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.7rem', color: 'var(--secondary-foreground)', pointerEvents: 'none', fontWeight: 600 }}>{unit}</span>
+                                                                                                </div>
                                                                                                 <input
                                                                                                     type="number"
                                                                                                     inputMode="decimal"
@@ -550,10 +610,10 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
 
                                         {/* Stats row */}
                                         <div style={{ padding: '12px 0 8px 0', borderBottom: '1px dashed var(--card-border)', fontSize: '0.85rem', color: 'var(--foreground)' }}>
-                                            <div style={{ display: 'flex', gap: '16px', fontWeight: 600 }}>
-                                                <span>E1RM: {maxE1RM} lbs</span>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: 4 }}>
+                                                <span>E1RM: {toDisplay(maxE1RM)} {unit}</span>
                                                 <span>NL: {totalNL}</span>
-                                                <span>Tonnage: {tonnage.toLocaleString()} lbs</span>
+                                                <span>Tonnage: {toDisplay(tonnage)} {unit}</span>
                                             </div>
                                             <div style={{ display: 'flex', gap: '16px', marginTop: 4 }}>
                                                 <span>Total: <span style={{ fontWeight: 'normal' }}>{exStress.total.toFixed(2)}</span></span>
@@ -603,7 +663,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                                 athleteId={athleteId}
                                                 exerciseName={ex.name}
                                                 sets={ex.sets.map(s => (s.actual || { weight: '', reps: '', rpe: '' }))}
-                                                unit="lbs"
+                                                unit={unit}
                                                 sessionId={sessionId}
                                                 programName={blockName}
                                                 weekNum={weekNum}

@@ -666,10 +666,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
     const removeWeek = (weekIndex: number) => {
         if (weeks.length <= 1) return; // Don't delete the last week
         if (!confirm('Delete this entire week and all its sessions?')) return;
-        const newWeeks = weeks.filter((_, i) => i !== weekIndex).map((w, i) => ({
-            ...w,
-            weekNumber: i + 1
-        }));
+        const newWeeks = weeks.filter((_, i) => i !== weekIndex);
         setWeeks(newWeeks);
         setActiveLocation({ w: 0, s: 0 });
         setEditingSession(null);
@@ -1186,26 +1183,21 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
         let compactedWeeks = weeks;
         let adjustedStart = snappedStart;
 
-        if (firstNonEmptyIdx > 0) {
-            // Shift startDate forward by the number of empty leading weeks
-            const firstWeekNumber = weeks[firstNonEmptyIdx].weekNumber || (firstNonEmptyIdx + 1);
-            const [sy, sm, sd] = snappedStart.split('-').map(Number);
-            const shifted = new Date(sy, sm - 1, sd);
-            shifted.setDate(shifted.getDate() + (firstWeekNumber - 1) * 7);
-            adjustedStart = `${shifted.getFullYear()}-${String(shifted.getMonth() + 1).padStart(2, '0')}-${String(shifted.getDate()).padStart(2, '0')}`;
-        }
-
         if (firstNonEmptyIdx >= 0 && lastNonEmptyIdx >= 0) {
-            // Slice to only include weeks from first to last non-empty, then renumber from 1
-            compactedWeeks = weeks.slice(firstNonEmptyIdx, lastNonEmptyIdx + 1).map((w, i) => ({
-                ...w,
-                weekNumber: i + 1
-            }));
+            // Slice to only include weeks from first to last non-empty
+            // We DO NOT renumber weekNumber to preserve sessionIDs that match existing readiness and logs,
+            // UNLESS it's missing (for older programs)
+            compactedWeeks = weeks.slice(firstNonEmptyIdx, lastNonEmptyIdx + 1).map((w, i) => {
+                if (typeof w.weekNumber !== 'number') {
+                    return { ...w, weekNumber: i + 1 };
+                }
+                return w;
+            });
         }
 
         const start = new Date(adjustedStart);
         const maxWeekNum = compactedWeeks.length > 0
-            ? Math.max(...compactedWeeks.map(w => w.weekNumber))
+            ? Math.max(...compactedWeeks.map(w => w.weekNumber || 1))
             : 0;
         const durationDays = maxWeekNum * 7;
         start.setDate(start.getDate() + durationDays);

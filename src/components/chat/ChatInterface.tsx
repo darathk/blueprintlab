@@ -6,13 +6,13 @@ import { chatUploadManager, useChatUploadJobsForConversation, usePreUploadJobs, 
 
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
-import { Mic, MoreVertical, Reply, Copy, Download, Paperclip, X, Send, Search, Scissors, Pencil, Play, Maximize, Plus } from 'lucide-react';
+import { Mic, MoreVertical, Reply, Copy, Download, Paperclip, X, Send, Search, Scissors, Pencil, Play, Maximize, Minimize2, Plus } from 'lucide-react';
 const VideoCropper = dynamic(() => import('./VideoCropper'), { ssr: false });
 const EmojiPicker = dynamic(() => import('./EmojiPicker'), { ssr: false });
 const GifPicker = dynamic(() => import('./GifPicker'), { ssr: false });
 
 // Lazy-loading video component for iOS reliability
-function LazyVideo({ src, onLoadedData, style }: { src: string; onLoadedData?: () => void; style?: React.CSSProperties }) {
+function LazyVideo({ src, onLoadedData, style, onExpand }: { src: string; onLoadedData?: () => void; style?: React.CSSProperties; onExpand?: (src: string) => void }) {
     const containerRef = useRef<HTMLDivElement>(null);
     const videoRef = useRef<HTMLVideoElement>(null);
     const [isVisible, setIsVisible] = useState(false);
@@ -40,17 +40,22 @@ function LazyVideo({ src, onLoadedData, style }: { src: string; onLoadedData?: (
     }, []);
 
     const handleFullscreen = useCallback(() => {
+        // If an onExpand callback is provided (desktop side-panel), use it
+        if (onExpand) {
+            onExpand(src);
+            return;
+        }
+        // Otherwise fall back to native fullscreen (mobile)
         const vid = videoRef.current;
         if (!vid) return;
         if (vid.requestFullscreen) {
             vid.requestFullscreen();
         } else if ((vid as any).webkitEnterFullscreen) {
-            // iOS Safari uses webkitEnterFullscreen on the video element
             (vid as any).webkitEnterFullscreen();
         } else if ((vid as any).webkitRequestFullscreen) {
             (vid as any).webkitRequestFullscreen();
         }
-    }, []);
+    }, [onExpand, src]);
 
     return (
         <div ref={containerRef} style={{ minHeight: 120, background: '#000', borderRadius: 14, overflow: 'hidden', position: 'relative' }}>
@@ -203,6 +208,8 @@ export default function ChatInterface({
 
     // Pre-upload job IDs per staged file index — upload starts immediately on staging
     const [stagedPreUploadIds, setStagedPreUploadIds] = useState<Record<number, string>>({});
+    // Expanded video panel state (desktop side-panel instead of native fullscreen)
+    const [expandedVideoSrc, setExpandedVideoSrc] = useState<string | null>(null);
     // Subscribe to pre-upload progress so thumbnails update live
     const preUploadJobs = usePreUploadJobs();
     // Helper: get pre-upload progress (0-100) for a staged file index
@@ -1117,6 +1124,88 @@ export default function ChatInterface({
             position: 'relative',
             overflow: 'hidden'
         }}>
+            {/* Expanded Video Side Panel (desktop) */}
+            {expandedVideoSrc && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    right: 0,
+                    width: '50vw',
+                    height: '100dvh',
+                    background: 'rgba(8, 10, 18, 0.97)',
+                    backdropFilter: 'blur(20px)',
+                    WebkitBackdropFilter: 'blur(20px)',
+                    borderLeft: '1px solid rgba(255,255,255,0.08)',
+                    zIndex: 100,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    animation: 'slideInRight 0.25s ease-out',
+                }}>
+                    {/* Panel header */}
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        padding: '16px 20px',
+                        borderBottom: '1px solid rgba(255,255,255,0.06)',
+                        flexShrink: 0,
+                    }}>
+                        <span style={{ fontSize: 14, fontWeight: 600, color: 'rgba(255,255,255,0.7)', letterSpacing: '0.02em' }}>Expanded View</span>
+                        <button
+                            onClick={() => setExpandedVideoSrc(null)}
+                            style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                background: 'rgba(255,255,255,0.06)',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                borderRadius: 8,
+                                padding: '6px 12px',
+                                cursor: 'pointer',
+                                color: 'rgba(255,255,255,0.6)',
+                                fontSize: 13,
+                                fontWeight: 500,
+                                transition: 'all 0.15s',
+                            }}
+                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#fff'; }}
+                            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; }}
+                        >
+                            <Minimize2 size={14} />
+                            Close
+                        </button>
+                    </div>
+                    {/* Video container */}
+                    <div style={{
+                        flex: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: 24,
+                        overflow: 'hidden',
+                    }}>
+                        <video
+                            key={expandedVideoSrc}
+                            controls
+                            autoPlay
+                            playsInline
+                            src={expandedVideoSrc.includes('#t=') ? expandedVideoSrc : `${expandedVideoSrc}#t=0.001`}
+                            style={{
+                                maxWidth: '100%',
+                                maxHeight: '100%',
+                                borderRadius: 16,
+                                boxShadow: '0 8px 40px rgba(0,0,0,0.5)',
+                                background: '#000',
+                            }}
+                        />
+                    </div>
+                </div>
+            )}
+            <style>{`
+                @keyframes slideInRight {
+                    from { transform: translateX(30px); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+            `}</style>
             {/* Header */}
             <div style={{
                 padding: '14px 20px',
@@ -1292,6 +1381,7 @@ export default function ChatInterface({
                                                         src={msg.mediaUrl}
                                                         onLoadedData={() => scrollToBottom(false)}
                                                         style={{ width: '100%', maxWidth: '100%', maxHeight: 300, display: 'block', objectFit: 'contain' }}
+                                                        onExpand={(videoSrc) => setExpandedVideoSrc(videoSrc)}
                                                     />
                                                     {/* Upload/processing progress overlay */}
                                                     {uploadProgress[msg.id] !== undefined && uploadProgress[msg.id] < 100 && (

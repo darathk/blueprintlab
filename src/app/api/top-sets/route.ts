@@ -51,6 +51,43 @@ export async function POST(request: Request) {
             },
         });
 
+        // AUTOMATION: Update the prescribed program for the next week
+        if (body.weight) {
+            const program = await prisma.program.findUnique({
+                where: { id: body.programId }
+            });
+            if (program && program.weeks) {
+                let updated = false;
+                const nextWeekNum = (parseInt(body.weekNum) || 1) + 1;
+                const weeks = program.weeks as any[];
+                
+                for (let w of weeks) {
+                    if (w.weekNumber === nextWeekNum && w.sessions) {
+                        for (let s of w.sessions) {
+                            if (s.exercises) {
+                                for (let e of s.exercises) {
+                                    if (e.name === body.exerciseName && e.sets) {
+                                        for (let set of e.sets) {
+                                            set.target = set.target || {};
+                                            set.target.weight = body.weight;
+                                            updated = true;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (updated) {
+                    await prisma.program.update({
+                        where: { id: body.programId },
+                        data: { weeks: weeks }
+                    });
+                }
+            }
+        }
+
         return NextResponse.json(topSet);
     } catch (error) {
         console.error('Top set save error:', error);

@@ -1062,7 +1062,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                     <div style={{ display: 'flex', flex: 1, gap: '8px' }}>
                                                                                         {(['weight', 'reps', 'rpe'] as const).map(f => (
                                                                                             <div key={f} style={{ flex: 1, padding: '8px', border: '1px solid rgba(125,135,210,0.35)', borderRadius: '6px', background: 'rgba(125,135,210,0.08)', textAlign: 'center', color: 'var(--primary)', fontWeight: 600 }}>
-                                                                                                {prevSet ? (f === 'weight' ? toDisplay(prevSet.weight) : prevSet[f]) || '-' : '-'}
+                                                                                                {prevSet ? (f === 'weight' && prevSet.weight ? `${toDisplay(prevSet.weight)} ${unit}` : prevSet[f] || '-') : '-'}
                                                                                             </div>
                                                                                         ))}
                                                                                     </div>
@@ -1071,7 +1071,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                     <div style={{ display: 'flex', flex: 1, gap: '8px' }}>
                                                                                         {(['weight', 'reps', 'rpe'] as const).map(f => (
                                                                                             <div key={f} style={{ flex: 1, padding: '8px', border: '1px solid var(--card-border)', borderRadius: '6px', background: 'var(--card-bg)', textAlign: 'center', color: 'var(--foreground)' }}>
-                                                                                                {(f === 'weight' ? toDisplay(target[f]) : target[f]) || '-'}
+                                                                                                {f === 'weight' && target[f] ? `${toDisplay(target[f])} ${unit}` : target[f] || '-'}
                                                                                             </div>
                                                                                         ))}
                                                                                     </div>
@@ -1082,17 +1082,34 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                             {['weight', 'reps', 'rpe'].map(f => {
                                                                                                 const placeholderVal = f === 'weight' ? toDisplay(target[f]) : '';
                                                                                                 return (
-                                                                                                    <input key={f} type="number" inputMode="decimal"
-                                                                                                        value={f === 'weight' ? toDisplay(actual[f]) : actual[f]}
-                                                                                                        onChange={e => updateSet(sKey, exIdx, setIdx, f, e.target.value, program.id)}
-                                                                                                        onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
-                                                                                                        placeholder={placeholderVal?.toString()}
-                                                                                                        style={{
-                                                                                                            flex: 1, padding: '8px', border: '1px solid rgba(148,163,184,0.3)', borderRadius: '6px',
-                                                                                                            background: 'var(--background)', textAlign: 'center', fontSize: '1rem',
-                                                                                                            color: 'var(--foreground)', width: '100%', outlineColor: 'var(--primary)'
-                                                                                                        }}
-                                                                                                    />
+                                                                                                    f === 'weight' ? (
+                                                                                                        <div key={f} style={{ position: 'relative', flex: 1 }}>
+                                                                                                            <input type="number" inputMode="decimal"
+                                                                                                                value={toDisplay(actual[f])}
+                                                                                                                onChange={e => updateSet(sKey, exIdx, setIdx, f, toInternal(e.target.value), program.id)}
+                                                                                                                onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
+                                                                                                                placeholder={placeholderVal?.toString()}
+                                                                                                                style={{
+                                                                                                                    width: '100%', padding: '8px', paddingRight: '28px', border: '1px solid rgba(148,163,184,0.3)', borderRadius: '6px',
+                                                                                                                    background: 'var(--background)', textAlign: 'center', fontSize: '1rem',
+                                                                                                                    color: 'var(--foreground)', outlineColor: 'var(--primary)'
+                                                                                                                }}
+                                                                                                            />
+                                                                                                            <span style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.7rem', color: 'var(--secondary-foreground)', pointerEvents: 'none', fontWeight: 600 }}>{unit}</span>
+                                                                                                        </div>
+                                                                                                    ) : (
+                                                                                                        <input key={f} type="number" inputMode="decimal"
+                                                                                                            value={actual[f]}
+                                                                                                            onChange={e => updateSet(sKey, exIdx, setIdx, f, e.target.value, program.id)}
+                                                                                                            onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
+                                                                                                            placeholder={placeholderVal?.toString()}
+                                                                                                            style={{
+                                                                                                                flex: 1, padding: '8px', border: '1px solid rgba(148,163,184,0.3)', borderRadius: '6px',
+                                                                                                                background: 'var(--background)', textAlign: 'center', fontSize: '1rem',
+                                                                                                                color: 'var(--foreground)', width: '100%', outlineColor: 'var(--primary)'
+                                                                                                            }}
+                                                                                                        />
+                                                                                                    )
                                                                                                 );
                                                                                             })}
                                                                                         </div>

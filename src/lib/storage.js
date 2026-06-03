@@ -187,6 +187,28 @@ export const getReadiness = cache(async (coachId) => {
 });
 
 export async function saveReadiness(log) {
+    const sessionKey = log.scores?._sessionKey;
+    
+    if (sessionKey && log.programId) {
+        const recentLogs = await prisma.readiness.findMany({
+            where: { athleteId: log.athleteId, programId: log.programId },
+            orderBy: { timestamp: 'desc' },
+            take: 20
+        });
+        
+        const existing = recentLogs.find(r => r.scores && r.scores._sessionKey === sessionKey);
+        
+        if (existing) {
+            return prisma.readiness.update({
+                where: { id: existing.id },
+                data: {
+                    scores: log.scores,
+                    date: log.date || new Date().toISOString().split('T')[0]
+                }
+            });
+        }
+    }
+
     const newLog = await prisma.readiness.create({
         data: {
             id: Math.random().toString(36).substring(7),
