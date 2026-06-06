@@ -3,6 +3,7 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { calculateDots } from '@/lib/calculators';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 const LIFTS = [
     { key: 'squat', label: 'Squat', color: '#7d87d2' },
@@ -249,6 +250,13 @@ export default function MeetAttempts({
         federation: data.meetDay?.federation || athlete.federation || 'IPF',
     }));
 
+    // Accordion state for lifts
+    const [expandedLifts, setExpandedLifts] = useState<{ [key: string]: boolean }>({
+        squat: true,
+        bench: true,
+        deadlift: true,
+    });
+
     // All-time PRs
     const allTimePRs = useMemo(() => getAllTimePRs(athlete.pastMeets), [athlete.pastMeets]);
 
@@ -447,6 +455,7 @@ export default function MeetAttempts({
 
     const inputStyle: React.CSSProperties = {
         width: '100%',
+        boxSizing: 'border-box',
         background: 'rgba(255,255,255,0.06)',
         border: '1px solid rgba(255,255,255,0.1)',
         borderRadius: 8,
@@ -732,15 +741,34 @@ export default function MeetAttempts({
                     padding: '1.25rem',
                     marginBottom: '1rem',
                 }}>
-                    <h3 style={{
-                        fontSize: 13, fontWeight: 700, textTransform: 'uppercase',
-                        letterSpacing: '0.08em', color: liftColor,
-                        margin: '0 0 1rem', opacity: 0.9,
-                    }}>
-                        {label}
-                    </h3>
+                    <button
+                        onClick={() => setExpandedLifts(prev => ({ ...prev, [liftKey]: !prev[liftKey] }))}
+                        style={{
+                            width: '100%',
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            background: 'transparent',
+                            border: 'none',
+                            padding: 0,
+                            cursor: 'pointer',
+                            outline: 'none',
+                            marginBottom: expandedLifts[liftKey] ? '1rem' : 0,
+                        }}
+                    >
+                        <h3 style={{
+                            fontSize: 13, fontWeight: 700, textTransform: 'uppercase',
+                            letterSpacing: '0.08em', color: liftColor,
+                            margin: 0, opacity: 0.9,
+                        }}>
+                            {label}
+                        </h3>
+                        {expandedLifts[liftKey] ? <ChevronUp size={18} color="var(--secondary-foreground)" /> : <ChevronDown size={18} color="var(--secondary-foreground)" />}
+                    </button>
 
-                    {/* Three attempt boxes */}
+                    {expandedLifts[liftKey] && (
+                        <>
+                            {/* Three attempt boxes */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         {ATTEMPTS.map(({ key: attemptKey, label: attemptLabel }) => {
                             const attemptData = data[liftKey][attemptKey];
@@ -872,9 +900,10 @@ export default function MeetAttempts({
                                 e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)';
                                 handleBlur();
                             }}
-                            onChange={e => handleWarmupChange(liftKey, e.target.value)}
                         />
                     </div>
+                        </>
+                    )}
                 </div>
             ))}
 
