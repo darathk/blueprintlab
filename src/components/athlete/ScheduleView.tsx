@@ -1295,7 +1295,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                         width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                                         padding: '16px', background: 'var(--card-bg)',
                                         border: '1px solid var(--card-border)', borderRadius: blockOpen ? '8px 8px 0 0' : '8px',
-                                        color: 'var(--foreground)', cursor: 'pointer', textAlign: 'left'
+                                        color: 'var(--foreground)', cursor: 'pointer', textAlign: 'left', boxSizing: 'border-box'
                                     }}
                                 >
                                     <div style={{ flex: 1 }}>
@@ -1360,11 +1360,12 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                 flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                                                 padding: '12px 16px', background: 'transparent',
                                                 border: 'none',
-                                                color: 'var(--foreground)', cursor: 'pointer', fontSize: '1rem', fontWeight: 600
+                                                color: 'var(--foreground)', cursor: 'pointer', fontSize: '1rem', fontWeight: 600,
+                                                minWidth: 0 // Prevent flex child from overflowing
                                             }}
                                         >
                                             <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Week {weekDisplayNum} — {weekDateRangeFromDate(program.startDate, weekNum)} <span style={{ fontWeight: 400, color: 'var(--secondary-foreground)', fontSize: '0.85rem' }}>• {sessions.length} session{sessions.length !== 1 ? 's' : ''}</span></span>
-                                            <span style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', transition: 'transform 200ms', transform: weekOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
+                                            <span style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', transition: 'transform 200ms', transform: weekOpen ? 'rotate(90deg)' : 'rotate(0deg)', marginRight: '8px', flexShrink: 0 }}>▶</span>
                                         </button>
                                         {/* Week Overview Button */}
                                         <button

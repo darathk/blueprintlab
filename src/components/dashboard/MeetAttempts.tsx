@@ -567,14 +567,22 @@ export default function MeetAttempts({
                         </div>
                         <div>
                             <label style={{ fontSize: 10, color: 'var(--secondary-foreground)', display: 'block', marginBottom: 4 }}>Meet Date</label>
-                            <input
-                                type="date"
-                                value={meetMeta.meetDate}
-                                readOnly={isReadOnly}
-                                style={{ ...metaInputStyle, colorScheme: 'dark' }}
-                                onChange={e => handleMetaChange('meetDate', e.target.value)}
-                                onBlur={handleMetaBlur}
-                            />
+                            <div style={{ ...metaInputStyle, padding: 0, overflow: 'hidden', position: 'relative', height: '38px' }}>
+                                <input
+                                    type="date"
+                                    value={meetMeta.meetDate}
+                                    readOnly={isReadOnly}
+                                    style={{
+                                        position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                                        width: '100%', height: '100%', border: 'none', background: 'transparent',
+                                        color: 'inherit', fontSize: 'inherit', fontFamily: 'inherit',
+                                        padding: '8px 12px', outline: 'none', colorScheme: 'dark',
+                                        boxSizing: 'border-box', appearance: 'none', WebkitAppearance: 'none', margin: 0
+                                    }}
+                                    onChange={e => handleMetaChange('meetDate', e.target.value)}
+                                    onBlur={handleMetaBlur}
+                                />
+                            </div>
                         </div>
                         <div>
                             <label style={{ fontSize: 10, color: 'var(--secondary-foreground)', display: 'block', marginBottom: 4 }}>Bodyweight (kg)</label>
