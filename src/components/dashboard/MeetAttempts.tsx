@@ -15,18 +15,31 @@ const ATTEMPTS = [
     { key: 'attempt3', label: '3rd Attempt' },
 ] as const;
 
+const OPTIONS = [
+    { key: 'conservative', label: 'Conservative' },
+    { key: 'planned', label: 'Planned' },
+    { key: 'reach', label: 'Reach' }
+] as const;
+
 type LiftKey = typeof LIFTS[number]['key'];
 type AttemptKey = typeof ATTEMPTS[number]['key'];
+type OptionKey = typeof OPTIONS[number]['key'];
 
 interface AttemptData {
     kg: string;
     lbs: string;
 }
 
+interface AttemptOptions {
+    conservative: AttemptData;
+    planned: AttemptData;
+    reach: AttemptData;
+}
+
 interface LiftAttempts {
-    attempt1: AttemptData;
-    attempt2: AttemptData;
-    attempt3: AttemptData;
+    attempt1: AttemptOptions;
+    attempt2: AttemptOptions;
+    attempt3: AttemptOptions;
     warmups?: string;
 }
 
@@ -47,8 +60,30 @@ function emptyAttempt(): AttemptData {
     return { kg: '', lbs: '' };
 }
 
+function emptyAttemptOptions(): AttemptOptions {
+    return {
+        conservative: emptyAttempt(),
+        planned: emptyAttempt(),
+        reach: emptyAttempt()
+    };
+}
+
 function emptyLift(): LiftAttempts {
-    return { attempt1: emptyAttempt(), attempt2: emptyAttempt(), attempt3: emptyAttempt(), warmups: '' };
+    return { attempt1: emptyAttemptOptions(), attempt2: emptyAttemptOptions(), attempt3: emptyAttemptOptions(), warmups: '' };
+}
+
+function migrateAttemptOptions(rawAttempt: any): AttemptOptions {
+    if (!rawAttempt) return emptyAttemptOptions();
+    if (rawAttempt.conservative !== undefined) return rawAttempt as AttemptOptions;
+    // Migrate intermediate format (where attempt was just {kg, lbs})
+    if (rawAttempt.kg !== undefined || rawAttempt.lbs !== undefined) {
+        return {
+            conservative: emptyAttempt(),
+            planned: rawAttempt,
+            reach: emptyAttempt()
+        };
+    }
+    return emptyAttemptOptions();
 }
 
 /** Convert legacy meetAttempts format (with conservative/planned/reach) to new simple format */
@@ -59,15 +94,31 @@ function migrateData(raw: any): MeetData {
         deadlift: emptyLift(),
     };
     if (!raw) return defaultData;
-    // Already new format
-    if (raw.squat?.attempt1 !== undefined) {
+    
+    // Detect if we have ANY data
+    if (raw.squat || raw.bench || raw.deadlift) {
         return {
-            squat: { ...raw.squat, warmups: raw.squat.warmups || '' },
-            bench: { ...raw.bench, warmups: raw.bench.warmups || '' },
-            deadlift: { ...raw.deadlift, warmups: raw.deadlift.warmups || '' },
-        } as MeetData;
+            squat: {
+                attempt1: migrateAttemptOptions(raw.squat?.attempt1),
+                attempt2: migrateAttemptOptions(raw.squat?.attempt2),
+                attempt3: migrateAttemptOptions(raw.squat?.attempt3),
+                warmups: raw.squat?.warmups || ''
+            },
+            bench: {
+                attempt1: migrateAttemptOptions(raw.bench?.attempt1),
+                attempt2: migrateAttemptOptions(raw.bench?.attempt2),
+                attempt3: migrateAttemptOptions(raw.bench?.attempt3),
+                warmups: raw.bench?.warmups || ''
+            },
+            deadlift: {
+                attempt1: migrateAttemptOptions(raw.deadlift?.attempt1),
+                attempt2: migrateAttemptOptions(raw.deadlift?.attempt2),
+                attempt3: migrateAttemptOptions(raw.deadlift?.attempt3),
+                warmups: raw.deadlift?.warmups || ''
+            }
+        };
     }
-    // Legacy: try to import the "planned" 3rd attempt as the basis
+
     return defaultData;
 }
 
@@ -91,27 +142,33 @@ export default function MeetAttempts({ athlete, isReadOnly = false }: { athlete:
         router.refresh();
     }, [athlete.id, router]);
 
-    const handleKgChange = (lift: LiftKey, attempt: AttemptKey, value: string) => {
+    const handleKgChange = (lift: LiftKey, attempt: AttemptKey, option: OptionKey, value: string) => {
         const parsed = parseFloat(value);
         const lbs = !isNaN(parsed) && value !== '' ? String(round2(parsed * KG_TO_LBS)) : '';
         const updated = {
             ...data,
             [lift]: {
                 ...data[lift],
-                [attempt]: { kg: value, lbs },
+                [attempt]: {
+                    ...data[lift][attempt],
+                    [option]: { kg: value, lbs }
+                },
             },
         };
         setData(updated);
     };
 
-    const handleLbsChange = (lift: LiftKey, attempt: AttemptKey, value: string) => {
+    const handleLbsChange = (lift: LiftKey, attempt: AttemptKey, option: OptionKey, value: string) => {
         const parsed = parseFloat(value);
         const kg = !isNaN(parsed) && value !== '' ? String(round2(parsed * LBS_TO_KG)) : '';
         const updated = {
             ...data,
             [lift]: {
                 ...data[lift],
-                [attempt]: { lbs: value, kg },
+                [attempt]: {
+                    ...data[lift][attempt],
+                    [option]: { lbs: value, kg }
+                },
             },
         };
         setData(updated);
@@ -189,7 +246,6 @@ export default function MeetAttempts({ athlete, isReadOnly = false }: { athlete:
                     {/* Three attempt boxes */}
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
                         {ATTEMPTS.map(({ key: attemptKey, label: attemptLabel }) => {
-                            const val = data[liftKey][attemptKey];
                             return (
                                 <div key={attemptKey} style={{
                                     background: 'rgba(255,255,255,0.03)',
@@ -198,71 +254,66 @@ export default function MeetAttempts({ athlete, isReadOnly = false }: { athlete:
                                     padding: '12px 10px',
                                     display: 'flex',
                                     flexDirection: 'column',
-                                    gap: 8,
+                                    gap: 12,
                                 }}>
                                     {/* Attempt label */}
                                     <div style={{
-                                        fontSize: 11, fontWeight: 700, textAlign: 'center',
-                                        color: 'var(--secondary-foreground)', textTransform: 'uppercase',
-                                        letterSpacing: '0.06em', marginBottom: 2,
+                                        fontSize: 12, fontWeight: 700, textAlign: 'center',
+                                        color: 'var(--primary)', textTransform: 'uppercase',
+                                        letterSpacing: '0.06em', marginBottom: 4,
                                     }}>
                                         {attemptLabel}
                                     </div>
 
-                                    {/* KG input */}
-                                    <div>
-                                        <label style={{ fontSize: 10, color: 'var(--secondary-foreground)', display: 'block', textAlign: 'center', marginBottom: 4, opacity: 0.7 }}>
-                                            KG
-                                        </label>
-                                        <input
-                                            type="number"
-                                            inputMode="decimal"
-                                            placeholder="—"
-                                            value={val.kg}
-                                            readOnly={isReadOnly}
-                                            style={{
-                                                ...inputStyle,
-                                                borderColor: val.kg ? 'rgba(6,182,212,0.4)' : 'rgba(255,255,255,0.1)',
-                                            }}
-                                            onFocus={e => e.currentTarget.style.borderColor = 'rgba(6,182,212,0.7)'}
-                                            onBlur={e => {
-                                                e.currentTarget.style.borderColor = val.kg ? 'rgba(6,182,212,0.4)' : 'rgba(255,255,255,0.1)';
-                                                handleBlur();
-                                            }}
-                                            onChange={e => handleKgChange(liftKey, attemptKey, e.target.value)}
-                                        />
-                                    </div>
-
-                                    {/* Divider with conversion arrow */}
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                        <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.06)' }} />
-                                        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)', flexShrink: 0 }}>⇅</span>
-                                        <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.06)' }} />
-                                    </div>
-
-                                    {/* LBS input */}
-                                    <div>
-                                        <label style={{ fontSize: 10, color: 'var(--secondary-foreground)', display: 'block', textAlign: 'center', marginBottom: 4, opacity: 0.7 }}>
-                                            LBS
-                                        </label>
-                                        <input
-                                            type="number"
-                                            inputMode="decimal"
-                                            placeholder="—"
-                                            value={val.lbs}
-                                            readOnly={isReadOnly}
-                                            style={{
-                                                ...inputStyle,
-                                                borderColor: val.lbs ? 'rgba(168,85,247,0.4)' : 'rgba(255,255,255,0.1)',
-                                            }}
-                                            onFocus={e => e.currentTarget.style.borderColor = 'rgba(168,85,247,0.7)'}
-                                            onBlur={e => {
-                                                e.currentTarget.style.borderColor = val.lbs ? 'rgba(168,85,247,0.4)' : 'rgba(255,255,255,0.1)';
-                                                handleBlur();
-                                            }}
-                                            onChange={e => handleLbsChange(liftKey, attemptKey, e.target.value)}
-                                        />
-                                    </div>
+                                    {OPTIONS.map(({ key: optionKey, label: optionLabel }) => {
+                                        const val = data[liftKey][attemptKey][optionKey];
+                                        return (
+                                            <div key={optionKey} style={{
+                                                background: 'rgba(0,0,0,0.1)',
+                                                border: '1px solid rgba(255,255,255,0.04)',
+                                                borderRadius: 8,
+                                                padding: '8px',
+                                            }}>
+                                                <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', marginBottom: 6, textAlign: 'center' }}>
+                                                    {optionLabel}
+                                                </div>
+                                                <div style={{ display: 'flex', gap: 6 }}>
+                                                    <div style={{ flex: 1 }}>
+                                                        <input
+                                                            type="number"
+                                                            inputMode="decimal"
+                                                            placeholder="KG"
+                                                            value={val.kg}
+                                                            readOnly={isReadOnly}
+                                                            style={{ ...inputStyle, padding: '6px 4px', fontSize: 13, borderColor: val.kg ? 'rgba(6,182,212,0.4)' : 'rgba(255,255,255,0.1)' }}
+                                                            onFocus={e => e.currentTarget.style.borderColor = 'rgba(6,182,212,0.7)'}
+                                                            onBlur={e => {
+                                                                e.currentTarget.style.borderColor = val.kg ? 'rgba(6,182,212,0.4)' : 'rgba(255,255,255,0.1)';
+                                                                handleBlur();
+                                                            }}
+                                                            onChange={e => handleKgChange(liftKey, attemptKey, optionKey, e.target.value)}
+                                                        />
+                                                    </div>
+                                                    <div style={{ flex: 1 }}>
+                                                        <input
+                                                            type="number"
+                                                            inputMode="decimal"
+                                                            placeholder="LBS"
+                                                            value={val.lbs}
+                                                            readOnly={isReadOnly}
+                                                            style={{ ...inputStyle, padding: '6px 4px', fontSize: 13, borderColor: val.lbs ? 'rgba(168,85,247,0.4)' : 'rgba(255,255,255,0.1)' }}
+                                                            onFocus={e => e.currentTarget.style.borderColor = 'rgba(168,85,247,0.7)'}
+                                                            onBlur={e => {
+                                                                e.currentTarget.style.borderColor = val.lbs ? 'rgba(168,85,247,0.4)' : 'rgba(255,255,255,0.1)';
+                                                                handleBlur();
+                                                            }}
+                                                            onChange={e => handleLbsChange(liftKey, attemptKey, optionKey, e.target.value)}
+                                                        />
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
                                 </div>
                             );
                         })}
