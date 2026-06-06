@@ -19,6 +19,60 @@ interface PastMeet {
     dots: number;
 }
 
+interface AllTimePRs {
+    squat: { value: number; meetName: string; date: string };
+    bench: { value: number; meetName: string; date: string };
+    deadlift: { value: number; meetName: string; date: string };
+    total: { value: number; meetName: string; date: string };
+    dots: { value: number; meetName: string; date: string };
+}
+
+function getAllTimePRs(pastMeets: any[]): AllTimePRs | null {
+    if (!pastMeets || pastMeets.length === 0) return null;
+
+    const prs: AllTimePRs = {
+        squat: { value: 0, meetName: '', date: '' },
+        bench: { value: 0, meetName: '', date: '' },
+        deadlift: { value: 0, meetName: '', date: '' },
+        total: { value: 0, meetName: '', date: '' },
+        dots: { value: 0, meetName: '', date: '' }
+    };
+
+    for (const m of pastMeets) {
+        const meetName = m.meetName || m.name || '—';
+        const date = m.date || '';
+        let sq = 0, bp = 0, dl = 0;
+
+        if (m._meetDataEntry) {
+            const e = m._meetDataEntry;
+            const bestLift = (attempts: number[], results: boolean[]) => {
+                let best = 0;
+                attempts?.forEach((v: number, i: number) => { if (results?.[i] && v > best) best = v; });
+                return best;
+            };
+            sq = bestLift(e.squat, e.squatResults);
+            bp = bestLift(e.bench, e.benchResults);
+            dl = bestLift(e.deadlift, e.deadliftResults);
+        } else {
+            sq = parseFloat(m.squat) || 0;
+            bp = parseFloat(m.bench) || 0;
+            dl = parseFloat(m.deadlift) || 0;
+        }
+
+        const total = parseFloat(m.total) || (sq + bp + dl);
+        const dots = parseFloat(m.dots) || 0;
+
+        if (sq > prs.squat.value) prs.squat = { value: sq, meetName, date };
+        if (bp > prs.bench.value) prs.bench = { value: bp, meetName, date };
+        if (dl > prs.deadlift.value) prs.deadlift = { value: dl, meetName, date };
+        if (total > prs.total.value) prs.total = { value: total, meetName, date };
+        if (dots > prs.dots.value) prs.dots = { value: dots, meetName, date };
+    }
+
+    if (prs.total.value === 0) return null;
+    return prs;
+}
+
 export default function HistoricalPerformance({ athlete }) {
     const router = useRouter();
     const [pastMeets, setPastMeets] = useState<PastMeet[]>(athlete.pastMeets || []);
@@ -38,6 +92,7 @@ export default function HistoricalPerformance({ athlete }) {
     // Chart toggles & units
     const [activeLines, setActiveLines] = useState({ squat: true, bench: true, deadlift: true, total: true, dots: true });
     const [unit, setUnit] = useState<'kg' | 'lbs'>('kg');
+    const allTimePRs = useMemo(() => getAllTimePRs(pastMeets), [pastMeets]);
 
     const CHART_COLORS = {
         squat: '#7d87d2',
@@ -245,6 +300,42 @@ export default function HistoricalPerformance({ athlete }) {
                             <button type="submit" className="btn btn-primary">Save Meet</button>
                         </div>
                     </form>
+                </div>
+            )}
+
+            {/* All-Time PRs */}
+            {allTimePRs && (
+                <div style={{
+                    background: 'var(--card-bg)',
+                    border: '1px solid var(--card-border)',
+                    borderRadius: 16,
+                    padding: '1.5rem',
+                    marginBottom: '2rem',
+                }}>
+                    <div style={{ marginBottom: '1rem' }}>
+                        <h3 style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--secondary-foreground)', margin: 0 }}>
+                            All-Time PRs
+                        </h3>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                        {[
+                            { label: 'Squat', data: allTimePRs.squat, color: '#7d87d2' },
+                            { label: 'Bench', data: allTimePRs.bench, color: '#a855f7' },
+                            { label: 'Deadlift', data: allTimePRs.deadlift, color: '#10b981' },
+                            { label: 'Total', data: allTimePRs.total, color: 'var(--primary)' },
+                            { label: 'DOTS', data: allTimePRs.dots, color: '#f59e0b' },
+                        ].map(item => (
+                            <div key={item.label} style={{ textAlign: 'center', padding: '12px 8px', background: 'rgba(255,255,255,0.03)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.05)' }}>
+                                <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>{item.label}</div>
+                                <div style={{ fontSize: 20, fontWeight: 800, color: item.color }}>{item.data.value > 0 ? item.data.value.toFixed(item.label === 'DOTS' ? 2 : 1) : '—'}</div>
+                                {item.data.value > 0 && (
+                                    <div style={{ fontSize: 10, color: 'var(--foreground)', opacity: 0.9, marginTop: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 'bold' }} title={item.data.meetName}>
+                                        {item.data.meetName}
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
                 </div>
             )}
 

@@ -171,40 +171,58 @@ interface PreviousBest {
     dots: number;
 }
 
-function getLatestPastMeet(pastMeets: any[]): PreviousBest | null {
-    if (!pastMeets || pastMeets.length === 0) return null;
-    // Sort by date descending, pick most recent
-    const sorted = [...pastMeets].sort((a, b) => (b.date || '').localeCompare(a.date || ''));
-    const m = sorted[0];
-    if (!m) return null;
+interface AllTimePRs {
+    squat: { value: number; meetName: string; date: string };
+    bench: { value: number; meetName: string; date: string };
+    deadlift: { value: number; meetName: string; date: string };
+    total: { value: number; meetName: string; date: string };
+    dots: { value: number; meetName: string; date: string };
+}
 
-    // Handle both MeetDataTable format and HistoricalPerformance format
-    let sq = 0, bp = 0, dl = 0;
-    if (m._meetDataEntry) {
-        const e = m._meetDataEntry;
-        const bestLift = (attempts: number[], results: boolean[]) => {
-            let best = 0;
-            attempts?.forEach((v: number, i: number) => { if (results?.[i] && v > best) best = v; });
-            return best;
-        };
-        sq = bestLift(e.squat, e.squatResults);
-        bp = bestLift(e.bench, e.benchResults);
-        dl = bestLift(e.deadlift, e.deadliftResults);
-    } else {
-        sq = parseFloat(m.squat) || 0;
-        bp = parseFloat(m.bench) || 0;
-        dl = parseFloat(m.deadlift) || 0;
+function getAllTimePRs(pastMeets: any[]): AllTimePRs | null {
+    if (!pastMeets || pastMeets.length === 0) return null;
+
+    const prs: AllTimePRs = {
+        squat: { value: 0, meetName: '', date: '' },
+        bench: { value: 0, meetName: '', date: '' },
+        deadlift: { value: 0, meetName: '', date: '' },
+        total: { value: 0, meetName: '', date: '' },
+        dots: { value: 0, meetName: '', date: '' }
+    };
+
+    for (const m of pastMeets) {
+        const meetName = m.meetName || m.name || '—';
+        const date = m.date || '';
+        let sq = 0, bp = 0, dl = 0;
+
+        if (m._meetDataEntry) {
+            const e = m._meetDataEntry;
+            const bestLift = (attempts: number[], results: boolean[]) => {
+                let best = 0;
+                attempts?.forEach((v: number, i: number) => { if (results?.[i] && v > best) best = v; });
+                return best;
+            };
+            sq = bestLift(e.squat, e.squatResults);
+            bp = bestLift(e.bench, e.benchResults);
+            dl = bestLift(e.deadlift, e.deadliftResults);
+        } else {
+            sq = parseFloat(m.squat) || 0;
+            bp = parseFloat(m.bench) || 0;
+            dl = parseFloat(m.deadlift) || 0;
+        }
+
+        const total = parseFloat(m.total) || (sq + bp + dl);
+        const dots = parseFloat(m.dots) || 0;
+
+        if (sq > prs.squat.value) prs.squat = { value: sq, meetName, date };
+        if (bp > prs.bench.value) prs.bench = { value: bp, meetName, date };
+        if (dl > prs.deadlift.value) prs.deadlift = { value: dl, meetName, date };
+        if (total > prs.total.value) prs.total = { value: total, meetName, date };
+        if (dots > prs.dots.value) prs.dots = { value: dots, meetName, date };
     }
 
-    return {
-        meetName: m.meetName || m.name || '—',
-        date: m.date || '',
-        squat: sq,
-        bench: bp,
-        deadlift: dl,
-        total: sq + bp + dl,
-        dots: parseFloat(m.dots) || 0,
-    };
+    if (prs.total.value === 0) return null;
+    return prs;
 }
 
 export default function MeetAttempts({
@@ -231,8 +249,8 @@ export default function MeetAttempts({
         federation: data.meetDay?.federation || athlete.federation || 'IPF',
     }));
 
-    // Previous best
-    const previousBest = useMemo(() => getLatestPastMeet(athlete.pastMeets), [athlete.pastMeets]);
+    // All-time PRs
+    const allTimePRs = useMemo(() => getAllTimePRs(athlete.pastMeets), [athlete.pastMeets]);
 
     const isMale = athlete.gender !== 'female';
     const bwKg = parseFloat(meetMeta.bodyweight) || athlete.weightClass || 0;
@@ -338,15 +356,15 @@ export default function MeetAttempts({
             const total = sq + bp + dl;
             const dots = total > 0 && bwKg > 0 ? calculateDots(total, bwKg, isMale) : 0;
 
-            const sqPR = previousBest ? sq - previousBest.squat : 0;
-            const bpPR = previousBest ? bp - previousBest.bench : 0;
-            const dlPR = previousBest ? dl - previousBest.deadlift : 0;
-            const totalPR = previousBest ? total - previousBest.total : 0;
-            const dotsPR = previousBest && previousBest.dots > 0 ? dots - previousBest.dots : 0;
+            const sqPR = allTimePRs ? sq - allTimePRs.squat.value : 0;
+            const bpPR = allTimePRs ? bp - allTimePRs.bench.value : 0;
+            const dlPR = allTimePRs ? dl - allTimePRs.deadlift.value : 0;
+            const totalPR = allTimePRs ? total - allTimePRs.total.value : 0;
+            const dotsPR = allTimePRs && allTimePRs.dots.value > 0 ? dots - allTimePRs.dots.value : 0;
 
             return { key: optionKey, label, color, sq, bp, dl, total, dots, sqPR, bpPR, dlPR, totalPR, dotsPR };
         });
-    }, [data, bwKg, isMale, previousBest]);
+    }, [data, bwKg, isMale, allTimePRs]);
 
     // Live running total from successful attempts
     const liveTotal = useMemo(() => {
@@ -575,8 +593,8 @@ export default function MeetAttempts({
                 </div>
             )}
 
-            {/* Previous Best Reference */}
-            {previousBest && (
+            {/* Previous Highest Reference */}
+            {allTimePRs && (
                 <div style={{
                     background: 'var(--card-bg)',
                     border: '1px solid var(--card-border)',
@@ -586,23 +604,25 @@ export default function MeetAttempts({
                 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.75rem' }}>
                         <h3 style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--secondary-foreground)', margin: 0, opacity: 0.7 }}>
-                            Previous Best
+                            Previous Highest
                         </h3>
-                        <span style={{ fontSize: 11, color: 'var(--secondary-foreground)', opacity: 0.6 }}>
-                            {previousBest.meetName} {previousBest.date ? `· ${previousBest.date}` : ''}
-                        </span>
                     </div>
                     <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
                         {[
-                            { label: 'Squat', value: previousBest.squat, color: '#7d87d2' },
-                            { label: 'Bench', value: previousBest.bench, color: '#a855f7' },
-                            { label: 'Deadlift', value: previousBest.deadlift, color: '#10b981' },
-                            { label: 'Total', value: previousBest.total, color: 'var(--primary)' },
-                            { label: 'DOTS', value: previousBest.dots, color: '#f59e0b' },
+                            { label: 'Squat', data: allTimePRs.squat, color: '#7d87d2' },
+                            { label: 'Bench', data: allTimePRs.bench, color: '#a855f7' },
+                            { label: 'Deadlift', data: allTimePRs.deadlift, color: '#10b981' },
+                            { label: 'Total', data: allTimePRs.total, color: 'var(--primary)' },
+                            { label: 'DOTS', data: allTimePRs.dots, color: '#f59e0b' },
                         ].map(item => (
                             <div key={item.label} style={{ textAlign: 'center', padding: '8px 4px', background: 'rgba(255,255,255,0.03)', borderRadius: 8 }}>
                                 <div style={{ fontSize: 10, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{item.label}</div>
-                                <div style={{ fontSize: 16, fontWeight: 700, color: item.color }}>{item.value > 0 ? item.value.toFixed(item.label === 'DOTS' ? 2 : 1) : '—'}</div>
+                                <div style={{ fontSize: 16, fontWeight: 700, color: item.color }}>{item.data.value > 0 ? item.data.value.toFixed(item.label === 'DOTS' ? 2 : 1) : '—'}</div>
+                                {item.data.value > 0 && (
+                                    <div style={{ fontSize: 9, color: 'var(--secondary-foreground)', opacity: 0.8, marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 'bold' }}>
+                                        {item.data.meetName}
+                                    </div>
+                                )}
                             </div>
                         ))}
                     </div>
@@ -685,7 +705,7 @@ export default function MeetAttempts({
                         {liveTotal.dots > 0 && (
                             <div style={{ fontSize: 12, color: '#f59e0b', fontWeight: 600 }}>
                                 DOTS: {liveTotal.dots.toFixed(2)}
-                                {previousBest && previousBest.dots > 0 && prBadge(liveTotal.dots - previousBest.dots, '')}
+                                {allTimePRs && allTimePRs.dots.value > 0 && prBadge(liveTotal.dots - allTimePRs.dots.value, '')}
                             </div>
                         )}
                     </div>
