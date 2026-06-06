@@ -27,6 +27,7 @@ interface LiftAttempts {
     attempt1: AttemptData;
     attempt2: AttemptData;
     attempt3: AttemptData;
+    warmups?: string;
 }
 
 interface MeetData {
@@ -47,7 +48,7 @@ function emptyAttempt(): AttemptData {
 }
 
 function emptyLift(): LiftAttempts {
-    return { attempt1: emptyAttempt(), attempt2: emptyAttempt(), attempt3: emptyAttempt() };
+    return { attempt1: emptyAttempt(), attempt2: emptyAttempt(), attempt3: emptyAttempt(), warmups: '' };
 }
 
 /** Convert legacy meetAttempts format (with conservative/planned/reach) to new simple format */
@@ -59,7 +60,13 @@ function migrateData(raw: any): MeetData {
     };
     if (!raw) return defaultData;
     // Already new format
-    if (raw.squat?.attempt1 !== undefined) return raw as MeetData;
+    if (raw.squat?.attempt1 !== undefined) {
+        return {
+            squat: { ...raw.squat, warmups: raw.squat.warmups || '' },
+            bench: { ...raw.bench, warmups: raw.bench.warmups || '' },
+            deadlift: { ...raw.deadlift, warmups: raw.deadlift.warmups || '' },
+        } as MeetData;
+    }
     // Legacy: try to import the "planned" 3rd attempt as the basis
     return defaultData;
 }
@@ -105,6 +112,17 @@ export default function MeetAttempts({ athlete, isReadOnly = false }: { athlete:
             [lift]: {
                 ...data[lift],
                 [attempt]: { lbs: value, kg },
+            },
+        };
+        setData(updated);
+    };
+
+    const handleWarmupChange = (lift: LiftKey, value: string) => {
+        const updated = {
+            ...data,
+            [lift]: {
+                ...data[lift],
+                warmups: value,
             },
         };
         setData(updated);
@@ -248,6 +266,38 @@ export default function MeetAttempts({ athlete, isReadOnly = false }: { athlete:
                                 </div>
                             );
                         })}
+                    </div>
+
+                    {/* Warm-ups section */}
+                    <div style={{ marginTop: '1rem' }}>
+                        <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6, display: 'block' }}>
+                            Warm-ups
+                        </label>
+                        <textarea
+                            placeholder="e.g., Bar x 10, 135 x 5, 225 x 3..."
+                            value={data[liftKey].warmups || ''}
+                            readOnly={isReadOnly}
+                            style={{
+                                width: '100%',
+                                background: 'rgba(255,255,255,0.03)',
+                                border: '1px solid rgba(255,255,255,0.07)',
+                                borderRadius: 12,
+                                padding: '12px',
+                                color: 'var(--foreground)',
+                                fontSize: 14,
+                                minHeight: '60px',
+                                resize: 'vertical',
+                                outline: 'none',
+                                transition: 'border-color 0.15s',
+                                fontFamily: 'inherit'
+                            }}
+                            onFocus={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'}
+                            onBlur={e => {
+                                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)';
+                                handleBlur();
+                            }}
+                            onChange={e => handleWarmupChange(liftKey, e.target.value)}
+                        />
                     </div>
                 </div>
             ))}

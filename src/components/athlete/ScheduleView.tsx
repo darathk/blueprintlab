@@ -3,7 +3,8 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { calculateSimpleE1RM, calculateStress } from '@/lib/stress-index';
+import { calculateSimpleE1RM, calculateStress, classifySessionStress } from '@/lib/stress-index';
+import WeightInput from '@/components/athlete/WeightInput';
 import { ArrowRight, Search, ChevronDown } from 'lucide-react';
 import { getExerciseCategory } from '@/lib/exercise-db';
 
@@ -1084,9 +1085,10 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                 return (
                                                                                                     f === 'weight' ? (
                                                                                                         <div key={f} style={{ position: 'relative', flex: 1 }}>
-                                                                                                            <input type="number" inputMode="decimal"
-                                                                                                                value={toDisplay(actual[f])}
-                                                                                                                onChange={e => updateSet(sKey, exIdx, setIdx, f, toInternal(e.target.value), program.id)}
+                                                                                                            <WeightInput
+                                                                                                                internalValue={actual[f]}
+                                                                                                                unit={unit}
+                                                                                                                onChange={(val) => updateSet(sKey, exIdx, setIdx, f, val, program.id)}
                                                                                                                 onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
                                                                                                                 placeholder={placeholderVal?.toString()}
                                                                                                                 style={{

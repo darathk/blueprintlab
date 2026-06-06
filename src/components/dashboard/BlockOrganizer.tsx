@@ -13,6 +13,7 @@ export default function PeriodizationPlanner({ athlete }) {
 
     // Merged Competition Tracker State
     const [meetName, setMeetName] = useState(athlete.nextMeetName || '');
+    const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
     const [meetDate, setMeetDate] = useState(athlete.nextMeetDate || '');
 
     // Sync if athlete prop updates
@@ -99,13 +100,20 @@ export default function PeriodizationPlanner({ athlete }) {
     const [timeToPeak, setTimeToPeak] = useState(4); // Default 4 weeks
 
     const generatePlan = () => {
-        if (!daysOutData) {
+        if (!meetDate) {
             alert("Please set a valid Meet Date first.");
             return;
         }
 
+        const meet = new Date(meetDate);
+        const start = startDate ? new Date(startDate) : new Date();
+        start.setHours(0, 0, 0, 0);
+        meet.setHours(0, 0, 0, 0);
+        const diffTime = meet.getTime() - start.getTime();
+        const totalDaysAvailable = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
         // Allow negative days (past meets) for retro-planning
-        const totalWeeksAvailable = Math.ceil(Math.abs(daysOutData.totalDays) / 7);
+        const totalWeeksAvailable = Math.ceil(Math.abs(totalDaysAvailable) / 7);
 
         // If days are negative (past), we probably want to just generate the structure back from the meet date?
         // Actually, the original logic works by subtracting weeks from meet date.
@@ -407,6 +415,10 @@ export default function PeriodizationPlanner({ athlete }) {
                         <div style={{ flex: 1 }}>
                             <label className="label">Target Objective (Meet Name)</label>
                             <input className="input" value={meetName} onChange={e => setMeetName(e.target.value)} placeholder="e.g. Galactic Nationals" />
+                        </div>
+                        <div style={{ flex: 1 }}>
+                            <label className="label">Start Date</label>
+                            <input className="input" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} style={{ colorScheme: 'dark' }} />
                         </div>
                         <div style={{ flex: 1 }}>
                             <label className="label">Launch Date (Meet Date)</label>
