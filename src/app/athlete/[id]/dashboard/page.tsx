@@ -43,8 +43,8 @@ export default async function AthleteDashboard({ params }) {
     if (!athlete) return <div>Athlete not found</div>;
 
     return (
-        <div style={{ minHeight: '100vh', padding: '1rem', maxWidth: 600, margin: '0 auto' }}>
-            <header style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 4px' }}>
+        <div style={{ minHeight: '100vh', padding: '1rem 0', maxWidth: 600, margin: '0 auto' }}>
+            <header style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 1rem' }}>
                 <div>
                     <h1 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Hello, {athlete.name}</h1>
                     <p style={{ color: 'var(--secondary-foreground)', fontSize: '0.85rem' }}>Ready to train?</p>
@@ -52,15 +52,19 @@ export default async function AthleteDashboard({ params }) {
                 <Link href="/" style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)' }}>Logout</Link>
             </header>
 
-            {athlete.coachId && <AnnouncementBanner coachId={athlete.coachId} />}
+            {athlete.coachId && (
+                <div style={{ padding: '0 1rem' }}>
+                    <AnnouncementBanner coachId={athlete.coachId} />
+                </div>
+            )}
 
             {athlete.coachId && (
-                <Link href={`/athlete/${id}/leaderboard`} style={{ textDecoration: 'none', color: 'inherit', display: 'block', marginBottom: '1rem' }}>
+                <Link href={`/athlete/${id}/leaderboard`} style={{ textDecoration: 'none', color: 'inherit', display: 'block', marginBottom: '1rem', padding: '0 1rem' }}>
                     <LeaderboardRankWidget coachId={athlete.coachId} athleteId={id} athleteName={athlete.name} />
                 </Link>
             )}
 
-            <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--card-border)', background: 'var(--card-bg)' }}>
+            <div>
                 <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center', color: 'var(--secondary-foreground)' }} className="pulse">Loading schedule…</div>}>
                     <AsyncSchedule id={id} />
                 </Suspense>

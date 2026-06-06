@@ -1245,59 +1245,61 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                 </>
             )}
 
-            {viewMode === 'blocks' && filteredPrograms.map(program => {
-                const blockOpen = openBlocks.has(program.id);
-                const weeks: any[] = Array.isArray(program.weeks) ? program.weeks : [];
-                const totalWeeks = weeks.length;
-                const totalSessions = weeks.reduce((s: number, w: any) => s + (Array.isArray(w.sessions) ? w.sessions.length : 0), 0);
+            {viewMode === 'blocks' && (
+                <div style={{ padding: '0 16px' }}>
+                    {filteredPrograms.map(program => {
+                        const blockOpen = openBlocks.has(program.id);
+                        const weeks: any[] = Array.isArray(program.weeks) ? program.weeks : [];
+                        const totalWeeks = weeks.length;
+                        const totalSessions = weeks.reduce((s: number, w: any) => s + (Array.isArray(w.sessions) ? w.sessions.length : 0), 0);
 
-                // Calculate Block Progress
-                let bTotalSets = 0;
-                let bFilledSets = 0;
-                weeks.forEach((w: any) => {
-                    const wSessions: any[] = Array.isArray(w.sessions) ? w.sessions : [];
-                    wSessions.forEach((s: any) => {
-                        const sKey = sessionKey(program.id, w.weekNumber || 1, s.day || 1);
-                        const exData: any[] = Array.isArray(s.exercises) ? s.exercises : [];
-                        const log = Array.isArray(logs) ? logs.find(l => l.sessionId === sKey && l.programId === program.id) : undefined;
-                        const esData = editState[sKey];
+                        // Calculate Block Progress
+                        let bTotalSets = 0;
+                        let bFilledSets = 0;
+                        weeks.forEach((w: any) => {
+                            const wSessions: any[] = Array.isArray(w.sessions) ? w.sessions : [];
+                            wSessions.forEach((s: any) => {
+                                const sKey = sessionKey(program.id, w.weekNumber || 1, s.day || 1);
+                                const exData: any[] = Array.isArray(s.exercises) ? s.exercises : [];
+                                const log = Array.isArray(logs) ? logs.find(l => l.sessionId === sKey && l.programId === program.id) : undefined;
+                                const esData = editState[sKey];
 
-                        exData.forEach((ex: any) => {
-                            bTotalSets += Array.isArray(ex.sets) ? ex.sets.length : 0;
+                                exData.forEach((ex: any) => {
+                                    bTotalSets += Array.isArray(ex.sets) ? ex.sets.length : 0;
+                                });
+
+                                if (esData) {
+                                    esData.forEach((ex: any) => {
+                                        (ex.sets || []).forEach((set: any) => {
+                                            const a = set.actual || {};
+                                            if (a.weight || a.reps) bFilledSets++;
+                                        });
+                                    });
+                                } else if (log) {
+                                    (log.exercises || []).forEach((logEx: any) => {
+                                        (logEx.sets || []).forEach((set: any) => {
+                                            if (set.weight || set.reps) bFilledSets++;
+                                        });
+                                    });
+                                }
+                            });
                         });
+                        const blockProgressPct = bTotalSets > 0 ? Math.min(100, Math.round((bFilledSets / bTotalSets) * 100)) : 0;
 
-                        if (esData) {
-                            esData.forEach((ex: any) => {
-                                (ex.sets || []).forEach((set: any) => {
-                                    const a = set.actual || {};
-                                    if (a.weight || a.reps) bFilledSets++;
-                                });
-                            });
-                        } else if (log) {
-                            (log.exercises || []).forEach((logEx: any) => {
-                                (logEx.sets || []).forEach((set: any) => {
-                                    if (set.weight || set.reps) bFilledSets++;
-                                });
-                            });
-                        }
-                    });
-                });
-                const blockProgressPct = bTotalSets > 0 ? Math.min(100, Math.round((bFilledSets / bTotalSets) * 100)) : 0;
-
-                return (
-                    <div key={program.id} style={{ marginBottom: 16 }}>
-                        {/* ═══ Block Header ═══ */}
-                        <button
-                            onClick={() => toggle(openBlocks, program.id, setOpenBlocks)}
-                            style={{
-                                width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                padding: '16px', background: 'var(--card-bg)',
-                                border: '1px solid var(--card-border)', borderRadius: blockOpen ? '8px 8px 0 0' : '8px',
-                                color: 'var(--foreground)', cursor: 'pointer', textAlign: 'left'
-                            }}
-                        >
-                            <div style={{ flex: 1 }}>
-                                <div style={{ fontSize: '1.2rem', fontWeight: 600 }}>{program.name}</div>
+                        return (
+                            <div key={program.id} style={{ marginBottom: 16 }}>
+                                {/* ═══ Block Header ═══ */}
+                                <button
+                                    onClick={() => toggle(openBlocks, program.id, setOpenBlocks)}
+                                    style={{
+                                        width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                                        padding: '16px', background: 'var(--card-bg)',
+                                        border: '1px solid var(--card-border)', borderRadius: blockOpen ? '8px 8px 0 0' : '8px',
+                                        color: 'var(--foreground)', cursor: 'pointer', textAlign: 'left'
+                                    }}
+                                >
+                                    <div style={{ flex: 1 }}>
+                                        <div style={{ fontSize: '1.2rem', fontWeight: 600 }}>{program.name}</div>
                                 <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginTop: 2 }}>
                                     {totalSessions} session{totalSessions !== 1 ? 's' : ''}
                                 </div>
@@ -1806,6 +1808,8 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                     </div>
                 );
             })}
+                </div>
+            )}
             {/* ═══ Week Overview Drawer ═══ */}
             {weekDrawer && (
                 <>
