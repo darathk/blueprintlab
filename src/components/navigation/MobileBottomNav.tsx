@@ -81,6 +81,8 @@ export default function MobileBottomNav({ items, children, className, userId }: 
             }}>
                 {/* Expanded Menu - Vertical Neumorphic Pill */}
                 <div style={{
+                    position: 'absolute',
+                    bottom: 'calc(100% + 16px)',
                     display: 'flex',
                     flexDirection: 'column',
                     alignItems: 'stretch',
@@ -95,7 +97,6 @@ export default function MobileBottomNav({ items, children, className, userId }: 
                     transform: isOpen ? 'translateY(0) scale(1)' : 'translateY(20px) scale(0.9)',
                     transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
                     pointerEvents: isOpen ? 'auto' : 'none',
-                    marginBottom: '1rem',
                 }}>
                     {enrichedItems.map((item) => {
                         const active = isActive(item.href);
