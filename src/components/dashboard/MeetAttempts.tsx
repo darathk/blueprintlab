@@ -454,7 +454,10 @@ export default function MeetAttempts({
     };
 
     const inputStyle: React.CSSProperties = {
+        display: 'block',
         width: '100%',
+        maxWidth: '100%',
+        minWidth: 0,
         boxSizing: 'border-box',
         background: 'rgba(255,255,255,0.06)',
         border: '1px solid rgba(255,255,255,0.1)',
