@@ -327,7 +327,18 @@ export default function HistoricalPerformance({ athlete }) {
                         ].map(item => (
                             <div key={item.label} style={{ textAlign: 'center', padding: '12px 8px', background: 'rgba(255,255,255,0.03)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.05)' }}>
                                 <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>{item.label}</div>
-                                <div style={{ fontSize: 20, fontWeight: 800, color: item.color }}>{item.data.value > 0 ? item.data.value.toFixed(item.label === 'DOTS' ? 2 : 1) : '—'}</div>
+                                <div style={{ fontSize: 20, fontWeight: 800, color: item.color }}>
+                                    {item.data.value > 0 ? (
+                                        <>
+                                            {item.data.value.toFixed(item.label === 'DOTS' ? 2 : 1)}
+                                            {item.label !== 'DOTS' && (
+                                                <span style={{ fontSize: '0.65em', color: 'var(--secondary-foreground)', marginLeft: '6px', fontWeight: 600 }}>
+                                                    ({(item.data.value * 2.20462).toFixed(1)} lbs)
+                                                </span>
+                                            )}
+                                        </>
+                                    ) : '—'}
+                                </div>
                                 {item.data.value > 0 && (
                                     <div style={{ fontSize: 10, color: 'var(--foreground)', opacity: 0.9, marginTop: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 'bold' }} title={item.data.meetName}>
                                         {item.data.meetName}

@@ -617,7 +617,18 @@ export default function MeetAttempts({
                         ].map(item => (
                             <div key={item.label} style={{ textAlign: 'center', padding: '8px 4px', background: 'rgba(255,255,255,0.03)', borderRadius: 8 }}>
                                 <div style={{ fontSize: 10, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{item.label}</div>
-                                <div style={{ fontSize: 16, fontWeight: 700, color: item.color }}>{item.data.value > 0 ? item.data.value.toFixed(item.label === 'DOTS' ? 2 : 1) : '—'}</div>
+                                <div style={{ fontSize: 16, fontWeight: 700, color: item.color }}>
+                                    {item.data.value > 0 ? (
+                                        <>
+                                            {item.data.value.toFixed(item.label === 'DOTS' ? 2 : 1)}
+                                            {item.label !== 'DOTS' && (
+                                                <span style={{ fontSize: '0.7em', color: 'var(--secondary-foreground)', marginLeft: '4px', fontWeight: 500 }}>
+                                                    ({(item.data.value * 2.20462).toFixed(1)} lbs)
+                                                </span>
+                                            )}
+                                        </>
+                                    ) : '—'}
+                                </div>
                                 {item.data.value > 0 && (
                                     <div style={{ fontSize: 9, color: 'var(--secondary-foreground)', opacity: 0.8, marginTop: 4, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 'bold' }}>
                                         {item.data.meetName}
