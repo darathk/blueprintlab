@@ -523,7 +523,7 @@ export default function MeetAttempts({
                     <h3 style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--secondary-foreground)', margin: '0 0 0.75rem', opacity: 0.7 }}>
                         Meet Information
                     </h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                         <div>
                             <label style={{ fontSize: 10, color: 'var(--secondary-foreground)', display: 'block', marginBottom: 4 }}>Meet Name</label>
                             <input
@@ -592,7 +592,7 @@ export default function MeetAttempts({
                             {previousBest.meetName} {previousBest.date ? `· ${previousBest.date}` : ''}
                         </span>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8 }}>
+                    <div className="grid grid-cols-3 md:grid-cols-5 gap-2">
                         {[
                             { label: 'Squat', value: previousBest.squat, color: '#7d87d2' },
                             { label: 'Bench', value: previousBest.bench, color: '#a855f7' },
@@ -621,7 +621,7 @@ export default function MeetAttempts({
                     <h3 style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--secondary-foreground)', margin: '0 0 0.75rem', opacity: 0.7 }}>
                         Projected 9/9 Totals
                     </h3>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         {projections.filter(p => p.total > 0).map(p => (
                             <div key={p.key} style={{
                                 background: 'rgba(255,255,255,0.03)',
@@ -710,7 +710,7 @@ export default function MeetAttempts({
                     </h3>
 
                     {/* Three attempt boxes */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10 }}>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                         {ATTEMPTS.map(({ key: attemptKey, label: attemptLabel }) => {
                             const attemptData = data[liftKey][attemptKey];
                             return (
