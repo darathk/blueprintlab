@@ -116,6 +116,21 @@ export default function TopNavigation({ unreadCount = 0, userId }: { unreadCount
                 >
                     Meet Data
                 </Link>
+                <Link
+                    href="/dashboard/meet-day"
+                    className="nav-link"
+                    style={{
+                        fontWeight: 600,
+                        fontSize: '0.85rem',
+                        color: isActive('/dashboard/meet-day') ? 'var(--primary)' : 'var(--secondary-foreground)',
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.05em',
+                        transition: 'color 0.2s ease',
+                        textShadow: isActive('/dashboard/meet-day') ? '0 0 10px rgba(125, 135, 210,0.4)' : 'none'
+                    }}
+                >
+                    Meet Day
+                </Link>
 
             </div>
             <UserButton afterSignOutUrl="/" />
