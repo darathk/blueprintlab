@@ -79,19 +79,18 @@ export default function MobileBottomNav({ items, children, className, userId }: 
                 alignItems: 'center',
                 pointerEvents: 'auto',
             }}>
-                {/* Expanded Menu */}
+                {/* Expanded Menu - Vertical Neumorphic Pill */}
                 <div style={{
                     display: 'flex',
+                    flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    gap: '0.75rem',
-                    padding: '10px 14px',
+                    gap: '12px',
+                    padding: '12px',
                     borderRadius: 50,
-                    background: 'rgba(18, 18, 18, 0.85)',
-                    backdropFilter: 'blur(28px)',
-                    WebkitBackdropFilter: 'blur(28px)',
-                    border: '1px solid rgba(255, 255, 255, 0.05)',
-                    boxShadow: '0 10px 40px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.05)',
+                    background: '#151515', // Solid dark grey almost black
+                    border: '1px solid rgba(255, 255, 255, 0.03)',
+                    boxShadow: 'inset 0 2px 5px rgba(255,255,255,0.03), 0 10px 40px rgba(0, 0, 0, 0.8)',
                     opacity: isOpen ? 1 : 0,
                     transform: isOpen ? 'translateY(0) scale(1)' : 'translateY(20px) scale(0.9)',
                     transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
@@ -118,12 +117,15 @@ export default function MobileBottomNav({ items, children, className, userId }: 
                                     justifyContent: 'center',
                                     textDecoration: 'none',
                                     position: 'relative',
-                                    width: 52,
-                                    height: 52,
+                                    width: 54,
+                                    height: 54,
                                     borderRadius: '50%',
-                                    background: active ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.4)',
-                                    border: active ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(255,255,255,0.02)',
-                                    boxShadow: active ? 'inset 0 2px 4px rgba(255,255,255,0.05)' : 'inset 0 2px 6px rgba(0,0,0,0.8)',
+                                    background: active ? '#1a1a1a' : '#1e1e1e', // Darker when active
+                                    border: '1px solid rgba(255,255,255,0.02)',
+                                    // Neumorphic Shadows mimicking Image 2
+                                    boxShadow: active 
+                                        ? 'inset 4px 4px 8px rgba(0,0,0,0.6), inset -2px -2px 6px rgba(255,255,255,0.04)' 
+                                        : '3px 3px 8px rgba(0,0,0,0.7), -2px -2px 6px rgba(255,255,255,0.04)',
                                     transition: 'all 0.2s ease',
                                 }}
                             >
@@ -132,6 +134,8 @@ export default function MobileBottomNav({ items, children, className, userId }: 
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     color: active ? '#fff' : 'rgba(255, 255, 255, 0.5)',
+                                    transform: active ? 'scale(0.95)' : 'scale(1)',
+                                    transition: 'transform 0.2s ease, color 0.2s ease',
                                 }}>
                                     {item.icon}
                                 </div>
@@ -176,10 +180,12 @@ export default function MobileBottomNav({ items, children, className, userId }: 
                         width: 60,
                         height: 60,
                         borderRadius: '50%',
-                        background: isOpen ? 'rgba(28, 28, 28, 0.94)' : 'var(--primary)',
-                        color: '#fff',
-                        border: isOpen ? '1px solid rgba(255, 255, 255, 0.1)' : 'none',
-                        boxShadow: isOpen ? '0 4px 12px rgba(0,0,0,0.3)' : '0 4px 20px rgba(6, 182, 212, 0.4)',
+                        background: isOpen ? '#151515' : '#1e1e1e',
+                        color: isOpen ? 'rgba(255, 255, 255, 0.5)' : '#fff',
+                        border: '1px solid rgba(255, 255, 255, 0.03)',
+                        boxShadow: isOpen 
+                            ? 'inset 4px 4px 8px rgba(0,0,0,0.6), inset -2px -2px 6px rgba(255,255,255,0.04)' 
+                            : '3px 3px 8px rgba(0,0,0,0.7), -2px -2px 6px rgba(255,255,255,0.04)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -199,7 +205,7 @@ export default function MobileBottomNav({ items, children, className, userId }: 
                             width: 14,
                             height: 14,
                             borderRadius: '50%',
-                            border: '2px solid var(--primary)',
+                            border: '2px solid #1e1e1e',
                         }} />
                     )}
                 </button>
