@@ -768,140 +768,141 @@ export default function MeetAttempts({
 
                     {expandedLifts[liftKey] && (
                         <>
+                            {/* Warm-ups section */}
+                            <div style={{ marginBottom: '1rem' }}>
+                                <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6, display: 'block' }}>
+                                    Warm-ups
+                                </label>
+                                <textarea
+                                    placeholder="e.g., Bar x 10, 135 x 5, 225 x 3..."
+                                    value={data[liftKey].warmups || ''}
+                                    readOnly={isReadOnly}
+                                    style={{
+                                        width: '100%',
+                                        background: 'rgba(255,255,255,0.03)',
+                                        border: '1px solid rgba(255,255,255,0.07)',
+                                        borderRadius: 12,
+                                        padding: '12px',
+                                        color: 'var(--foreground)',
+                                        fontSize: 14,
+                                        minHeight: '60px',
+                                        resize: 'vertical',
+                                        outline: 'none',
+                                        transition: 'border-color 0.15s',
+                                        fontFamily: 'inherit'
+                                    }}
+                                    onFocus={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'}
+                                    onBlur={e => {
+                                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)';
+                                        handleBlur();
+                                    }}
+                                    onChange={e => handleWarmupChange(liftKey, e.target.value)}
+                                />
+                            </div>
+
                             {/* Three attempt boxes */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        {ATTEMPTS.map(({ key: attemptKey, label: attemptLabel }) => {
-                            const attemptData = data[liftKey][attemptKey];
-                            return (
-                                <div key={attemptKey} style={{
-                                    background: 'rgba(255,255,255,0.03)',
-                                    border: '1px solid rgba(255,255,255,0.07)',
-                                    borderRadius: 12,
-                                    padding: '12px 10px',
-                                    display: 'flex',
-                                    flexDirection: 'column',
-                                    gap: 10,
-                                }}>
-                                    {/* Attempt label + result button */}
-                                    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
-                                        <div style={{
-                                            fontSize: 12, fontWeight: 700, textAlign: 'center',
-                                            color: 'var(--primary)', textTransform: 'uppercase',
-                                            letterSpacing: '0.06em',
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                                {ATTEMPTS.map(({ key: attemptKey, label: attemptLabel }) => {
+                                    const attemptData = data[liftKey][attemptKey];
+                                    return (
+                                        <div key={attemptKey} style={{
+                                            background: 'rgba(255,255,255,0.03)',
+                                            border: '1px solid rgba(255,255,255,0.07)',
+                                            borderRadius: 12,
+                                            padding: '12px 10px',
+                                            display: 'flex',
+                                            flexDirection: 'column',
+                                            gap: 10,
                                         }}>
-                                            {attemptLabel}
-                                        </div>
-                                        {resultButton(liftKey, attemptKey)}
-                                    </div>
-
-                                    {/* Actual weight field (meet day) */}
-                                    {(meetDayMode || attemptData.result !== 'pending') && (
-                                        <div>
-                                            <label style={{ fontSize: 9, color: 'var(--secondary-foreground)', display: 'block', textAlign: 'center', marginBottom: 3, textTransform: 'uppercase' }}>Actual KG</label>
-                                            <input
-                                                type="number"
-                                                inputMode="decimal"
-                                                placeholder="—"
-                                                value={attemptData.actualKg || ''}
-                                                readOnly={isReadOnly}
-                                                style={{
-                                                    ...inputStyle, padding: '6px 4px', fontSize: 14, fontWeight: 700,
-                                                    borderColor: attemptData.result === 'good' ? 'rgba(34,197,94,0.5)' :
-                                                        attemptData.result === 'fail' ? 'rgba(239,68,68,0.5)' : 'rgba(255,255,255,0.15)',
-                                                    background: attemptData.result === 'good' ? 'rgba(34,197,94,0.08)' :
-                                                        attemptData.result === 'fail' ? 'rgba(239,68,68,0.08)' : 'rgba(255,255,255,0.06)',
-                                                }}
-                                                onChange={e => handleActualKgChange(liftKey, attemptKey, e.target.value)}
-                                                onBlur={handleBlur}
-                                            />
-                                        </div>
-                                    )}
-
-                                    {/* Options (conservative/planned/reach) */}
-                                    {OPTIONS.map(({ key: optionKey, label: optionLabel }) => {
-                                        const val = data[liftKey][attemptKey][optionKey];
-                                        return (
-                                            <div key={optionKey} style={{
-                                                background: 'rgba(0,0,0,0.1)',
-                                                border: '1px solid rgba(255,255,255,0.04)',
-                                                borderRadius: 8,
-                                                padding: '8px',
-                                            }}>
-                                                <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', marginBottom: 6, textAlign: 'center' }}>
-                                                    {optionLabel}
+                                            {/* Attempt label + result button */}
+                                            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 8 }}>
+                                                <div style={{
+                                                    fontSize: 12, fontWeight: 700, textAlign: 'center',
+                                                    color: 'var(--primary)', textTransform: 'uppercase',
+                                                    letterSpacing: '0.06em',
+                                                }}>
+                                                    {attemptLabel}
                                                 </div>
-                                                <div style={{ display: 'flex', gap: 6 }}>
-                                                    <div style={{ flex: 1 }}>
-                                                        <input
-                                                            type="number"
-                                                            inputMode="decimal"
-                                                            placeholder="KG"
-                                                            value={val.kg}
-                                                            readOnly={isReadOnly}
-                                                            style={{ ...inputStyle, padding: '6px 4px', fontSize: 13, borderColor: val.kg ? 'rgba(6,182,212,0.4)' : 'rgba(255,255,255,0.1)' }}
-                                                            onFocus={e => e.currentTarget.style.borderColor = 'rgba(6,182,212,0.7)'}
-                                                            onBlur={e => {
-                                                                e.currentTarget.style.borderColor = val.kg ? 'rgba(6,182,212,0.4)' : 'rgba(255,255,255,0.1)';
-                                                                handleBlur();
-                                                            }}
-                                                            onChange={e => handleKgChange(liftKey, attemptKey, optionKey, e.target.value)}
-                                                        />
-                                                    </div>
-                                                    <div style={{ flex: 1 }}>
-                                                        <input
-                                                            type="number"
-                                                            inputMode="decimal"
-                                                            placeholder="LBS"
-                                                            value={val.lbs}
-                                                            readOnly={isReadOnly}
-                                                            style={{ ...inputStyle, padding: '6px 4px', fontSize: 13, borderColor: val.lbs ? 'rgba(168,85,247,0.4)' : 'rgba(255,255,255,0.1)' }}
-                                                            onFocus={e => e.currentTarget.style.borderColor = 'rgba(168,85,247,0.7)'}
-                                                            onBlur={e => {
-                                                                e.currentTarget.style.borderColor = val.lbs ? 'rgba(168,85,247,0.4)' : 'rgba(255,255,255,0.1)';
-                                                                handleBlur();
-                                                            }}
-                                                            onChange={e => handleLbsChange(liftKey, attemptKey, optionKey, e.target.value)}
-                                                        />
-                                                    </div>
-                                                </div>
+                                                {resultButton(liftKey, attemptKey)}
                                             </div>
-                                        );
-                                    })}
-                                </div>
-                            );
-                        })}
-                    </div>
 
-                    {/* Warm-ups section */}
-                    <div style={{ marginTop: '1rem' }}>
-                        <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 6, display: 'block' }}>
-                            Warm-ups
-                        </label>
-                        <textarea
-                            placeholder="e.g., Bar x 10, 135 x 5, 225 x 3..."
-                            value={data[liftKey].warmups || ''}
-                            readOnly={isReadOnly}
-                            style={{
-                                width: '100%',
-                                background: 'rgba(255,255,255,0.03)',
-                                border: '1px solid rgba(255,255,255,0.07)',
-                                borderRadius: 12,
-                                padding: '12px',
-                                color: 'var(--foreground)',
-                                fontSize: 14,
-                                minHeight: '60px',
-                                resize: 'vertical',
-                                outline: 'none',
-                                transition: 'border-color 0.15s',
-                                fontFamily: 'inherit'
-                            }}
-                            onFocus={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)'}
-                            onBlur={e => {
-                                e.currentTarget.style.borderColor = 'rgba(255,255,255,0.07)';
-                                handleBlur();
-                            }}
-                        />
-                    </div>
+                                            {/* Actual weight field (meet day) */}
+                                            {(meetDayMode || attemptData.result !== 'pending') && (
+                                                <div>
+                                                    <label style={{ fontSize: 9, color: 'var(--secondary-foreground)', display: 'block', textAlign: 'center', marginBottom: 3, textTransform: 'uppercase' }}>Actual KG</label>
+                                                    <input
+                                                        type="number"
+                                                        inputMode="decimal"
+                                                        placeholder="—"
+                                                        value={attemptData.actualKg || ''}
+                                                        readOnly={isReadOnly}
+                                                        style={{
+                                                            ...inputStyle, padding: '6px 4px', fontSize: 14, fontWeight: 700,
+                                                            borderColor: attemptData.result === 'good' ? 'rgba(34,197,94,0.5)' :
+                                                                attemptData.result === 'fail' ? 'rgba(239,68,68,0.5)' : 'rgba(255,255,255,0.15)',
+                                                            background: attemptData.result === 'good' ? 'rgba(34,197,94,0.08)' :
+                                                                attemptData.result === 'fail' ? 'rgba(239,68,68,0.08)' : 'rgba(255,255,255,0.06)',
+                                                        }}
+                                                        onChange={e => handleActualKgChange(liftKey, attemptKey, e.target.value)}
+                                                        onBlur={handleBlur}
+                                                    />
+                                                </div>
+                                            )}
+
+                                            {/* Options (conservative/planned/reach) */}
+                                            {OPTIONS.map(({ key: optionKey, label: optionLabel }) => {
+                                                const val = data[liftKey][attemptKey][optionKey];
+                                                return (
+                                                    <div key={optionKey} style={{
+                                                        background: 'rgba(0,0,0,0.1)',
+                                                        border: '1px solid rgba(255,255,255,0.04)',
+                                                        borderRadius: 8,
+                                                        padding: '8px',
+                                                    }}>
+                                                        <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', marginBottom: 6, textAlign: 'center' }}>
+                                                            {optionLabel}
+                                                        </div>
+                                                        <div style={{ display: 'flex', gap: 6 }}>
+                                                            <div style={{ flex: 1 }}>
+                                                                <input
+                                                                    type="number"
+                                                                    inputMode="decimal"
+                                                                    placeholder="KG"
+                                                                    value={val.kg}
+                                                                    readOnly={isReadOnly}
+                                                                    style={{ ...inputStyle, padding: '6px 4px', fontSize: 13, borderColor: val.kg ? 'rgba(6,182,212,0.4)' : 'rgba(255,255,255,0.1)' }}
+                                                                    onFocus={e => e.currentTarget.style.borderColor = 'rgba(6,182,212,0.7)'}
+                                                                    onBlur={e => {
+                                                                        e.currentTarget.style.borderColor = val.kg ? 'rgba(6,182,212,0.4)' : 'rgba(255,255,255,0.1)';
+                                                                        handleBlur();
+                                                                    }}
+                                                                    onChange={e => handleKgChange(liftKey, attemptKey, optionKey, e.target.value)}
+                                                                />
+                                                            </div>
+                                                            <div style={{ flex: 1 }}>
+                                                                <input
+                                                                    type="number"
+                                                                    inputMode="decimal"
+                                                                    placeholder="LBS"
+                                                                    value={val.lbs}
+                                                                    readOnly={isReadOnly}
+                                                                    style={{ ...inputStyle, padding: '6px 4px', fontSize: 13, borderColor: val.lbs ? 'rgba(168,85,247,0.4)' : 'rgba(255,255,255,0.1)' }}
+                                                                    onFocus={e => e.currentTarget.style.borderColor = 'rgba(168,85,247,0.7)'}
+                                                                    onBlur={e => {
+                                                                        e.currentTarget.style.borderColor = val.lbs ? 'rgba(168,85,247,0.4)' : 'rgba(255,255,255,0.1)';
+                                                                        handleBlur();
+                                                                    }}
+                                                                    onChange={e => handleLbsChange(liftKey, attemptKey, optionKey, e.target.value)}
+                                                                />
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    );
+                                })}
+                            </div>
                         </>
                     )}
                 </div>
