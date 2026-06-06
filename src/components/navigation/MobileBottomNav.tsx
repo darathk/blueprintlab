@@ -83,11 +83,11 @@ export default function MobileBottomNav({ items, children, className, userId }: 
                 <div style={{
                     display: 'flex',
                     flexDirection: 'column',
-                    alignItems: 'center',
+                    alignItems: 'stretch',
                     justifyContent: 'center',
                     gap: '12px',
                     padding: '12px',
-                    borderRadius: 50,
+                    borderRadius: 36,
                     background: '#151515', // Solid dark grey almost black
                     border: '1px solid rgba(255, 255, 255, 0.03)',
                     boxShadow: 'inset 0 2px 5px rgba(255,255,255,0.03), 0 10px 40px rgba(0, 0, 0, 0.8)',
@@ -114,12 +114,13 @@ export default function MobileBottomNav({ items, children, className, userId }: 
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
-                                    justifyContent: 'center',
+                                    justifyContent: 'flex-start',
                                     textDecoration: 'none',
                                     position: 'relative',
-                                    width: 54,
+                                    minWidth: 160,
                                     height: 54,
-                                    borderRadius: '50%',
+                                    padding: '0 20px',
+                                    borderRadius: 27,
                                     background: active ? '#1a1a1a' : '#1e1e1e', // Darker when active
                                     border: '1px solid rgba(255,255,255,0.02)',
                                     // Neumorphic Shadows mimicking Image 2
@@ -133,12 +134,24 @@ export default function MobileBottomNav({ items, children, className, userId }: 
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
+                                    width: 24,
                                     color: active ? '#fff' : 'rgba(255, 255, 255, 0.5)',
                                     transform: active ? 'scale(0.95)' : 'scale(1)',
                                     transition: 'transform 0.2s ease, color 0.2s ease',
                                 }}>
                                     {item.icon}
                                 </div>
+                                
+                                <span style={{
+                                    marginLeft: 16,
+                                    fontSize: 15,
+                                    fontWeight: 600,
+                                    letterSpacing: '0.02em',
+                                    color: active ? '#fff' : 'rgba(255, 255, 255, 0.5)',
+                                    transition: 'color 0.2s ease',
+                                }}>
+                                    {item.label}
+                                </span>
 
                                 {/* Unread badge */}
                                 {item.unreadCount !== undefined && item.unreadCount > 0 && (
