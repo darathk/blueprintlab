@@ -6,7 +6,7 @@ export default async function AthleteMeetPage({ params }: { params: Promise<{ id
 
     const athlete = await prisma.athlete.findUnique({
         where: { id },
-        select: { id: true, name: true, meetAttempts: true, pastMeets: true, nextMeetName: true, nextMeetDate: true, weightClass: true, gender: true, federation: true },
+        select: { id: true, name: true, meetAttempts: true, pastMeets: true, nextMeetName: true, nextMeetDate: true, weightClass: true, gender: true, federation: true, competitors: true },
     });
 
     if (!athlete) return <div style={{ padding: '2rem' }}>Athlete not found.</div>;

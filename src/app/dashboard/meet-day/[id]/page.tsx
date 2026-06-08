@@ -32,10 +32,10 @@ export default async function MeetDayAthletePage({
                 meetAttempts: true,
                 pastMeets: true,
                 nextMeetName: true,
-                nextMeetDate: true,
                 weightClass: true,
                 gender: true,
                 federation: true,
+                competitors: true,
             },
         }),
         prisma.athlete.findMany({
