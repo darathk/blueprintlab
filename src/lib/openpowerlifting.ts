@@ -1,0 +1,199 @@
+export interface OPLMeet {
+    Name: string;
+    Date: string;
+    BodyweightKg: number;
+    WeightClassKg: string;
+    Squat1Kg: number | string;
+    Squat2Kg: number | string;
+    Squat3Kg: number | string;
+    Best3SquatKg: number;
+    Bench1Kg: number | string;
+    Bench2Kg: number | string;
+    Bench3Kg: number | string;
+    Best3BenchKg: number;
+    Deadlift1Kg: number | string;
+    Deadlift2Kg: number | string;
+    Deadlift3Kg: number | string;
+    Best3DeadliftKg: number;
+    TotalKg: number;
+    Federation: string;
+}
+
+export interface HitRateStats {
+    squat: { made: number; total: number; percent: number };
+    bench: { made: number; total: number; percent: number };
+    deadlift: { made: number; total: number; percent: number };
+    overall: { made: number; total: number; percent: number };
+    bombOuts: number;
+}
+
+export interface ProgressionStats {
+    averageTotalIncreaseKg: number;
+    averageTotalIncreasePercent: number;
+    meetsCount: number;
+    history: { date: string; total: number; bodyweight: number; federation: string }[];
+}
+
+export interface TacticalStats {
+    avgSquatJump1to2: number;
+    avgSquatJump2to3: number;
+    avgBenchJump1to2: number;
+    avgBenchJump2to3: number;
+    avgDeadliftJump1to2: number;
+    avgDeadliftJump2to3: number;
+    opensHeavy: boolean;
+}
+
+export interface CompetitorProfile {
+    id: string; // usually the slug
+    name: string;
+    hitRates: HitRateStats;
+    progression: ProgressionStats;
+    tactics: TacticalStats;
+    lastTotal: number;
+    projectedTotal: number;
+    lastBodyweight: number;
+    lastMeetDate: string;
+}
+
+function parseAttempt(val: any): { attempted: boolean; made: boolean; kg: number } {
+    if (val === null || val === undefined || val === '') return { attempted: false, made: false, kg: 0 };
+    const num = typeof val === 'string' ? parseFloat(val) : val;
+    if (isNaN(num)) return { attempted: false, made: false, kg: 0 };
+    return {
+        attempted: true,
+        made: num > 0,
+        kg: Math.abs(num)
+    };
+}
+
+export function analyzeCompetitor(slug: string, meets: OPLMeet[]): CompetitorProfile {
+    // Sort meets oldest to newest
+    const sortedMeets = [...meets].sort((a, b) => new Date(a.Date).getTime() - new Date(b.Date).getTime());
+    
+    let sqMade = 0, sqTot = 0;
+    let bnMade = 0, bnTot = 0;
+    let dlMade = 0, dlTot = 0;
+    let bombOuts = 0;
+
+    let sqJumps1to2: number[] = [];
+    let sqJumps2to3: number[] = [];
+    let bnJumps1to2: number[] = [];
+    let bnJumps2to3: number[] = [];
+    let dlJumps1to2: number[] = [];
+    let dlJumps2to3: number[] = [];
+
+    const history = [];
+
+    let name = meets.length > 0 ? meets[0].Name : slug;
+
+    for (const meet of sortedMeets) {
+        if (!meet.TotalKg) continue; // Skip incomplete meets
+        
+        history.push({
+            date: meet.Date,
+            total: meet.TotalKg,
+            bodyweight: meet.BodyweightKg,
+            federation: meet.Federation
+        });
+
+        const s1 = parseAttempt(meet.Squat1Kg);
+        const s2 = parseAttempt(meet.Squat2Kg);
+        const s3 = parseAttempt(meet.Squat3Kg);
+        
+        const b1 = parseAttempt(meet.Bench1Kg);
+        const b2 = parseAttempt(meet.Bench2Kg);
+        const b3 = parseAttempt(meet.Bench3Kg);
+        
+        const d1 = parseAttempt(meet.Deadlift1Kg);
+        const d2 = parseAttempt(meet.Deadlift2Kg);
+        const d3 = parseAttempt(meet.Deadlift3Kg);
+
+        // Hit Rates
+        if (s1.attempted) { sqTot++; if (s1.made) sqMade++; }
+        if (s2.attempted) { sqTot++; if (s2.made) sqMade++; }
+        if (s3.attempted) { sqTot++; if (s3.made) sqMade++; }
+        if (s1.attempted && !s1.made && !s2.made && !s3.made) bombOuts++;
+
+        if (b1.attempted) { bnTot++; if (b1.made) bnMade++; }
+        if (b2.attempted) { bnTot++; if (b2.made) bnMade++; }
+        if (b3.attempted) { bnTot++; if (b3.made) bnMade++; }
+        if (b1.attempted && !b1.made && !b2.made && !b3.made) bombOuts++;
+
+        if (d1.attempted) { dlTot++; if (d1.made) dlMade++; }
+        if (d2.attempted) { dlTot++; if (d2.made) dlMade++; }
+        if (d3.attempted) { dlTot++; if (d3.made) dlMade++; }
+        if (d1.attempted && !d1.made && !d2.made && !d3.made) bombOuts++;
+
+        // Jumps
+        if (s1.made && s2.attempted) sqJumps1to2.push(s2.kg - s1.kg);
+        if (s2.made && s3.attempted) sqJumps2to3.push(s3.kg - s2.kg);
+        
+        if (b1.made && b2.attempted) bnJumps1to2.push(b2.kg - b1.kg);
+        if (b2.made && b3.attempted) bnJumps2to3.push(b3.kg - b2.kg);
+
+        if (d1.made && d2.attempted) dlJumps1to2.push(d2.kg - d1.kg);
+        if (d2.made && d3.attempted) dlJumps2to3.push(d3.kg - d2.kg);
+    }
+
+    const overallMade = sqMade + bnMade + dlMade;
+    const overallTot = sqTot + bnTot + dlTot;
+
+    // Progression
+    let totalIncreaseKg = 0;
+    let totalIncreasePct = 0;
+    let progressionMeets = 0;
+    
+    for (let i = 1; i < history.length; i++) {
+        const prev = history[i-1].total;
+        const curr = history[i].total;
+        if (prev > 0) {
+            totalIncreaseKg += (curr - prev);
+            totalIncreasePct += ((curr - prev) / prev) * 100;
+            progressionMeets++;
+        }
+    }
+
+    const avgIncKg = progressionMeets > 0 ? totalIncreaseKg / progressionMeets : 0;
+    const avgIncPct = progressionMeets > 0 ? totalIncreasePct / progressionMeets : 0;
+
+    const lastMeet = history.length > 0 ? history[history.length - 1] : null;
+    const lastTotal = lastMeet ? lastMeet.total : 0;
+    // Projected = last total + average progression
+    const projectedTotal = lastTotal > 0 ? lastTotal + avgIncKg : 0;
+
+    const avg = (arr: number[]) => arr.length > 0 ? arr.reduce((a,b)=>a+b,0)/arr.length : 0;
+
+    const tactics: TacticalStats = {
+        avgSquatJump1to2: avg(sqJumps1to2),
+        avgSquatJump2to3: avg(sqJumps2to3),
+        avgBenchJump1to2: avg(bnJumps1to2),
+        avgBenchJump2to3: avg(bnJumps2to3),
+        avgDeadliftJump1to2: avg(dlJumps1to2),
+        avgDeadliftJump2to3: avg(dlJumps2to3),
+        opensHeavy: avg(sqJumps1to2) < 7.5 // Arbitrary heuristic
+    };
+
+    return {
+        id: slug,
+        name,
+        hitRates: {
+            squat: { made: sqMade, total: sqTot, percent: sqTot > 0 ? Math.round((sqMade/sqTot)*100) : 0 },
+            bench: { made: bnMade, total: bnTot, percent: bnTot > 0 ? Math.round((bnMade/bnTot)*100) : 0 },
+            deadlift: { made: dlMade, total: dlTot, percent: dlTot > 0 ? Math.round((dlMade/dlTot)*100) : 0 },
+            overall: { made: overallMade, total: overallTot, percent: overallTot > 0 ? Math.round((overallMade/overallTot)*100) : 0 },
+            bombOuts
+        },
+        progression: {
+            averageTotalIncreaseKg: Math.round(avgIncKg * 10) / 10,
+            averageTotalIncreasePercent: Math.round(avgIncPct * 10) / 10,
+            meetsCount: history.length,
+            history
+        },
+        tactics,
+        lastTotal,
+        projectedTotal: Math.round(projectedTotal * 10) / 10,
+        lastBodyweight: lastMeet ? lastMeet.bodyweight : 0,
+        lastMeetDate: lastMeet ? lastMeet.date : ''
+    };
+}

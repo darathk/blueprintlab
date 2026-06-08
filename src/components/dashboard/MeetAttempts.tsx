@@ -3,7 +3,8 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { calculateDots } from '@/lib/calculators';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, Camera } from 'lucide-react';
+import CompetitorScout from './CompetitorScout';
 
 const LIFTS = [
     { key: 'squat', label: 'Squat', color: '#7d87d2' },
@@ -249,6 +250,41 @@ export default function MeetAttempts({
         bodyweight: data.meetDay?.bodyweight || '',
         federation: data.meetDay?.federation || athlete.federation || 'IPF',
     }));
+
+    // Tabs and Export
+    const [activeTab, setActiveTab] = useState<'attempts' | 'scout'>('attempts');
+    const [exporting, setExporting] = useState(false);
+
+    const exportAsPhoto = async () => {
+        setExporting(true);
+        try {
+            const html2canvas = (await import('html2canvas')).default;
+            // Add a small delay to ensure any layout shifts are settled
+            await new Promise(r => setTimeout(r, 100));
+            const elementId = activeTab === 'attempts' ? 'meet-attempts-content' : 'competitor-scout-report';
+            const element = document.getElementById(elementId);
+            if (!element) throw new Error('Could not find content to export');
+
+            const canvas = await html2canvas(element, {
+                backgroundColor: '#09090b', // Match dark theme bg
+                scale: 2, // High resolution
+                useCORS: true,
+                logging: false,
+                ignoreElements: (node) => node.tagName === 'BUTTON' && node.textContent?.includes('Export'),
+            });
+
+            const image = canvas.toDataURL('image/jpeg', 0.9);
+            const link = document.createElement('a');
+            link.href = image;
+            link.download = `${athlete.name}_${activeTab === 'attempts' ? 'Attempt_Sheet' : 'Scouting_Report'}.jpg`;
+            link.click();
+        } catch (err) {
+            console.error('Failed to export photo:', err);
+            alert('Failed to export photo. Please try again.');
+        } finally {
+            setExporting(false);
+        }
+    };
 
     // Accordion state for lifts
     const [expandedLifts, setExpandedLifts] = useState<{ [key: string]: boolean }>({
@@ -534,12 +570,40 @@ export default function MeetAttempts({
                         Enter weights in either unit — they auto-convert
                     </p>
                 </div>
-                {!isReadOnly && (
-                    <div style={{ fontSize: 12, color: saving ? 'var(--secondary-foreground)' : saved ? '#4ade80' : 'transparent', fontWeight: 500, transition: 'color 0.2s' }}>
-                        {saving ? 'Saving…' : saved ? '✓ Saved' : '·'}
-                    </div>
-                )}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                    {!isReadOnly && (
+                        <div style={{ fontSize: 12, color: saving ? 'var(--secondary-foreground)' : saved ? '#4ade80' : 'transparent', fontWeight: 500, transition: 'color 0.2s' }}>
+                            {saving ? 'Saving…' : saved ? '✓ Saved' : '·'}
+                        </div>
+                    )}
+                    <button
+                        onClick={exportAsPhoto}
+                        disabled={exporting}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, border: '1px solid var(--card-border)', background: 'var(--card-bg)', color: 'var(--foreground)', fontSize: '0.85rem', fontWeight: 500, cursor: exporting ? 'default' : 'pointer', opacity: exporting ? 0.7 : 1 }}
+                    >
+                        {exporting ? 'Exporting...' : <><Camera size={14} /> Export</>}
+                    </button>
+                </div>
             </div>
+
+            {/* Tabs */}
+            <div style={{ display: 'flex', gap: 4, marginBottom: '1.5rem', background: 'rgba(255,255,255,0.03)', padding: 4, borderRadius: 10 }}>
+                <button
+                    onClick={() => setActiveTab('attempts')}
+                    style={{ flex: 1, padding: '8px', borderRadius: 8, border: 'none', background: activeTab === 'attempts' ? 'var(--card-bg)' : 'transparent', color: activeTab === 'attempts' ? 'var(--foreground)' : 'var(--secondary-foreground)', fontWeight: activeTab === 'attempts' ? 600 : 500, boxShadow: activeTab === 'attempts' ? '0 2px 8px rgba(0,0,0,0.2)' : 'none', cursor: 'pointer', transition: 'all 0.2s' }}
+                >
+                    Attempt Selection
+                </button>
+                <button
+                    onClick={() => setActiveTab('scout')}
+                    style={{ flex: 1, padding: '8px', borderRadius: 8, border: 'none', background: activeTab === 'scout' ? 'var(--card-bg)' : 'transparent', color: activeTab === 'scout' ? 'var(--foreground)' : 'var(--secondary-foreground)', fontWeight: activeTab === 'scout' ? 600 : 500, boxShadow: activeTab === 'scout' ? '0 2px 8px rgba(0,0,0,0.2)' : 'none', cursor: 'pointer', transition: 'all 0.2s' }}
+                >
+                    Competitor Scouting
+                </button>
+            </div>
+
+            {activeTab === 'attempts' ? (
+                <div id="meet-attempts-content">
 
             {/* Meet Info Fields */}
             {(meetDayMode || true) && (
@@ -950,6 +1014,15 @@ export default function MeetAttempts({
                         Saves all marked attempts and results to this athlete&apos;s past meet records
                     </p>
                 </div>
+            )}
+                </div>
+            ) : (
+                <CompetitorScout 
+                    athleteId={athlete.id}
+                    savedCompetitors={athlete.competitors || []}
+                    athleteProjectedTotal={projections.find(p => p.key === 'planned')?.total || 0}
+                    athleteBodyweight={bwKg}
+                />
             )}
         </div>
     );

@@ -42,7 +42,7 @@ export async function PATCH(
         if ('error' in auth) return auth.error;
 
         const body = await request.json();
-        const { weightClass, gender, federation, liftTargets, email: rawEmail, trainingSchedule } = body;
+        const { weightClass, gender, federation, liftTargets, email: rawEmail, trainingSchedule, competitors } = body;
         const email = rawEmail !== undefined ? (typeof rawEmail === 'string' ? rawEmail.toLowerCase() : rawEmail) : undefined;
 
         // Validate inputs
@@ -78,6 +78,7 @@ export async function PATCH(
                 ...(liftTargets !== undefined && { liftTargets }),
                 ...(trainingSchedule !== undefined && { trainingSchedule }),
                 ...(email !== undefined && { email }),
+                ...(competitors !== undefined && { competitors }),
             },
         });
         return NextResponse.json({ success: true });
