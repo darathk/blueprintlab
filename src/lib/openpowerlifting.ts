@@ -23,9 +23,9 @@ export interface OPLMeet {
 }
 
 export interface HitRateStats {
-    squat: { made: number; total: number; percent: number };
-    bench: { made: number; total: number; percent: number };
-    deadlift: { made: number; total: number; percent: number };
+    squat: { made: number; total: number; percent: number; thirdMade: number; thirdTotal: number; thirdPercent: number };
+    bench: { made: number; total: number; percent: number; thirdMade: number; thirdTotal: number; thirdPercent: number };
+    deadlift: { made: number; total: number; percent: number; thirdMade: number; thirdTotal: number; thirdPercent: number };
     overall: { made: number; total: number; percent: number };
     bombOuts: number;
 }
@@ -119,9 +119,9 @@ export function analyzeCompetitor(slug: string, meets: OPLMeet[]): CompetitorPro
     // Sort meets oldest to newest
     const sortedMeets = [...meets].sort((a, b) => new Date(a.Date).getTime() - new Date(b.Date).getTime());
     
-    let sqMade = 0, sqTot = 0;
-    let bnMade = 0, bnTot = 0;
-    let dlMade = 0, dlTot = 0;
+    let sqMade = 0, sqTot = 0, sq3Made = 0, sq3Tot = 0;
+    let bnMade = 0, bnTot = 0, bn3Made = 0, bn3Tot = 0;
+    let dlMade = 0, dlTot = 0, dl3Made = 0, dl3Tot = 0;
     let bombOuts = 0;
 
     let sqJumps1to2: number[] = [];
@@ -193,17 +193,17 @@ export function analyzeCompetitor(slug: string, meets: OPLMeet[]): CompetitorPro
         // Hit Rates
         if (s1.attempted) { sqTot++; if (s1.made) sqMade++; }
         if (s2.attempted) { sqTot++; if (s2.made) sqMade++; }
-        if (s3.attempted) { sqTot++; if (s3.made) sqMade++; }
+        if (s3.attempted) { sqTot++; sq3Tot++; if (s3.made) { sqMade++; sq3Made++; } }
         if (s1.attempted && !s1.made && !s2.made && !s3.made) bombOuts++;
 
         if (b1.attempted) { bnTot++; if (b1.made) bnMade++; }
         if (b2.attempted) { bnTot++; if (b2.made) bnMade++; }
-        if (b3.attempted) { bnTot++; if (b3.made) bnMade++; }
+        if (b3.attempted) { bnTot++; bn3Tot++; if (b3.made) { bnMade++; bn3Made++; } }
         if (b1.attempted && !b1.made && !b2.made && !b3.made) bombOuts++;
 
         if (d1.attempted) { dlTot++; if (d1.made) dlMade++; }
         if (d2.attempted) { dlTot++; if (d2.made) dlMade++; }
-        if (d3.attempted) { dlTot++; if (d3.made) dlMade++; }
+        if (d3.attempted) { dlTot++; dl3Tot++; if (d3.made) { dlMade++; dl3Made++; } }
         if (d1.attempted && !d1.made && !d2.made && !d3.made) bombOuts++;
 
         // Jumps
@@ -286,10 +286,10 @@ export function analyzeCompetitor(slug: string, meets: OPLMeet[]): CompetitorPro
         id: slug,
         name,
         hitRates: {
-            squat: { made: sqMade, total: sqTot, percent: sqTot > 0 ? Math.round((sqMade/sqTot)*100) : 0 },
-            bench: { made: bnMade, total: bnTot, percent: bnTot > 0 ? Math.round((bnMade/bnTot)*100) : 0 },
-            deadlift: { made: dlMade, total: dlTot, percent: dlTot > 0 ? Math.round((dlMade/dlTot)*100) : 0 },
-            overall: { made: overallMade, total: overallTot, percent: overallTot > 0 ? Math.round((overallMade/overallTot)*100) : 0 },
+            squat: { made: sqMade, total: sqTot, percent: sqTot > 0 ? (sqMade / sqTot) * 100 : 0, thirdMade: sq3Made, thirdTotal: sq3Tot, thirdPercent: sq3Tot > 0 ? (sq3Made / sq3Tot) * 100 : 0 },
+            bench: { made: bnMade, total: bnTot, percent: bnTot > 0 ? (bnMade / bnTot) * 100 : 0, thirdMade: bn3Made, thirdTotal: bn3Tot, thirdPercent: bn3Tot > 0 ? (bn3Made / bn3Tot) * 100 : 0 },
+            deadlift: { made: dlMade, total: dlTot, percent: dlTot > 0 ? (dlMade / dlTot) * 100 : 0, thirdMade: dl3Made, thirdTotal: dl3Tot, thirdPercent: dl3Tot > 0 ? (dl3Made / dl3Tot) * 100 : 0 },
+            overall: { made: overallMade, total: overallTot, percent: overallTot > 0 ? (overallMade / overallTot) * 100 : 0 },
             bombOuts
         },
         progression: {

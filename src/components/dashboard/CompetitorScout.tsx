@@ -585,13 +585,21 @@ function HitRateCard({ comp }: { comp: CompetitorProfile }) {
                     { label: 'Bench Press', data: comp.hitRates.bench, color: '#a855f7' },
                     { label: 'Deadlift', data: comp.hitRates.deadlift, color: '#10b981' }
                 ].map(lift => (
-                    <div key={lift.label}>
+                    <div key={lift.label} style={{ marginBottom: 8 }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: 4 }}>
                             <span style={{ fontWeight: 600 }}>{lift.label}</span>
-                            <span style={{ color: 'var(--secondary-foreground)' }}>{lift.data.percent}% ({lift.data.made}/{lift.data.total})</span>
+                            <span style={{ color: 'var(--secondary-foreground)' }}>{Math.round(lift.data.percent)}% ({lift.data.made}/{lift.data.total})</span>
                         </div>
-                        <div style={{ height: 6, background: 'var(--bg-modifier-hover)', borderRadius: 3, overflow: 'hidden' }}>
+                        <div style={{ height: 6, background: 'var(--bg-modifier-hover)', borderRadius: 3, overflow: 'hidden', marginBottom: 6 }}>
                             <div style={{ height: '100%', background: lift.color, width: `${lift.data.percent}%`, borderRadius: 3 }} />
+                        </div>
+                        
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: 'var(--secondary-foreground)' }}>
+                            <span>3rd Attempts</span>
+                            <span>{Math.round(lift.data.thirdPercent)}% ({lift.data.thirdMade}/{lift.data.thirdTotal})</span>
+                        </div>
+                        <div style={{ height: 4, background: 'var(--bg-modifier-hover)', borderRadius: 2, overflow: 'hidden', marginTop: 2 }}>
+                            <div style={{ height: '100%', background: lift.color, width: `${lift.data.thirdPercent}%`, borderRadius: 2, opacity: 0.6 }} />
                         </div>
                     </div>
                 ))}
