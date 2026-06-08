@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useMemo } from 'react';
-import { CompetitorProfile } from '@/lib/openpowerlifting';
-import { Search, Plus, Trash2, TrendingUp, AlertTriangle, Crosshair, Users, Activity } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar } from 'recharts';
+import { useState, useMemo, useRef } from 'react';
+import { CompetitorProfile, analyzeCompetitor } from '@/lib/openpowerlifting';
+import Papa from 'papaparse';
+import { Upload, Trash2, TrendingUp, AlertTriangle, Crosshair, Activity } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 
 interface CompetitorScoutProps {
     athleteId: string;
@@ -14,53 +15,67 @@ interface CompetitorScoutProps {
 
 export default function CompetitorScout({ athleteId, savedCompetitors: initialSaved, athleteProjectedTotal, athleteBodyweight }: CompetitorScoutProps) {
     const [saved, setSaved] = useState<CompetitorProfile[]>(initialSaved || []);
-    const [searchSlug, setSearchSlug] = useState('');
     const [searching, setSearching] = useState(false);
     const [error, setError] = useState('');
     const [selectedId, setSelectedId] = useState<string | null>(initialSaved?.[0]?.id || null);
+    const fileRef = useRef<HTMLInputElement>(null);
 
     const activeCompetitor = useMemo(() => saved.find(c => c.id === selectedId), [saved, selectedId]);
 
-    const handleSearch = async () => {
-        if (!searchSlug) return;
+    const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
         setSearching(true);
         setError('');
-        
-        try {
-            const res = await fetch(`/api/openpowerlifting?slug=${encodeURIComponent(searchSlug)}`);
-            const data = await res.json();
-            
-            if (!res.ok) {
-                throw new Error(data.error || 'Failed to fetch competitor');
+
+        Papa.parse(file, {
+            header: true,
+            skipEmptyLines: true,
+            dynamicTyping: true,
+            complete: async (results) => {
+                try {
+                    if (results.errors.length > 0 && results.data.length === 0) {
+                        throw new Error('Failed to parse CSV file. Ensure it is a valid OpenPowerlifting CSV export.');
+                    }
+
+                    const meets = results.data as any[];
+                    if (meets.length === 0) {
+                        throw new Error('The CSV file is empty.');
+                    }
+
+                    // Get name from the first row or file name
+                    const compName = meets[0].Name || file.name.replace(/\.[^/.]+$/, "");
+                    const slug = compName.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+                    // Analyze directly on client using the existing logic
+                    const profile = analyzeCompetitor(slug, meets);
+
+                    // Add to saved list
+                    const newSaved = [...saved.filter(c => c.id !== profile.id), profile];
+                    setSaved(newSaved);
+                    setSelectedId(profile.id);
+
+                    // Save to database
+                    await fetch(`/api/athletes/${athleteId}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ competitors: newSaved })
+                    });
+
+                } catch (err: any) {
+                    setError(err.message);
+                } finally {
+                    setSearching(false);
+                    if (fileRef.current) fileRef.current.value = '';
+                }
+            },
+            error: (err) => {
+                setError(`CSV Parse Error: ${err.message}`);
+                setSearching(false);
+                if (fileRef.current) fileRef.current.value = '';
             }
-
-            // Analyze data
-            const analysis = await fetch('/api/openpowerlifting/analyze', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ slug: searchSlug, meets: data.meets })
-            }).then(r => r.json());
-
-            if (analysis.error) throw new Error(analysis.error);
-
-            // Add to saved list
-            const newSaved = [...saved.filter(c => c.id !== analysis.profile.id), analysis.profile];
-            setSaved(newSaved);
-            setSelectedId(analysis.profile.id);
-            setSearchSlug('');
-
-            // Save to database
-            await fetch(`/api/athletes/${athleteId}`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ competitors: newSaved })
-            });
-
-        } catch (err: any) {
-            setError(err.message);
-        } finally {
-            setSearching(false);
-        }
+        });
     };
 
     const removeCompetitor = async (id: string, e: React.MouseEvent) => {
@@ -82,31 +97,30 @@ export default function CompetitorScout({ athleteId, savedCompetitors: initialSa
                 Competitor Scouting
             </h2>
 
-            {/* Search Bar */}
-            <div style={{ display: 'flex', gap: 8, marginBottom: '1.5rem' }}>
+            {/* File Upload Bar */}
+            <div style={{ display: 'flex', gap: 8, marginBottom: '1.5rem', alignItems: 'center' }}>
                 <input
-                    type="text"
-                    placeholder="Enter OpenPowerlifting name (e.g., tayloratwood)"
-                    value={searchSlug}
-                    onChange={e => setSearchSlug(e.target.value)}
-                    onKeyDown={e => e.key === 'Enter' && handleSearch()}
-                    style={{
-                        flex: 1, padding: '10px 14px', borderRadius: 8, border: '1px solid var(--card-border)',
-                        background: 'var(--card-bg)', color: 'var(--foreground)', fontSize: '0.95rem'
-                    }}
+                    type="file"
+                    accept=".csv"
+                    ref={fileRef}
+                    onChange={handleFileUpload}
+                    style={{ display: 'none' }}
+                    id="competitor-csv-upload"
                 />
-                <button
-                    onClick={handleSearch}
-                    disabled={searching || !searchSlug}
+                <label
+                    htmlFor="competitor-csv-upload"
                     style={{
-                        padding: '0 20px', borderRadius: 8, border: 'none',
-                        background: 'var(--primary)', color: 'white', fontWeight: 600,
+                        padding: '10px 20px', borderRadius: 8, border: '1px dashed var(--card-border)',
+                        background: 'var(--card-bg)', color: 'var(--foreground)', fontSize: '0.95rem',
                         cursor: searching ? 'default' : 'pointer', opacity: searching ? 0.7 : 1,
-                        display: 'flex', alignItems: 'center', gap: 6
+                        display: 'flex', alignItems: 'center', gap: 8, fontWeight: 600, flex: 1, justifyContent: 'center',
+                        transition: 'all 0.2s'
                     }}
+                    onMouseOver={(e) => e.currentTarget.style.borderColor = 'var(--primary)'}
+                    onMouseOut={(e) => e.currentTarget.style.borderColor = 'var(--card-border)'}
                 >
-                    {searching ? 'Scouting...' : <><Search size={16} /> Scout</>}
-                </button>
+                    {searching ? 'Analyzing...' : <><Upload size={18} /> Upload OpenPowerlifting CSV</>}
+                </label>
             </div>
             {error && <div style={{ color: 'var(--error)', fontSize: '0.9rem', marginBottom: '1rem', marginTop: '-0.5rem' }}>{error}</div>}
 
