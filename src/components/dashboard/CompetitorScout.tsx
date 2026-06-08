@@ -192,6 +192,7 @@ export default function CompetitorScout({ athleteId, savedCompetitors: initialSa
                                     athleteTotals={athleteTotals} 
                                     athleteBodyweight={athleteBodyweight} 
                                     athleteGender={athleteGender} 
+                                    allTimePRs={allTimePRs}
                                 />
                                 
                                 <PerLiftMatchupCard 
@@ -322,24 +323,35 @@ function HistoricalBestsCard({ comp }: { comp: CompetitorProfile }) {
     );
 }
 
-function DotsReportCard({ comp, athleteTotals, athleteBodyweight, athleteGender }: { comp: CompetitorProfile, athleteTotals?: any, athleteBodyweight: number, athleteGender?: 'male'|'female' }) {
+function DotsReportCard({ comp, athleteTotals, athleteBodyweight, athleteGender, allTimePRs }: { comp: CompetitorProfile, athleteTotals?: any, athleteBodyweight: number, athleteGender?: 'male'|'female', allTimePRs: any }) {
     if (!comp.historicalBests) return null;
     
-    // Calculate Athlete Projected DOTS (Planned Total)
-    const athletePlannedTotal = athleteTotals?.planned || 0;
-    const athleteDots = (athleteGender && athleteBodyweight > 0 && athletePlannedTotal > 0) 
-        ? calculateDots(athletePlannedTotal, athleteBodyweight, athleteGender) 
-        : 0;
+    // Calculate Athlete DOTS
+    const conDots = (athleteGender && athleteBodyweight > 0 && athleteTotals?.conservative > 0) ? calculateDots(athleteTotals.conservative, athleteBodyweight, athleteGender) : 0;
+    const plnDots = (athleteGender && athleteBodyweight > 0 && athleteTotals?.planned > 0) ? calculateDots(athleteTotals.planned, athleteBodyweight, athleteGender) : 0;
+    const rchDots = (athleteGender && athleteBodyweight > 0 && athleteTotals?.reach > 0) ? calculateDots(athleteTotals.reach, athleteBodyweight, athleteGender) : 0;
+    const bestDots = (athleteGender && athleteBodyweight > 0 && allTimePRs?.total?.value > 0) ? calculateDots(allTimePRs.total.value, athleteBodyweight, athleteGender) : 0;
 
     // Calculate Competitor Projected DOTS
-    // We already have their projectedTotal, but we need their expected bodyweight for this meet
-    // We use their heaviestTotalBodyweight or lastBodyweight
-    const compBw = comp.lastBodyweight > 0 ? comp.lastBodyweight : comp.heaviestTotalBodyweight;
-    // We need competitor's gender but it isn't explicitly in CompetitorProfile yet, however, their DOTS was pre-calculated in bests.
-    // We can infer their gender from their best DOTS math or we just skip if we don't have it.
-    // Let's just calculate their projected DOTS by looking at the ratio of best DOTS / best Total (rough approximation) or just display their best dots.
     const compDotsRatio = comp.historicalBests.total.value > 0 ? (comp.historicalBests.dots.value / comp.historicalBests.total.value) : 0;
     const compProjectedDots = comp.projectedTotal * compDotsRatio;
+
+    const renderDotsBlock = (label: string, value: number, color: string, compareValue?: number) => {
+        const diff = compareValue ? value - compareValue : 0;
+        return (
+            <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: 12, borderLeft: `3px solid ${color}` }}>
+                <div style={{ fontSize: 10, color: 'var(--secondary-foreground)', textTransform: 'uppercase', marginBottom: 4 }}>{label}</div>
+                <div style={{ fontSize: 18, fontWeight: 800, color: color }}>
+                    {value > 0 ? value.toFixed(2) : '—'}
+                </div>
+                {compareValue && value > 0 && (
+                    <div style={{ fontSize: 11, color: diff >= 0 ? 'var(--success)' : 'var(--error)', marginTop: 4 }}>
+                        {diff >= 0 ? '+' : ''}{diff.toFixed(2)} vs Comp Proj
+                    </div>
+                )}
+            </div>
+        );
+    };
 
     return (
         <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 12, padding: '1.25rem' }}>
@@ -347,25 +359,19 @@ function DotsReportCard({ comp, athleteTotals, athleteBodyweight, athleteGender 
                 <ActivitySquare size={12} style={{ display: 'inline', marginRight: 4 }} /> Complete DOTS Report
                 <InfoTooltip text="Compares the absolute strength score (DOTS) of the competitor against your athlete's planned DOTS, neutralizing weight class advantages." />
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
-                <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: 12, borderLeft: `3px solid var(--secondary-foreground)` }}>
-                    <div style={{ fontSize: 10, color: 'var(--secondary-foreground)', textTransform: 'uppercase', marginBottom: 4 }}>Competitor Best DOTS</div>
-                    <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--foreground)' }}>
-                        {comp.historicalBests.dots.value > 0 ? comp.historicalBests.dots.value.toFixed(2) : '—'}
-                    </div>
-                </div>
-                <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: 12, borderLeft: `3px solid var(--warning)` }}>
-                    <div style={{ fontSize: 10, color: 'var(--secondary-foreground)', textTransform: 'uppercase', marginBottom: 4 }}>Competitor Proj. DOTS</div>
-                    <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--warning)' }}>
-                        {compProjectedDots > 0 ? compProjectedDots.toFixed(2) : '—'}
-                    </div>
-                </div>
-                <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: 12, borderLeft: `3px solid #ec4899` }}>
-                    <div style={{ fontSize: 10, color: 'var(--secondary-foreground)', textTransform: 'uppercase', marginBottom: 4 }}>Athlete Planned DOTS</div>
-                    <div style={{ fontSize: 18, fontWeight: 800, color: '#ec4899' }}>
-                        {athleteDots > 0 ? athleteDots.toFixed(2) : '—'}
-                    </div>
-                </div>
+            
+            <div style={{ marginBottom: 12, fontSize: 11, fontWeight: 700, color: 'var(--secondary-foreground)', textTransform: 'uppercase' }}>Competitor</div>
+            <div className="grid grid-cols-2 gap-3 mb-4">
+                {renderDotsBlock('Competitor Best DOTS', comp.historicalBests.dots.value, 'var(--secondary-foreground)')}
+                {renderDotsBlock('Competitor Proj. DOTS', compProjectedDots, 'var(--warning)')}
+            </div>
+
+            <div style={{ marginBottom: 12, fontSize: 11, fontWeight: 700, color: 'var(--secondary-foreground)', textTransform: 'uppercase' }}>Athlete Game Plans vs Competitor Proj.</div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {renderDotsBlock('Best DOTS', bestDots, '#f59e0b', compProjectedDots)}
+                {renderDotsBlock('Conservative', conDots, '#22d3ee', compProjectedDots)}
+                {renderDotsBlock('Planned', plnDots, '#ec4899', compProjectedDots)}
+                {renderDotsBlock('Reach', rchDots, '#f43f5e', compProjectedDots)}
             </div>
         </div>
     );
@@ -396,6 +402,14 @@ function PerLiftMatchupCard({ comp, athleteData, allTimePRs }: { comp: Competito
             athCon: parseFloat(athleteData?.deadlift?.attempt3?.conservative?.kg || '0') || 0,
             athPln: parseFloat(athleteData?.deadlift?.attempt3?.planned?.kg || '0') || 0,
             athRch: parseFloat(athleteData?.deadlift?.attempt3?.reach?.kg || '0') || 0
+        },
+        { 
+            key: 'total', label: 'Total', color: '#f59e0b', 
+            compProj: comp.projectedTotal, compAvg: (comp.progression.averageSquatIncreaseKg + comp.progression.averageBenchIncreaseKg + comp.progression.averageDeadliftIncreaseKg),
+            athBest: allTimePRs?.total?.value || 0,
+            athCon: athleteTotals?.conservative || 0,
+            athPln: athleteTotals?.planned || 0,
+            athRch: athleteTotals?.reach || 0
         }
     ];
 
@@ -407,16 +421,22 @@ function PerLiftMatchupCard({ comp, athleteData, allTimePRs }: { comp: Competito
             </div>
 
             {lifts.map(lift => {
-                const marginPln = lift.athPln - lift.compProj;
-                const marginBest = lift.athBest - lift.compProj;
+                const marginPln = lift.athPln > 0 ? lift.athPln - lift.compProj : 0;
+                const marginBest = lift.athBest > 0 ? lift.athBest - lift.compProj : 0;
+                
+                const conMargin = lift.athCon > 0 ? lift.athCon - lift.compProj : 0;
+                const plnMargin = lift.athPln > 0 ? lift.athPln - lift.compProj : 0;
+                const rchMargin = lift.athRch > 0 ? lift.athRch - lift.compProj : 0;
                 
                 return (
                     <div key={lift.key} style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: 12, borderLeft: `3px solid ${lift.color}` }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
                             <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--foreground)', textTransform: 'uppercase' }}>{lift.label}</div>
-                            <div style={{ fontSize: 11, color: marginPln >= 0 ? 'var(--success)' : 'var(--error)', fontWeight: 600 }}>
-                                {marginPln >= 0 ? '+' : ''}{marginPln.toFixed(1)}kg margin (Planned)
-                            </div>
+                            {lift.athPln > 0 && (
+                                <div style={{ fontSize: 11, color: marginPln >= 0 ? 'var(--success)' : 'var(--error)', fontWeight: 600 }}>
+                                    {marginPln >= 0 ? '+' : ''}{marginPln.toFixed(1)}kg margin (Planned)
+                                </div>
+                            )}
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-[12px]">
@@ -430,18 +450,29 @@ function PerLiftMatchupCard({ comp, athleteData, allTimePRs }: { comp: Competito
                             
                             <div style={{ background: 'rgba(0,0,0,0.2)', padding: 8, borderRadius: 6 }}>
                                 <div style={{ color: 'var(--secondary-foreground)', fontSize: 10, textTransform: 'uppercase', marginBottom: 2 }}>Athlete Current Best</div>
-                                <div style={{ fontWeight: 700 }}>PR: {lift.athBest} kg</div>
-                                <div style={{ fontSize: 10, color: marginBest >= 0 ? 'var(--success)' : 'var(--error)' }}>
-                                    {marginBest >= 0 ? '+' : ''}{marginBest.toFixed(1)}kg vs Comp
-                                </div>
+                                <div style={{ fontWeight: 700 }}>PR: {lift.athBest > 0 ? lift.athBest : '—'} kg</div>
+                                {lift.athBest > 0 && (
+                                    <div style={{ fontSize: 10, color: marginBest >= 0 ? 'var(--success)' : 'var(--error)' }}>
+                                        {marginBest >= 0 ? '+' : ''}{marginBest.toFixed(1)}kg vs Comp
+                                    </div>
+                                )}
                             </div>
 
                             <div style={{ background: 'rgba(0,0,0,0.2)', padding: 8, borderRadius: 6 }}>
-                                <div style={{ color: 'var(--secondary-foreground)', fontSize: 10, textTransform: 'uppercase', marginBottom: 2 }}>Athlete Game Plan</div>
-                                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 4 }}>
-                                    <span style={{ color: '#22d3ee' }}>C: {lift.athCon}</span>
-                                    <span style={{ color: '#f59e0b' }}>P: {lift.athPln}</span>
-                                    <span style={{ color: '#f43f5e' }}>R: {lift.athRch}</span>
+                                <div style={{ color: 'var(--secondary-foreground)', fontSize: 10, textTransform: 'uppercase', marginBottom: 2 }}>Athlete Game Plan vs Comp</div>
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                    <div style={{ color: '#22d3ee', display: 'flex', justifyContent: 'space-between' }}>
+                                        <span>C: {lift.athCon > 0 ? lift.athCon : '—'}</span>
+                                        {lift.athCon > 0 && <span style={{fontSize: 10, opacity: 0.8}}>{conMargin >= 0 ? '+' : ''}{conMargin.toFixed(1)}</span>}
+                                    </div>
+                                    <div style={{ color: '#f59e0b', display: 'flex', justifyContent: 'space-between' }}>
+                                        <span>P: {lift.athPln > 0 ? lift.athPln : '—'}</span>
+                                        {lift.athPln > 0 && <span style={{fontSize: 10, opacity: 0.8}}>{plnMargin >= 0 ? '+' : ''}{plnMargin.toFixed(1)}</span>}
+                                    </div>
+                                    <div style={{ color: '#f43f5e', display: 'flex', justifyContent: 'space-between' }}>
+                                        <span>R: {lift.athRch > 0 ? lift.athRch : '—'}</span>
+                                        {lift.athRch > 0 && <span style={{fontSize: 10, opacity: 0.8}}>{rchMargin >= 0 ? '+' : ''}{rchMargin.toFixed(1)}</span>}
+                                    </div>
                                 </div>
                             </div>
                         </div>

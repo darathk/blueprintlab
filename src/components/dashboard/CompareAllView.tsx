@@ -31,7 +31,7 @@ export default function CompareAllView({
                     <thead>
                         <tr style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid var(--card-border)', fontSize: 11, textTransform: 'uppercase', color: 'var(--secondary-foreground)' }}>
                             <th style={{ padding: '12px 16px', fontWeight: 600 }}>Competitor</th>
-                            <th style={{ padding: '12px 16px', fontWeight: 600 }}>Target Total</th>
+                            <th style={{ padding: '12px 16px', fontWeight: 600 }}>Projected Total</th>
                             <th style={{ padding: '12px 16px', fontWeight: 600 }}>vs Athlete</th>
                             <th style={{ padding: '12px 16px', fontWeight: 600 }}>Best DOTS</th>
                             <th style={{ padding: '12px 16px', fontWeight: 600 }}>Overall Hit Rate</th>
