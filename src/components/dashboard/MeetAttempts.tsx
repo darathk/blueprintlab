@@ -632,8 +632,7 @@ export default function MeetAttempts({
                 </button>
             </div>
 
-            {activeTab === 'attempts' ? (
-                <div id="meet-attempts-content">
+            <div id="meet-attempts-content" style={{ display: activeTab === 'attempts' ? 'block' : 'none' }}>
 
             {/* Meet Info Fields */}
             {(meetDayMode || true) && (
@@ -1126,15 +1125,21 @@ export default function MeetAttempts({
                     </div>
                 </div>
             )}
-                </div>
-            ) : (
+            </div>
+            <div style={{ display: activeTab === 'scout' ? 'block' : 'none' }}>
                 <CompetitorScout 
                     athleteId={athlete.id}
                     savedCompetitors={athlete.competitors || []}
-                    athleteProjectedTotal={projections.find(p => p.key === 'planned')?.total || 0}
+                    athleteTotals={{
+                        conservative: projections.find(p => p.key === 'conservative')?.total || 0,
+                        planned: projections.find(p => p.key === 'planned')?.total || 0,
+                        reach: projections.find(p => p.key === 'reach')?.total || 0
+                    }}
+                    athleteData={data}
+                    allTimePRs={allTimePRs}
                     athleteBodyweight={bwKg}
                 />
-            )}
+            </div>
         </div>
     );
 }

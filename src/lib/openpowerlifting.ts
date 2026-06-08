@@ -30,8 +30,11 @@ export interface HitRateStats {
 export interface ProgressionStats {
     averageTotalIncreaseKg: number;
     averageTotalIncreasePercent: number;
+    averageSquatIncreaseKg: number;
+    averageBenchIncreaseKg: number;
+    averageDeadliftIncreaseKg: number;
     meetsCount: number;
-    history: { date: string; total: number; bodyweight: number; federation: string }[];
+    history: { date: string; total: number; bodyweight: number; weightClass: string; federation: string; squat: number; bench: number; deadlift: number }[];
 }
 
 export interface TacticalStats {
@@ -52,6 +55,12 @@ export interface CompetitorProfile {
     tactics: TacticalStats;
     lastTotal: number;
     projectedTotal: number;
+    projectedSquat: number;
+    projectedBench: number;
+    projectedDeadlift: number;
+    heaviestTotal: number;
+    heaviestTotalWeightClass: string;
+    heaviestTotalBodyweight: number;
     lastBodyweight: number;
     lastMeetDate: string;
 }
@@ -87,27 +96,44 @@ export function analyzeCompetitor(slug: string, meets: OPLMeet[]): CompetitorPro
 
     let name = meets.length > 0 ? meets[0].Name : slug;
 
+    let heaviestTotal = 0;
+    let heaviestTotalWeightClass = '';
+    let heaviestTotalBodyweight = 0;
+
     for (const meet of sortedMeets) {
         if (!meet.TotalKg) continue; // Skip incomplete meets
         
-        history.push({
-            date: meet.Date,
-            total: meet.TotalKg,
-            bodyweight: meet.BodyweightKg,
-            federation: meet.Federation
-        });
-
         const s1 = parseAttempt(meet.Squat1Kg);
         const s2 = parseAttempt(meet.Squat2Kg);
         const s3 = parseAttempt(meet.Squat3Kg);
+        const sqBest = meet.Best3SquatKg > 0 ? meet.Best3SquatKg : Math.max(s1.made ? s1.kg : 0, s2.made ? s2.kg : 0, s3.made ? s3.kg : 0);
         
         const b1 = parseAttempt(meet.Bench1Kg);
         const b2 = parseAttempt(meet.Bench2Kg);
         const b3 = parseAttempt(meet.Bench3Kg);
+        const bnBest = meet.Best3BenchKg > 0 ? meet.Best3BenchKg : Math.max(b1.made ? b1.kg : 0, b2.made ? b2.kg : 0, b3.made ? b3.kg : 0);
         
         const d1 = parseAttempt(meet.Deadlift1Kg);
         const d2 = parseAttempt(meet.Deadlift2Kg);
         const d3 = parseAttempt(meet.Deadlift3Kg);
+        const dlBest = meet.Best3DeadliftKg > 0 ? meet.Best3DeadliftKg : Math.max(d1.made ? d1.kg : 0, d2.made ? d2.kg : 0, d3.made ? d3.kg : 0);
+
+        history.push({
+            date: meet.Date,
+            total: meet.TotalKg,
+            bodyweight: meet.BodyweightKg,
+            weightClass: meet.WeightClassKg || String(meet.BodyweightKg),
+            federation: meet.Federation,
+            squat: sqBest,
+            bench: bnBest,
+            deadlift: dlBest
+        });
+
+        if (meet.TotalKg > heaviestTotal) {
+            heaviestTotal = meet.TotalKg;
+            heaviestTotalWeightClass = meet.WeightClassKg || String(meet.BodyweightKg);
+            heaviestTotalBodyweight = meet.BodyweightKg;
+        }
 
         // Hit Rates
         if (s1.attempted) { sqTot++; if (s1.made) sqMade++; }
@@ -142,7 +168,13 @@ export function analyzeCompetitor(slug: string, meets: OPLMeet[]): CompetitorPro
     // Progression
     let totalIncreaseKg = 0;
     let totalIncreasePct = 0;
+    let sqIncreaseKg = 0;
+    let bnIncreaseKg = 0;
+    let dlIncreaseKg = 0;
     let progressionMeets = 0;
+    let sqProgMeets = 0;
+    let bnProgMeets = 0;
+    let dlProgMeets = 0;
     
     for (let i = 1; i < history.length; i++) {
         const prev = history[i-1].total;
@@ -152,15 +184,34 @@ export function analyzeCompetitor(slug: string, meets: OPLMeet[]): CompetitorPro
             totalIncreasePct += ((curr - prev) / prev) * 100;
             progressionMeets++;
         }
+
+        if (history[i-1].squat > 0 && history[i].squat > 0) {
+            sqIncreaseKg += (history[i].squat - history[i-1].squat);
+            sqProgMeets++;
+        }
+        if (history[i-1].bench > 0 && history[i].bench > 0) {
+            bnIncreaseKg += (history[i].bench - history[i-1].bench);
+            bnProgMeets++;
+        }
+        if (history[i-1].deadlift > 0 && history[i].deadlift > 0) {
+            dlIncreaseKg += (history[i].deadlift - history[i-1].deadlift);
+            dlProgMeets++;
+        }
     }
 
     const avgIncKg = progressionMeets > 0 ? totalIncreaseKg / progressionMeets : 0;
     const avgIncPct = progressionMeets > 0 ? totalIncreasePct / progressionMeets : 0;
+    const avgSqIncKg = sqProgMeets > 0 ? sqIncreaseKg / sqProgMeets : 0;
+    const avgBnIncKg = bnProgMeets > 0 ? bnIncreaseKg / bnProgMeets : 0;
+    const avgDlIncKg = dlProgMeets > 0 ? dlIncreaseKg / dlProgMeets : 0;
 
     const lastMeet = history.length > 0 ? history[history.length - 1] : null;
     const lastTotal = lastMeet ? lastMeet.total : 0;
     // Projected = last total + average progression
     const projectedTotal = lastTotal > 0 ? lastTotal + avgIncKg : 0;
+    const projectedSquat = lastMeet && lastMeet.squat > 0 ? lastMeet.squat + avgSqIncKg : 0;
+    const projectedBench = lastMeet && lastMeet.bench > 0 ? lastMeet.bench + avgBnIncKg : 0;
+    const projectedDeadlift = lastMeet && lastMeet.deadlift > 0 ? lastMeet.deadlift + avgDlIncKg : 0;
 
     const avg = (arr: number[]) => arr.length > 0 ? arr.reduce((a,b)=>a+b,0)/arr.length : 0;
 
@@ -187,12 +238,21 @@ export function analyzeCompetitor(slug: string, meets: OPLMeet[]): CompetitorPro
         progression: {
             averageTotalIncreaseKg: Math.round(avgIncKg * 10) / 10,
             averageTotalIncreasePercent: Math.round(avgIncPct * 10) / 10,
+            averageSquatIncreaseKg: Math.round(avgSqIncKg * 10) / 10,
+            averageBenchIncreaseKg: Math.round(avgBnIncKg * 10) / 10,
+            averageDeadliftIncreaseKg: Math.round(avgDlIncKg * 10) / 10,
             meetsCount: history.length,
             history
         },
         tactics,
         lastTotal,
         projectedTotal: Math.round(projectedTotal * 10) / 10,
+        projectedSquat: Math.round(projectedSquat * 10) / 10,
+        projectedBench: Math.round(projectedBench * 10) / 10,
+        projectedDeadlift: Math.round(projectedDeadlift * 10) / 10,
+        heaviestTotal,
+        heaviestTotalWeightClass,
+        heaviestTotalBodyweight,
         lastBodyweight: lastMeet ? lastMeet.bodyweight : 0,
         lastMeetDate: lastMeet ? lastMeet.date : ''
     };

@@ -9,11 +9,13 @@ import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveCo
 interface CompetitorScoutProps {
     athleteId: string;
     savedCompetitors: CompetitorProfile[];
-    athleteProjectedTotal: number;
+    athleteTotals?: { conservative: number; planned: number; reach: number };
+    athleteData?: any;
+    allTimePRs?: any;
     athleteBodyweight: number;
 }
 
-export default function CompetitorScout({ athleteId, savedCompetitors: initialSaved, athleteProjectedTotal, athleteBodyweight }: CompetitorScoutProps) {
+export default function CompetitorScout({ athleteId, savedCompetitors: initialSaved, athleteTotals, athleteData, allTimePRs, athleteBodyweight }: CompetitorScoutProps) {
     const [saved, setSaved] = useState<CompetitorProfile[]>(initialSaved || []);
     const [searching, setSearching] = useState(false);
     const [error, setError] = useState('');
@@ -152,9 +154,15 @@ export default function CompetitorScout({ athleteId, savedCompetitors: initialSa
                         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                             <WinConditionCard 
                                 comp={activeCompetitor} 
-                                athleteProjectedTotal={athleteProjectedTotal} 
+                                athleteTotals={athleteTotals} 
                             />
                             
+                            <PerLiftMatchupCard 
+                                comp={activeCompetitor} 
+                                athleteData={athleteData} 
+                                allTimePRs={allTimePRs} 
+                            />
+
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <HitRateCard comp={activeCompetitor} />
                                 <TacticalEngineCard comp={activeCompetitor} />
@@ -169,50 +177,140 @@ export default function CompetitorScout({ athleteId, savedCompetitors: initialSa
     );
 }
 
-function WinConditionCard({ comp, athleteProjectedTotal }: { comp: CompetitorProfile, athleteProjectedTotal: number }) {
-    const diff = athleteProjectedTotal - comp.projectedTotal;
-    const isWinning = diff >= 0;
+function WinConditionCard({ comp, athleteTotals }: { comp: CompetitorProfile, athleteTotals?: any }) {
+    const targetTotal = comp.heaviestTotal > 0 ? comp.heaviestTotal : comp.projectedTotal;
+    const contextStr = comp.heaviestTotal > 0 
+        ? `(Heaviest Total, hit at ${comp.heaviestTotalBodyweight}kg BW / ${comp.heaviestTotalWeightClass} class)` 
+        : `(Projected Total based on trend)`;
 
-    // Likelihood of competitor hitting their projected total
-    // Heavily weighted by their overall hit rate and bomb out risk
     const baseLikelihood = comp.hitRates.overall.percent;
-    const penalty = comp.hitRates.bombOuts * 5; // 5% penalty per bomb out
+    const penalty = comp.hitRates.bombOuts * 5;
     const likelihood = Math.max(0, Math.min(100, baseLikelihood - penalty));
 
-    let tacticalAdvice = '';
-    if (isWinning) {
-        tacticalAdvice = `Athlete is projected to win by ${diff.toFixed(1)}kg. Stick to the planned attempts.`;
-    } else {
-        // Find the next 2.5kg increment above the difference
-        const neededToTie = Math.abs(diff);
-        const neededToWin = Math.ceil((Math.abs(diff) + 0.1) / 2.5) * 2.5;
-        tacticalAdvice = `To win, the athlete needs to add +${neededToWin.toFixed(1)}kg to their planned attempts (e.g. +${neededToWin}kg on the 3rd attempt deadlift).`;
-    }
+    const tiers = [
+        { label: 'Conservative', value: athleteTotals?.conservative || 0, color: '#22d3ee' },
+        { label: 'Planned', value: athleteTotals?.planned || 0, color: '#f59e0b' },
+        { label: 'Reach', value: athleteTotals?.reach || 0, color: '#f43f5e' }
+    ];
 
     return (
-        <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 12, padding: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
-            <div style={{ flex: '1 1 300px' }}>
-                <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>
-                    <Crosshair size={12} style={{ display: 'inline', marginRight: 4 }} /> Win Condition vs {comp.name}
+        <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 12, padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
+                <div>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
+                        <Crosshair size={12} style={{ display: 'inline', marginRight: 4 }} /> Target to Beat ({comp.name})
+                    </div>
+                    <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--foreground)' }}>
+                        {targetTotal.toFixed(1)} kg
+                    </div>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--secondary-foreground)' }}>
+                        {contextStr}
+                    </div>
                 </div>
-                <div style={{ fontSize: '2rem', fontWeight: 800, color: isWinning ? 'var(--success)' : 'var(--error)' }}>
-                    {isWinning ? 'Winning' : 'Losing'} by {Math.abs(diff).toFixed(1)} kg
-                </div>
-                <div style={{ fontSize: '0.95rem', color: 'var(--secondary-foreground)', marginTop: 4 }}>
-                    Athlete Projected: <strong>{athleteProjectedTotal} kg</strong> <span style={{opacity:0.5}}>|</span> Competitor Projected: <strong>{comp.projectedTotal} kg</strong>
-                </div>
-                <div style={{ marginTop: 12, padding: '8px 12px', background: 'rgba(255,255,255,0.03)', borderRadius: 6, fontSize: '0.9rem', color: 'var(--foreground)', borderLeft: `3px solid ${isWinning ? 'var(--success)' : 'var(--warning)'}` }}>
-                    {tacticalAdvice}
+                <div style={{ textAlign: 'right' }}>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)', marginBottom: 4 }}>Competitor Confidence</div>
+                    <div style={{ fontSize: '2rem', fontWeight: 800, color: likelihood > 80 ? 'var(--success)' : likelihood > 60 ? 'var(--warning)' : 'var(--error)' }}>
+                        {likelihood}%
+                    </div>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--secondary-foreground)' }}>historical hit rate</div>
                 </div>
             </div>
-            
-            <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)', marginBottom: 4 }}>Competitor Confidence</div>
-                <div style={{ fontSize: '2.5rem', fontWeight: 800, color: likelihood > 80 ? 'var(--success)' : likelihood > 60 ? 'var(--warning)' : 'var(--error)' }}>
-                    {likelihood}%
-                </div>
-                <div style={{ fontSize: '0.85rem', color: 'var(--secondary-foreground)' }}>chance to hit projected total</div>
+
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginTop: 8 }}>
+                {tiers.map(t => {
+                    const diff = t.value - targetTotal;
+                    const isWinning = diff >= 0;
+                    return (
+                        <div key={t.label} style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${t.color}40`, borderRadius: 8, padding: 12, textAlign: 'center' }}>
+                            <div style={{ fontSize: 11, fontWeight: 700, color: t.color, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{t.label} Plan</div>
+                            <div style={{ fontSize: 18, fontWeight: 800, color: isWinning ? 'var(--success)' : 'var(--error)' }}>
+                                {isWinning ? '+' : ''}{diff.toFixed(1)} kg
+                            </div>
+                            <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', marginTop: 2 }}>vs Target ({t.value} kg)</div>
+                        </div>
+                    );
+                })}
             </div>
+        </div>
+    );
+}
+
+function PerLiftMatchupCard({ comp, athleteData, allTimePRs }: { comp: CompetitorProfile, athleteData: any, allTimePRs: any }) {
+    const lifts = [
+        { 
+            key: 'squat', label: 'Squat', color: '#7d87d2', 
+            compProj: comp.projectedSquat, compAvg: comp.progression.averageSquatIncreaseKg,
+            athBest: allTimePRs?.squat?.value || 0,
+            athCon: parseFloat(athleteData?.squat?.attempt3?.conservative?.kg || '0') || 0,
+            athPln: parseFloat(athleteData?.squat?.attempt3?.planned?.kg || '0') || 0,
+            athRch: parseFloat(athleteData?.squat?.attempt3?.reach?.kg || '0') || 0
+        },
+        { 
+            key: 'bench', label: 'Bench Press', color: '#a855f7', 
+            compProj: comp.projectedBench, compAvg: comp.progression.averageBenchIncreaseKg,
+            athBest: allTimePRs?.bench?.value || 0,
+            athCon: parseFloat(athleteData?.bench?.attempt3?.conservative?.kg || '0') || 0,
+            athPln: parseFloat(athleteData?.bench?.attempt3?.planned?.kg || '0') || 0,
+            athRch: parseFloat(athleteData?.bench?.attempt3?.reach?.kg || '0') || 0
+        },
+        { 
+            key: 'deadlift', label: 'Deadlift', color: '#10b981', 
+            compProj: comp.projectedDeadlift, compAvg: comp.progression.averageDeadliftIncreaseKg,
+            athBest: allTimePRs?.deadlift?.value || 0,
+            athCon: parseFloat(athleteData?.deadlift?.attempt3?.conservative?.kg || '0') || 0,
+            athPln: parseFloat(athleteData?.deadlift?.attempt3?.planned?.kg || '0') || 0,
+            athRch: parseFloat(athleteData?.deadlift?.attempt3?.reach?.kg || '0') || 0
+        }
+    ];
+
+    return (
+        <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 12, padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
+                Per-Lift Matchup Grid
+            </div>
+
+            {lifts.map(lift => {
+                const marginPln = lift.athPln - lift.compProj;
+                const marginBest = lift.athBest - lift.compProj;
+                
+                return (
+                    <div key={lift.key} style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: 12, borderLeft: `3px solid ${lift.color}` }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--foreground)', textTransform: 'uppercase' }}>{lift.label}</div>
+                            <div style={{ fontSize: 11, color: marginPln >= 0 ? 'var(--success)' : 'var(--error)', fontWeight: 600 }}>
+                                {marginPln >= 0 ? '+' : ''}{marginPln.toFixed(1)}kg margin (Planned)
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, fontSize: 12 }}>
+                            <div style={{ background: 'rgba(0,0,0,0.2)', padding: 8, borderRadius: 6 }}>
+                                <div style={{ color: 'var(--secondary-foreground)', fontSize: 10, textTransform: 'uppercase', marginBottom: 2 }}>Competitor Trend</div>
+                                <div style={{ fontWeight: 700 }}>Proj: {lift.compProj} kg</div>
+                                <div style={{ fontSize: 10, color: lift.compAvg >= 0 ? 'var(--success)' : 'var(--error)' }}>
+                                    {lift.compAvg >= 0 ? '+' : ''}{lift.compAvg.toFixed(1)}kg / meet avg
+                                </div>
+                            </div>
+                            
+                            <div style={{ background: 'rgba(0,0,0,0.2)', padding: 8, borderRadius: 6 }}>
+                                <div style={{ color: 'var(--secondary-foreground)', fontSize: 10, textTransform: 'uppercase', marginBottom: 2 }}>Athlete Current Best</div>
+                                <div style={{ fontWeight: 700 }}>PR: {lift.athBest} kg</div>
+                                <div style={{ fontSize: 10, color: marginBest >= 0 ? 'var(--success)' : 'var(--error)' }}>
+                                    {marginBest >= 0 ? '+' : ''}{marginBest.toFixed(1)}kg vs Comp
+                                </div>
+                            </div>
+
+                            <div style={{ background: 'rgba(0,0,0,0.2)', padding: 8, borderRadius: 6 }}>
+                                <div style={{ color: 'var(--secondary-foreground)', fontSize: 10, textTransform: 'uppercase', marginBottom: 2 }}>Athlete Game Plan</div>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 4 }}>
+                                    <span style={{ color: '#22d3ee' }}>C: {lift.athCon}</span>
+                                    <span style={{ color: '#f59e0b' }}>P: {lift.athPln}</span>
+                                    <span style={{ color: '#f43f5e' }}>R: {lift.athRch}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                );
+            })}
         </div>
     );
 }
