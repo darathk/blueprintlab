@@ -302,44 +302,54 @@ function WinConditionCard({ comp, athleteTotals }: { comp: CompetitorProfile, at
     ];
 
     return (
-        <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 12, padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
-                <div style={{ flex: '1 1 300px' }}>
-                <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8, display: 'flex', alignItems: 'center' }}>
-                    <Crosshair size={12} style={{ display: 'inline', marginRight: 4 }} /> Target to Beat ({comp.name})
-                    <InfoTooltip text="Compares the competitor's Heaviest Total or Projected Total against your athlete's game plans. A + (plus) means your athlete is winning against their target. A - (minus) means your athlete is losing against their target." />
-                </div>
-                    <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--foreground)' }}>
-                        {targetTotal.toFixed(1)} kg <span style={{ fontSize: '1.25rem', color: 'var(--secondary-foreground)', fontWeight: 600 }}>({(targetTotal * 2.20462).toFixed(1)} lbs)</span>
+        <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 12, padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {/* Header row: title */}
+            <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center' }}>
+                <Crosshair size={12} style={{ display: 'inline', marginRight: 4 }} /> Target to Beat ({comp.name})
+                <InfoTooltip text="Compares the competitor's Projected Total against your athlete's game plans. A + (plus) means your athlete is winning against their target. A - (minus) means your athlete is losing against their target." />
+            </div>
+
+            {/* Target total + Confidence side-by-side */}
+            <div className="grid grid-cols-2 gap-3">
+                <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: 12 }}>
+                    <div style={{ fontSize: 10, color: 'var(--secondary-foreground)', textTransform: 'uppercase', marginBottom: 4 }}>Projected Total</div>
+                    <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--foreground)', lineHeight: 1.2 }}>
+                        {targetTotal.toFixed(1)} <span style={{ fontSize: 12, fontWeight: 500 }}>kg</span>
                     </div>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--secondary-foreground)' }}>
+                    <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', marginTop: 2 }}>
+                        {(targetTotal * 2.20462).toFixed(1)} lbs
+                    </div>
+                    <div style={{ fontSize: 10, color: 'var(--secondary-foreground)', marginTop: 4, lineHeight: 1.3 }}>
                         {contextStr}
                     </div>
                 </div>
-                <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)', marginBottom: 4 }}>Competitor Confidence</div>
-                    <div style={{ fontSize: '2rem', fontWeight: 800, color: likelihood > 80 ? 'var(--success)' : likelihood > 60 ? 'var(--warning)' : 'var(--error)' }}>
+                <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: 12, textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+                    <div style={{ fontSize: 10, color: 'var(--secondary-foreground)', textTransform: 'uppercase', marginBottom: 4 }}>Competitor Confidence</div>
+                    <div style={{ fontSize: '1.75rem', fontWeight: 800, color: likelihood > 80 ? 'var(--success)' : likelihood > 60 ? 'var(--warning)' : 'var(--error)', lineHeight: 1.2 }}>
                         {likelihood}%
                     </div>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--secondary-foreground)' }}>historical hit rate</div>
+                    <div style={{ fontSize: 10, color: 'var(--secondary-foreground)', marginTop: 2 }}>historical hit rate</div>
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12, marginTop: 8 }}>
+            {/* Plan tiers — always 3 columns on desktop, single column on mobile */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {tiers.map(t => {
                     const diff = t.value - targetTotal;
                     const isWinning = diff >= 0;
                     const winProb = calculateWinProbability(t.value, targetTotal);
                     return (
-                        <div key={t.label} style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${t.color}40`, borderRadius: 8, padding: 12, textAlign: 'center' }}>
-                            <div style={{ fontSize: 11, fontWeight: 700, color: t.color, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{t.label} Plan</div>
-                            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: isWinning ? 'var(--success)' : 'var(--error)' }}>
-                                {isWinning ? '+' : ''}{diff.toFixed(1)} kg <span style={{ fontSize: '0.85rem', opacity: 0.8 }}>({isWinning ? '+' : ''}{(diff * 2.20462).toFixed(1)} lbs)</span>
+                        <div key={t.label} style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${t.color}40`, borderRadius: 8, padding: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }} className="sm:!flex-col sm:!text-center">
+                            <div style={{ display: 'flex', flexDirection: 'column' }} className="sm:!items-center">
+                                <div style={{ fontSize: 11, fontWeight: 700, color: t.color, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{t.label}</div>
+                                <div style={{ fontSize: '1.1rem', fontWeight: 800, color: isWinning ? 'var(--success)' : 'var(--error)', whiteSpace: 'nowrap' }}>
+                                    {isWinning ? '+' : ''}{diff.toFixed(1)} kg <span style={{ fontSize: 11, opacity: 0.8 }}>({isWinning ? '+' : ''}{(diff * 2.20462).toFixed(1)} lbs)</span>
+                                </div>
+                                <div style={{ fontSize: 10, color: 'var(--secondary-foreground)', marginTop: 2 }}>vs Target ({t.value} kg)</div>
                             </div>
-                            <div style={{ fontSize: 13, fontWeight: 800, color: winProb > 0.5 ? 'var(--success)' : winProb === 0.5 ? 'var(--warning)' : 'var(--error)', marginTop: 8 }}>
-                                {(winProb * 100).toFixed(0)}% Win Chance
+                            <div style={{ fontSize: 14, fontWeight: 800, color: winProb > 0.5 ? 'var(--success)' : winProb === 0.5 ? 'var(--warning)' : 'var(--error)' }} className="sm:!mt-2">
+                                {(winProb * 100).toFixed(0)}% Win
                             </div>
-                            <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', marginTop: 4 }}>vs Target ({t.value} kg)</div>
                         </div>
                     );
                 })}
