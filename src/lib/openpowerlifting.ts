@@ -50,6 +50,24 @@ export interface TacticalStats {
     opensHeavy: boolean;
 }
 
+export interface LiveAttempt {
+    kg: number;
+    status: 'pending' | 'made' | 'missed';
+}
+
+export interface LiveLiftData {
+    attempt1?: LiveAttempt;
+    attempt2?: LiveAttempt;
+    attempt3?: LiveAttempt;
+}
+
+export interface CompetitorLiveData {
+    squat: LiveLiftData;
+    bench: LiveLiftData;
+    deadlift: LiveLiftData;
+    bodyweight?: number;
+}
+
 export interface CompetitorProfile {
     id: string; // usually the slug
     name: string;
@@ -73,6 +91,17 @@ export interface CompetitorProfile {
         total: { value: number; date: string };
         dots: { value: number; date: string };
     };
+    liveData?: CompetitorLiveData;
+}
+
+/**
+ * Calculates the probability of the athlete beating the competitor.
+ * Uses a logistic curve where a 10kg lead roughly equals a 75% chance to win.
+ */
+export function calculateWinProbability(athleteTotal: number, competitorTotal: number): number {
+    if (athleteTotal <= 0 || competitorTotal <= 0) return 0;
+    // P = 1 / (1 + 10^((Comp - Ath) / 20))
+    return 1 / (1 + Math.pow(10, (competitorTotal - athleteTotal) / 20));
 }
 
 function parseAttempt(val: any): { attempted: boolean; made: boolean; kg: number } {

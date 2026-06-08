@@ -419,12 +419,20 @@ export default function MeetAttempts({
         if (!isReadOnly) save(data);
     };
 
-    // Projected totals for 9/9 scenarios
+    // Projected totals for 9/9 scenarios (incorporating live made attempts)
     const projections = useMemo(() => {
         return OPTIONS.map(({ key: optionKey, label, color }) => {
-            const sq = get3rdAttemptKg(data.squat, optionKey);
-            const bp = get3rdAttemptKg(data.bench, optionKey);
-            const dl = get3rdAttemptKg(data.deadlift, optionKey);
+            const getEffective = (lift: LiftAttempts) => {
+                const bestMade = getBestGoodAttempt(lift);
+                const hasPending = lift.attempt1.result === 'pending' || lift.attempt2.result === 'pending' || lift.attempt3.result === 'pending' || !lift.attempt1.result || !lift.attempt2.result || !lift.attempt3.result;
+                if (!hasPending) return bestMade;
+                const planned3rd = parseFloat(lift.attempt3[optionKey as OptionKey]?.kg || '0') || 0;
+                return Math.max(bestMade, planned3rd);
+            };
+
+            const sq = getEffective(data.squat);
+            const bp = getEffective(data.bench);
+            const dl = getEffective(data.deadlift);
             const total = sq + bp + dl;
             const dots = total > 0 && bwKg > 0 ? calculateDots(total, bwKg, isMale) : 0;
 
@@ -1133,7 +1141,22 @@ export default function MeetAttempts({
                     athleteTotals={{
                         conservative: projections.find(p => p.key === 'conservative')?.total || 0,
                         planned: projections.find(p => p.key === 'planned')?.total || 0,
-                        reach: projections.find(p => p.key === 'reach')?.total || 0
+                        reach: projections.find(p => p.key === 'reach')?.total || 0,
+                        squat: {
+                            conservative: projections.find(p => p.key === 'conservative')?.sq || 0,
+                            planned: projections.find(p => p.key === 'planned')?.sq || 0,
+                            reach: projections.find(p => p.key === 'reach')?.sq || 0
+                        },
+                        bench: {
+                            conservative: projections.find(p => p.key === 'conservative')?.bp || 0,
+                            planned: projections.find(p => p.key === 'planned')?.bp || 0,
+                            reach: projections.find(p => p.key === 'reach')?.bp || 0
+                        },
+                        deadlift: {
+                            conservative: projections.find(p => p.key === 'conservative')?.dl || 0,
+                            planned: projections.find(p => p.key === 'planned')?.dl || 0,
+                            reach: projections.find(p => p.key === 'reach')?.dl || 0
+                        }
                     }}
                     athleteData={data}
                     allTimePRs={allTimePRs}

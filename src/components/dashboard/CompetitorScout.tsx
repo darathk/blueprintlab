@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useMemo, useRef } from 'react';
-import { CompetitorProfile, analyzeCompetitor } from '@/lib/openpowerlifting';
+import { useState, useMemo, useRef, useEffect } from 'react';
+import { CompetitorProfile, analyzeCompetitor, calculateWinProbability, CompetitorLiveData, LiveAttempt, LiveLiftData } from '@/lib/openpowerlifting';
 import Papa from 'papaparse';
 import { Upload, Trash2, TrendingUp, AlertTriangle, Crosshair, Activity, Eye, ActivitySquare } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
@@ -11,7 +11,14 @@ import CompareAllView from './CompareAllView';
 interface CompetitorScoutProps {
     athleteId: string;
     savedCompetitors: CompetitorProfile[];
-    athleteTotals?: { conservative: number; planned: number; reach: number };
+    athleteTotals?: { 
+        conservative: number; 
+        planned: number; 
+        reach: number;
+        squat?: { conservative: number; planned: number; reach: number };
+        bench?: { conservative: number; planned: number; reach: number };
+        deadlift?: { conservative: number; planned: number; reach: number };
+    };
     athleteData?: any;
     allTimePRs?: any;
     athleteBodyweight: number;
@@ -95,6 +102,65 @@ export default function CompetitorScout({ athleteId, savedCompetitors: initialSa
             body: JSON.stringify({ competitors: newSaved })
         });
     };
+
+    const updateCompetitor = async (updatedComp: CompetitorProfile) => {
+        const newSaved = saved.map(c => c.id === updatedComp.id ? updatedComp : c);
+        setSaved(newSaved);
+
+        await fetch(`/api/athletes/${athleteId}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ competitors: newSaved })
+        });
+    };
+
+    // Calculate effective competitor with live data overrides
+    const activeCompetitorData = saved.find(c => c.id === selectedId);
+    const getEffectiveCompetitor = (comp: CompetitorProfile | undefined) => {
+        if (!comp) return null;
+        if (!comp.liveData) return comp;
+
+        const effective = { ...comp };
+        
+        // Helper to get max made attempt or 0
+        const getMaxMade = (lift: LiveLiftData) => {
+            let max = 0;
+            if (lift.attempt1?.status === 'made') max = Math.max(max, lift.attempt1.kg);
+            if (lift.attempt2?.status === 'made') max = Math.max(max, lift.attempt2.kg);
+            if (lift.attempt3?.status === 'made') max = Math.max(max, lift.attempt3.kg);
+            return max;
+        };
+
+        const hasPending = (lift: LiveLiftData) => {
+            if (!lift.attempt1 || lift.attempt1.status === 'pending') return true;
+            if (!lift.attempt2 || lift.attempt2.status === 'pending') return true;
+            if (!lift.attempt3 || lift.attempt3.status === 'pending') return true;
+            return false;
+        };
+
+        const sqMax = getMaxMade(comp.liveData.squat);
+        const sqPending = hasPending(comp.liveData.squat);
+        effective.projectedSquat = sqPending 
+            ? Math.max(comp.projectedSquat, sqMax + (sqMax > 0 ? comp.progression.averageSquatIncreaseKg : 0)) 
+            : sqMax;
+
+        const bpMax = getMaxMade(comp.liveData.bench);
+        const bpPending = hasPending(comp.liveData.bench);
+        effective.projectedBench = bpPending 
+            ? Math.max(comp.projectedBench, bpMax + (bpMax > 0 ? comp.progression.averageBenchIncreaseKg : 0)) 
+            : bpMax;
+
+        const dlMax = getMaxMade(comp.liveData.deadlift);
+        const dlPending = hasPending(comp.liveData.deadlift);
+        effective.projectedDeadlift = dlPending 
+            ? Math.max(comp.projectedDeadlift, dlMax + (dlMax > 0 ? comp.progression.averageDeadliftIncreaseKg : 0)) 
+            : dlMax;
+
+        effective.projectedTotal = effective.projectedSquat + effective.projectedBench + effective.projectedDeadlift;
+        return effective;
+    };
+
+    const activeCompetitor = getEffectiveCompetitor(activeCompetitorData);
 
     return (
         <div className="scout-container" id="competitor-scout-report">
@@ -180,6 +246,8 @@ export default function CompetitorScout({ athleteId, savedCompetitors: initialSa
                             <CompareAllView saved={saved} athleteTotals={athleteTotals} athleteBodyweight={athleteBodyweight} athleteGender={athleteGender} allTimePRs={allTimePRs} />
                         ) : activeCompetitor ? (
                             <>
+                                <LiveMeetTrackerCard comp={activeCompetitorData!} onUpdate={updateCompetitor} />
+                                
                                 <WinConditionCard 
                                     comp={activeCompetitor} 
                                     athleteTotals={athleteTotals} 
@@ -198,6 +266,7 @@ export default function CompetitorScout({ athleteId, savedCompetitors: initialSa
                                 <PerLiftMatchupCard 
                                     comp={activeCompetitor} 
                                     athleteData={athleteData} 
+                                    athleteTotals={athleteTotals}
                                     allTimePRs={allTimePRs} 
                                 />
 
@@ -260,13 +329,17 @@ function WinConditionCard({ comp, athleteTotals }: { comp: CompetitorProfile, at
                 {tiers.map(t => {
                     const diff = t.value - targetTotal;
                     const isWinning = diff >= 0;
+                    const winProb = calculateWinProbability(t.value, targetTotal);
                     return (
                         <div key={t.label} style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${t.color}40`, borderRadius: 8, padding: 12, textAlign: 'center' }}>
                             <div style={{ fontSize: 11, fontWeight: 700, color: t.color, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{t.label} Plan</div>
                             <div style={{ fontSize: '1.25rem', fontWeight: 800, color: isWinning ? 'var(--success)' : 'var(--error)' }}>
                                 {isWinning ? '+' : ''}{diff.toFixed(1)} kg <span style={{ fontSize: '0.85rem', opacity: 0.8 }}>({isWinning ? '+' : ''}{(diff * 2.20462).toFixed(1)} lbs)</span>
                             </div>
-                            <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', marginTop: 2 }}>vs Target ({t.value} kg)</div>
+                            <div style={{ fontSize: 13, fontWeight: 800, color: winProb > 0.5 ? 'var(--success)' : winProb === 0.5 ? 'var(--warning)' : 'var(--error)', marginTop: 8 }}>
+                                {(winProb * 100).toFixed(0)}% Win Chance
+                            </div>
+                            <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', marginTop: 4 }}>vs Target ({t.value} kg)</div>
                         </div>
                     );
                 })}
@@ -377,31 +450,40 @@ function DotsReportCard({ comp, athleteTotals, athleteBodyweight, athleteGender,
     );
 }
 
-function PerLiftMatchupCard({ comp, athleteData, allTimePRs }: { comp: CompetitorProfile, athleteData: any, allTimePRs: any }) {
+function PerLiftMatchupCard({ comp, athleteData, athleteTotals, allTimePRs }: { comp: CompetitorProfile, athleteData: any, athleteTotals?: any, allTimePRs: any }) {
     const lifts = [
-        { 
-            key: 'squat', label: 'Squat', color: '#7d87d2', 
-            compProj: comp.projectedSquat, compAvg: comp.progression.averageSquatIncreaseKg,
+        {
+            name: 'Squat',
+            key: 'squat',
+            color: '#7d87d2',
+            compProj: comp.projectedSquat,
+            compAvJmp: comp.progression?.averageSquatIncreaseKg || 2.5,
             athBest: allTimePRs?.squat?.value || 0,
-            athCon: parseFloat(athleteData?.squat?.attempt3?.conservative?.kg || '0') || 0,
-            athPln: parseFloat(athleteData?.squat?.attempt3?.planned?.kg || '0') || 0,
-            athRch: parseFloat(athleteData?.squat?.attempt3?.reach?.kg || '0') || 0
+            athCon: athleteTotals?.squat?.conservative || parseFloat(athleteData?.squat?.attempt3?.conservative?.kg || '0') || 0,
+            athPln: athleteTotals?.squat?.planned || parseFloat(athleteData?.squat?.attempt3?.planned?.kg || '0') || 0,
+            athRch: athleteTotals?.squat?.reach || parseFloat(athleteData?.squat?.attempt3?.reach?.kg || '0') || 0
         },
-        { 
-            key: 'bench', label: 'Bench Press', color: '#a855f7', 
-            compProj: comp.projectedBench, compAvg: comp.progression.averageBenchIncreaseKg,
+        {
+            name: 'Bench',
+            key: 'bench',
+            color: '#a855f7',
+            compProj: comp.projectedBench,
+            compAvJmp: comp.progression?.averageBenchIncreaseKg || 2.5,
             athBest: allTimePRs?.bench?.value || 0,
-            athCon: parseFloat(athleteData?.bench?.attempt3?.conservative?.kg || '0') || 0,
-            athPln: parseFloat(athleteData?.bench?.attempt3?.planned?.kg || '0') || 0,
-            athRch: parseFloat(athleteData?.bench?.attempt3?.reach?.kg || '0') || 0
+            athCon: athleteTotals?.bench?.conservative || parseFloat(athleteData?.bench?.attempt3?.conservative?.kg || '0') || 0,
+            athPln: athleteTotals?.bench?.planned || parseFloat(athleteData?.bench?.attempt3?.planned?.kg || '0') || 0,
+            athRch: athleteTotals?.bench?.reach || parseFloat(athleteData?.bench?.attempt3?.reach?.kg || '0') || 0
         },
-        { 
-            key: 'deadlift', label: 'Deadlift', color: '#10b981', 
-            compProj: comp.projectedDeadlift, compAvg: comp.progression.averageDeadliftIncreaseKg,
+        {
+            name: 'Deadlift',
+            key: 'deadlift',
+            color: '#10b981',
+            compProj: comp.projectedDeadlift,
+            compAvJmp: comp.progression?.averageDeadliftIncreaseKg || 2.5,
             athBest: allTimePRs?.deadlift?.value || 0,
-            athCon: parseFloat(athleteData?.deadlift?.attempt3?.conservative?.kg || '0') || 0,
-            athPln: parseFloat(athleteData?.deadlift?.attempt3?.planned?.kg || '0') || 0,
-            athRch: parseFloat(athleteData?.deadlift?.attempt3?.reach?.kg || '0') || 0
+            athCon: athleteTotals?.deadlift?.conservative || parseFloat(athleteData?.deadlift?.attempt3?.conservative?.kg || '0') || 0,
+            athPln: athleteTotals?.deadlift?.planned || parseFloat(athleteData?.deadlift?.attempt3?.planned?.kg || '0') || 0,
+            athRch: athleteTotals?.deadlift?.reach || parseFloat(athleteData?.deadlift?.attempt3?.reach?.kg || '0') || 0
         },
         { 
             key: 'total', label: 'Total', color: '#f59e0b', 
@@ -654,6 +736,86 @@ function InfoTooltip({ text }: { text: string }) {
                     letterSpacing: 'normal'
                 }}>
                     {text}
+                </div>
+            )}
+        </div>
+    );
+}
+
+function LiveMeetTrackerCard({ comp, onUpdate }: { comp: CompetitorProfile, onUpdate: (c: CompetitorProfile) => void }) {
+    const [isOpen, setIsOpen] = useState(false);
+    const [liveData, setLiveData] = useState<CompetitorLiveData>(comp.liveData || { squat: {}, bench: {}, deadlift: {} });
+
+    useEffect(() => {
+        setLiveData(comp.liveData || { squat: {}, bench: {}, deadlift: {} });
+    }, [comp.id, comp.liveData]);
+
+    const handleUpdate = (lift: keyof CompetitorLiveData, attempt: 'attempt1'|'attempt2'|'attempt3', field: 'kg'|'status', value: any) => {
+        const newData = { ...liveData };
+        if (!newData[lift]) newData[lift] = {};
+        if (!newData[lift][attempt]) newData[lift][attempt] = { kg: 0, status: 'pending' };
+        (newData[lift] as any)[attempt][field] = value;
+        setLiveData(newData);
+        onUpdate({ ...comp, liveData: newData });
+    };
+
+    const renderAttempt = (lift: 'squat'|'bench'|'deadlift', attempt: 'attempt1'|'attempt2'|'attempt3', label: string) => {
+        const data = (liveData[lift] as any)?.[attempt] || { kg: '', status: 'pending' };
+        return (
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
+                <span style={{ width: 30, fontSize: 12, color: 'var(--secondary-foreground)' }}>{label}</span>
+                <input 
+                    type="number" 
+                    value={data.kg || ''} 
+                    onChange={e => handleUpdate(lift, attempt, 'kg', parseFloat(e.target.value) || 0)}
+                    style={{ width: 70, padding: '4px 8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--card-border)', borderRadius: 4, color: 'var(--foreground)', fontSize: 13 }}
+                    placeholder="kg"
+                />
+                <select 
+                    value={data.status}
+                    onChange={e => handleUpdate(lift, attempt, 'status', e.target.value)}
+                    style={{ padding: '4px 8px', background: 'rgba(0,0,0,0.3)', border: '1px solid var(--card-border)', borderRadius: 4, color: data.status === 'made' ? 'var(--success)' : data.status === 'missed' ? 'var(--error)' : 'var(--foreground)', fontSize: 13 }}
+                >
+                    <option value="pending">Pending</option>
+                    <option value="made">Made</option>
+                    <option value="missed">Missed</option>
+                </select>
+            </div>
+        );
+    };
+
+    return (
+        <div style={{ background: 'rgba(245, 158, 11, 0.05)', border: '1px solid rgba(245, 158, 11, 0.3)', borderRadius: 12, overflow: 'hidden' }}>
+            <div 
+                style={{ padding: '1rem 1.25rem', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: isOpen ? 'rgba(245, 158, 11, 0.1)' : 'transparent', transition: 'all 0.2s' }}
+                onClick={() => setIsOpen(!isOpen)}
+            >
+                <div style={{ fontSize: '0.9rem', fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center' }}>
+                    <ActivitySquare size={16} style={{ display: 'inline', marginRight: 8 }} /> Live Meet Day Tracker
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--secondary-foreground)', fontWeight: 600 }}>{isOpen ? 'HIDE' : 'EXPAND'}</div>
+            </div>
+            
+            {isOpen && (
+                <div style={{ padding: '1.25rem', borderTop: '1px solid rgba(245, 158, 11, 0.1)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 16 }}>
+                    <div style={{ background: 'rgba(0,0,0,0.2)', padding: 12, borderRadius: 8 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: '#7d87d2', textTransform: 'uppercase', marginBottom: 12 }}>Squat</div>
+                        {renderAttempt('squat', 'attempt1', '1st')}
+                        {renderAttempt('squat', 'attempt2', '2nd')}
+                        {renderAttempt('squat', 'attempt3', '3rd')}
+                    </div>
+                    <div style={{ background: 'rgba(0,0,0,0.2)', padding: 12, borderRadius: 8 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: '#a855f7', textTransform: 'uppercase', marginBottom: 12 }}>Bench</div>
+                        {renderAttempt('bench', 'attempt1', '1st')}
+                        {renderAttempt('bench', 'attempt2', '2nd')}
+                        {renderAttempt('bench', 'attempt3', '3rd')}
+                    </div>
+                    <div style={{ background: 'rgba(0,0,0,0.2)', padding: 12, borderRadius: 8 }}>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: '#10b981', textTransform: 'uppercase', marginBottom: 12 }}>Deadlift</div>
+                        {renderAttempt('deadlift', 'attempt1', '1st')}
+                        {renderAttempt('deadlift', 'attempt2', '2nd')}
+                        {renderAttempt('deadlift', 'attempt3', '3rd')}
+                    </div>
                 </div>
             )}
         </div>
