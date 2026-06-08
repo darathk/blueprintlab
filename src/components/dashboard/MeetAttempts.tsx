@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { calculateDots } from '@/lib/calculators';
 import { useUser } from '@clerk/nextjs';
 import { ChevronDown, ChevronUp, Camera, MessageSquare, X } from 'lucide-react';
@@ -239,7 +239,14 @@ export default function MeetAttempts({
     meetDayMode?: boolean;
 }) {
     const router = useRouter();
+    const pathname = usePathname();
     const { user } = useUser();
+    
+    // Determine the database IDs based on who is viewing (athlete vs coach)
+    const isAthleteView = pathname?.startsWith('/athlete');
+    const dbCurrentUserId = isAthleteView ? athlete.id : athlete.coachId;
+    const dbOtherUserId = isAthleteView ? athlete.coachId : athlete.id;
+
     const [chatOpen, setChatOpen] = useState(false);
     const [data, setData] = useState<MeetData>(() => migrateData(athlete.meetAttempts));
     const [saving, setSaving] = useState(false);
@@ -1207,8 +1214,8 @@ export default function MeetAttempts({
                     
                     <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', paddingBottom: '1rem' }}>
                         <ChatInterface
-                            currentUserId={user?.id || ''}
-                            otherUserId={athlete.id}
+                            currentUserId={dbCurrentUserId || user?.id || ''}
+                            otherUserId={dbOtherUserId}
                             currentUserName={user?.fullName || user?.firstName || 'Coach'}
                             otherUserName={athlete.name || 'Athlete'}
                             athleteId={athlete.id}
