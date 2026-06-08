@@ -1161,6 +1161,7 @@ export default function MeetAttempts({
                     athleteData={data}
                     allTimePRs={allTimePRs}
                     athleteBodyweight={bwKg}
+                    athleteGender={isMale ? 'male' : 'female'}
                 />
             </div>
         </div>
