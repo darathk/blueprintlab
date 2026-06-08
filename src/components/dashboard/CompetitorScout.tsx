@@ -3,7 +3,7 @@
 import { useState, useMemo, useRef } from 'react';
 import { CompetitorProfile, analyzeCompetitor } from '@/lib/openpowerlifting';
 import Papa from 'papaparse';
-import { Upload, Trash2, TrendingUp, AlertTriangle, Crosshair, Activity } from 'lucide-react';
+import { Upload, Trash2, TrendingUp, AlertTriangle, Crosshair, Activity, Eye } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 
 interface CompetitorScoutProps {
@@ -196,10 +196,11 @@ function WinConditionCard({ comp, athleteTotals }: { comp: CompetitorProfile, at
     return (
         <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 12, padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 16 }}>
-                <div>
-                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
-                        <Crosshair size={12} style={{ display: 'inline', marginRight: 4 }} /> Target to Beat ({comp.name})
-                    </div>
+                <div style={{ flex: '1 1 300px' }}>
+                <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8, display: 'flex', alignItems: 'center' }}>
+                    <Crosshair size={12} style={{ display: 'inline', marginRight: 4 }} /> Target to Beat ({comp.name})
+                    <InfoTooltip text="Compares the competitor's Heaviest Total or Projected Total against your athlete's Conservative, Planned, and Reach game plans. Shows exactly how many KGs you need to tie or win." />
+                </div>
                     <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--foreground)' }}>
                         {targetTotal.toFixed(1)} kg
                     </div>
@@ -265,8 +266,9 @@ function PerLiftMatchupCard({ comp, athleteData, allTimePRs }: { comp: Competito
 
     return (
         <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 12, padding: '1.25rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-            <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>
+            <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4, display: 'flex', alignItems: 'center' }}>
                 Per-Lift Matchup Grid
+                <InfoTooltip text="Breaks down the competitor's average progression per meet for each lift to project their Meet Day numbers. Compares those projections directly against your athlete's PR and game plan targets." />
             </div>
 
             {lifts.map(lift => {
@@ -318,8 +320,9 @@ function PerLiftMatchupCard({ comp, athleteData, allTimePRs }: { comp: Competito
 function HitRateCard({ comp }: { comp: CompetitorProfile }) {
     return (
         <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 12, padding: '1.25rem' }}>
-            <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+            <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12, display: 'flex', alignItems: 'center' }}>
                 <Activity size={12} style={{ display: 'inline', marginRight: 4 }} /> Historical Hit Rates
+                <InfoTooltip text="Shows the percentage of successful attempts the competitor has made in their career across all meets. A lower hit rate indicates inconsistency." />
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {[
@@ -372,8 +375,9 @@ function TacticalEngineCard({ comp }: { comp: CompetitorProfile }) {
 
     return (
         <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 12, padding: '1.25rem' }}>
-            <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+            <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12, display: 'flex', alignItems: 'center' }}>
                 Tactical Engine
+                <InfoTooltip text="Automatically analyzes their attempt history to identify their weakest lift and calculate how aggressively they jump between attempts. Uses this to suggest Meet Day strategies." />
             </div>
             {renderTactic()}
         </div>
@@ -391,8 +395,9 @@ function ProgressionChart({ comp }: { comp: CompetitorProfile }) {
     return (
         <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 12, padding: '1.25rem' }}>
              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                 <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                 <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center' }}>
                     <TrendingUp size={12} style={{ display: 'inline', marginRight: 4 }} /> Trajectory & Progression
+                    <InfoTooltip text="A visual graph of their total over time. Calculates their average KG increase per meet to project their future performance." />
                  </div>
                  <div style={{ fontSize: '0.85rem', color: 'var(--success)', fontWeight: 600 }}>
                     Avg: +{comp.progression.averageTotalIncreaseKg}kg / meet
@@ -419,6 +424,48 @@ function ProgressionChart({ comp }: { comp: CompetitorProfile }) {
                      </AreaChart>
                  </ResponsiveContainer>
              </div>
+        </div>
+    );
+}
+
+function InfoTooltip({ text }: { text: string }) {
+    const [open, setOpen] = useState(false);
+    
+    return (
+        <div 
+            style={{ display: 'inline-flex', position: 'relative', marginLeft: 8 }}
+            onMouseEnter={() => setOpen(true)}
+            onMouseLeave={() => setOpen(false)}
+            onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
+        >
+            <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Eye size={12} color="var(--secondary-foreground)" />
+            </div>
+            {open && (
+                <div style={{
+                    position: 'absolute',
+                    bottom: '100%',
+                    left: '50%',
+                    transform: 'translateX(-50%)',
+                    marginBottom: 8,
+                    padding: '8px 12px',
+                    background: '#27272a',
+                    border: '1px solid var(--card-border)',
+                    borderRadius: 8,
+                    fontSize: '0.75rem',
+                    color: 'var(--foreground)',
+                    width: 220,
+                    zIndex: 50,
+                    boxShadow: '0 4px 12px rgba(0,0,0,0.5)',
+                    textAlign: 'left',
+                    fontWeight: 400,
+                    lineHeight: 1.4,
+                    textTransform: 'none',
+                    letterSpacing: 'normal'
+                }}>
+                    {text}
+                </div>
+            )}
         </div>
     );
 }
