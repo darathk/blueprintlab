@@ -130,40 +130,44 @@ export default function CompetitorScout({ athleteId, savedCompetitors: initialSa
             {error && <div style={{ color: 'var(--error)', fontSize: '0.9rem', marginBottom: '1rem', marginTop: '-0.5rem' }}>{error}</div>}
 
             {saved.length > 0 && (
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                <div className="flex flex-col md:flex-row gap-4 items-start">
                     {/* Sidebar / Tabs */}
-                    <div style={{ width: '220px', display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div className="w-full md:w-[220px] shrink-0 flex flex-col gap-2">
                         <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Saved Competitors</div>
-                        {saved.map(c => (
-                            <button
-                                key={c.id}
-                                onClick={() => setSelectedId(c.id)}
-                                style={{
-                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                    padding: '10px 14px', borderRadius: 8, border: `1px solid ${selectedId === c.id ? 'var(--primary)' : 'var(--card-border)'}`,
-                                    background: selectedId === c.id ? 'rgba(34, 211, 238, 0.1)' : 'var(--card-bg)',
-                                    color: 'var(--foreground)', cursor: 'pointer', textAlign: 'left',
-                                    transition: 'all 0.2s'
-                                }}
-                            >
-                                <span style={{ fontWeight: selectedId === c.id ? 600 : 400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name}</span>
-                                <Trash2 size={14} color="var(--error)" style={{ opacity: 0.6, cursor: 'pointer' }} onClick={(e) => removeCompetitor(c.id, e)} />
-                            </button>
-                        ))}
-                        {saved.length > 1 && (
-                            <button
-                                onClick={() => setSelectedId('COMPARE_ALL')}
-                                style={{
-                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                    padding: '10px 14px', borderRadius: 8, border: `1px solid ${selectedId === 'COMPARE_ALL' ? 'var(--primary)' : 'var(--card-border)'}`,
-                                    background: selectedId === 'COMPARE_ALL' ? 'rgba(34, 211, 238, 0.1)' : 'var(--card-bg)',
-                                    color: 'var(--foreground)', cursor: 'pointer', textAlign: 'left',
-                                    transition: 'all 0.2s', marginTop: 8
-                                }}
-                            >
-                                <span style={{ fontWeight: selectedId === 'COMPARE_ALL' ? 600 : 400 }}>Compare All</span>
-                            </button>
-                        )}
+                        <div className="flex md:flex-col gap-2 overflow-x-auto pb-2 hide-scrollbar" style={{ WebkitOverflowScrolling: 'touch' }}>
+                            {saved.map(c => (
+                                <button
+                                    key={c.id}
+                                    onClick={() => setSelectedId(c.id)}
+                                    style={{
+                                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                        padding: '10px 14px', borderRadius: 8, border: `1px solid ${selectedId === c.id ? 'var(--primary)' : 'var(--card-border)'}`,
+                                        background: selectedId === c.id ? 'rgba(34, 211, 238, 0.1)' : 'var(--card-bg)',
+                                        color: 'var(--foreground)', cursor: 'pointer', textAlign: 'left',
+                                        transition: 'all 0.2s',
+                                        minWidth: 'max-content'
+                                    }}
+                                >
+                                    <span style={{ fontWeight: selectedId === c.id ? 600 : 400, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{c.name}</span>
+                                    <Trash2 size={14} color="var(--error)" style={{ opacity: 0.6, cursor: 'pointer', marginLeft: 12 }} onClick={(e) => removeCompetitor(c.id, e)} />
+                                </button>
+                            ))}
+                            {saved.length > 1 && (
+                                <button
+                                    onClick={() => setSelectedId('COMPARE_ALL')}
+                                    style={{
+                                        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                        padding: '10px 14px', borderRadius: 8, border: `1px solid ${selectedId === 'COMPARE_ALL' ? 'var(--primary)' : 'var(--card-border)'}`,
+                                        background: selectedId === 'COMPARE_ALL' ? 'rgba(34, 211, 238, 0.1)' : 'var(--card-bg)',
+                                        color: 'var(--foreground)', cursor: 'pointer', textAlign: 'left',
+                                        transition: 'all 0.2s',
+                                        minWidth: 'max-content'
+                                    }}
+                                >
+                                    <span style={{ fontWeight: selectedId === 'COMPARE_ALL' ? 600 : 400 }}>Compare All</span>
+                                </button>
+                            )}
+                        </div>
                     </div>
 
                     {/* Main Scouting Report */}
@@ -415,7 +419,7 @@ function PerLiftMatchupCard({ comp, athleteData, allTimePRs }: { comp: Competito
                             </div>
                         </div>
 
-                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, fontSize: 12 }}>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-[12px]">
                             <div style={{ background: 'rgba(0,0,0,0.2)', padding: 8, borderRadius: 6 }}>
                                 <div style={{ color: 'var(--secondary-foreground)', fontSize: 10, textTransform: 'uppercase', marginBottom: 2 }}>Competitor Trend</div>
                                 <div style={{ fontWeight: 700 }}>Proj: {lift.compProj} kg</div>
