@@ -3,7 +3,9 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { calculateDots } from '@/lib/calculators';
-import { ChevronDown, ChevronUp, Camera } from 'lucide-react';
+import { useUser } from '@clerk/nextjs';
+import { ChevronDown, ChevronUp, Camera, MessageSquare, X } from 'lucide-react';
+import ChatInterface from '@/components/chat/ChatInterface';
 import CompetitorScout from './CompetitorScout';
 
 const LIFTS = [
@@ -237,6 +239,8 @@ export default function MeetAttempts({
     meetDayMode?: boolean;
 }) {
     const router = useRouter();
+    const { user } = useUser();
+    const [chatOpen, setChatOpen] = useState(false);
     const [data, setData] = useState<MeetData>(() => migrateData(athlete.meetAttempts));
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
@@ -612,6 +616,12 @@ export default function MeetAttempts({
                             {saving ? 'Saving…' : saved ? '✓ Saved' : '·'}
                         </div>
                     )}
+                    <button
+                        onClick={() => setChatOpen(true)}
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, border: '1px solid var(--card-border)', background: 'var(--card-bg)', color: 'var(--foreground)', fontSize: '0.85rem', fontWeight: 500, cursor: 'pointer' }}
+                    >
+                        <MessageSquare size={14} /> Chat
+                    </button>
                     {activeTab === 'scout' && (
                         <button
                             onClick={exportAsPhoto}
@@ -1164,6 +1174,49 @@ export default function MeetAttempts({
                     athleteGender={isMale ? 'male' : 'female'}
                 />
             </div>
+
+            {/* Coach Chat Side Panel */}
+            {chatOpen && athlete.id && (
+                <div style={{
+                    position: 'fixed', top: 'var(--header-height, 56px)', right: 0, bottom: 0, width: 360, zIndex: 1000,
+                    background: 'var(--background)', borderLeft: '1px solid var(--card-border)',
+                    display: 'flex', flexDirection: 'column', boxShadow: '-4px 0 24px rgba(0,0,0,0.4)',
+                }}>
+                    <div style={{
+                        padding: '1rem 1.25rem', borderBottom: '1px solid var(--card-border)',
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0,
+                    }}>
+                        <div>
+                            <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--foreground)' }}>
+                                Chat
+                            </div>
+                            {athlete.name && (
+                                <div style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', marginTop: 2 }}>
+                                    {athlete.name}
+                                </div>
+                            )}
+                        </div>
+                        <button
+                            onClick={() => setChatOpen(false)}
+                            title="Close"
+                            style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center' }}
+                        >
+                            <X size={16} />
+                        </button>
+                    </div>
+                    
+                    <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', paddingBottom: '1rem' }}>
+                        <ChatInterface
+                            currentUserId={user?.id || ''}
+                            otherUserId={athlete.id}
+                            currentUserName={user?.fullName || user?.firstName || 'Coach'}
+                            otherUserName={athlete.name || 'Athlete'}
+                            athleteId={athlete.id}
+                            isEmbedded={true}
+                        />
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
