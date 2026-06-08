@@ -1,3 +1,5 @@
+import { calculateDots } from './dots';
+
 export interface OPLMeet {
     Name: string;
     Date: string;
@@ -17,6 +19,7 @@ export interface OPLMeet {
     Best3DeadliftKg: number;
     TotalKg: number;
     Federation: string;
+    Sex: string;
 }
 
 export interface HitRateStats {
@@ -63,6 +66,13 @@ export interface CompetitorProfile {
     heaviestTotalBodyweight: number;
     lastBodyweight: number;
     lastMeetDate: string;
+    historicalBests: {
+        squat: { value: number; date: string };
+        bench: { value: number; date: string };
+        deadlift: { value: number; date: string };
+        total: { value: number; date: string };
+        dots: { value: number; date: string };
+    };
 }
 
 function parseAttempt(val: any): { attempted: boolean; made: boolean; kg: number } {
@@ -100,6 +110,12 @@ export function analyzeCompetitor(slug: string, meets: OPLMeet[]): CompetitorPro
     let heaviestTotalWeightClass = '';
     let heaviestTotalBodyweight = 0;
 
+    let bestSquat = { value: 0, date: '' };
+    let bestBench = { value: 0, date: '' };
+    let bestDeadlift = { value: 0, date: '' };
+    let bestTotal = { value: 0, date: '' };
+    let bestDots = { value: 0, date: '' };
+
     for (const meet of sortedMeets) {
         if (!meet.TotalKg) continue; // Skip incomplete meets
         
@@ -118,6 +134,8 @@ export function analyzeCompetitor(slug: string, meets: OPLMeet[]): CompetitorPro
         const d3 = parseAttempt(meet.Deadlift3Kg);
         const dlBest = meet.Best3DeadliftKg > 0 ? meet.Best3DeadliftKg : Math.max(d1.made ? d1.kg : 0, d2.made ? d2.kg : 0, d3.made ? d3.kg : 0);
 
+        const dots = calculateDots(meet.TotalKg, meet.BodyweightKg, meet.Sex === 'M' ? 'male' : 'female');
+
         history.push({
             date: meet.Date,
             total: meet.TotalKg,
@@ -126,7 +144,8 @@ export function analyzeCompetitor(slug: string, meets: OPLMeet[]): CompetitorPro
             federation: meet.Federation,
             squat: sqBest,
             bench: bnBest,
-            deadlift: dlBest
+            deadlift: dlBest,
+            dots: dots
         });
 
         if (meet.TotalKg > heaviestTotal) {
@@ -134,6 +153,13 @@ export function analyzeCompetitor(slug: string, meets: OPLMeet[]): CompetitorPro
             heaviestTotalWeightClass = meet.WeightClassKg || String(meet.BodyweightKg);
             heaviestTotalBodyweight = meet.BodyweightKg;
         }
+
+        // Track Bests
+        if (sqBest > bestSquat.value) bestSquat = { value: sqBest, date: meet.Date };
+        if (bnBest > bestBench.value) bestBench = { value: bnBest, date: meet.Date };
+        if (dlBest > bestDeadlift.value) bestDeadlift = { value: dlBest, date: meet.Date };
+        if (meet.TotalKg > bestTotal.value) bestTotal = { value: meet.TotalKg, date: meet.Date };
+        if (dots > bestDots.value) bestDots = { value: dots, date: meet.Date };
 
         // Hit Rates
         if (s1.attempted) { sqTot++; if (s1.made) sqMade++; }
@@ -225,6 +251,8 @@ export function analyzeCompetitor(slug: string, meets: OPLMeet[]): CompetitorPro
         opensHeavy: avg(sqJumps1to2) < 7.5 // Arbitrary heuristic
     };
 
+    const round25 = (val: number) => Math.round(val / 2.5) * 2.5;
+
     return {
         id: slug,
         name,
@@ -236,24 +264,31 @@ export function analyzeCompetitor(slug: string, meets: OPLMeet[]): CompetitorPro
             bombOuts
         },
         progression: {
-            averageTotalIncreaseKg: Math.round(avgIncKg * 10) / 10,
+            averageTotalIncreaseKg: round25(avgIncKg),
             averageTotalIncreasePercent: Math.round(avgIncPct * 10) / 10,
-            averageSquatIncreaseKg: Math.round(avgSqIncKg * 10) / 10,
-            averageBenchIncreaseKg: Math.round(avgBnIncKg * 10) / 10,
-            averageDeadliftIncreaseKg: Math.round(avgDlIncKg * 10) / 10,
+            averageSquatIncreaseKg: round25(avgSqIncKg),
+            averageBenchIncreaseKg: round25(avgBnIncKg),
+            averageDeadliftIncreaseKg: round25(avgDlIncKg),
             meetsCount: history.length,
             history
         },
         tactics,
         lastTotal,
-        projectedTotal: Math.round(projectedTotal * 10) / 10,
-        projectedSquat: Math.round(projectedSquat * 10) / 10,
-        projectedBench: Math.round(projectedBench * 10) / 10,
-        projectedDeadlift: Math.round(projectedDeadlift * 10) / 10,
+        projectedTotal: round25(projectedTotal),
+        projectedSquat: round25(projectedSquat),
+        projectedBench: round25(projectedBench),
+        projectedDeadlift: round25(projectedDeadlift),
         heaviestTotal,
         heaviestTotalWeightClass,
         heaviestTotalBodyweight,
         lastBodyweight: lastMeet ? lastMeet.bodyweight : 0,
-        lastMeetDate: lastMeet ? lastMeet.date : ''
+        lastMeetDate: lastMeet ? lastMeet.date : '',
+        historicalBests: {
+            squat: bestSquat,
+            bench: bestBench,
+            deadlift: bestDeadlift,
+            total: bestTotal,
+            dots: bestDots
+        }
     };
 }

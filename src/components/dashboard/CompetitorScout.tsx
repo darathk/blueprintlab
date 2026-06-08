@@ -3,8 +3,9 @@
 import { useState, useMemo, useRef } from 'react';
 import { CompetitorProfile, analyzeCompetitor } from '@/lib/openpowerlifting';
 import Papa from 'papaparse';
-import { Upload, Trash2, TrendingUp, AlertTriangle, Crosshair, Activity, Eye } from 'lucide-react';
+import { Upload, Trash2, TrendingUp, AlertTriangle, Crosshair, Activity, Eye, ActivitySquare } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
+import { calculateDots } from '@/lib/dots';
 
 interface CompetitorScoutProps {
     athleteId: string;
@@ -13,9 +14,10 @@ interface CompetitorScoutProps {
     athleteData?: any;
     allTimePRs?: any;
     athleteBodyweight: number;
+    athleteGender?: 'male' | 'female';
 }
 
-export default function CompetitorScout({ athleteId, savedCompetitors: initialSaved, athleteTotals, athleteData, allTimePRs, athleteBodyweight }: CompetitorScoutProps) {
+export default function CompetitorScout({ athleteId, savedCompetitors: initialSaved, athleteTotals, athleteData, allTimePRs, athleteBodyweight, athleteGender }: CompetitorScoutProps) {
     const [saved, setSaved] = useState<CompetitorProfile[]>(initialSaved || []);
     const [searching, setSearching] = useState(false);
     const [error, setError] = useState('');
@@ -157,6 +159,15 @@ export default function CompetitorScout({ athleteId, savedCompetitors: initialSa
                                 athleteTotals={athleteTotals} 
                             />
                             
+                            <HistoricalBestsCard comp={activeCompetitor} />
+                            
+                            <DotsReportCard 
+                                comp={activeCompetitor} 
+                                athleteTotals={athleteTotals} 
+                                athleteBodyweight={athleteBodyweight} 
+                                athleteGender={athleteGender} 
+                            />
+                            
                             <PerLiftMatchupCard 
                                 comp={activeCompetitor} 
                                 athleteData={athleteData} 
@@ -231,6 +242,103 @@ function WinConditionCard({ comp, athleteTotals }: { comp: CompetitorProfile, at
                         </div>
                     );
                 })}
+            </div>
+        </div>
+    );
+}
+
+function timeAgo(dateString: string) {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMonths = (now.getFullYear() - date.getFullYear()) * 12 + now.getMonth() - date.getMonth();
+    
+    if (diffMonths < 1) return 'This month';
+    if (diffMonths < 12) return `${diffMonths} months ago`;
+    const years = Math.floor(diffMonths / 12);
+    const remainingMonths = diffMonths % 12;
+    if (remainingMonths === 0) return `${years} ${years === 1 ? 'year' : 'years'} ago`;
+    return `${years} ${years === 1 ? 'year' : 'years'}, ${remainingMonths} ${remainingMonths === 1 ? 'mo' : 'mos'} ago`;
+}
+
+function HistoricalBestsCard({ comp }: { comp: CompetitorProfile }) {
+    if (!comp.historicalBests) return null; // Fallback for older saved data without historicalBests
+
+    const items = [
+        { label: 'Squat PR', value: comp.historicalBests.squat.value, unit: 'kg', date: comp.historicalBests.squat.date, color: '#7d87d2' },
+        { label: 'Bench PR', value: comp.historicalBests.bench.value, unit: 'kg', date: comp.historicalBests.bench.date, color: '#a855f7' },
+        { label: 'Deadlift PR', value: comp.historicalBests.deadlift.value, unit: 'kg', date: comp.historicalBests.deadlift.date, color: '#10b981' },
+        { label: 'Heaviest Total', value: comp.historicalBests.total.value, unit: 'kg', date: comp.historicalBests.total.date, color: '#f59e0b' },
+        { label: 'Best DOTS', value: comp.historicalBests.dots.value, unit: '', date: comp.historicalBests.dots.date, color: '#ec4899' },
+    ];
+
+    return (
+        <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 12, padding: '1.25rem' }}>
+            <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12, display: 'flex', alignItems: 'center' }}>
+                All-Time Career Bests
+                <InfoTooltip text="Shows the absolute highest numbers the competitor has ever hit in their career, along with exactly how long ago they hit them." />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 12 }}>
+                {items.map(item => (
+                    <div key={item.label} style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: 12, borderLeft: `3px solid ${item.color}` }}>
+                        <div style={{ fontSize: 10, color: 'var(--secondary-foreground)', textTransform: 'uppercase', marginBottom: 4 }}>{item.label}</div>
+                        <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--foreground)' }}>
+                            {item.value.toFixed(item.unit === '' ? 2 : 1)} {item.unit}
+                        </div>
+                        <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', marginTop: 4 }}>
+                            {timeAgo(item.date)}
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}
+
+function DotsReportCard({ comp, athleteTotals, athleteBodyweight, athleteGender }: { comp: CompetitorProfile, athleteTotals?: any, athleteBodyweight: number, athleteGender?: 'male'|'female' }) {
+    if (!comp.historicalBests) return null;
+    
+    // Calculate Athlete Projected DOTS (Planned Total)
+    const athletePlannedTotal = athleteTotals?.planned || 0;
+    const athleteDots = (athleteGender && athleteBodyweight > 0 && athletePlannedTotal > 0) 
+        ? calculateDots(athletePlannedTotal, athleteBodyweight, athleteGender) 
+        : 0;
+
+    // Calculate Competitor Projected DOTS
+    // We already have their projectedTotal, but we need their expected bodyweight for this meet
+    // We use their heaviestTotalBodyweight or lastBodyweight
+    const compBw = comp.lastBodyweight > 0 ? comp.lastBodyweight : comp.heaviestTotalBodyweight;
+    // We need competitor's gender but it isn't explicitly in CompetitorProfile yet, however, their DOTS was pre-calculated in bests.
+    // We can infer their gender from their best DOTS math or we just skip if we don't have it.
+    // Let's just calculate their projected DOTS by looking at the ratio of best DOTS / best Total (rough approximation) or just display their best dots.
+    const compDotsRatio = comp.historicalBests.total.value > 0 ? (comp.historicalBests.dots.value / comp.historicalBests.total.value) : 0;
+    const compProjectedDots = comp.projectedTotal * compDotsRatio;
+
+    return (
+        <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 12, padding: '1.25rem' }}>
+            <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#ec4899', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12, display: 'flex', alignItems: 'center' }}>
+                <ActivitySquare size={12} style={{ display: 'inline', marginRight: 4 }} /> Complete DOTS Report
+                <InfoTooltip text="Compares the absolute strength score (DOTS) of the competitor against your athlete's planned DOTS, neutralizing weight class advantages." />
+            </div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
+                <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: 12, borderLeft: `3px solid var(--secondary-foreground)` }}>
+                    <div style={{ fontSize: 10, color: 'var(--secondary-foreground)', textTransform: 'uppercase', marginBottom: 4 }}>Competitor Best DOTS</div>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--foreground)' }}>
+                        {comp.historicalBests.dots.value > 0 ? comp.historicalBests.dots.value.toFixed(2) : '—'}
+                    </div>
+                </div>
+                <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: 12, borderLeft: `3px solid var(--warning)` }}>
+                    <div style={{ fontSize: 10, color: 'var(--secondary-foreground)', textTransform: 'uppercase', marginBottom: 4 }}>Competitor Proj. DOTS</div>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: 'var(--warning)' }}>
+                        {compProjectedDots > 0 ? compProjectedDots.toFixed(2) : '—'}
+                    </div>
+                </div>
+                <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: 12, borderLeft: `3px solid #ec4899` }}>
+                    <div style={{ fontSize: 10, color: 'var(--secondary-foreground)', textTransform: 'uppercase', marginBottom: 4 }}>Athlete Planned DOTS</div>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: '#ec4899' }}>
+                        {athleteDots > 0 ? athleteDots.toFixed(2) : '—'}
+                    </div>
+                </div>
             </div>
         </div>
     );
@@ -313,6 +421,10 @@ function PerLiftMatchupCard({ comp, athleteData, allTimePRs }: { comp: Competito
                     </div>
                 );
             })}
+
+            <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', marginTop: 8, background: 'rgba(255,255,255,0.03)', padding: '8px 12px', borderRadius: 8 }}>
+                <strong>Legend:</strong> A <strong><span style={{ color: 'var(--success)' }}>+ (Plus)</span></strong> means your athlete is winning by that margin (or the competitor trend is increasing). A <strong><span style={{ color: 'var(--error)' }}>- (Minus)</span></strong> means your athlete is losing by that margin (or the competitor trend is decreasing).
+            </div>
         </div>
     );
 }
@@ -347,29 +459,53 @@ function HitRateCard({ comp }: { comp: CompetitorProfile }) {
 
 function TacticalEngineCard({ comp }: { comp: CompetitorProfile }) {
     const renderTactic = () => {
-        const { hitRates, tactics } = comp;
-        
-        let weakestLift = 'squat';
-        let lowestPct = hitRates.squat.percent;
-        if (hitRates.bench.percent < lowestPct) { weakestLift = 'bench'; lowestPct = hitRates.bench.percent; }
-        if (hitRates.deadlift.percent < lowestPct) { weakestLift = 'deadlift'; lowestPct = hitRates.deadlift.percent; }
+        let advice = "No significant tactical patterns found.";
+        let icon = <AlertTriangle size={16} color="var(--warning)" />;
 
-        const jumpSize = weakestLift === 'squat' ? tactics.avgSquatJump2to3 : weakestLift === 'bench' ? tactics.avgBenchJump2to3 : tactics.avgDeadliftJump2to3;
+        if (comp.hitRates.squat.percent < 60) {
+            advice = `Force Attempts on Squat: Competitor only makes ${comp.hitRates.squat.percent}% of squat attempts. Consider opening heavier to force them into a risky 3rd attempt.`;
+        } else if (comp.hitRates.deadlift.percent < 60) {
+            advice = `Build a Lead Before Deadlift: Competitor only hits ${comp.hitRates.deadlift.percent}% of deadlifts. A solid sub-total puts them under immense pressure on their weakest lift.`;
+        } else if (comp.tactics.opensHeavy) {
+            advice = `Aggressive Opener: Competitor typically takes very small jumps on Squat. They open close to their max. Stay conservative to guarantee a total, they are prone to bombing out.`;
+        } else {
+            advice = `Consistent Performer: Hit rates are strong across the board. Stick to your athlete's planned 9/9 attempt strategy without reacting to the competitor.`;
+            icon = <TrendingUp size={16} color="var(--success)" />;
+        }
 
         return (
-            <>
-                <div style={{ fontSize: '0.9rem', color: 'var(--foreground)', marginBottom: 8, lineHeight: 1.5 }}>
-                    <strong>Force Attempts on {weakestLift.charAt(0).toUpperCase() + weakestLift.slice(1)}:</strong> Competitor only makes {lowestPct}% of attempts here. Load heavier on our 2nd attempt to force them into a risky 3rd attempt.
-                </div>
-                <div style={{ fontSize: '0.9rem', color: 'var(--foreground)', marginBottom: 8, lineHeight: 1.5 }}>
-                    <strong>Jump Aggression:</strong> They average a {jumpSize.toFixed(1)}kg jump on their 3rd attempt {weakestLift}.
-                </div>
-                {hitRates.bombOuts > 0 && (
-                    <div style={{ fontSize: '0.9rem', color: 'var(--error)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <AlertTriangle size={14} /> High Bomb-out Risk ({hitRates.bombOuts} career bomb-outs)
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                <div style={{ display: 'flex', gap: 12, alignItems: 'flex-start', background: 'rgba(255,255,255,0.03)', padding: 12, borderRadius: 8 }}>
+                    <div style={{ marginTop: 2 }}>{icon}</div>
+                    <div style={{ fontSize: 13, lineHeight: 1.5, color: 'var(--foreground)' }}>
+                        {advice}
                     </div>
-                )}
-            </>
+                </div>
+
+                <div style={{ borderTop: '1px solid var(--card-border)', paddingTop: 12 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--secondary-foreground)', marginBottom: 8 }}>Average KG Jumps Between Attempts</div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, fontSize: 12 }}>
+                        <div style={{ background: 'rgba(0,0,0,0.2)', padding: 8, borderRadius: 6 }}>
+                            <div style={{ color: '#7d87d2', fontWeight: 600, marginBottom: 4 }}>Squat</div>
+                            <div style={{ marginBottom: 2 }}>1st→2nd: +{comp.tactics.avgSquatJump1to2.toFixed(1)}kg</div>
+                            <div>2nd→3rd: +{comp.tactics.avgSquatJump2to3.toFixed(1)}kg</div>
+                        </div>
+                        <div style={{ background: 'rgba(0,0,0,0.2)', padding: 8, borderRadius: 6 }}>
+                            <div style={{ color: '#a855f7', fontWeight: 600, marginBottom: 4 }}>Bench</div>
+                            <div style={{ marginBottom: 2 }}>1st→2nd: +{comp.tactics.avgBenchJump1to2.toFixed(1)}kg</div>
+                            <div>2nd→3rd: +{comp.tactics.avgBenchJump2to3.toFixed(1)}kg</div>
+                        </div>
+                        <div style={{ background: 'rgba(0,0,0,0.2)', padding: 8, borderRadius: 6 }}>
+                            <div style={{ color: '#10b981', fontWeight: 600, marginBottom: 4 }}>Deadlift</div>
+                            <div style={{ marginBottom: 2 }}>1st→2nd: +{comp.tactics.avgDeadliftJump1to2.toFixed(1)}kg</div>
+                            <div>2nd→3rd: +{comp.tactics.avgDeadliftJump2to3.toFixed(1)}kg</div>
+                        </div>
+                    </div>
+                    <div style={{ fontSize: 10, color: 'var(--secondary-foreground)', marginTop: 8, opacity: 0.8 }}>
+                        <em>Note: A negative value (e.g. -250kg) in OpenPowerlifting means the attempt was missed. These jump calculations only factor in successful attempt jumps.</em>
+                    </div>
+                </div>
+            </div>
         );
     };
 
