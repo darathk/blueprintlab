@@ -14,7 +14,7 @@ export default async function NewProgramPage() {
 
     return (
         <div>
-            <ProgramBuilder athletes={athletes} initialExercises={initialExercises} />
+            <ProgramBuilder athletes={athletes} initialExercises={initialExercises} coachId={coach?.id} />
         </div>
     );
 }

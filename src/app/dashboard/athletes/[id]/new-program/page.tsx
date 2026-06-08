@@ -1,9 +1,13 @@
 import ProgramBuilder from '@/components/program-builder/ProgramBuilder';
 import { getExerciseLibrary } from '@/lib/storage';
 import { prisma } from '@/lib/prisma';
+import { requireAuth } from '@/lib/api-auth';
 
 export default async function NewProgramPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
+    const auth = await requireAuth();
+    if ('error' in auth) return auth.error;
+    
     const [initialExercises, athlete, existingPrograms, initialCoachNotes, latestDraft] = await Promise.all([
         getExerciseLibrary(),
         prisma.athlete.findUnique({
@@ -55,6 +59,7 @@ export default async function NewProgramPage({ params }: { params: Promise<{ id:
             athleteName={athlete?.name}
             existingPrograms={existingPrograms}
             initialCoachNotes={initialCoachNotes as any}
+            coachId={auth.user.id}
         />
     );
 }

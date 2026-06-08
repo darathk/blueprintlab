@@ -275,7 +275,31 @@ const BuilderExerciseCard = ({ exercise, onUpdate, onRemove, onDragStart, onDrag
 
 
 
-export default function ProgramBuilder({ athleteId, initialData = null, athletes = [], initialExercises = null, athleteLiftTargets = null, athleteTrainingSchedule = null, athleteName = '', existingPrograms = [], initialCoachNotes = null, isEmbedded = false }: { athleteId?: string, initialData?: any, athletes?: any[], initialExercises?: any, athleteLiftTargets?: any, athleteTrainingSchedule?: string | null, athleteName?: string, existingPrograms?: any[], initialCoachNotes?: any[] | null, isEmbedded?: boolean }) {
+export default function ProgramBuilder({
+    athleteId,
+    initialData = null,
+    initialExercises = null,
+    athleteLiftTargets = null,
+    athleteTrainingSchedule = null,
+    athleteName = '',
+    existingPrograms = [],
+    initialCoachNotes = [],
+    athletes = [],
+    coachId,
+    isEmbedded = false,
+}: {
+    athleteId?: string;
+    initialData?: any;
+    initialExercises?: any[];
+    athleteLiftTargets?: any;
+    athleteTrainingSchedule?: string;
+    athleteName?: string;
+    existingPrograms?: any[];
+    initialCoachNotes?: any[];
+    athletes?: any[];
+    coachId?: string;
+    isEmbedded?: boolean;
+}) {
     const router = useRouter();
     const [programName, setProgramName] = useState('');
     const [startDate, setStartDate] = useState(() => snapToSunday(new Date().toISOString().split('T')[0]));
@@ -2750,7 +2774,7 @@ export default function ProgramBuilder({ athleteId, initialData = null, athletes
                     
                     <div style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column', paddingBottom: '1rem' }}>
                         <ChatInterface
-                            currentUserId={user?.id || ''}
+                            currentUserId={coachId || user?.id || ''}
                             otherUserId={athleteId}
                             currentUserName={user?.fullName || user?.firstName || 'Coach'}
                             otherUserName={athleteName || 'Athlete'}
