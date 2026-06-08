@@ -251,23 +251,51 @@ export default function MeetAttempts({
         federation: data.meetDay?.federation || athlete.federation || 'IPF',
     }));
 
-    // Tabs and Export
     const [activeTab, setActiveTab] = useState<'attempts' | 'scout'>('attempts');
     const [exporting, setExporting] = useState(false);
+    const [exportingLift, setExportingLift] = useState<LiftKey | null>(null);
 
-    const exportAsPhoto = async () => {
-        setExporting(true);
+    const exportLift = async (liftKey: LiftKey) => {
+        setExportingLift(liftKey);
         try {
             const html2canvas = (await import('html2canvas')).default;
-            // Add a small delay to ensure any layout shifts are settled
+            // Wait for React to render the off-screen element
             await new Promise(r => setTimeout(r, 100));
-            const elementId = activeTab === 'attempts' ? 'meet-attempts-content' : 'competitor-scout-report';
-            const element = document.getElementById(elementId);
+            const element = document.getElementById(`export-${liftKey}`);
             if (!element) throw new Error('Could not find content to export');
 
             const canvas = await html2canvas(element, {
-                backgroundColor: '#09090b', // Match dark theme bg
-                scale: 2, // High resolution
+                backgroundColor: '#09090b',
+                scale: 2,
+                useCORS: true,
+                logging: false,
+            });
+
+            const image = canvas.toDataURL('image/jpeg', 0.9);
+            const link = document.createElement('a');
+            link.href = image;
+            link.download = `${athlete.name}_${liftKey}_Attempts.jpg`;
+            link.click();
+        } catch (err) {
+            console.error('Failed to export lift:', err);
+            alert('Failed to export lift. Please try again.');
+        } finally {
+            setExportingLift(null);
+        }
+    };
+
+    const exportAsPhoto = async () => {
+        if (activeTab === 'attempts') return;
+        setExporting(true);
+        try {
+            const html2canvas = (await import('html2canvas')).default;
+            await new Promise(r => setTimeout(r, 100));
+            const element = document.getElementById('competitor-scout-report');
+            if (!element) throw new Error('Could not find content to export');
+
+            const canvas = await html2canvas(element, {
+                backgroundColor: '#09090b',
+                scale: 2,
                 useCORS: true,
                 logging: false,
                 ignoreElements: (node) => node.tagName === 'BUTTON' && node.textContent?.includes('Export'),
@@ -276,7 +304,7 @@ export default function MeetAttempts({
             const image = canvas.toDataURL('image/jpeg', 0.9);
             const link = document.createElement('a');
             link.href = image;
-            link.download = `${athlete.name}_${activeTab === 'attempts' ? 'Attempt_Sheet' : 'Scouting_Report'}.jpg`;
+            link.download = `${athlete.name}_Scouting_Report.jpg`;
             link.click();
         } catch (err) {
             console.error('Failed to export photo:', err);
@@ -576,13 +604,15 @@ export default function MeetAttempts({
                             {saving ? 'Saving…' : saved ? '✓ Saved' : '·'}
                         </div>
                     )}
-                    <button
-                        onClick={exportAsPhoto}
-                        disabled={exporting}
-                        style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, border: '1px solid var(--card-border)', background: 'var(--card-bg)', color: 'var(--foreground)', fontSize: '0.85rem', fontWeight: 500, cursor: exporting ? 'default' : 'pointer', opacity: exporting ? 0.7 : 1 }}
-                    >
-                        {exporting ? 'Exporting...' : <><Camera size={14} /> Export</>}
-                    </button>
+                    {activeTab === 'scout' && (
+                        <button
+                            onClick={exportAsPhoto}
+                            disabled={exporting}
+                            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, border: '1px solid var(--card-border)', background: 'var(--card-bg)', color: 'var(--foreground)', fontSize: '0.85rem', fontWeight: 500, cursor: exporting ? 'default' : 'pointer', opacity: exporting ? 0.7 : 1 }}
+                        >
+                            {exporting ? 'Exporting...' : <><Camera size={14} /> Export Report</>}
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -838,7 +868,22 @@ export default function MeetAttempts({
                         }}>
                             {label}
                         </h3>
-                        {expandedLifts[liftKey] ? <ChevronUp size={18} color="var(--secondary-foreground)" /> : <ChevronDown size={18} color="var(--secondary-foreground)" />}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <button
+                                onClick={(e) => { e.stopPropagation(); exportLift(liftKey); }}
+                                disabled={exportingLift === liftKey}
+                                style={{
+                                    display: 'flex', alignItems: 'center', gap: 6,
+                                    padding: '4px 8px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)',
+                                    background: 'rgba(0,0,0,0.2)', color: 'var(--foreground)',
+                                    fontSize: 10, fontWeight: 600, cursor: exportingLift === liftKey ? 'default' : 'pointer',
+                                    opacity: exportingLift === liftKey ? 0.7 : 1
+                                }}
+                            >
+                                <Camera size={12} /> {exportingLift === liftKey ? 'Exporting...' : 'Export'}
+                            </button>
+                            {expandedLifts[liftKey] ? <ChevronUp size={18} color="var(--secondary-foreground)" /> : <ChevronDown size={18} color="var(--secondary-foreground)" />}
+                        </div>
                     </button>
 
                     {expandedLifts[liftKey] && (
@@ -1013,6 +1058,72 @@ export default function MeetAttempts({
                     <p style={{ fontSize: 11, color: 'var(--secondary-foreground)', textAlign: 'center', margin: 0, opacity: 0.6 }}>
                         Saves all marked attempts and results to this athlete&apos;s past meet records
                     </p>
+                </div>
+            )}
+
+            {/* Off-screen Export Container */}
+            {exportingLift && (
+                <div style={{ position: 'absolute', top: -9999, left: -9999, pointerEvents: 'none' }}>
+                    <div id={`export-${exportingLift}`} style={{ width: 600, background: '#09090b', padding: '24px 32px', borderRadius: 16, color: '#fff', fontFamily: 'system-ui, sans-serif' }}>
+                        {/* Header */}
+                        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+                            <div style={{ fontSize: 24, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--primary)' }}>
+                                {athlete.name} - {exportingLift.toUpperCase()}
+                            </div>
+                            <div style={{ fontSize: 14, color: 'var(--secondary-foreground)', marginTop: 4 }}>
+                                {meetMeta.meetName || 'Upcoming Meet'} • {meetMeta.meetDate || ''} • BW: {meetMeta.bodyweight}kg
+                            </div>
+                        </div>
+
+                        {/* Top Stats */}
+                        <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
+                            {/* PR */}
+                            <div style={{ flex: 1, background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 16, textAlign: 'center' }}>
+                                <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Previous Highest</div>
+                                <div style={{ fontSize: 24, fontWeight: 800, color: '#10b981' }}>
+                                    {allTimePRs?.[exportingLift]?.value > 0 ? `${allTimePRs[exportingLift].value} kg` : '—'}
+                                </div>
+                            </div>
+                            {/* Projected Total */}
+                            <div style={{ flex: 1, background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 16, textAlign: 'center' }}>
+                                <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Projected 9/9 Total</div>
+                                <div style={{ fontSize: 24, fontWeight: 800, color: '#f59e0b' }}>
+                                    {projections.find(p => p.key === 'planned')?.total || '—'} kg
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Attempts */}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                            {ATTEMPTS.map(({ key: attemptKey, label }) => {
+                                const attemptData = data[exportingLift][attemptKey];
+                                return (
+                                    <div key={attemptKey} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 16 }}>
+                                        <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12, textAlign: 'center' }}>{label}</div>
+                                        
+                                        {/* Row for CON/PLN/RCH */}
+                                        <div style={{ display: 'flex', gap: 12 }}>
+                                            {OPTIONS.map(opt => (
+                                                <div key={opt.key} style={{ flex: 1 }}>
+                                                    <div style={{ fontSize: 10, textAlign: 'center', color: opt.color, marginBottom: 4, textTransform: 'uppercase', fontWeight: 700 }}>{opt.label}</div>
+                                                    <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', borderRadius: 8, border: `1px solid ${opt.color}40`, overflow: 'hidden' }}>
+                                                        <div style={{ flex: 1, padding: 8, textAlign: 'center', borderRight: '1px solid rgba(255,255,255,0.1)' }}>
+                                                            <div style={{ fontSize: 16, fontWeight: 700 }}>{attemptData[opt.key].kg || '-'}</div>
+                                                            <div style={{ fontSize: 9, color: 'var(--secondary-foreground)' }}>KG</div>
+                                                        </div>
+                                                        <div style={{ flex: 1, padding: 8, textAlign: 'center' }}>
+                                                            <div style={{ fontSize: 16, fontWeight: 700 }}>{attemptData[opt.key].lbs || '-'}</div>
+                                                            <div style={{ fontSize: 9, color: 'var(--secondary-foreground)' }}>LBS</div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
                 </div>
             )}
                 </div>
