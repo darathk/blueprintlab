@@ -177,7 +177,7 @@ export default function CompetitorScout({ athleteId, savedCompetitors: initialSa
                         </div>
 
                         {selectedId === 'COMPARE_ALL' ? (
-                            <CompareAllView saved={saved} athleteTotals={athleteTotals} athleteBodyweight={athleteBodyweight} athleteGender={athleteGender} />
+                            <CompareAllView saved={saved} athleteTotals={athleteTotals} athleteBodyweight={athleteBodyweight} athleteGender={athleteGender} allTimePRs={allTimePRs} />
                         ) : activeCompetitor ? (
                             <>
                                 <WinConditionCard 
