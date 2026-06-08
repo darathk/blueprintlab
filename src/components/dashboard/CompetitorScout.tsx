@@ -233,7 +233,7 @@ function WinConditionCard({ comp, athleteTotals }: { comp: CompetitorProfile, at
                 <div style={{ flex: '1 1 300px' }}>
                 <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8, display: 'flex', alignItems: 'center' }}>
                     <Crosshair size={12} style={{ display: 'inline', marginRight: 4 }} /> Target to Beat ({comp.name})
-                    <InfoTooltip text="Compares the competitor's Heaviest Total or Projected Total against your athlete's Conservative, Planned, and Reach game plans. Shows exactly how many KGs you need to tie or win." />
+                    <InfoTooltip text="Compares the competitor's Heaviest Total or Projected Total against your athlete's game plans. A + (plus) means your athlete is winning against their target. A - (minus) means your athlete is losing against their target." />
                 </div>
                     <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--foreground)' }}>
                         {targetTotal.toFixed(1)} kg
