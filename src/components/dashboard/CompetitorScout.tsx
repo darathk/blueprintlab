@@ -6,6 +6,7 @@ import Papa from 'papaparse';
 import { Upload, Trash2, TrendingUp, AlertTriangle, Crosshair, Activity, Eye, ActivitySquare } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 import { calculateDots } from '@/lib/dots';
+import CompareAllView from './CompareAllView';
 
 interface CompetitorScoutProps {
     athleteId: string;
@@ -149,39 +150,61 @@ export default function CompetitorScout({ athleteId, savedCompetitors: initialSa
                                 <Trash2 size={14} color="var(--error)" style={{ opacity: 0.6, cursor: 'pointer' }} onClick={(e) => removeCompetitor(c.id, e)} />
                             </button>
                         ))}
+                        {saved.length > 1 && (
+                            <button
+                                onClick={() => setSelectedId('COMPARE_ALL')}
+                                style={{
+                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                    padding: '10px 14px', borderRadius: 8, border: `1px solid ${selectedId === 'COMPARE_ALL' ? 'var(--primary)' : 'var(--card-border)'}`,
+                                    background: selectedId === 'COMPARE_ALL' ? 'rgba(34, 211, 238, 0.1)' : 'var(--card-bg)',
+                                    color: 'var(--foreground)', cursor: 'pointer', textAlign: 'left',
+                                    transition: 'all 0.2s', marginTop: 8
+                                }}
+                            >
+                                <span style={{ fontWeight: selectedId === 'COMPARE_ALL' ? 600 : 400 }}>Compare All</span>
+                            </button>
+                        )}
                     </div>
 
                     {/* Main Scouting Report */}
-                    {activeCompetitor && (
-                        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            <WinConditionCard 
-                                comp={activeCompetitor} 
-                                athleteTotals={athleteTotals} 
-                            />
-                            
-                            <HistoricalBestsCard comp={activeCompetitor} />
-                            
-                            <DotsReportCard 
-                                comp={activeCompetitor} 
-                                athleteTotals={athleteTotals} 
-                                athleteBodyweight={athleteBodyweight} 
-                                athleteGender={athleteGender} 
-                            />
-                            
-                            <PerLiftMatchupCard 
-                                comp={activeCompetitor} 
-                                athleteData={athleteData} 
-                                allTimePRs={allTimePRs} 
-                            />
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                <HitRateCard comp={activeCompetitor} />
-                                <TacticalEngineCard comp={activeCompetitor} />
-                            </div>
-
-                            <ProgressionChart comp={activeCompetitor} />
+                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '1rem', minWidth: 0 }}>
+                        <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', background: 'rgba(255,255,255,0.03)', padding: '10px 14px', borderRadius: 8, borderLeft: '3px solid var(--primary)' }}>
+                            <strong>Legend:</strong> A <strong><span style={{ color: 'var(--success)' }}>+ (Plus)</span></strong> margin means your athlete is <strong>winning</strong> against the competitor's target or trend. A <strong><span style={{ color: 'var(--error)' }}>- (Minus)</span></strong> margin means your athlete is <strong>losing</strong> against the competitor.
                         </div>
-                    )}
+
+                        {selectedId === 'COMPARE_ALL' ? (
+                            <CompareAllView saved={saved} athleteTotals={athleteTotals} athleteBodyweight={athleteBodyweight} athleteGender={athleteGender} />
+                        ) : activeCompetitor ? (
+                            <>
+                                <WinConditionCard 
+                                    comp={activeCompetitor} 
+                                    athleteTotals={athleteTotals} 
+                                />
+                                
+                                <HistoricalBestsCard comp={activeCompetitor} />
+                                
+                                <DotsReportCard 
+                                    comp={activeCompetitor} 
+                                    athleteTotals={athleteTotals} 
+                                    athleteBodyweight={athleteBodyweight} 
+                                    athleteGender={athleteGender} 
+                                />
+                                
+                                <PerLiftMatchupCard 
+                                    comp={activeCompetitor} 
+                                    athleteData={athleteData} 
+                                    allTimePRs={allTimePRs} 
+                                />
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <HitRateCard comp={activeCompetitor} />
+                                    <TacticalEngineCard comp={activeCompetitor} />
+                                </div>
+
+                                <ProgressionChart comp={activeCompetitor} />
+                            </>
+                        ) : null}
+                    </div>
                 </div>
             )}
         </div>
@@ -421,10 +444,6 @@ function PerLiftMatchupCard({ comp, athleteData, allTimePRs }: { comp: Competito
                     </div>
                 );
             })}
-
-            <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', marginTop: 8, background: 'rgba(255,255,255,0.03)', padding: '8px 12px', borderRadius: 8 }}>
-                <strong>Legend:</strong> A <strong><span style={{ color: 'var(--success)' }}>+ (Plus)</span></strong> means your athlete is winning by that margin (or the competitor trend is increasing). A <strong><span style={{ color: 'var(--error)' }}>- (Minus)</span></strong> means your athlete is losing by that margin (or the competitor trend is decreasing).
-            </div>
         </div>
     );
 }
@@ -484,7 +503,7 @@ function TacticalEngineCard({ comp }: { comp: CompetitorProfile }) {
 
                 <div style={{ borderTop: '1px solid var(--card-border)', paddingTop: 12 }}>
                     <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--secondary-foreground)', marginBottom: 8 }}>Average KG Jumps Between Attempts</div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, fontSize: 12 }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: 8, fontSize: 12 }}>
                         <div style={{ background: 'rgba(0,0,0,0.2)', padding: 8, borderRadius: 6 }}>
                             <div style={{ color: '#7d87d2', fontWeight: 600, marginBottom: 4 }}>Squat</div>
                             <div style={{ marginBottom: 2 }}>1st→2nd: +{comp.tactics.avgSquatJump1to2.toFixed(1)}kg</div>
