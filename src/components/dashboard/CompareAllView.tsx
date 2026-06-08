@@ -1,5 +1,5 @@
 import React from 'react';
-import { CompetitorProfile } from '@/lib/openpowerlifting';
+import { CompetitorProfile, calculateWinProbability } from '@/lib/openpowerlifting';
 import { calculateDots } from '@/lib/dots';
 
 export default function CompareAllView({ 
@@ -43,6 +43,7 @@ export default function CompareAllView({
                             <th style={{ padding: '12px 16px', fontWeight: 600 }}>vs Athlete</th>
                             <th style={{ padding: '12px 16px', fontWeight: 600 }}>Best SBD</th>
                             <th style={{ padding: '12px 16px', fontWeight: 600 }}>Best DOTS</th>
+                            <th style={{ padding: '12px 16px', fontWeight: 600 }}>Win %</th>
                             <th style={{ padding: '12px 16px', fontWeight: 600 }}>Hit Rates</th>
                         </tr>
                     </thead>
@@ -67,6 +68,7 @@ export default function CompareAllView({
                                 {allTimePRs?.deadlift?.value ? `${allTimePRs.deadlift.value}` : '—'}
                             </td>
                             <td style={{ padding: '12px 16px', fontWeight: 600, color: '#ec4899' }}>{athleteBestDots > 0 ? athleteBestDots.toFixed(2) : '—'}</td>
+                            <td style={{ padding: '12px 16px', color: 'var(--secondary-foreground)' }}>—</td>
                             <td style={{ padding: '12px 16px', color: 'var(--secondary-foreground)' }}>—</td>
                         </tr>
                         {/* Competitor Rows */}
@@ -98,6 +100,16 @@ export default function CompareAllView({
                                     </td>
                                     <td style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--foreground)' }}>
                                         {c.historicalBests?.dots?.value > 0 ? c.historicalBests.dots.value.toFixed(2) : '—'}
+                                    </td>
+                                    <td style={{ padding: '12px 16px' }}>
+                                        {athletePlannedTotal > 0 ? (() => {
+                                            const winProb = calculateWinProbability(athletePlannedTotal, target);
+                                            return (
+                                                <div style={{ fontWeight: 700, fontSize: 13, color: winProb > 0.5 ? 'var(--success)' : winProb === 0.5 ? 'var(--warning)' : 'var(--error)' }}>
+                                                    {(winProb * 100).toFixed(0)}%
+                                                </div>
+                                            );
+                                        })() : '—'}
                                     </td>
                                     <td style={{ padding: '12px 16px', color: 'var(--foreground)' }}>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, min-content)', gap: '0 12px', fontSize: 11 }}>
