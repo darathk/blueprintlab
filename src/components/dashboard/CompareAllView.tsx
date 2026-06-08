@@ -113,10 +113,10 @@ export default function CompareAllView({
                                     </td>
                                     <td style={{ padding: '12px 16px', color: 'var(--foreground)' }}>
                                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, min-content)', gap: '0 12px', fontSize: 11 }}>
-                                            <div style={{ color: 'var(--foreground)', fontWeight: 600 }}>OV: {c.hitRates.overall.percent}%</div>
-                                            <div style={{ color: '#7d87d2' }}>SQ: {c.hitRates.squat.percent}%</div>
-                                            <div style={{ color: '#a855f7' }}>BP: {c.hitRates.bench.percent}%</div>
-                                            <div style={{ color: '#10b981' }}>DL: {c.hitRates.deadlift.percent}%</div>
+                                            <div style={{ color: 'var(--foreground)', fontWeight: 600 }}>OV: {Math.round(c.hitRates.overall.percent)}%</div>
+                                            <div style={{ color: '#7d87d2' }}>SQ: {Math.round(c.hitRates.squat.percent)}%</div>
+                                            <div style={{ color: '#a855f7' }}>BP: {Math.round(c.hitRates.bench.percent)}%</div>
+                                            <div style={{ color: '#10b981' }}>DL: {Math.round(c.hitRates.deadlift.percent)}%</div>
                                         </div>
                                     </td>
                                 </tr>

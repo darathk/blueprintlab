@@ -326,7 +326,7 @@ function WinConditionCard({ comp, athleteTotals }: { comp: CompetitorProfile, at
                 <div style={{ background: 'rgba(255,255,255,0.03)', borderRadius: 8, padding: 12, textAlign: 'center', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
                     <div style={{ fontSize: 10, color: 'var(--secondary-foreground)', textTransform: 'uppercase', marginBottom: 4 }}>Competitor Confidence</div>
                     <div style={{ fontSize: '1.75rem', fontWeight: 800, color: likelihood > 80 ? 'var(--success)' : likelihood > 60 ? 'var(--warning)' : 'var(--error)', lineHeight: 1.2 }}>
-                        {likelihood}%
+                        {likelihood.toFixed(2)}%
                     </div>
                     <div style={{ fontSize: 10, color: 'var(--secondary-foreground)', marginTop: 2 }}>historical hit rate</div>
                 </div>
