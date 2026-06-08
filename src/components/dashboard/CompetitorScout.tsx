@@ -32,7 +32,7 @@ export default function CompetitorScout({ athleteId, savedCompetitors: initialSa
     const [selectedId, setSelectedId] = useState<string | null>(initialSaved?.[0]?.id || null);
     const fileRef = useRef<HTMLInputElement>(null);
 
-    const activeCompetitor = useMemo(() => saved.find(c => c.id === selectedId), [saved, selectedId]);
+    // activeCompetitor is now computed via getEffectiveCompetitor below
 
     const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
