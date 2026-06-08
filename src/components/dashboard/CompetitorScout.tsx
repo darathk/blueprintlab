@@ -275,7 +275,6 @@ export default function CompetitorScout({ athleteId, savedCompetitors: initialSa
                                     <TacticalEngineCard comp={activeCompetitor} />
                                 </div>
 
-                                <ProgressionChart comp={activeCompetitor} />
                             </>
                         ) : null}
                     </div>
@@ -286,9 +285,10 @@ export default function CompetitorScout({ athleteId, savedCompetitors: initialSa
 }
 
 function WinConditionCard({ comp, athleteTotals }: { comp: CompetitorProfile, athleteTotals?: any }) {
-    const targetTotal = comp.heaviestTotal > 0 ? comp.heaviestTotal : comp.projectedTotal;
-    const contextStr = comp.heaviestTotal > 0 
-        ? `(Heaviest Total, hit at ${comp.heaviestTotalBodyweight}kg BW / ${comp.heaviestTotalWeightClass} class)` 
+    const hasLiveData = comp.liveData && (comp.liveData.squat?.attempt1 || comp.liveData.bench?.attempt1 || comp.liveData.deadlift?.attempt1);
+    const targetTotal = comp.projectedTotal;
+    const contextStr = hasLiveData 
+        ? `(Live Projected Total based on meet day data)` 
         : `(Projected Total based on trend)`;
 
     const baseLikelihood = comp.hitRates.overall.percent;
@@ -653,49 +653,6 @@ function TacticalEngineCard({ comp }: { comp: CompetitorProfile }) {
     );
 }
 
-function ProgressionChart({ comp }: { comp: CompetitorProfile }) {
-    const data = comp.progression.history.map((h, i) => ({
-        name: `Meet ${i+1}`,
-        total: h.total,
-        date: h.date,
-        bw: h.bodyweight
-    }));
-
-    return (
-        <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 12, padding: '1.25rem' }}>
-             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                 <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', display: 'flex', alignItems: 'center' }}>
-                    <TrendingUp size={12} style={{ display: 'inline', marginRight: 4 }} /> Trajectory & Progression
-                    <InfoTooltip text="A visual graph of their total over time. Calculates their average KG increase per meet to project their future performance." />
-                 </div>
-                 <div style={{ fontSize: '0.85rem', color: 'var(--success)', fontWeight: 600 }}>
-                    Avg: +{comp.progression.averageTotalIncreaseKg}kg / meet
-                 </div>
-             </div>
-             
-             <div style={{ height: 200, width: '100%' }}>
-                 <ResponsiveContainer width="100%" height="100%">
-                     <AreaChart data={data}>
-                         <defs>
-                             <linearGradient id="colorTotal" x1="0" y1="0" x2="0" y2="1">
-                                 <stop offset="5%" stopColor="var(--primary)" stopOpacity={0.3}/>
-                                 <stop offset="95%" stopColor="var(--primary)" stopOpacity={0}/>
-                             </linearGradient>
-                         </defs>
-                         <XAxis dataKey="name" hide />
-                         <YAxis domain={['auto', 'auto']} hide />
-                         <RechartsTooltip 
-                            contentStyle={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 8, fontSize: '0.85rem' }}
-                            labelStyle={{ color: 'var(--secondary-foreground)', marginBottom: 4 }}
-                            formatter={(value: any, name: string, props: any) => [`${value}kg (BW: ${props.payload.bw}kg)`, 'Total']}
-                         />
-                         <Area type="monotone" dataKey="total" stroke="var(--primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorTotal)" />
-                     </AreaChart>
-                 </ResponsiveContainer>
-             </div>
-        </div>
-    );
-}
 
 function InfoTooltip({ text }: { text: string }) {
     const [open, setOpen] = useState(false);
