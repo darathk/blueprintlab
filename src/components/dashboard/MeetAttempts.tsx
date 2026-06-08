@@ -787,7 +787,7 @@ export default function MeetAttempts({
                                 <div style={{ borderTop: '1px solid rgba(255,255,255,0.06)', marginTop: 8, paddingTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <div>
                                         <div style={{ fontSize: 10, color: 'var(--secondary-foreground)' }}>Total</div>
-                                        <div style={{ fontSize: 16, fontWeight: 700, color: p.color }}>{p.total}{prBadge(p.totalPR)}</div>
+                                        <div style={{ fontSize: 16, fontWeight: 700, color: p.color }}>{p.total} <span style={{fontSize: 11, fontWeight: 500, opacity: 0.7}}>({(p.total * 2.20462).toFixed(1)} lbs)</span>{prBadge(p.totalPR)}</div>
                                     </div>
                                     <div style={{ textAlign: 'right' }}>
                                         <div style={{ fontSize: 10, color: 'var(--secondary-foreground)' }}>DOTS</div>

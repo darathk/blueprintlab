@@ -236,7 +236,7 @@ function WinConditionCard({ comp, athleteTotals }: { comp: CompetitorProfile, at
                     <InfoTooltip text="Compares the competitor's Heaviest Total or Projected Total against your athlete's game plans. A + (plus) means your athlete is winning against their target. A - (minus) means your athlete is losing against their target." />
                 </div>
                     <div style={{ fontSize: '2rem', fontWeight: 800, color: 'var(--foreground)' }}>
-                        {targetTotal.toFixed(1)} kg
+                        {targetTotal.toFixed(1)} kg <span style={{ fontSize: '1.25rem', color: 'var(--secondary-foreground)', fontWeight: 600 }}>({(targetTotal * 2.20462).toFixed(1)} lbs)</span>
                     </div>
                     <div style={{ fontSize: '0.85rem', color: 'var(--secondary-foreground)' }}>
                         {contextStr}
@@ -258,8 +258,8 @@ function WinConditionCard({ comp, athleteTotals }: { comp: CompetitorProfile, at
                     return (
                         <div key={t.label} style={{ background: 'rgba(255,255,255,0.03)', border: `1px solid ${t.color}40`, borderRadius: 8, padding: 12, textAlign: 'center' }}>
                             <div style={{ fontSize: 11, fontWeight: 700, color: t.color, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>{t.label} Plan</div>
-                            <div style={{ fontSize: 18, fontWeight: 800, color: isWinning ? 'var(--success)' : 'var(--error)' }}>
-                                {isWinning ? '+' : ''}{diff.toFixed(1)} kg
+                            <div style={{ fontSize: '1.25rem', fontWeight: 800, color: isWinning ? 'var(--success)' : 'var(--error)' }}>
+                                {isWinning ? '+' : ''}{diff.toFixed(1)} kg <span style={{ fontSize: '0.85rem', opacity: 0.8 }}>({isWinning ? '+' : ''}{(diff * 2.20462).toFixed(1)} lbs)</span>
                             </div>
                             <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', marginTop: 2 }}>vs Target ({t.value} kg)</div>
                         </div>

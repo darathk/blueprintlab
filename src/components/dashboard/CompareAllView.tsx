@@ -44,7 +44,10 @@ export default function CompareAllView({
                                 <div style={{ fontWeight: 700, color: 'var(--primary)' }}>Your Athlete (PLN)</div>
                                 <div style={{ fontSize: 11, color: 'var(--secondary-foreground)' }}>{athleteBodyweight}kg Class</div>
                             </td>
-                            <td style={{ padding: '12px 16px', fontWeight: 800, color: 'var(--foreground)' }}>{athletePlannedTotal > 0 ? athletePlannedTotal.toFixed(1) : '—'} kg</td>
+                            <td style={{ padding: '12px 16px', fontWeight: 800, color: 'var(--foreground)' }}>
+                                {athletePlannedTotal > 0 ? `${athletePlannedTotal.toFixed(1)} kg ` : '—'}
+                                {athletePlannedTotal > 0 && <span style={{ fontSize: 11, opacity: 0.6, fontWeight: 500 }}>({(athletePlannedTotal * 2.20462).toFixed(1)} lbs)</span>}
+                            </td>
                             <td style={{ padding: '12px 16px', color: 'var(--secondary-foreground)' }}>—</td>
                             <td style={{ padding: '12px 16px', fontWeight: 600, color: '#ec4899' }}>{athleteDots > 0 ? athleteDots.toFixed(2) : '—'}</td>
                             <td style={{ padding: '12px 16px', color: 'var(--secondary-foreground)' }}>—</td>
@@ -61,9 +64,12 @@ export default function CompareAllView({
                                         <div style={{ fontWeight: 600, color: 'var(--foreground)' }}>{c.name}</div>
                                         <div style={{ fontSize: 11, color: 'var(--secondary-foreground)' }}>{c.heaviestTotalWeightClass ? `${c.heaviestTotalWeightClass}kg Class` : 'Unknown Class'}</div>
                                     </td>
-                                    <td style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--foreground)' }}>{target.toFixed(1)} kg</td>
+                                    <td style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--foreground)' }}>
+                                        {target.toFixed(1)} kg <span style={{ fontSize: 11, opacity: 0.6, fontWeight: 500 }}>({(target * 2.20462).toFixed(1)} lbs)</span>
+                                    </td>
                                     <td style={{ padding: '12px 16px', fontWeight: 700, color: isWinning ? 'var(--success)' : 'var(--error)' }}>
-                                        {athletePlannedTotal > 0 ? `${isWinning ? '+' : ''}${diff.toFixed(1)} kg` : '—'}
+                                        {athletePlannedTotal > 0 ? `${isWinning ? '+' : ''}${diff.toFixed(1)} kg ` : '—'}
+                                        {athletePlannedTotal > 0 && <span style={{ fontSize: 11, opacity: 0.8 }}>({isWinning ? '+' : ''}{(diff * 2.20462).toFixed(1)} lbs)</span>}
                                     </td>
                                     <td style={{ padding: '12px 16px', fontWeight: 600, color: 'var(--foreground)' }}>
                                         {c.historicalBests?.dots?.value > 0 ? c.historicalBests.dots.value.toFixed(2) : '—'}
