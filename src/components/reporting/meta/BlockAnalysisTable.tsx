@@ -44,9 +44,9 @@ export default function BlockAnalysisTable({ blocks, athleteId, onSelectBlock })
     };
 
     return (
-        <div className="card" style={{ marginBottom: '2rem' }}>
+        <div className="solid-panel" style={{ marginBottom: '2rem' }}>
             <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', padding: '0.5rem', borderRadius: '4px', display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                <div style={{ background: '#111111', border: '1px solid var(--card-border)', padding: '0.5rem', borderRadius: '4px', display: 'flex', gap: '1rem', alignItems: 'center' }}>
                     <span>
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>

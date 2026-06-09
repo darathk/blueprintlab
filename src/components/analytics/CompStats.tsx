@@ -111,7 +111,7 @@ export default function CompStats({ logs, programs }) {
     }
 
     return (
-        <div className="glass-panel" style={{ marginBottom: '2rem', padding: 0, overflow: 'hidden' }}>
+        <div className="solid-panel" style={{ marginBottom: '2rem', padding: 0, overflow: 'hidden' }}>
             <h3 style={{ padding: '1.5rem', background: 'rgba(6, 182, 212, 0.1)', margin: 0, color: 'var(--primary)', borderBottom: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span className="neon-text">///</span> Mission Telemetry Specs
                 <InfoTooltip text="Analyzes your e1RM at the Start, Peak, and End of the block. 'Delta' shows the total gain or loss from the beginning to the end of the block." />

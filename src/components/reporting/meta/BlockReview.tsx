@@ -96,7 +96,7 @@ export default function BlockReview({ programs, logs, reportParams }) {
 
             {/* Sidebar */}
             <div style={{
-                background: 'var(--card-bg)',
+                background: '#111111',
                 borderRight: '1px solid var(--card-border)',
                 padding: '1.5rem',
                 color: 'var(--primary)',

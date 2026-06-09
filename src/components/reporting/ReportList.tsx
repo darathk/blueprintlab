@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 export default function ReportList({ reports, onView, onDelete }) {
     return (
-        <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+        <div className="solid-panel" style={{ padding: 0, overflow: 'hidden' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
                 <thead style={{ background: 'var(--accent)', color: 'black' }}>
                     <tr>

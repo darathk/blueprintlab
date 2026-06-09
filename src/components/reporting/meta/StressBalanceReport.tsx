@@ -8,13 +8,13 @@ export default function StressBalanceReport({ readinessLogs, reportParams }) {
 
     return (
         <div style={{ padding: '0 1rem' }}>
-            <div className="glass-panel" style={{ marginBottom: '2rem', padding: '2rem', textAlign: 'center' }}>
+            <div className="solid-panel" style={{ marginBottom: '2rem', padding: '2rem', textAlign: 'center' }}>
                 <h3 style={{ marginBottom: '0.5rem', fontSize: '1.5rem', color: 'var(--foreground)' }}>
                     <span className="neon-text">///</span> STRESS BALANCE REPORT
                 </h3>
             </div>
 
-            <div className="card">
+            <div className="solid-panel">
                 <p>Detailed view of Recovery vs Training Load over time.</p>
                 {/* 
                     This would be a more complex chart overlaying stress (bars) vs recovery (line).

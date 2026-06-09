@@ -47,7 +47,7 @@ export default function LiftDensity({ logs }) {
     };
 
     return (
-        <div className="card" style={{ marginBottom: '2rem', padding: 0 }}>
+        <div className="solid-panel" style={{ marginBottom: '2rem', padding: 0 }}>
             <div style={{ padding: '1rem', background: '#0f3460', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                 <h3 style={{ margin: 0, color: 'white', fontSize: '1.2rem', display: 'flex', alignItems: 'center' }}>
                     All Lift Density Data
@@ -67,14 +67,14 @@ export default function LiftDensity({ logs }) {
                     </thead>
                     <tbody>
                         {data.map((row, idx) => (
-                            <tr key={row.name} style={{ background: idx % 2 === 0 ? 'var(--card-bg)' : 'rgba(255,255,255,0.02)' }}>
+                            <tr key={row.name} style={{ background: idx % 2 === 0 ? '#111111' : 'rgba(255,255,255,0.02)' }}>
                                 <td style={{
                                     padding: '0.75rem',
                                     fontWeight: 600,
                                     borderRight: '2px solid #0f3460',
                                     position: 'sticky',
                                     left: 0,
-                                    background: 'var(--card-bg)',
+                                    background: '#111111',
                                     zIndex: 5
                                 }}>
                                     {row.name}

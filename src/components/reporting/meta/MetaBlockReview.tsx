@@ -229,7 +229,7 @@ export default function MetaBlockReview({ programs, logs, reportParams }) {
     return (
         <div>
             {/* Header / Config */}
-            <div className="glass-panel" style={{ marginBottom: '2rem', padding: '2rem', textAlign: 'center' }}>
+            <div className="solid-panel" style={{ marginBottom: '2rem', padding: '2rem', textAlign: 'center' }}>
                 <h3 style={{ marginBottom: '1.5rem', fontSize: '1.5rem', color: 'var(--primary)', letterSpacing: '-0.02em' }}>
                     <span className="neon-text">///</span> METABLOCK ANALYTICS
                 </h3>

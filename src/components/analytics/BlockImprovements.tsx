@@ -112,7 +112,7 @@ export default function BlockImprovements({ logs, dateRange, programs }) {
     }, [logs, activeLift, programs]);
 
     return (
-        <div className="glass-panel" style={{ marginBottom: '2rem', padding: '1.5rem' }}>
+        <div className="solid-panel" style={{ marginBottom: '2rem', padding: '1.5rem' }}>
             <h3 style={{ borderBottom: '1px solid var(--card-border)', paddingBottom: '1rem', marginBottom: '1.5rem', color: 'var(--foreground)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span className="neon-text" style={{ color: 'var(--accent)' }}>///</span> Block Performance Trajectory
                 <InfoTooltip text="Visualizes your estimated 1 Rep Max (e1RM) progression for the primary competition lifts throughout the block. This helps you track strength trends over time." />

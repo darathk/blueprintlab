@@ -134,10 +134,10 @@ export default function ReportsPage({ params }: { params: Promise<{ id: string }
             {selectedReport && (
                 <div style={{
                     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                    background: 'rgba(0,0,0,0.9)', zIndex: 2000,
+                    background: 'var(--background)', zIndex: 2000,
                     display: 'flex', flexDirection: 'column'
                 }}>
-                    <div style={{ padding: '1rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'var(--card-bg)' }}>
+                    <div style={{ padding: '1rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#111111' }}>
                         <div>
                             <h2 style={{ margin: 0, color: 'var(--foreground)' }}>{selectedReport.name}</h2>
                             <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--secondary-foreground)' }}>{selectedReport.type} • {new Date(selectedReport.created).toLocaleDateString()}</p>

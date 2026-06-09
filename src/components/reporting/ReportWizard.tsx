@@ -77,11 +77,11 @@ export default function ReportWizard({ athleteId, onClose, onGenerate }) {
     return (
         <div style={{
             position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-            background: 'rgba(0,0,0,0.8)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+            background: 'var(--background)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
         }}>
-            <div className="card" style={{ width: '600px', maxWidth: '90vw', padding: '0', overflow: 'hidden' }}>
+            <div className="solid-panel" style={{ width: '600px', maxWidth: '90vw', padding: '0', overflow: 'hidden' }}>
                 {/* Header */}
-                <div style={{ padding: '1rem', background: 'var(--card-bg)', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ padding: '1rem', background: '#111111', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <h2 style={{ fontSize: '1.2rem', margin: 0, color: 'var(--primary)' }}>Queue New Report</h2>
                     <button onClick={onClose} style={{ background: 'transparent', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer' }}>×</button>
                 </div>
@@ -96,7 +96,7 @@ export default function ReportWizard({ athleteId, onClose, onGenerate }) {
                         {[1, 2, 3].map(s => (
                             <div key={s} style={{
                                 width: '30px', height: '30px', borderRadius: '50%',
-                                background: step >= s ? 'var(--accent)' : 'var(--card-bg)',
+                                background: step >= s ? 'var(--accent)' : '#111111',
                                 border: `2px solid ${step >= s ? 'var(--accent)' : 'var(--card-border)'}`,
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 color: step >= s ? 'black' : 'var(--secondary-foreground)',
@@ -128,7 +128,7 @@ export default function ReportWizard({ athleteId, onClose, onGenerate }) {
                                         border: reportType === type ? '2px solid var(--accent)' : '1px solid var(--card-border)',
                                         borderRadius: 'var(--radius)',
                                         cursor: 'pointer',
-                                        background: reportType === type ? 'var(--primary)' : 'var(--card-bg)',
+                                        background: reportType === type ? 'var(--primary)' : '#111111',
                                         color: reportType === type ? '#000' : 'var(--foreground)',
                                         transition: 'all 0.2s ease'
                                     }}

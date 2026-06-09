@@ -220,7 +220,7 @@ export default function CompetitionLiftHeatMap({ blocks, logs, primaryLift }) {
     };
 
     return (
-        <div className="card" style={{ marginBottom: '2rem', padding: '1.5rem', overflow: 'visible', background: 'var(--background)' }}>
+        <div className="solid-panel" style={{ marginBottom: '2rem', padding: '1.5rem', overflow: 'visible', background: 'var(--background)' }}>
             {/* Header / Config */}
             <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
                 <h3 style={{ margin: 0, color: 'var(--foreground)', fontSize: '1.25rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
@@ -234,7 +234,7 @@ export default function CompetitionLiftHeatMap({ blocks, logs, primaryLift }) {
 
                 {/* RTS style tooltip popup */}
                 {showInfo && (
-                    <div style={{ position: 'absolute', top: '100%', left: '0', width: '450px', background: 'var(--card-bg)', backdropFilter: 'blur(12px)', color: 'var(--foreground)', padding: '1.5rem', borderRadius: 'var(--radius)', zIndex: 100, border: '1px solid var(--card-border)', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', fontSize: '0.85rem', lineHeight: '1.5' }}>
+                    <div style={{ position: 'absolute', top: '100%', left: '0', width: '450px', background: '#111111', backdropFilter: 'blur(12px)', color: 'var(--foreground)', padding: '1.5rem', borderRadius: 'var(--radius)', zIndex: 100, border: '1px solid var(--card-border)', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', fontSize: '0.85rem', lineHeight: '1.5' }}>
                         <strong style={{ display: 'block', marginBottom: '1rem', fontSize: '0.95rem', color: 'var(--primary)' }}>Green indicates higher values; Red indicates lower values.</strong>
                         <p style={{ marginBottom: '1rem', color: 'var(--secondary-foreground)' }}>This heat map is an easy way for you to see what kinds of rep and RPE pairings you respond well to. Reps are listed down the vertical axis. RPE is across the horizontal axis. Click on a dot for more detailed info.</p>
 
@@ -360,7 +360,7 @@ export default function CompetitionLiftHeatMap({ blocks, logs, primaryLift }) {
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     backdropFilter: 'blur(8px)'
                 }} onClick={() => setSelectedCell(null)}>
-                    <div className="glass-panel" style={{
+                    <div className="solid-panel" style={{
                         padding: '2rem', borderRadius: '12px',
                         width: '450px', maxWidth: '90vw', border: '1px solid var(--primary)'
                     }} onClick={e => e.stopPropagation()}>

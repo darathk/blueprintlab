@@ -10,7 +10,7 @@ export default function AssistCorrelationTable({ assistData, primaryLift }) {
     if (!assistData || assistData.length === 0) return null;
 
     return (
-        <div className="card" style={{ marginBottom: '2rem' }}>
+        <div className="solid-panel" style={{ marginBottom: '2rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--foreground)', margin: 0, display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                     <span className="neon-text" style={{ color: 'var(--primary)' }}>///</span> Assist Exercises ({primaryLift})
@@ -40,7 +40,7 @@ export default function AssistCorrelationTable({ assistData, primaryLift }) {
                         }}>
                             <div style={{
                                 padding: '0.75rem',
-                                background: 'var(--card-bg)',
+                                background: '#111111',
                                 borderBottom: '1px solid var(--card-border)',
                                 fontWeight: 600,
                                 display: 'flex',
