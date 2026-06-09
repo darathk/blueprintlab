@@ -71,7 +71,7 @@ export default function ExerciseFeedback({
         const setLines = sets
             .filter(s => s.actual.weight || s.actual.reps || s.actual.rpe)
             .map(s => {
-                const displayWeight = unit === 'lbs' ? s.actual.weight : (parseFloat(s.actual.weight) * 0.45359237).toFixed(1).replace(/\.0$/, '');
+                const displayWeight = s.actual.weight;
                 return `  Set ${s.setNumber}: ${displayWeight || '—'} ${unit} × ${s.actual.reps || '—'} reps @ RPE ${s.actual.rpe || '—'}`;
             })
             .join('\n');
