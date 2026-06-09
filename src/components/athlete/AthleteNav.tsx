@@ -15,7 +15,7 @@ export default function AthleteNav({ id, unreadCount, userId }: { id: string; un
 
     return (
         <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', flexShrink: 0 }}>
-            <Link href={leaderboardPath} style={{
+            <Link prefetch={true} href={leaderboardPath} style={{
                 fontSize: '0.9rem',
                 fontWeight: 600,
                 color: pathname === leaderboardPath ? 'var(--primary)' : 'var(--secondary-foreground)',
@@ -32,7 +32,7 @@ export default function AthleteNav({ id, unreadCount, userId }: { id: string; un
                 <span style={{ fontSize: '1.1rem' }}>🏆</span>
                 <span className="hidden sm:inline">Leaderboard</span>
             </Link>
-            <Link href={`/athlete/${id}/plate-loader`} style={{
+            <Link prefetch={true} href={`/athlete/${id}/plate-loader`} style={{
                 fontSize: '0.9rem',
                 fontWeight: 600,
                 color: pathname === `/athlete/${id}/plate-loader` ? 'var(--primary)' : 'var(--secondary-foreground)',
@@ -49,7 +49,7 @@ export default function AthleteNav({ id, unreadCount, userId }: { id: string; un
                 <span style={{ fontSize: '1.1rem' }}>🏋️‍♂️</span>
                 <span className="hidden sm:inline">Plate Loader</span>
             </Link>
-            <Link href={chatPath} style={{
+            <Link prefetch={true} href={chatPath} style={{
                 fontSize: '0.9rem',
                 fontWeight: 600,
                 color: isActive ? 'var(--primary)' : 'var(--secondary-foreground)',

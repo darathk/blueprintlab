@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { MessageSquare, Calendar as CalendarIcon, Search, X, MailOpen, LayoutDashboard, Pencil } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ChatInterface from './ChatInterface';
 import AthleteProgramPane from './AthleteProgramPane';
@@ -23,6 +24,16 @@ interface ConvSummary { athleteId: string; athleteName: string; lastMessage: str
 interface Props { coachId: string; coachName: string; initialConvos?: ConvSummary[]; initialAthleteId?: string; initialMessages?: Message[]; }
 
 export default function CoachInbox({ coachId, coachName, initialConvos = [], initialAthleteId, initialMessages = [] }: Props) {
+    const router = useRouter();
+    
+    // Aggressively prefetch dashboard so exiting chat is instant
+    useEffect(() => {
+        router.prefetch('/dashboard');
+        if (initialAthleteId) {
+            router.prefetch(`/dashboard/athletes/${initialAthleteId}`);
+        }
+    }, [router, initialAthleteId]);
+
     const [convos, setConvos] = useState<ConvSummary[]>(initialConvos);
     const [selectedId, setSelectedId] = useState<string | null>(initialAthleteId || null);
     const selectedConvo = convos.find(c => c.athleteId === selectedId);
@@ -269,6 +280,7 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                         headerActions={
                             <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
                                 <Link
+                                    prefetch={true}
                                     href={`/dashboard/athletes/${selectedId}`}
                                     title="Dashboard"
                                     style={{

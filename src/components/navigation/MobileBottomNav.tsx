@@ -103,6 +103,7 @@ export default function MobileBottomNav({ items, children, className, userId }: 
                         return (
                             <Link
                                 key={item.href}
+                                prefetch={true}
                                 href={item.href}
                                 onClick={() => {
                                     setIsOpen(false);

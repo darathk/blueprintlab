@@ -642,6 +642,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                                 blockName={blockName}
                                                 sessionId={sessionId}
                                                 sets={ex.sets}
+                                                unit={unit}
                                             />
                                             <PRToggle
                                                 athleteId={athleteId}

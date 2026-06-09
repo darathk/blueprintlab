@@ -5,6 +5,16 @@ import { supabase } from '@/lib/supabase';
 import { MessageCircle, Video, X, Send, CheckCircle, Scissors, Paperclip, Image } from 'lucide-react';
 import VideoCropper from '@/components/chat/VideoCropper';
 
+const getSafeMimeType = (f: File) => {
+    let mime = f?.type || '';
+    if (!mime && f?.name) {
+        const name = f.name.toLowerCase();
+        if (name.endsWith('.mp4') || name.endsWith('.mov') || name.endsWith('.webm')) mime = 'video/mp4';
+        else if (name.endsWith('.jpg') || name.endsWith('.jpeg') || name.endsWith('.png')) mime = 'image/jpeg';
+    }
+    return mime;
+};
+
 interface Props {
     athleteId: string;
     coachId: string;
@@ -159,8 +169,9 @@ export default function ExerciseFeedback({
         if (files.length === 0) return;
 
         const validFiles = files.filter(f => {
-            const isVid = f.type.startsWith('video/');
-            const isImg = f.type.startsWith('image/');
+            const mime = getSafeMimeType(f);
+            const isVid = mime.startsWith('video/');
+            const isImg = mime.startsWith('image/');
             return (isVid || isImg) && f.size <= 200 * 1024 * 1024;
         });
 
@@ -174,7 +185,8 @@ export default function ExerciseFeedback({
         setStagedFileUrls(prev => [...prev, ...validFiles.map(f => URL.createObjectURL(f))]);
 
         validFiles.forEach((f, i) => {
-            if (f.type.startsWith('video/')) {
+            const mime = getSafeMimeType(f);
+            if (mime.startsWith('video/')) {
                 generateVideoPoster(f, startIndex + i);
             }
         });
@@ -237,7 +249,9 @@ export default function ExerciseFeedback({
     // --- Upload & Send ---
 
     const uploadFile = async (file: File, index: number): Promise<{ url: string; type: string }> => {
-        const mime = file.type || 'video/mp4';
+        let mime = getSafeMimeType(file);
+        if (!mime) mime = 'video/mp4';
+
         let ext = '.mp4';
         if (mime.includes('quicktime')) ext = '.mov';
         else if (mime.includes('webm')) ext = '.webm';
@@ -323,9 +337,9 @@ export default function ExerciseFeedback({
                     const trim = stagedTrimData[i];
                     const mediaUrl = trim ? `${result.url}#t=${trim.start},${trim.end}` : result.url;
                     const mediaType = result.type;
-
-                    const isVid = filesToSend[i].type.startsWith('video/');
-                    const isAudio = filesToSend[i].type.startsWith('audio/');
+                    const safeMime = getSafeMimeType(filesToSend[i]);
+                    const isVid = safeMime.startsWith('video/');
+                    const isAudio = safeMime.startsWith('audio/');
                     const msgContent = i === 0 && textContent ? textContent : isAudio ? 'Voice Message' : isVid ? 'Video' : 'Photo';
 
                     const res = await fetch('/api/messages', {
@@ -415,7 +429,7 @@ export default function ExerciseFeedback({
                                         cursor: 'pointer', position: 'relative', flexShrink: 0,
                                     }}
                                 >
-                                    {file.type.startsWith('video/') ? (
+                                    {getSafeMimeType(file).startsWith('video/') ? (
                                         stagedPosters[i] ? (
                                             <img src={stagedPosters[i]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                                         ) : (
@@ -440,7 +454,7 @@ export default function ExerciseFeedback({
                                         <X size={10} />
                                     </button>
                                     {/* Video badge */}
-                                    {file.type.startsWith('video/') && (
+                                    {getSafeMimeType(file).startsWith('video/') && (
                                         <div style={{
                                             position: 'absolute', bottom: 2, left: 2,
                                             background: 'rgba(0,0,0,0.6)', borderRadius: 3,
@@ -578,7 +592,7 @@ export default function ExerciseFeedback({
                             <X size={26} />
                         </button>
                         <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-                            {stagedFiles[stagedPreviewIndex]?.type.startsWith('video/') && (
+                            {stagedFiles[stagedPreviewIndex] && getSafeMimeType(stagedFiles[stagedPreviewIndex]).startsWith('video/') && (
                                 <button
                                     onClick={() => setCropFile(stagedFiles[stagedPreviewIndex])}
                                     style={{
@@ -603,7 +617,7 @@ export default function ExerciseFeedback({
 
                     {/* Main Preview */}
                     <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', padding: 16 }}>
-                        {stagedFiles[stagedPreviewIndex]?.type.startsWith('video/') ? (
+                        {stagedFiles[stagedPreviewIndex] && getSafeMimeType(stagedFiles[stagedPreviewIndex]).startsWith('video/') ? (
                             <video
                                 key={stagedFileUrls[stagedPreviewIndex]}
                                 src={stagedFileUrls[stagedPreviewIndex]}
@@ -622,7 +636,7 @@ export default function ExerciseFeedback({
                         )}
 
                         {/* File size overlay for videos */}
-                        {stagedFiles[stagedPreviewIndex]?.type.startsWith('video/') && (
+                        {stagedFiles[stagedPreviewIndex] && getSafeMimeType(stagedFiles[stagedPreviewIndex]).startsWith('video/') && (
                             <div style={{
                                 position: 'absolute', bottom: 24, left: '50%', transform: 'translateX(-50%)',
                                 background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)',
@@ -645,7 +659,7 @@ export default function ExerciseFeedback({
                                         border: i === stagedPreviewIndex ? '2px solid #00a884' : '2px solid transparent',
                                         cursor: 'pointer', flexShrink: 0, position: 'relative', transition: 'all 0.15s ease',
                                     }}>
-                                        {stagedFiles[i]?.type.startsWith('video/') ? (
+                                        {stagedFiles[i] && getSafeMimeType(stagedFiles[i]).startsWith('video/') ? (
                                             stagedPosters[i] ? (
                                                 <img src={stagedPosters[i]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: i === stagedPreviewIndex ? 1 : 0.5 }} />
                                             ) : (

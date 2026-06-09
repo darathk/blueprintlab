@@ -6,6 +6,7 @@ import { chatUploadManager, useChatUploadJobsForConversation, usePreUploadJobs, 
 
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import { useRouter } from 'next/navigation';
 import { Mic, MoreVertical, Reply, Copy, Download, Paperclip, X, Send, Search, Scissors, Pencil, Play, Maximize, Minimize2, Plus } from 'lucide-react';
 const VideoCropper = dynamic(() => import('./VideoCropper'), { ssr: false });
 const EmojiPicker = dynamic(() => import('./EmojiPicker'), { ssr: false });
@@ -177,6 +178,14 @@ export default function ChatInterface({
     currentUserId, otherUserId, currentUserName, otherUserName, athleteId,
     initialMessages = [], isEmbedded = false, onBack, headerActions
 }: Props) {
+    const router = useRouter();
+    
+    // Aggressively prefetch dashboards so exiting chat is instant
+    useEffect(() => {
+        router.prefetch('/dashboard');
+        router.prefetch(`/athlete/${athleteId}/dashboard`);
+    }, [router, athleteId]);
+
     const [messages, setMessages] = useState<Message[]>(initialMessages);
     const [newMessage, setNewMessage] = useState('');
     const [uploading, setUploading] = useState(false);
@@ -1243,7 +1252,7 @@ export default function ChatInterface({
                         {onBack ? (
                             <button onClick={onBack} style={{ color: 'var(--secondary-foreground)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, fontWeight: 300, display: 'flex', alignItems: 'center' }}>&#8249;</button>
                         ) : (
-                            <Link href={`/athlete/${athleteId}/dashboard`} style={{ color: 'var(--secondary-foreground)', background: 'none', border: 'none', textDecoration: 'none', fontSize: 20, fontWeight: 300, display: 'flex', alignItems: 'center' }}>&#8249;</Link>
+                            <Link prefetch={true} href={`/athlete/${athleteId}/dashboard`} style={{ color: 'var(--secondary-foreground)', background: 'none', border: 'none', textDecoration: 'none', fontSize: 20, fontWeight: 300, display: 'flex', alignItems: 'center' }}>&#8249;</Link>
                         )}
 
                         <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, rgba(125,135,210,0.3), rgba(168,85,247,0.3))', border: '1px solid rgba(125,135,210,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, color: 'var(--primary)', fontSize: 14, flexShrink: 0 }}>

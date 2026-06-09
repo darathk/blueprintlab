@@ -20,6 +20,7 @@ export default function TopNavigation({ unreadCount = 0, userId }: { unreadCount
         <nav className="dashboard-nav flex w-full items-center justify-between md:justify-end" style={{ gap: '1.5rem' }}>
             <div style={{ display: 'flex', gap: '1.75rem', alignItems: 'center' }}>
                 <Link
+                    prefetch={true}
                     href="/dashboard"
                     className="nav-link"
                     style={{

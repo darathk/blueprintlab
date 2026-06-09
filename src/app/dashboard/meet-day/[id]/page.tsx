@@ -36,6 +36,7 @@ export default async function MeetDayAthletePage({
                 gender: true,
                 federation: true,
                 competitors: true,
+                coachId: true,
             },
         }),
         prisma.athlete.findMany({
