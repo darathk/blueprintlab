@@ -10,7 +10,7 @@ import { useMemo, useState } from 'react';
 export default function CompetitionLiftHeatMap({ blocks, logs, primaryLift }) {
     const [selectedCell, setSelectedCell] = useState(null); // { reps, rpe, data: [blocks], val }
     const [metric, setMetric] = useState('Gain'); // 'End E1RM', 'Peak E1RM', 'Gain', '# of Blocks'
-    const [viewMode, setViewMode] = useState('radial'); // 'grid' | 'radial'
+    const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'radial'
     const [showInfo, setShowInfo] = useState(false);
 
     // Grid Definition based on screenshot
