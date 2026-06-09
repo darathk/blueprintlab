@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import InfoTooltip from '@/components/ui/InfoTooltip';
+import { calculateSimpleE1RM } from '@/lib/stress-index';
 
 export default function BlockImprovements({ logs, dateRange, programs }) {
     const [activeLift, setActiveLift] = useState('Squat');
@@ -62,7 +63,7 @@ export default function BlockImprovements({ logs, dateRange, programs }) {
                     const weight = parseFloat(set.weight || ex.weight || 0);
 
                     if (weight > 0) {
-                        const e1rm = weight * (1 + (reps + (10 - rpe)) / 30);
+                        const e1rm = calculateSimpleE1RM(weight, reps, rpe);
                         if (e1rm > currentLogMax) currentLogMax = e1rm;
                     }
                 });
