@@ -48,7 +48,7 @@ export default function AssistCorrelationTable({ assistData, primaryLift }) {
                             }}>
                                 <span>{item.name}</span>
                                 <span style={{ fontSize: '0.9rem', color: 'var(--accent)' }}>
-                                    Avg Gain: {item.avgGain > 0 ? '+' : ''}{item.avgGain} lbs
+                                    Avg {primaryLift} Gain: {item.avgGain > 0 ? '+' : ''}{item.avgGain} lbs
                                 </span>
                             </div>
 
@@ -57,9 +57,9 @@ export default function AssistCorrelationTable({ assistData, primaryLift }) {
                                     <thead>
                                         <tr style={{ textAlign: 'left', color: 'var(--secondary-foreground)' }}>
                                             <th style={{ padding: '0.5rem' }}>Block End Date</th>
-                                            <th style={{ padding: '0.5rem' }}>End E1RM</th>
-                                            <th style={{ padding: '0.5rem' }}>Peak E1RM</th>
-                                            <th style={{ padding: '0.5rem' }}>Gain</th>
+                                            <th style={{ padding: '0.5rem' }}>{primaryLift} End E1RM</th>
+                                            <th style={{ padding: '0.5rem' }}>{primaryLift} Peak E1RM</th>
+                                            <th style={{ padding: '0.5rem' }}>{primaryLift} Gain</th>
                                             <th style={{ padding: '0.5rem' }}># Sets</th>
                                         </tr>
                                     </thead>

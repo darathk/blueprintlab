@@ -4,7 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import InfoTooltip from '@/components/ui/InfoTooltip';
 
-export default function BlockAnalysisTable({ blocks, athleteId }) {
+export default function BlockAnalysisTable({ blocks, athleteId, onSelectBlock }) {
     const [sortBy, setSortBy] = useState('Date'); // Date, End E1RM, Peak E1RM, Gain
 
     if (!blocks || blocks.length === 0) return <div style={{ padding: '1rem', opacity: 0.7 }}>No blocks selected.</div>;
@@ -120,9 +120,13 @@ export default function BlockAnalysisTable({ blocks, athleteId }) {
                                 <td style={{ padding: '0.75rem' }}>{block.csBalance || '0%'}</td>
 
                                 <td style={{ padding: '0.75rem' }}>
-                                    <Link href={`/dashboard/athletes/${athleteId}/programs/${block.id}/review`} title="View Detailed Report">
-                                        <span style={{ fontSize: '1.2rem', cursor: 'pointer' }}>🔍</span>
-                                    </Link>
+                                    {onSelectBlock ? (
+                                        <span onClick={() => onSelectBlock(block.id)} style={{ fontSize: '1.2rem', cursor: 'pointer' }} title="View Detailed Report">🔍</span>
+                                    ) : (
+                                        <Link href={`/dashboard/athletes/${athleteId}/programs/${block.id}/review`} title="View Detailed Report">
+                                            <span style={{ fontSize: '1.2rem', cursor: 'pointer' }}>🔍</span>
+                                        </Link>
+                                    )}
                                 </td>
                             </tr>
                         ))}

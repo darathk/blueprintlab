@@ -7,10 +7,14 @@ import BlockAnalysisTable from './BlockAnalysisTable';
 import AssistCorrelationTable from './AssistCorrelationTable';
 import { calculateSimpleE1RM } from '@/lib/stress-index';
 import { getExerciseCategory, EXERCISE_CATEGORIES } from '@/lib/exercise-db'; // Import Helper
+import BlockImprovements from '@/components/analytics/BlockImprovements';
+import CompStats from '@/components/analytics/CompStats';
+import LiftDensity from '@/components/analytics/LiftDensity';
 
 export default function MetaBlockReview({ programs, logs, reportParams }) {
     const params = useParams();
     const [primaryLift, setPrimaryLift] = useState('Squat'); // Squat, Bench, Deadlift
+    const [viewingBlockId, setViewingBlockId] = useState(null);
 
     // Helper to check if string contains primary lift or exercise is marked primary
     const isPrimary = (exercise, type) => {
@@ -199,6 +203,29 @@ export default function MetaBlockReview({ programs, logs, reportParams }) {
 
     }, [programs, logs, reportParams, primaryLift]);
 
+    if (viewingBlockId) {
+        const program = programs.find(p => p.id === viewingBlockId);
+        const filteredLogs = logs.filter(l => l.programId === viewingBlockId);
+
+        return (
+            <div style={{ padding: '1rem', animation: 'fadeIn 0.3s' }}>
+                <button onClick={() => setViewingBlockId(null)} style={{ background: 'transparent', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem' }}>
+                    ← Back to Meta Block Review
+                </button>
+                <div style={{ marginBottom: '2rem' }}>
+                    <h2 style={{ fontSize: '1.875rem', fontWeight: 700, margin: 0, color: 'var(--foreground)' }}>Block Review: {program?.name}</h2>
+                    <div style={{ fontSize: '0.9rem', color: 'var(--secondary-foreground)', marginTop: '0.5rem' }}>
+                        {program?.startDate && new Date(program.startDate).toLocaleDateString()} - {program?.endDate ? new Date(program.endDate).toLocaleDateString() : 'Ongoing'}
+                    </div>
+                </div>
+                
+                <BlockImprovements logs={filteredLogs} dateRange="all" programs={[program]} />
+                <CompStats logs={filteredLogs} programs={[program]} />
+                <LiftDensity logs={filteredLogs} />
+            </div>
+        );
+    }
+
     return (
         <div>
             {/* Header / Config */}
@@ -242,7 +269,7 @@ export default function MetaBlockReview({ programs, logs, reportParams }) {
                 primaryLift={primaryLift}
             />
 
-            <BlockAnalysisTable blocks={analysisData.blocks} athleteId={params.id} />
+            <BlockAnalysisTable blocks={analysisData.blocks} athleteId={params.id} onSelectBlock={setViewingBlockId} />
             <AssistCorrelationTable assistData={analysisData.assistData} primaryLift={primaryLift} />
         </div>
     );
