@@ -119,7 +119,7 @@ export default function ReportWizard({ athleteId, onClose, onGenerate }) {
                 <div style={{ padding: '2rem', minHeight: '300px' }}>
                     {step === 1 && (
                         <div style={{ display: 'grid', gap: '1rem' }}>
-                            {['Meta Block Review', 'Block Review', 'Stress Balance', 'Multiple Lift Report', 'Single Lift Report'].map(type => (
+                            {['Meta Block Review', 'Block Review'].map(type => (
                                 <div
                                     key={type}
                                     onClick={() => setReportType(type)}
@@ -128,10 +128,12 @@ export default function ReportWizard({ athleteId, onClose, onGenerate }) {
                                         border: reportType === type ? '2px solid var(--accent)' : '1px solid var(--card-border)',
                                         borderRadius: 'var(--radius)',
                                         cursor: 'pointer',
-                                        background: reportType === type ? 'rgba(78, 205, 196, 0.1)' : 'transparent'
+                                        background: reportType === type ? 'var(--primary)' : 'var(--card-bg)',
+                                        color: reportType === type ? '#000' : 'var(--foreground)',
+                                        transition: 'all 0.2s ease'
                                     }}
                                 >
-                                    <h3 style={{ fontSize: '1rem', margin: 0 }}>{type}</h3>
+                                    <h3 style={{ fontSize: '1rem', margin: 0, fontWeight: 600 }}>{type}</h3>
                                 </div>
                             ))}
                         </div>
