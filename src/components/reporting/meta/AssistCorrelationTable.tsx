@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import AssistForceGraph from './AssistForceGraph';
+import InfoTooltip from '@/components/ui/InfoTooltip';
 
 export default function AssistCorrelationTable({ assistData, primaryLift }) {
     const [viewMode, setViewMode] = useState('table');
@@ -13,6 +14,7 @@ export default function AssistCorrelationTable({ assistData, primaryLift }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <h3 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--foreground)', margin: 0, display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                     <span className="neon-text" style={{ color: 'var(--primary)' }}>///</span> Assist Exercises ({primaryLift})
+                    <InfoTooltip text="Lists the accessory exercises you performed alongside this primary lift across all blocks. Compares how much volume you did vs. the actual strength gained, helping identify which accessories work best for you." />
                 </h3>
 
                 <div style={{ display: 'flex', background: 'var(--secondary)', border: '1px solid var(--card-border)', borderRadius: 'var(--radius)', padding: '4px' }}>

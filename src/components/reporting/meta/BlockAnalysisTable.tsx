@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import InfoTooltip from '@/components/ui/InfoTooltip';
 
 export default function BlockAnalysisTable({ blocks, athleteId }) {
     const [sortBy, setSortBy] = useState('Date'); // Date, End E1RM, Peak E1RM, Gain
@@ -66,7 +67,10 @@ export default function BlockAnalysisTable({ blocks, athleteId }) {
                 </div>
             </div>
 
-            <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--primary)', marginBottom: '1rem' }}>/// Mission Telemetry Specs</h3>
+            <h3 style={{ fontSize: '1.2rem', fontWeight: 600, color: 'var(--primary)', marginBottom: '1rem', display: 'flex', alignItems: 'center' }}>
+                /// Mission Telemetry Specs
+                <InfoTooltip text="Analyzes the Start, Peak, and End e1RM for each block you've done. 'Change' shows how much strength you gained or lost during that specific block." />
+            </h3>
 
             <div style={{ overflowX: 'auto' }}>
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>

@@ -115,7 +115,7 @@ export default function MetaBlockReview({ programs, logs, reportParams }) {
             let peakE1RM = 0;
             let gain = 0;
 
-            if (relevantSets.length > 0) {
+            if (liftLogs.length > 0) {
                 // Calculate Peak E1RM from ALL sets (not just daily maxes)
                 const allSetE1RMs = relevantSets
                     .filter(s => s.rpe) // only sets with RPE
@@ -126,23 +126,15 @@ export default function MetaBlockReview({ programs, logs, reportParams }) {
                     peakE1RM = Math.max(...allSetE1RMs);
                     peakE1RM = parseFloat(peakE1RM.toFixed(1));
 
-                    // Telemetry Logic: Start = First Set, End = Last Set (to show arc/fatigue)
-                    // Ensure sets are strictly sorted by time
-                    relevantSets.sort((a, b) => a.rawDate.getTime() - b.rawDate.getTime());
+                    // Telemetry Logic: Start = First Session Max, End = Last Session Max
+                    // This aligns with the Single Block Review (CompStats) which compares the daily top sets
+                    const firstDay = liftLogs[0];
+                    const lastDay = liftLogs[liftLogs.length - 1];
 
-                    const setsWithRPE = relevantSets.filter(s => s.rpe);
-                    if (setsWithRPE.length > 0) {
-                        const firstSet = setsWithRPE[0];
-                        const lastSet = setsWithRPE[setsWithRPE.length - 1];
+                    startE1RM = parseFloat(firstDay.e1rm.toFixed(1));
+                    endE1RM = parseFloat(lastDay.e1rm.toFixed(1));
 
-                        startE1RM = calculateSimpleE1RM(firstSet.weight, firstSet.reps, firstSet.rpe);
-                        endE1RM = calculateSimpleE1RM(lastSet.weight, lastSet.reps, lastSet.rpe);
-
-                        startE1RM = parseFloat(startE1RM.toFixed(1));
-                        endE1RM = parseFloat(endE1RM.toFixed(1));
-
-                        gain = parseFloat((endE1RM - startE1RM).toFixed(1));
-                    }
+                    gain = parseFloat((endE1RM - startE1RM).toFixed(1));
                 }
             }
 

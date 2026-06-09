@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import InfoTooltip from '@/components/ui/InfoTooltip';
 
 export default function BlockImprovements({ logs, dateRange, programs }) {
     const [activeLift, setActiveLift] = useState('Squat');
@@ -114,6 +115,7 @@ export default function BlockImprovements({ logs, dateRange, programs }) {
         <div className="glass-panel" style={{ marginBottom: '2rem', padding: '1.5rem' }}>
             <h3 style={{ borderBottom: '1px solid var(--card-border)', paddingBottom: '1rem', marginBottom: '1.5rem', color: 'var(--foreground)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                 <span className="neon-text" style={{ color: 'var(--accent)' }}>///</span> Block Performance Trajectory
+                <InfoTooltip text="Visualizes your estimated 1 Rep Max (e1RM) progression for the primary competition lifts throughout the block. This helps you track strength trends over time." />
             </h3>
 
             <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', justifyContent: 'center' }}>

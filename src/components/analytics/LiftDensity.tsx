@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import InfoTooltip from '@/components/ui/InfoTooltip';
 
 export default function LiftDensity({ logs }) {
     const data = useMemo(() => {
@@ -48,7 +49,10 @@ export default function LiftDensity({ logs }) {
     return (
         <div className="card" style={{ marginBottom: '2rem', padding: 0 }}>
             <div style={{ padding: '1rem', background: '#0f3460', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ margin: 0, color: 'white', fontSize: '1.2rem' }}>All Lift Density Data</h3>
+                <h3 style={{ margin: 0, color: 'white', fontSize: '1.2rem', display: 'flex', alignItems: 'center' }}>
+                    All Lift Density Data
+                    <InfoTooltip text="Displays a heatmap of rep ranges for every exercise performed during the block. Color intensity (green -> yellow -> red) shows how frequently you hit each rep count." />
+                </h3>
             </div>
 
             <div style={{ overflowX: 'auto' }}>
