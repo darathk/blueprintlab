@@ -217,8 +217,8 @@ export default function ChatInterface({
 
     // Pre-upload job IDs per staged file index — upload starts immediately on staging
     const [stagedPreUploadIds, setStagedPreUploadIds] = useState<Record<number, string>>({});
-    // Expanded video panel state (desktop side-panel instead of native fullscreen)
-    const [expandedVideoSrc, setExpandedVideoSrc] = useState<string | null>(null);
+    // Expanded media panel state (desktop side-panel instead of native fullscreen)
+    const [expandedMedia, setExpandedMedia] = useState<{ url: string, type: 'video' | 'image' } | null>(null);
     // Subscribe to pre-upload progress so thumbnails update live
     const preUploadJobs = usePreUploadJobs();
     // Helper: get pre-upload progress (0-100) for a staged file index
@@ -1133,8 +1133,8 @@ export default function ChatInterface({
             position: 'relative',
             overflow: 'hidden'
         }}>
-            {/* Expanded Video Side Panel (desktop) */}
-            {expandedVideoSrc && (
+            {/* Expanded Media Side Panel (desktop) */}
+            {expandedMedia && (
                 <div style={{
                     position: 'fixed',
                     top: 0,
@@ -1160,30 +1160,57 @@ export default function ChatInterface({
                         flexShrink: 0,
                     }}>
                         <span style={{ fontSize: 14, fontWeight: 600, color: 'rgba(255,255,255,0.7)', letterSpacing: '0.02em' }}>Expanded View</span>
-                        <button
-                            onClick={() => setExpandedVideoSrc(null)}
-                            style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: 6,
-                                background: 'rgba(255,255,255,0.06)',
-                                border: '1px solid rgba(255,255,255,0.1)',
-                                borderRadius: 8,
-                                padding: '6px 12px',
-                                cursor: 'pointer',
-                                color: 'rgba(255,255,255,0.6)',
-                                fontSize: 13,
-                                fontWeight: 500,
-                                transition: 'all 0.15s',
-                            }}
-                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#fff'; }}
-                            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; }}
-                        >
-                            <Minimize2 size={14} />
-                            Close
-                        </button>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                            {expandedMedia.type === 'image' && (
+                                <button
+                                    onClick={() => window.open(expandedMedia.url, '_blank')}
+                                    style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 6,
+                                        background: 'rgba(255,255,255,0.06)',
+                                        border: '1px solid rgba(255,255,255,0.1)',
+                                        borderRadius: 8,
+                                        padding: '6px 12px',
+                                        cursor: 'pointer',
+                                        color: 'rgba(255,255,255,0.6)',
+                                        fontSize: 13,
+                                        fontWeight: 500,
+                                        transition: 'all 0.15s',
+                                    }}
+                                    onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#fff'; }}
+                                    onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; }}
+                                    title="Open original image"
+                                >
+                                    <Maximize size={14} />
+                                    Original
+                                </button>
+                            )}
+                            <button
+                                onClick={() => setExpandedMedia(null)}
+                                style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 6,
+                                    background: 'rgba(255,255,255,0.06)',
+                                    border: '1px solid rgba(255,255,255,0.1)',
+                                    borderRadius: 8,
+                                    padding: '6px 12px',
+                                    cursor: 'pointer',
+                                    color: 'rgba(255,255,255,0.6)',
+                                    fontSize: 13,
+                                    fontWeight: 500,
+                                    transition: 'all 0.15s',
+                                }}
+                                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; e.currentTarget.style.color = '#fff'; }}
+                                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = 'rgba(255,255,255,0.6)'; }}
+                            >
+                                <Minimize2 size={14} />
+                                Close
+                            </button>
+                        </div>
                     </div>
-                    {/* Video container */}
+                    {/* Media container */}
                     <div style={{
                         flex: 1,
                         display: 'flex',
@@ -1192,20 +1219,36 @@ export default function ChatInterface({
                         padding: 24,
                         overflow: 'hidden',
                     }}>
-                        <video
-                            key={expandedVideoSrc}
-                            controls
-                            autoPlay
-                            playsInline
-                            src={expandedVideoSrc.includes('#t=') ? expandedVideoSrc : `${expandedVideoSrc}#t=0.001`}
-                            style={{
-                                maxWidth: '100%',
-                                maxHeight: '100%',
-                                borderRadius: 16,
-                                boxShadow: '0 8px 40px rgba(0,0,0,0.5)',
-                                background: '#000',
-                            }}
-                        />
+                        {expandedMedia.type === 'video' ? (
+                            <video
+                                key={expandedMedia.url}
+                                controls
+                                autoPlay
+                                playsInline
+                                src={expandedMedia.url.includes('#t=') ? expandedMedia.url : `${expandedMedia.url}#t=0.001`}
+                                style={{
+                                    maxWidth: '100%',
+                                    maxHeight: '100%',
+                                    borderRadius: 16,
+                                    boxShadow: '0 8px 40px rgba(0,0,0,0.5)',
+                                    background: '#000',
+                                }}
+                            />
+                        ) : (
+                            <img
+                                key={expandedMedia.url}
+                                src={expandedMedia.url}
+                                alt="Expanded view"
+                                style={{
+                                    maxWidth: '100%',
+                                    maxHeight: '100%',
+                                    borderRadius: 16,
+                                    boxShadow: '0 8px 40px rgba(0,0,0,0.5)',
+                                    objectFit: 'contain',
+                                    background: 'transparent',
+                                }}
+                            />
+                        )}
                     </div>
                 </div>
             )}
@@ -1390,7 +1433,7 @@ export default function ChatInterface({
                                                         src={msg.mediaUrl}
                                                         onLoadedData={() => scrollToBottom(false)}
                                                         style={{ width: '100%', maxWidth: '100%', maxHeight: 300, display: 'block', objectFit: 'contain' }}
-                                                        onExpand={(videoSrc) => setExpandedVideoSrc(videoSrc)}
+                                                        onExpand={(videoSrc) => setExpandedMedia({ url: videoSrc, type: 'video' })}
                                                     />
                                                     {/* Upload/processing progress overlay */}
                                                     {uploadProgress[msg.id] !== undefined && uploadProgress[msg.id] < 100 && (
@@ -1422,7 +1465,7 @@ export default function ChatInterface({
                                             {/* Image */}
                                             {msg.mediaUrl && isImg && (
                                                 <div style={{ position: 'relative' }}>
-                                                    <img src={msg.mediaUrl} alt="" loading="lazy" onClick={() => window.open(msg.mediaUrl!, '_blank')} onLoad={() => scrollToBottom(false)}
+                                                    <img src={msg.mediaUrl} alt="" loading="lazy" onClick={() => setExpandedMedia({ url: msg.mediaUrl!, type: 'image' })} onLoad={() => scrollToBottom(false)}
                                                         style={{ width: '100%', maxWidth: '100%', maxHeight: 200, borderRadius: 14, display: 'block', cursor: 'pointer', objectFit: 'cover' }} />
                                                     {uploadProgress[msg.id] !== undefined && uploadProgress[msg.id] < 100 && (
                                                         <div style={{
