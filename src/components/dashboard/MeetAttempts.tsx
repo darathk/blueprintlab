@@ -266,6 +266,13 @@ export default function MeetAttempts({
     const [exporting, setExporting] = useState(false);
     const [exportingLift, setExportingLift] = useState<LiftKey | null>(null);
 
+    // Scenario builder state
+    const [scenario, setScenario] = useState<{ squat: OptionKey; bench: OptionKey; deadlift: OptionKey }>({
+        squat: 'planned',
+        bench: 'planned',
+        deadlift: 'planned'
+    });
+
     const exportLift = async (liftKey: LiftKey) => {
         setExportingLift(liftKey);
         try {
@@ -466,6 +473,31 @@ export default function MeetAttempts({
         const dots = total > 0 && bwKg > 0 ? calculateDots(total, bwKg, isMale) : 0;
         return { sq, bp, dl, total, dots };
     }, [data, bwKg, isMale]);
+
+    // Scenario builder projection
+    const scenarioProjection = useMemo(() => {
+        const getEffective = (lift: LiftAttempts, optionKey: OptionKey) => {
+            const bestMade = getBestGoodAttempt(lift);
+            const hasPending = lift.attempt1.result === 'pending' || lift.attempt2.result === 'pending' || lift.attempt3.result === 'pending' || !lift.attempt1.result || !lift.attempt2.result || !lift.attempt3.result;
+            if (!hasPending) return bestMade;
+            const planned3rd = parseFloat(lift.attempt3[optionKey]?.kg || '0') || 0;
+            return Math.max(bestMade, planned3rd);
+        };
+
+        const sq = getEffective(data.squat, scenario.squat);
+        const bp = getEffective(data.bench, scenario.bench);
+        const dl = getEffective(data.deadlift, scenario.deadlift);
+        const total = sq + bp + dl;
+        const dots = total > 0 && bwKg > 0 ? calculateDots(total, bwKg, isMale) : 0;
+
+        const sqPR = allTimePRs ? sq - allTimePRs.squat.value : 0;
+        const bpPR = allTimePRs ? bp - allTimePRs.bench.value : 0;
+        const dlPR = allTimePRs ? dl - allTimePRs.deadlift.value : 0;
+        const totalPR = allTimePRs ? total - allTimePRs.total.value : 0;
+        const dotsPR = allTimePRs && allTimePRs.dots.value > 0 ? dots - allTimePRs.dots.value : 0;
+
+        return { sq, bp, dl, total, dots, sqPR, bpPR, dlPR, totalPR, dotsPR };
+    }, [data, scenario, bwKg, isMale, allTimePRs]);
 
     // Save to Meet History
     const saveToMeetHistory = async () => {
@@ -821,6 +853,101 @@ export default function MeetAttempts({
                                 </div>
                             </div>
                         ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Custom Scenario Builder */}
+            {projections.some(p => p.total > 0) && (
+                <div style={{
+                    background: 'var(--card-bg)',
+                    border: '1px dashed var(--card-border)',
+                    borderRadius: 16,
+                    padding: '1.25rem',
+                    marginBottom: '1rem',
+                }}>
+                    <h3 style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--secondary-foreground)', margin: '0 0 1rem', opacity: 0.7 }}>
+                        Scenario Builder
+                    </h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        {/* Selectors */}
+                        <div className="md:col-span-3 grid grid-cols-1 md:grid-cols-3 gap-3">
+                            {LIFTS.map(({ key: liftKey, label, color }) => (
+                                <div key={liftKey} style={{ background: 'rgba(255,255,255,0.03)', padding: 12, borderRadius: 12, border: `1px solid ${color}22` }}>
+                                    <div style={{ fontSize: 10, fontWeight: 700, color, textTransform: 'uppercase', marginBottom: 8 }}>{label}</div>
+                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                        {OPTIONS.map(opt => {
+                                            const isSelected = scenario[liftKey] === opt.key;
+                                            return (
+                                                <button
+                                                    key={opt.key}
+                                                    onClick={() => setScenario(prev => ({ ...prev, [liftKey]: opt.key }))}
+                                                    style={{
+                                                        background: isSelected ? `${opt.color}22` : 'rgba(255,255,255,0.05)',
+                                                        border: `1px solid ${isSelected ? opt.color : 'transparent'}`,
+                                                        color: isSelected ? opt.color : 'var(--secondary-foreground)',
+                                                        padding: '6px 10px',
+                                                        borderRadius: 8,
+                                                        fontSize: 11,
+                                                        fontWeight: 600,
+                                                        textAlign: 'left',
+                                                        cursor: 'pointer',
+                                                        transition: 'all 0.2s',
+                                                        display: 'flex',
+                                                        justifyContent: 'space-between',
+                                                        alignItems: 'center'
+                                                    }}
+                                                >
+                                                    <span>{opt.label}</span>
+                                                    {isSelected && <span style={{ fontSize: 12 }}>✓</span>}
+                                                </button>
+                                            );
+                                        })}
+                                    </div>
+                                    <div style={{ marginTop: 10, paddingTop: 10, borderTop: '1px solid rgba(255,255,255,0.06)', display: 'flex', justifyContent: 'space-between', fontSize: 12 }}>
+                                        <span style={{ color: 'var(--secondary-foreground)' }}>Proj:</span>
+                                        <span style={{ fontWeight: 700 }}>
+                                            {scenarioProjection[liftKey === 'squat' ? 'sq' : liftKey === 'bench' ? 'bp' : 'dl'] > 0 
+                                                ? scenarioProjection[liftKey === 'squat' ? 'sq' : liftKey === 'bench' ? 'bp' : 'dl'] 
+                                                : '—'}
+                                        </span>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                        
+                        {/* Results */}
+                        <div style={{ 
+                            background: 'rgba(255,255,255,0.03)', 
+                            padding: '1.25rem', 
+                            borderRadius: 12, 
+                            border: '1px solid rgba(255,255,255,0.08)',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'center'
+                        }}>
+                            <div style={{ marginBottom: 16 }}>
+                                <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Scenario Total</div>
+                                <div style={{ fontSize: 24, fontWeight: 800, color: 'var(--primary)' }}>
+                                    {scenarioProjection.total > 0 ? scenarioProjection.total : '—'}
+                                </div>
+                                <div style={{ fontSize: 12, color: 'var(--secondary-foreground)', fontWeight: 500, marginTop: 2 }}>
+                                    {scenarioProjection.total > 0 ? `(${(scenarioProjection.total * 2.20462).toFixed(1)} lbs)` : ''}
+                                    {scenarioProjection.total > 0 && prBadge(scenarioProjection.totalPR)}
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Scenario DOTS</div>
+                                <div style={{ fontSize: 18, fontWeight: 700, color: '#f59e0b' }}>
+                                    {scenarioProjection.dots > 0 ? scenarioProjection.dots.toFixed(2) : '—'}
+                                </div>
+                                <div style={{ fontSize: 12, fontWeight: 500, marginTop: 2 }}>
+                                    {scenarioProjection.dots > 0 && prBadge(scenarioProjection.dotsPR, '')}
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             )}
