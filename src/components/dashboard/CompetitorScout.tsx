@@ -585,13 +585,18 @@ function HitRateCard({ comp }: { comp: CompetitorProfile }) {
                     { label: 'Bench Press', data: comp.hitRates.bench, color: '#a855f7' },
                     { label: 'Deadlift', data: comp.hitRates.deadlift, color: '#10b981' }
                 ].map(lift => (
-                    <div key={lift.label} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: 8, padding: '12px' }}>
-                        <div style={{ fontWeight: 700, color: lift.color, marginBottom: 8, fontSize: '0.9rem' }}>{lift.label}</div>
+                    <div key={lift.label} style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid var(--card-border)', borderRadius: 8, padding: '12px', minWidth: 0 }}>
+                        <div style={{ fontWeight: 700, color: lift.color, marginBottom: 8, fontSize: '0.9rem', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{lift.label}</div>
                         
                         <div style={{ marginBottom: 12 }}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: 4 }}>
-                                <span style={{ color: 'var(--foreground)' }}>Overall</span>
-                                <span style={{ color: 'var(--secondary-foreground)', fontWeight: 600 }}>{Math.round(lift.data.percent)}% <span style={{ opacity: 0.7, fontWeight: 400, fontSize: '0.7rem' }}>({lift.data.made}/{lift.data.total})</span></span>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2, fontSize: '0.8rem', marginBottom: 4 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ color: 'var(--foreground)' }}>Overall</span>
+                                    <span style={{ color: 'var(--secondary-foreground)', fontWeight: 600 }}>{Math.round(lift.data.percent)}%</span>
+                                </div>
+                                <div style={{ textAlign: 'right', color: 'var(--secondary-foreground)', opacity: 0.7, fontSize: '0.7rem' }}>
+                                    ({lift.data.made}/{lift.data.total})
+                                </div>
                             </div>
                             <div style={{ height: 6, background: 'var(--bg-modifier-hover)', borderRadius: 3, overflow: 'hidden' }}>
                                 <div style={{ height: '100%', background: lift.color, width: `${lift.data.percent}%`, borderRadius: 3 }} />
@@ -599,9 +604,14 @@ function HitRateCard({ comp }: { comp: CompetitorProfile }) {
                         </div>
                         
                         <div>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: 4 }}>
-                                <span style={{ color: 'var(--foreground)' }}>3rd Attempts</span>
-                                <span style={{ color: 'var(--secondary-foreground)', fontWeight: 600 }}>{Math.round(lift.data.thirdPercent)}% <span style={{ opacity: 0.7, fontWeight: 400, fontSize: '0.7rem' }}>({lift.data.thirdMade}/{lift.data.thirdTotal})</span></span>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 2, fontSize: '0.8rem', marginBottom: 4 }}>
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <span style={{ color: 'var(--foreground)', whiteSpace: 'nowrap' }}>3rd Attempts</span>
+                                    <span style={{ color: 'var(--secondary-foreground)', fontWeight: 600 }}>{Math.round(lift.data.thirdPercent)}%</span>
+                                </div>
+                                <div style={{ textAlign: 'right', color: 'var(--secondary-foreground)', opacity: 0.7, fontSize: '0.7rem' }}>
+                                    ({lift.data.thirdMade}/{lift.data.thirdTotal})
+                                </div>
                             </div>
                             <div style={{ height: 6, background: 'var(--bg-modifier-hover)', borderRadius: 3, overflow: 'hidden' }}>
                                 <div style={{ height: '100%', background: lift.color, width: `${lift.data.thirdPercent}%`, borderRadius: 3, opacity: 0.8 }} />
