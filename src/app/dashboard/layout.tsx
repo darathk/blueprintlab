@@ -71,6 +71,7 @@ export default async function DashboardLayout({
         { label: 'Messages', href: '/dashboard/messages', icon: <MessageSquare size={26} />, unreadCount },
         { label: 'Highlights', href: '/dashboard/highlights', icon: <Star size={26} /> },
         { label: 'Board', href: '/dashboard/leaderboard', icon: <Medal size={26} /> },
+        { label: 'Meet Data', href: '/dashboard/meet-data', icon: <ClipboardList size={26} /> },
         { label: 'Meet Day', href: '/dashboard/meet-day', icon: <Target size={26} /> }
     ];
 
