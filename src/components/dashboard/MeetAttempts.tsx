@@ -1244,6 +1244,16 @@ export default function MeetAttempts({
                             </div>
                         </div>
 
+                        {/* Warm-ups */}
+                        {data[exportingLift].warmups && data[exportingLift].warmups.trim() !== '' && (
+                            <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 16, marginBottom: 24 }}>
+                                <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Warm-ups</div>
+                                <div style={{ fontSize: 14, color: 'var(--foreground)', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
+                                    {data[exportingLift].warmups}
+                                </div>
+                            </div>
+                        )}
+
                         {/* Attempts */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                             {ATTEMPTS.map(({ key: attemptKey, label }) => {
