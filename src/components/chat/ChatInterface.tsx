@@ -134,6 +134,7 @@ interface Message {
     sender: { id: string; name: string; email: string };
     receiver: { id: string; name: string; email: string };
     reactions?: Record<string, string[]> | null; // { emoji: [userIds] }
+    _uploadError?: boolean; // client-only flag for failed uploads
 }
 
 // Helper to fix missing or generic MIME types on iOS/Android/native uploads.
@@ -513,14 +514,11 @@ export default function ChatInterface({
         const onError = (e: Event) => {
             const detail = (e as CustomEvent<{ tempMessageId: string }>).detail;
             if (!detail) return;
-            // Remove the placeholder so it doesn't dangle. The global banner
-            // surfaces the failure to the user; per-message retry can come later.
-            setMessages(prev => prev.filter(m => {
-                if (m.id !== detail.tempMessageId) return true;
-                if (m.mediaUrl && m.mediaUrl.startsWith('blob:')) {
-                    try { URL.revokeObjectURL(m.mediaUrl); } catch {}
-                }
-                return false;
+            // Mark the message as failed instead of removing it so the athlete
+            // can see it didn't send (prevents panic-resending duplicates).
+            setMessages(prev => prev.map(m => {
+                if (m.id !== detail.tempMessageId) return m;
+                return { ...m, _uploadError: true };
             }));
         };
         window.addEventListener('chat-upload-complete', onComplete as EventListener);
@@ -1534,8 +1532,40 @@ export default function ChatInterface({
                                                 padding: msg.mediaUrl ? '0 8px' : 0
                                             }}>
                                                 {fmtTime(msg.createdAt)}
-                                                {mine && <span style={{ color: msg.read ? 'var(--primary)' : 'inherit', fontSize: 12 }}>✓✓</span>}
+                                                {mine && !msg._uploadError && <span style={{ color: msg.read ? 'var(--primary)' : 'inherit', fontSize: 12 }}>✓✓</span>}
+                                                {msg._uploadError && <span style={{ color: 'var(--error)', fontSize: 10, fontWeight: 600 }}>⚠ Failed</span>}
                                             </div>
+
+                                            {/* Upload error banner */}
+                                            {msg._uploadError && (
+                                                <div style={{
+                                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+                                                    padding: '6px 10px', marginTop: 4,
+                                                    background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)',
+                                                    borderRadius: 8, fontSize: 11, color: '#ef4444',
+                                                }}>
+                                                    <span style={{ fontWeight: 600 }}>Failed to send</span>
+                                                    <button
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            setMessages(prev => prev.filter(m => {
+                                                                if (m.id !== msg.id) return true;
+                                                                if (m.mediaUrl && m.mediaUrl.startsWith('blob:')) {
+                                                                    try { URL.revokeObjectURL(m.mediaUrl); } catch {}
+                                                                }
+                                                                return false;
+                                                            }));
+                                                        }}
+                                                        style={{
+                                                            background: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.3)',
+                                                            color: '#ef4444', fontSize: 10, fontWeight: 600, padding: '2px 8px',
+                                                            borderRadius: 6, cursor: 'pointer',
+                                                        }}
+                                                    >
+                                                        Dismiss
+                                                    </button>
+                                                </div>
+                                            )}
                                         </div>
 
                                         {/* Reactions display */}

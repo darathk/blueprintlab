@@ -60,6 +60,8 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
     const [isSaving, setIsSaving] = useState(false);
     const [lastSaved, setLastSaved] = useState(Date.now());
     const [weekDrawerOpen, setWeekDrawerOpen] = useState(false);
+    const savingInFlightRef = useRef(false);
+    const pendingSaveRef = useRef(false);
     const [warmupDrills, setWarmupDrills] = useState(initialLog?.warmupDrills || sessionWarmupDrills || '');
     const [activeTabs, setActiveTabs] = useState({});
     
@@ -134,11 +136,17 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
         });
     });
 
+    // Keep refs in sync for the auto-save closure
+    const latestLogsRef = useRef(exerciseLogs);
+    const latestDrillsRef = useRef(warmupDrills);
+    useEffect(() => { latestLogsRef.current = exerciseLogs; }, [exerciseLogs]);
+    useEffect(() => { latestDrillsRef.current = warmupDrills; }, [warmupDrills]);
+
     // Auto-Save Effect
     useEffect(() => {
         const timer = setTimeout(() => {
             handleSave(false);
-        }, 1000); // Debounce 1s
+        }, 1500); // Debounce 1.5s
 
         return () => clearTimeout(timer);
     }, [exerciseLogs, warmupDrills]);
@@ -252,9 +260,21 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
     };
 
     const handleSave = async (redirect = true) => {
+        // Prevent concurrent saves — queue a retry instead
+        if (savingInFlightRef.current && !redirect) {
+            pendingSaveRef.current = true;
+            return;
+        }
+
+        savingInFlightRef.current = true;
+        pendingSaveRef.current = false;
         setIsSaving(true);
         try {
-            const cleanLogs = exerciseLogs.map(ex => ({
+            // Use refs for auto-save to always get the latest state
+            const currentLogs = redirect ? exerciseLogs : latestLogsRef.current;
+            const currentDrills = redirect ? warmupDrills : latestDrillsRef.current;
+
+            const cleanLogs = currentLogs.map(ex => ({
                 exerciseId: ex.exerciseId,
                 name: ex.name,
                 sets: ex.sets.map(s => ({
@@ -274,7 +294,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                     sessionId,
                     date: new Date().toISOString(),
                     exercises: cleanLogs,
-                    warmupDrills
+                    warmupDrills: currentDrills
                 }),
             });
 
@@ -288,7 +308,13 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
         } catch (e) {
             console.error(e);
         } finally {
+            savingInFlightRef.current = false;
             setIsSaving(false);
+            // If another save was queued while we were in-flight, fire it now
+            if (pendingSaveRef.current) {
+                pendingSaveRef.current = false;
+                handleSave(false);
+            }
         }
     };
 

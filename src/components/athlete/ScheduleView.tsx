@@ -318,12 +318,24 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
         latestEditStateRef.current = editState;
     }, [editState]);
 
+    // Track per-session in-flight saves to prevent concurrent requests
+    const savingInFlightRef = useRef<Set<string>>(new Set());
+    const pendingSavesRef = useRef<Map<string, string>>(new Map()); // sKey -> programId
+
     const handleSaveRef = useRef<((sKey: string, programId: string) => Promise<void>) | null>(null);
 
     handleSaveRef.current = async (sKey: string, programId: string) => {
+        // If a save is already in-flight for this session, queue it for retry
+        if (savingInFlightRef.current.has(sKey)) {
+            pendingSavesRef.current.set(sKey, programId);
+            return;
+        }
+
         const state = latestEditStateRef.current[sKey];
         if (!state) return;
 
+        savingInFlightRef.current.add(sKey);
+        pendingSavesRef.current.delete(sKey);
         setSaving(prev => new Set(prev).add(sKey));
         try {
             const cleanLogs = state.map((ex: any) => ({
@@ -346,7 +358,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                 // Check if session just reached 100% — trigger celebration
                 const meta = sessionMetaRef.current[sKey];
                 if (meta && !celebratedSessionsRef.current.has(sKey)) {
-                    const progress = sessionProgress(meta.exercises, null, state);
+                    const progress = sessionProgress(meta.exercises, null, latestEditStateRef.current[sKey]);
                     if (progress === 100) {
                         celebratedSessionsRef.current.add(sKey);
                         setCelebration({ sessionName: meta.sessionName });
@@ -356,7 +368,14 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
         } catch (e) {
             console.error(e);
         } finally {
+            savingInFlightRef.current.delete(sKey);
             setSaving(prev => { const n = new Set(prev); n.delete(sKey); return n; });
+            // If another save was queued while in-flight, fire it now
+            if (pendingSavesRef.current.has(sKey)) {
+                const pid = pendingSavesRef.current.get(sKey)!;
+                pendingSavesRef.current.delete(sKey);
+                handleSaveRef.current?.(sKey, pid);
+            }
         }
     };
 
@@ -371,7 +390,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
             if (handleSaveRef.current) {
                 handleSaveRef.current(sKey, programId);
             }
-        }, 1000); // Save 1 second after last edit
+        }, 1500); // Save 1.5 seconds after last edit
     }, []);
 
     const updateSet = (sKey: string, exIdx: number, setIdx: number, field: string, value: string, programId: string) => {
