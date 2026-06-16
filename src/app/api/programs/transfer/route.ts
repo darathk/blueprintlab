@@ -21,11 +21,11 @@ export async function POST(request: Request) {
         if (!program) {
             return NextResponse.json({ error: 'Program not found' }, { status: 404 });
         }
-        const sourceAccess = await requireAccessToAthlete(program.athleteId);
+        const sourceAccess = await requireAccessToAthlete(program.athleteId, auth);
         if ('error' in sourceAccess) return sourceAccess.error;
 
         // Verify coach owns target athlete
-        const targetAccess = await requireAccessToAthlete(targetAthleteId);
+        const targetAccess = await requireAccessToAthlete(targetAthleteId, auth);
         if ('error' in targetAccess) return targetAccess.error;
 
         if (program.athleteId === targetAthleteId) {

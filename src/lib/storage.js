@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/prisma';
 import { cache } from 'react';
 import { EXERCISE_DB } from '@/lib/exercise-db';
+import { randomUUID } from 'crypto';
 
 export const getAthletes = cache(async (coachId) => {
     if (!coachId) {
@@ -43,20 +44,21 @@ export const getAthletes = cache(async (coachId) => {
 });
 
 export async function saveAthlete(athlete) {
-    const { id, name, email, nextMeetName, nextMeetDate, periodization, currentProgramId, weightClass, gender } = athlete;
+    const { id, name, email, nextMeetName, nextMeetDate, periodization, currentProgramId, weightClass, gender, coachId } = athlete;
 
     await prisma.athlete.upsert({
         where: { id: id || '' },
         update: { name, email, nextMeetName, nextMeetDate, periodization, weightClass, gender },
         create: {
-            id: id || Math.random().toString(36).substring(7),
+            id: id || randomUUID(),
             name: name || 'Unknown',
-            email: email || `${id || Math.random()}@example.com`,
+            email: email || `${id || randomUUID()}@example.com`,
             nextMeetName,
             nextMeetDate,
             periodization,
             weightClass,
-            gender
+            gender,
+            coachId
         }
     });
 
@@ -103,7 +105,7 @@ export async function updateProgram(program) {
 
 export async function deleteProgram(id) {
     await prisma.log.deleteMany({ where: { programId: id } });
-    await prisma.readiness.deleteMany({ where: { programId: id } });
+    await prisma.readiness.updateMany({ where: { programId: id }, data: { programId: null } });
     await prisma.program.delete({ where: { id } });
     return true;
 }
@@ -136,7 +138,7 @@ export async function saveLog(logEntry) {
     } else {
         await prisma.log.create({
             data: {
-                id: logEntry.id || Math.random().toString(36).substring(7),
+                id: logEntry.id || randomUUID(),
                 programId: logEntry.programId,
                 sessionId: logEntry.sessionId,
                 date: logEntry.date || new Date().toISOString(),
@@ -211,7 +213,7 @@ export async function saveReadiness(log) {
 
     const newLog = await prisma.readiness.create({
         data: {
-            id: Math.random().toString(36).substring(7),
+            id: randomUUID(),
             athleteId: log.athleteId,
             programId: log.programId || null,
             date: log.date || new Date().toISOString().split('T')[0],

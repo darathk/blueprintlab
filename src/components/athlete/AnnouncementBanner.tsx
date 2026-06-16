@@ -9,7 +9,8 @@ export default function AnnouncementBanner({ coachId }: { coachId: string }) {
 
     useEffect(() => {
         if (!coachId) return;
-        fetch(`/api/announcements?coachId=${coachId}`)
+        const localDate = new Date().toLocaleDateString('en-CA'); // YYYY-MM-DD local
+        fetch(`/api/announcements?coachId=${coachId}&date=${localDate}`)
             .then(r => r.ok ? r.json() : null)
             .then(data => { if (data?.announcement) setAnnouncement(data.announcement); })
             .catch(() => {});

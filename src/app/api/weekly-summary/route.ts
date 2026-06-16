@@ -95,7 +95,9 @@ export async function GET() {
                 // Calculate average overall readiness
                 const allScores = athleteReadiness.map(r => {
                     const scores = r.scores as Record<string, number>;
-                    const vals = Object.values(scores).filter(v => typeof v === 'number');
+                    const vals = Object.entries(scores)
+                        .filter(([k, v]) => typeof v === 'number' && !k.startsWith('_'))
+                        .map(([k, v]) => v as number);
                     return vals.length > 0 ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
                 });
                 avgReadiness = Math.round(
@@ -116,7 +118,7 @@ export async function GET() {
                 athleteReadiness.forEach(r => {
                     const scores = r.scores as Record<string, number>;
                     Object.entries(scores).forEach(([key, val]) => {
-                        if (typeof val === 'number') {
+                        if (typeof val === 'number' && !key.startsWith('_')) {
                             if (!metricSums[key]) metricSums[key] = { sum: 0, count: 0 };
                             metricSums[key].sum += val;
                             metricSums[key].count++;

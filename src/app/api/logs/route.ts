@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { requireAuth, requireAccessToAthlete } from '@/lib/api-auth';
+import { randomUUID } from 'crypto';
 
 export async function POST(request: Request) {
     const auth = await requireAuth();
@@ -26,38 +27,31 @@ export async function POST(request: Request) {
         }
 
         // Verify user has access to this athlete's data
-        const access = await requireAccessToAthlete(programRecord.athleteId);
+        const access = await requireAccessToAthlete(programRecord.athleteId, auth);
         if ('error' in access) return access.error;
 
-        // Check if log already exists for this session
-        const existingLog = await prisma.log.findFirst({
+        const logId = body.id || randomUUID();
+        await prisma.log.upsert({
             where: {
+                programId_sessionId: {
+                    programId: body.programId,
+                    sessionId: body.sessionId
+                }
+            },
+            update: {
+                date: body.date,
+                exercises: body.exercises,
+                ...(body.warmupDrills !== undefined && { warmupDrills: body.warmupDrills })
+            },
+            create: {
+                id: logId,
+                programId: body.programId,
                 sessionId: body.sessionId,
-                programId: body.programId
+                date: body.date,
+                exercises: body.exercises,
+                ...(body.warmupDrills !== undefined && { warmupDrills: body.warmupDrills })
             }
         });
-
-        if (existingLog) {
-            await prisma.log.update({
-                where: { id: existingLog.id },
-                data: {
-                    date: body.date,
-                    exercises: body.exercises,
-                    ...(body.warmupDrills !== undefined && { warmupDrills: body.warmupDrills })
-                }
-            });
-        } else {
-            await prisma.log.create({
-                data: {
-                    id: body.id || Math.random().toString(36).substring(7),
-                    programId: body.programId,
-                    sessionId: body.sessionId,
-                    date: body.date,
-                    exercises: body.exercises,
-                    ...(body.warmupDrills !== undefined && { warmupDrills: body.warmupDrills })
-                }
-            });
-        }
 
         // Revalidate coach dashboard paths so updates reflect instantly
         revalidatePath(`/dashboard/athletes/${programRecord.athleteId}`);
@@ -81,7 +75,7 @@ export async function GET(request: Request) {
         let where: any;
         if (athleteId) {
             // Verify access
-            const access = await requireAccessToAthlete(athleteId);
+            const access = await requireAccessToAthlete(athleteId, auth);
             if ('error' in access) return access.error;
             where = { program: { athleteId } };
         } else if (auth.isCoach) {

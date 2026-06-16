@@ -15,7 +15,7 @@ export async function GET(request: Request) {
         return NextResponse.json({ error: 'Missing athleteId' }, { status: 400 });
     }
 
-    const access = await requireAccessToAthlete(athleteId);
+    const access = await requireAccessToAthlete(athleteId, auth);
     if ('error' in access) return access.error;
 
     try {
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Content too long (max 5000 chars)' }, { status: 400 });
         }
 
-        const access = await requireAccessToAthlete(athleteId);
+        const access = await requireAccessToAthlete(athleteId, auth);
         if ('error' in access) return access.error;
 
         const note = await prisma.coachNote.create({

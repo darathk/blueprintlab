@@ -15,7 +15,8 @@ export async function GET(req: NextRequest) {
     const coachId = req.nextUrl.searchParams.get('coachId');
     if (!coachId) return NextResponse.json({ announcement: null });
 
-    const today = todayStr();
+    const providedDate = req.nextUrl.searchParams.get('date');
+    const today = providedDate || todayStr();
     const announcement = await prisma.announcement.findFirst({
         where: {
             coachId,

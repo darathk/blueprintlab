@@ -1136,17 +1136,18 @@ export default function ChatInterface({
                 <div style={{
                     position: 'fixed',
                     top: 0,
+                    left: 0,
                     right: 0,
-                    width: '50vw',
+                    bottom: 0,
+                    width: '100vw',
                     height: '100dvh',
-                    background: 'rgba(8, 10, 18, 0.97)',
-                    backdropFilter: 'blur(20px)',
-                    WebkitBackdropFilter: 'blur(20px)',
-                    borderLeft: '1px solid rgba(255,255,255,0.08)',
-                    zIndex: 100,
+                    background: 'rgba(0, 0, 0, 0.95)',
+                    backdropFilter: 'blur(10px)',
+                    WebkitBackdropFilter: 'blur(10px)',
+                    zIndex: 9999,
                     display: 'flex',
                     flexDirection: 'column',
-                    animation: 'slideInRight 0.25s ease-out',
+                    animation: 'zoomIn 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
                 }}>
                     {/* Panel header */}
                     <div style={{
@@ -1254,6 +1255,10 @@ export default function ChatInterface({
                 @keyframes slideInRight {
                     from { transform: translateX(30px); opacity: 0; }
                     to { transform: translateX(0); opacity: 1; }
+                }
+                @keyframes zoomIn {
+                    from { transform: scale(0.95); opacity: 0; }
+                    to { transform: scale(1); opacity: 1; }
                 }
             `}</style>
             {/* Header */}

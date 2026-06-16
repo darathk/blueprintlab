@@ -32,7 +32,8 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
 
     const fetchAnnouncement = useCallback(async () => {
         try {
-            const res = await fetch(`/api/announcements?coachId=${coachId}`);
+            const localDate = new Date().toLocaleDateString('en-CA');
+            const res = await fetch(`/api/announcements?coachId=${coachId}&date=${localDate}`);
             if (res.ok) {
                 const data = await res.json();
                 setActiveAnnouncement(data.announcement);

@@ -17,7 +17,7 @@ export async function POST(request: Request) {
         }
 
         // Verify user has access to this athlete
-        const access = await requireAccessToAthlete(data.athleteId);
+        const access = await requireAccessToAthlete(data.athleteId, auth);
         if ('error' in access) return access.error;
 
         // If a programId is supplied, make sure it actually belongs to this athlete
@@ -47,7 +47,7 @@ export async function GET(request: Request) {
     const athleteId = searchParams.get('athleteId');
 
     if (athleteId) {
-        const access = await requireAccessToAthlete(athleteId);
+        const access = await requireAccessToAthlete(athleteId, auth);
         if ('error' in access) return access.error;
 
         const logs = await getReadinessByAthlete(athleteId);

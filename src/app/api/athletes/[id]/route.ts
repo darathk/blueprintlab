@@ -108,51 +108,11 @@ export async function DELETE(
             return NextResponse.json({ error: 'Not your athlete' }, { status: 403 });
         }
 
-        // Perform a safe deletion of the athlete and all related records inside a transaction
-        await prisma.$transaction(async (tx) => {
-            // Find all programs associated with the athlete
-            const programs = await tx.program.findMany({
-                where: { athleteId: id },
-                select: { id: true }
-            });
-            const programIds = programs.map(p => p.id);
-
-            // Delete Logs
-            if (programIds.length > 0) {
-                await tx.log.deleteMany({
-                    where: { programId: { in: programIds } }
-                });
-            }
-
-            // Delete Programs
-            await tx.program.deleteMany({
-                where: { athleteId: id }
-            });
-
-            // Delete Reports
-            await tx.report.deleteMany({
-                where: { athleteId: id }
-            });
-
-            // Delete Readiness check-ins
-            await tx.readiness.deleteMany({
-                where: { athleteId: id }
-            });
-
-            // Delete Messages (both sent and received)
-            await tx.message.deleteMany({
-                where: {
-                    OR: [
-                        { senderId: id },
-                        { receiverId: id }
-                    ]
-                }
-            });
-
-            // Finally, delete the athlete
-            await tx.athlete.delete({
-                where: { id: id }
-            });
+        // Perform a safe deletion of the athlete. 
+        // All related records (Programs, Logs, Messages, etc) will be automatically 
+        // deleted via the schema's onDelete: Cascade rules.
+        await prisma.athlete.delete({
+            where: { id: id }
         });
 
         return NextResponse.json({ success: true, message: 'Athlete and all associated data deleted successfully.' });

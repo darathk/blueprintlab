@@ -41,6 +41,7 @@ model Athlete {
   personalRecords   PersonalRecord[]
   plannedTopSets    PlannedTopSet[]  @relation("AthleteTopSets")
   coachTopSets      PlannedTopSet[]  @relation("CoachTopSets")
+  announcements     Announcement[]
 
   @@index([coachId])
 }
@@ -60,7 +61,7 @@ model TravelEvent {
 model Program {
   id        String   @id @default(uuid())
   athleteId String
-  athlete   Athlete  @relation(fields: [athleteId], references: [id])
+  athlete   Athlete  @relation(fields: [athleteId], references: [id], onDelete: Cascade)
   name      String
   startDate String
   endDate   String?
@@ -75,13 +76,13 @@ model Program {
 model Log {
   id        String  @id @default(uuid())
   programId String
-  program   Program @relation(fields: [programId], references: [id])
+  program   Program @relation(fields: [programId], references: [id], onDelete: Cascade)
   sessionId String
   date      String
   exercises Json // Completed sets, reps, rpes
   warmupDrills String? @default("") // Pre-workout warm-up drills instruction/notes
 
-  @@index([programId, sessionId])
+  @@unique([programId, sessionId])
 }
 
 model Report {
@@ -180,6 +181,7 @@ model CoachNote {
 model Announcement {
   id        String   @id @default(uuid())
   coachId   String
+  coach     Athlete  @relation(fields: [coachId], references: [id], onDelete: Cascade)
   message   String
   startDate String   // YYYY-MM-DD inclusive
   endDate   String   // YYYY-MM-DD inclusive

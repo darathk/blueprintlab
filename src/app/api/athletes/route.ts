@@ -142,7 +142,7 @@ export async function POST(request: Request) {
         }
 
         // Brand new athlete — create with the provided email
-        const athleteId = id || Math.random().toString(36).substring(7);
+        const athleteId = id || undefined;
 
         athlete = await prisma.athlete.create({
             data: {

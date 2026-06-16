@@ -9,7 +9,9 @@ export function calculateSimpleE1RM(weight, reps, rpe) {
     if (isNaN(weightValue) || isNaN(repsValue)) return 0;
 
     // Adjusted formula: weight * (36 / (37 - (reps + (10 - rpe))))
-    return Math.round(weightValue * (36 / (37 - (repsValue + (10 - rpeValue)))));
+    const denominator = 37 - (repsValue + (10 - rpeValue));
+    if (denominator <= 0) return 0;
+    return Math.round(weightValue * (36 / denominator));
 }
 
 // RTS Stress Index Tables (Transcribed from user image)

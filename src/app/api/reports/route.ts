@@ -14,7 +14,7 @@ export async function GET(req: Request) {
 
         let where: any;
         if (athleteId) {
-            const access = await requireAccessToAthlete(athleteId);
+            const access = await requireAccessToAthlete(athleteId, auth);
             if ('error' in access) return access.error;
             where = { athleteId };
         } else if (auth.isCoach) {
@@ -60,7 +60,7 @@ export async function POST(req: Request) {
         }
 
         // Verify coach owns this athlete
-        const access = await requireAccessToAthlete(athleteId);
+        const access = await requireAccessToAthlete(athleteId, auth);
         if ('error' in access) return access.error;
 
         const newReport = await prisma.report.create({
@@ -104,7 +104,7 @@ export async function DELETE(req: Request) {
         if (!report) {
             return NextResponse.json({ error: 'Report not found' }, { status: 404 });
         }
-        const access = await requireAccessToAthlete(report.athleteId);
+        const access = await requireAccessToAthlete(report.athleteId, auth);
         if ('error' in access) return access.error;
 
         await prisma.report.delete({

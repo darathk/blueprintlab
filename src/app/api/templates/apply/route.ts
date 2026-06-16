@@ -14,7 +14,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'Missing templateId or athleteId' }, { status: 400 });
         }
 
-        const access = await requireAccessToAthlete(athleteId);
+        const access = await requireAccessToAthlete(athleteId, auth);
         if ('error' in access) return access.error;
 
         const template = await prisma.programTemplate.findUnique({

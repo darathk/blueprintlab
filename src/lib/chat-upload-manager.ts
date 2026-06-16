@@ -203,10 +203,12 @@ class ChatUploadManager {
             xhr.send(blob);
         }).catch((err: Error) => {
             this.updatePre(id, { status: 'error', error: err.message, progress: 0 });
+            setTimeout(() => this.dismissPreJob(id), 30000);
             throw err;
         });
 
         this.updatePre(id, { status: 'done', progress: 100, publicUrl, mime });
+        setTimeout(() => this.dismissPreJob(id), 30000);
     }
 
     private resolveMime(file: File): string {

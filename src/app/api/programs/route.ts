@@ -15,7 +15,7 @@ export async function GET(request: Request) {
     try {
         if (athleteId) {
             // Verify access to this athlete
-            const access = await requireAccessToAthlete(athleteId);
+            const access = await requireAccessToAthlete(athleteId, auth);
             if ('error' in access) return access.error;
 
             const programs = await getProgramsByAthlete(athleteId);
@@ -61,7 +61,7 @@ export async function POST(request: Request) {
         }
 
         // Verify coach owns this athlete
-        const access = await requireAccessToAthlete(program.athleteId);
+        const access = await requireAccessToAthlete(program.athleteId, auth);
         if ('error' in access) return access.error;
 
         // Create the new program; if it's active, deactivate previously-active programs
@@ -124,7 +124,7 @@ export async function PUT(request: Request) {
         if (!existing) {
             return NextResponse.json({ error: 'Program not found' }, { status: 404 });
         }
-        const access = await requireAccessToAthlete(existing.athleteId);
+        const access = await requireAccessToAthlete(existing.athleteId, auth);
         if ('error' in access) return access.error;
 
         // When promoting a draft (or any program) to 'active', deactivate the
@@ -188,7 +188,7 @@ export async function DELETE(request: Request) {
         if (!existing) {
             return NextResponse.json({ error: 'Program not found' }, { status: 404 });
         }
-        const access = await requireAccessToAthlete(existing.athleteId);
+        const access = await requireAccessToAthlete(existing.athleteId, auth);
         if ('error' in access) return access.error;
 
         // Transactionally delete associated logs (FK constraint) and detach any

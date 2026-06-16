@@ -19,7 +19,7 @@ export async function POST(request: Request) {
         }
 
         // Verify coach owns this athlete
-        const access = await requireAccessToAthlete(athleteId);
+        const access = await requireAccessToAthlete(athleteId, auth);
         if ('error' in access) return access.error;
 
         // First, check if athlete exists

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { EXERCISE_DB } from '@/lib/exercise-db';
-import { requireAuth } from '@/lib/api-auth';
+import { requireAuth, requireCoach } from '@/lib/api-auth';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,7 +30,7 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-    const auth = await requireAuth();
+    const auth = await requireCoach();
     if ('error' in auth) return auth.error;
 
     try {
@@ -76,7 +76,7 @@ export async function POST(req: Request) {
 
 // @ts-ignore - Prisma type schema discrepancy
 export async function DELETE(req: Request) {
-    const auth = await requireAuth();
+    const auth = await requireCoach();
     if ('error' in auth) return auth.error;
 
     try {
