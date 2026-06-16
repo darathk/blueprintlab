@@ -54,6 +54,7 @@ export interface StartUploadPayload {
     content: string;
     replyToId: string | null;
     trim?: { start: number; end: number };
+    sessionId?: string | null;
 }
 
 export interface UploadCompleteDetail {
@@ -367,6 +368,7 @@ class ChatUploadManager {
                 mediaUrl,
                 mediaType: mime,
                 replyToId: payload.replyToId,
+                sessionId: payload.sessionId || null,
             }),
         });
 

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useCallback, useId } from 'react';
 import { supabase } from '@/lib/supabase';
 import { MessageCircle, Video, X, Send, CheckCircle, Scissors, Paperclip, Image } from 'lucide-react';
 import VideoCropper from '@/components/chat/VideoCropper';
+import { chatUploadManager } from '@/lib/chat-upload-manager';
 
 const getSafeMimeType = (f: File) => {
     let mime = f?.type || '';
@@ -40,8 +41,6 @@ export default function ExerciseFeedback({
     const [error, setError] = useState('');
     const [resolvedCoachId, setResolvedCoachId] = useState(coachIdProp || '');
     const [attachWarning, setAttachWarning] = useState(false);
-    const [uploadProgress, setUploadProgress] = useState(0);
-    const [uploadPhase, setUploadPhase] = useState<'idle' | 'uploading' | 'saving'>('idle');
 
     // Media staging (same as chat)
     const [stagedFiles, setStagedFiles] = useState<File[]>([]);
@@ -248,52 +247,6 @@ export default function ExerciseFeedback({
 
     // --- Upload & Send ---
 
-    const uploadFile = async (file: File, index: number): Promise<{ url: string; type: string }> => {
-        let mime = getSafeMimeType(file);
-        if (!mime) mime = 'video/mp4';
-
-        let ext = '.mp4';
-        if (mime.includes('quicktime')) ext = '.mov';
-        else if (mime.includes('webm')) ext = '.webm';
-        else if (mime.includes('png')) ext = '.png';
-        else if (mime.includes('jpeg') || mime.includes('jpg')) ext = '.jpg';
-
-        const path = `${athleteId}/${Date.now()}-feedback-${index}${ext}`;
-
-        // Use XHR for progress tracking (same as chat)
-        return new Promise((resolve, reject) => {
-            const xhr = new XMLHttpRequest();
-            const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/lift-videos/${path}`;
-
-            xhr.open('POST', url);
-            xhr.setRequestHeader('Authorization', `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`);
-            xhr.setRequestHeader('apikey', process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '');
-            xhr.setRequestHeader('Content-Type', mime);
-            xhr.setRequestHeader('Cache-Control', '604800');
-            xhr.setRequestHeader('x-upsert', 'true');
-
-            xhr.upload.onprogress = (e) => {
-                if (e.lengthComputable) {
-                    setUploadProgress(Math.round((e.loaded / e.total) * 100));
-                }
-            };
-
-            xhr.onload = () => {
-                if (xhr.status >= 200 && xhr.status < 300) {
-                    const { data } = supabase.storage.from('lift-videos').getPublicUrl(path);
-                    resolve({ url: data.publicUrl, type: mime });
-                } else {
-                    reject(new Error(`Upload failed: ${xhr.status}`));
-                }
-            };
-
-            xhr.onerror = () => reject(new Error('Upload failed'));
-            xhr.timeout = 300000;
-            xhr.ontimeout = () => reject(new Error('Upload timed out'));
-            xhr.send(file);
-        });
-    };
-
     const handleSend = async () => {
         if (!message.trim() && stagedFiles.length === 0) return;
         if (!resolvedCoachId) {
@@ -303,8 +256,6 @@ export default function ExerciseFeedback({
 
         setSending(true);
         setError('');
-        setUploadProgress(0);
-        setUploadPhase('idle');
 
         try {
             const filesToSend = stagedFiles.length > 0 ? [...stagedFiles] : [];
@@ -326,36 +277,25 @@ export default function ExerciseFeedback({
                 });
                 if (!res.ok) throw new Error('Failed to send text');
             } else {
-                // Upload all files and send multiple messages sequentially
+                // Upload all files via ChatUploadManager (background fire-and-forget)
                 for (let i = 0; i < filesToSend.length; i++) {
-                    setUploadPhase('uploading');
-                    const result = await uploadFile(filesToSend[i], i);
-                    // File is uploaded — now saving the message record
-                    setUploadPhase('saving');
-                    setUploadProgress(100);
-                    // Append media fragment URI for trimmed videos
-                    const trim = stagedTrimData[i];
-                    const mediaUrl = trim ? `${result.url}#t=${trim.start},${trim.end}` : result.url;
-                    const mediaType = result.type;
                     const safeMime = getSafeMimeType(filesToSend[i]);
                     const isVid = safeMime.startsWith('video/');
                     const isAudio = safeMime.startsWith('audio/');
                     const msgContent = i === 0 && textContent ? textContent : isAudio ? 'Voice Message' : isVid ? 'Video' : 'Photo';
-
-                    const res = await fetch('/api/messages', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({
-                            senderId: athleteId,
-                            receiverId: resolvedCoachId,
-                            content: msgContent,
-                            mediaUrl,
-                            mediaType,
-                            sessionId: sessionId || null,
-                        }),
+                    const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+                    
+                    chatUploadManager.startUpload({
+                        file: filesToSend[i],
+                        tempMessageId: tempId,
+                        athleteId: athleteId,
+                        currentUserId: athleteId,
+                        otherUserId: resolvedCoachId,
+                        content: msgContent,
+                        replyToId: null,
+                        trim: stagedTrimData[i],
+                        sessionId: sessionId || null,
                     });
-
-                    if (!res.ok) throw new Error(`Failed to send file ${i + 1}`);
                 }
             }
 
@@ -365,12 +305,9 @@ export default function ExerciseFeedback({
                 setSent(false);
                 setMessage('');
                 clearStagedMedia();
-                setUploadProgress(0);
-                setUploadPhase('idle');
-            }, 1800);
+            }, 1000);
         } catch (e: any) {
             setError('Send failed — please try again.');
-            setUploadPhase('idle');
             console.error(e);
         } finally {
             setSending(false);
@@ -468,20 +405,7 @@ export default function ExerciseFeedback({
                         </div>
                     )}
 
-                    {/* Upload progress bar */}
-                    {sending && uploadPhase !== 'idle' && (
-                        <div style={{ width: '100%', background: 'rgba(255,255,255,0.08)', borderRadius: 4, height: 6, overflow: 'hidden' }}>
-                            <div style={{
-                                height: '100%', borderRadius: 4,
-                                background: uploadPhase === 'saving'
-                                    ? 'linear-gradient(90deg, #10b981, #34d399)'
-                                    : 'linear-gradient(90deg, #6366f1, #a855f7)',
-                                transition: 'width 200ms, background 400ms',
-                                width: uploadPhase === 'saving' ? '100%' : `${uploadProgress}%`,
-                                animation: uploadPhase === 'saving' ? 'pulse 1s ease-in-out infinite' : 'none',
-                            }} />
-                        </div>
-                    )}
+
 
                     {/* Reps/RPE warning card */}
                     {attachWarning && (
@@ -554,11 +478,7 @@ export default function ExerciseFeedback({
                             {sent
                                 ? <><CheckCircle size={14} /> Sent!</>
                                 : sending
-                                    ? uploadPhase === 'saving'
-                                        ? 'Saving…'
-                                        : uploadProgress > 0
-                                            ? `Uploading ${uploadProgress}%`
-                                            : 'Sending…'
+                                    ? 'Sending…'
                                     : <><Send size={13} /> Send to Coach</>
                             }
                         </button>
