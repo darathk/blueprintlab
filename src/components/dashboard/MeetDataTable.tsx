@@ -188,7 +188,7 @@ export default function MeetDataTable({ athletes, coachId }: Props) {
 
             // Preserve existing pastMeets that don't have _meetDataEntry
             const existingNonMeetData = (athlete.pastMeets || []).filter((m: any) => !m._meetDataEntry);
-            const meetDataEntries = byAthlete[athleteId].map(e => {
+            const meetDataEntries = byAthlete[targetId].map(e => {
                 const total = calcTotal(e);
                 const bw = e.bodyweight || e.weightClass;
                 const isMale = e.gender !== 'female';
