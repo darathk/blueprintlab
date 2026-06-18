@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, useId } from 'react';
 import { supabase } from '@/lib/supabase';
-import { MessageCircle, Video, X, Send, CheckCircle, Scissors, Paperclip, Image } from 'lucide-react';
+import { MessageCircle, Video, X, Send, CheckCircle, Scissors, Paperclip, Image, Upload } from 'lucide-react';
 import VideoCropper from '@/components/chat/VideoCropper';
 import { chatUploadManager } from '@/lib/chat-upload-manager';
 
@@ -37,7 +37,7 @@ export default function ExerciseFeedback({
     const [open, setOpen] = useState(false);
     const [message, setMessage] = useState('');
     const [sending, setSending] = useState(false);
-    const [sent, setSent] = useState(false);
+    const [sent, setSent] = useState<false | 'done' | 'uploading'>(false);
     const [error, setError] = useState('');
     const [resolvedCoachId, setResolvedCoachId] = useState(coachIdProp || '');
     const [attachWarning, setAttachWarning] = useState(false);
@@ -256,6 +256,7 @@ export default function ExerciseFeedback({
 
         setSending(true);
         setError('');
+        const hadFiles = stagedFiles.length > 0;
 
         try {
             const filesToSend = stagedFiles.length > 0 ? [...stagedFiles] : [];
@@ -299,13 +300,13 @@ export default function ExerciseFeedback({
                 }
             }
 
-            setSent(true);
+            setSent(hadFiles ? 'uploading' : 'done');
+            clearStagedMedia();
+            setMessage('');
             setTimeout(() => {
                 setOpen(false);
                 setSent(false);
-                setMessage('');
-                clearStagedMedia();
-            }, 1000);
+            }, hadFiles ? 2500 : 1200);
         } catch (e: any) {
             setError('Send failed — please try again.');
             console.error(e);
@@ -464,22 +465,33 @@ export default function ExerciseFeedback({
                         {/* Send */}
                         <button
                             onClick={handleSend}
-                            disabled={sending || sent || (!message.trim() && stagedFiles.length === 0)}
+                            disabled={!!sending || !!sent || (!message.trim() && stagedFiles.length === 0)}
                             style={{
                                 flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                                background: sent ? 'rgba(16,185,129,0.2)' : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
-                                border: sent ? '1px solid rgba(16,185,129,0.4)' : 'none',
+                                background: sent === 'uploading'
+                                    ? 'rgba(99,102,241,0.2)'
+                                    : sent === 'done'
+                                        ? 'rgba(16,185,129,0.2)'
+                                        : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                                border: sent === 'uploading'
+                                    ? '1px solid rgba(99,102,241,0.4)'
+                                    : sent === 'done'
+                                        ? '1px solid rgba(16,185,129,0.4)'
+                                        : 'none',
                                 borderRadius: 8, padding: '9px 14px', cursor: 'pointer',
-                                color: sent ? '#34d399' : '#fff', fontSize: 13, fontWeight: 700,
+                                color: sent === 'uploading' ? '#818cf8' : sent === 'done' ? '#34d399' : '#fff',
+                                fontSize: 13, fontWeight: 700,
                                 opacity: (!message.trim() && stagedFiles.length === 0) ? 0.4 : 1,
                                 transition: 'all 0.2s',
                             }}
                         >
-                            {sent
-                                ? <><CheckCircle size={14} /> Sent!</>
-                                : sending
-                                    ? 'Sending…'
-                                    : <><Send size={13} /> Send to Coach</>
+                            {sent === 'uploading'
+                                ? <><Upload size={14} /> Video uploading ↑</>
+                                : sent === 'done'
+                                    ? <><CheckCircle size={14} /> Sent!</>
+                                    : sending
+                                        ? 'Sending…'
+                                        : <><Send size={13} /> Send to Coach</>
                             }
                         </button>
                     </div>
