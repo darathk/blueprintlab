@@ -196,12 +196,12 @@ export default function CalendarView({ program, athleteId }) {
             </div>
 
             {/* Grid Header */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', textAlign: 'center', background: 'var(--accent)', color: 'black', fontWeight: 'bold', fontSize: '0.8rem', padding: '0.5rem 0' }}>
-                <div>Sun</div><div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', textAlign: 'center', background: 'var(--accent)', color: 'black', fontWeight: 'bold', fontSize: '0.8rem', padding: '0.5rem 0' }}>
+                <div style={{ minWidth: 0 }}>Sun</div><div style={{ minWidth: 0 }}>Mon</div><div style={{ minWidth: 0 }}>Tue</div><div style={{ minWidth: 0 }}>Wed</div><div style={{ minWidth: 0 }}>Thu</div><div style={{ minWidth: 0 }}>Fri</div><div style={{ minWidth: 0 }}>Sat</div>
             </div>
 
             {/* Grid Body */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', background: 'var(--card-bg)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', background: 'var(--card-bg)' }}>
                 {/* Empty Cells */}
                 {Array.from({ length: firstDay }).map((_, i) => (
                     <div key={`empty-${i}`} style={{ minHeight: '120px', border: '1px solid var(--card-border)', background: 'rgba(0,0,0,0.2)' }}></div>
@@ -219,7 +219,9 @@ export default function CalendarView({ program, athleteId }) {
                             border: '1px solid var(--card-border)',
                             padding: '0.5rem',
                             position: 'relative',
-                            background: isToday ? 'rgba(78, 205, 196, 0.05)' : 'transparent'
+                            background: isToday ? 'rgba(78, 205, 196, 0.05)' : 'transparent',
+                            overflow: 'hidden',
+                            minWidth: 0
                         }}>
                             <div style={{ fontSize: '0.8rem', marginBottom: '0.5rem', fontWeight: isToday ? 'bold' : 'normal', color: isToday ? 'var(--accent)' : 'inherit', display: 'flex', justifyContent: 'space-between' }}>
                                 <span>{day}</span>

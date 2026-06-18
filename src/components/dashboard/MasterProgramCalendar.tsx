@@ -158,12 +158,12 @@ export default function MasterProgramCalendar({
             </div>
 
             <div style={{ overflowX: 'hidden', boxSizing: 'border-box' }}>
-                <div style={{ minWidth: '100%', width: '100%', boxSizing: 'border-box' }}>
-                    <div className="calendar-grid-header" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', background: 'rgba(18, 18, 18, 0.5)', padding: '0.5rem 0', borderBottom: '1px solid var(--card-border)', boxSizing: 'border-box' }}>
-                        {weekDays.map(d => <div key={d} style={{ textAlign: 'center', fontSize: 'clamp(0.6rem, 2vw, 0.75rem)', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase' }}>{d}</div>)}
+                <div style={{ width: '100%', boxSizing: 'border-box' }}>
+                    <div className="calendar-grid-header" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', background: 'rgba(18, 18, 18, 0.5)', padding: '0.5rem 0', borderBottom: '1px solid var(--card-border)', boxSizing: 'border-box' }}>
+                        {weekDays.map(d => <div key={d} style={{ textAlign: 'center', fontSize: 'clamp(0.6rem, 2vw, 0.75rem)', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', minWidth: 0 }}>{d}</div>)}
                     </div>
 
-                    <div className="calendar-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridAutoRows: '1fr' }}>
+                    <div className="calendar-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gridAutoRows: '1fr' }}>
                         {calendarDays.map((day, i) => {
                             const hasSession = day.program && day.session && day.session.exercises && day.session.exercises.length > 0;
                             const isActive = day.isActive;
@@ -203,13 +203,15 @@ export default function MasterProgramCalendar({
                                             borderRadius: '0 6px 6px 0',
                                             boxShadow: isActive ? '0 2px 4px rgba(0,0,0,0.2)' : 'none',
                                             opacity: isActive ? 1 : 0.45,
+                                            overflow: 'hidden',
+                                            minWidth: 0,
                                         }}>
-                                            <div className="session-text">
+                                            <div className="session-text" style={{ minWidth: 0, overflow: 'hidden' }}>
                                                 <div style={{ fontWeight: 600, color: isActive ? 'var(--primary)' : 'var(--secondary-foreground)', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
                                                     {day.program.name}
                                                 </div>
-                                                <div style={{ marginTop: '2px' }}>
-                                                    <div style={{ color: isActive ? 'var(--primary)' : 'var(--secondary-foreground)', fontWeight: 500 }}>{day.session.name}</div>
+                                                <div style={{ marginTop: '2px', overflow: 'hidden' }}>
+                                                    <div style={{ color: isActive ? 'var(--primary)' : 'var(--secondary-foreground)', fontWeight: 500, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{day.session.name}</div>
                                                     <div style={{ opacity: 0.7, fontSize: '0.7rem' }}>{day.session.exercises.length} Exercises</div>
                                                 </div>
                                             </div>
@@ -317,6 +319,8 @@ export default function MasterProgramCalendar({
                 .calendar-cell {
                     min-height: 110px;
                     padding: 0.5rem;
+                    overflow: hidden;
+                    min-width: 0;
                 }
                 .calendar-day-active:hover {
                     background: rgba(255,255,255,0.03) !important;
