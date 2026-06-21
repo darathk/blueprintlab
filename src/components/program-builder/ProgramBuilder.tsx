@@ -1037,7 +1037,7 @@ export default function ProgramBuilder({
             { id: generateId(), reps: '5', rpe: '8', weight: '' }
         ];
 
-        newWeeks[w].sessions[s].exercises.push({
+        newWeeks[w].sessions[s].exercises.unshift({
             id: generateId(),
             name: exerciseName,
             category: exerciseCategory,
