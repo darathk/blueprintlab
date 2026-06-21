@@ -61,7 +61,10 @@ function getBestE1RMForLift(log: any, liftKey: 'squat' | 'bench' | 'deadlift'): 
 
         const sets: any[] = Array.isArray(ex.sets) ? ex.sets : [];
         for (const set of sets) {
-            const weight = parseFloat(set.weight ?? set.actual?.weight ?? 0);
+            let weight = parseFloat(set.weight ?? set.actual?.weight ?? 0);
+            if (set.unit === 'kg') {
+                weight = weight * 2.20462262185;
+            }
             const reps = parseFloat(set.reps ?? set.actual?.reps ?? 0);
             const rpe = parseFloat(set.rpe ?? set.actual?.rpe ?? 0);
             if (weight > 0 && reps > 0) {

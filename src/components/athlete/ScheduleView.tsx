@@ -342,7 +342,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                 exerciseId: ex.exerciseId,
                 name: ex.name,
                 notes: ex.notes || '',
-                sets: ex.sets.map((s: any) => ({ weight: s.actual.weight || '', reps: s.actual.reps, rpe: s.actual.rpe }))
+                sets: ex.sets.map((s: any) => ({ weight: s.actual.weight || '', reps: s.actual.reps, rpe: s.actual.rpe, unit }))
             }));
 
             const res = await fetch('/api/logs', {
