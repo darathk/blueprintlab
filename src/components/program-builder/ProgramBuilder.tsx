@@ -1617,7 +1617,7 @@ export default function ProgramBuilder({
             return;
         }
 
-        let newWeeks = [...currentWeeks]; // logic continues with currentWeeks
+        let newWeeks = currentWeeks.map(w => ({ ...w, sessions: [...w.sessions] })); // logic continues with currentWeeks
 
         // Ensure target week exists
         let targetWeekIndex = newWeeks.findIndex(w => w.weekNumber === targetW);
