@@ -159,7 +159,7 @@ export default function SessionDetailsModal({ session, programName, programId, s
                         // Exercise-level Stats
                         const exSets = logData[ex.id || exIndex] || [];
                         const validSets = exSets.filter(s => s.weight && s.reps && s.rpe);
-                        const e1rms = validSets.map(s => calculateSimpleE1RM(s.weight, s.reps, s.rpe));
+                        const e1rms = validSets.map(s => calculateSimpleE1RM(s.weight, s.reps, s.rpe, s.unit));
                         const maxE1RM = e1rms.length > 0 ? Math.max(...e1rms) : 0;
 
                         let exTotalStress = 0;

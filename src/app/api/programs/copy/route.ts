@@ -45,11 +45,39 @@ export async function POST(request: Request) {
             })) : [],
         })) : program.weeks;
 
+        let targetStartDate = new Date().toISOString().split('T')[0];
+        if (isDuplicate) {
+            const existingPrograms = await prisma.program.findMany({
+                where: { athleteId: targetAthleteId, status: { not: 'draft' } },
+                select: { startDate: true, weeks: true }
+            });
+
+            let maxEndDate = new Date();
+            maxEndDate.setHours(0, 0, 0, 0);
+
+            for (const p of existingPrograms) {
+                if (p.startDate) {
+                    const raw = typeof p.startDate === 'string' ? p.startDate : p.startDate.toISOString();
+                    const [y, m, d] = raw.slice(0, 10).split('-').map(Number);
+                    const start = new Date(y, m - 1, d);
+                    const weekCount = Array.isArray(p.weeks) ? Math.max(1, p.weeks.length) : 1;
+                    start.setDate(start.getDate() + weekCount * 7);
+                    if (start > maxEndDate) {
+                        maxEndDate = start;
+                    }
+                }
+            }
+            // Add leading zeroes if needed
+            targetStartDate = `${maxEndDate.getFullYear()}-${String(maxEndDate.getMonth() + 1).padStart(2, '0')}-${String(maxEndDate.getDate()).padStart(2, '0')}`;
+        } else {
+            targetStartDate = program.startDate;
+        }
+
         const newProgram = await prisma.program.create({
             data: {
                 athleteId: targetAthleteId,
                 name: isDuplicate ? `${program.name} (Copy)` : program.name,
-                startDate: isDuplicate ? new Date().toISOString().split('T')[0] : program.startDate,
+                startDate: targetStartDate,
                 endDate: isDuplicate ? null : program.endDate,
                 weeks: clonedWeeks,
                 status: 'completed', // Don't auto-activate the copy

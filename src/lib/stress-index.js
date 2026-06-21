@@ -1,8 +1,9 @@
 
 // E1RM Formula provided by user
-export function calculateSimpleE1RM(weight, reps, rpe) {
+export function calculateSimpleE1RM(weight, reps, rpe, unit = null) {
     if (!weight || !reps) return 0;
-    const weightValue = parseFloat(weight);
+    let weightValue = parseFloat(weight);
+    if (unit === 'kg') weightValue *= 2.20462262185;
     const repsValue = parseFloat(reps);
     const rpeValue = parseFloat(rpe) || 10;
 

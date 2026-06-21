@@ -97,7 +97,7 @@ export default function MetaBlockReview({ programs, logs, reportParams }) {
 
             relevantSets.forEach(set => {
                 if (set.weight > 0) {
-                    const e1rm = calculateSimpleE1RM(set.weight, set.reps, set.rpe);
+                    const e1rm = calculateSimpleE1RM(set.weight, set.reps, set.rpe, set.unit);
                     const dateKey = set.rawDate.toLocaleDateString();
 
                     const currentMax = dailyMaxMap.get(dateKey);
@@ -123,7 +123,7 @@ export default function MetaBlockReview({ programs, logs, reportParams }) {
                 // Calculate Peak E1RM from ALL sets (not just daily maxes)
                 const allSetE1RMs = relevantSets
                     .filter(s => s.rpe) // only sets with RPE
-                    .map(s => calculateSimpleE1RM(s.weight, s.reps, s.rpe))
+                    .map(s => calculateSimpleE1RM(s.weight, s.reps, s.rpe, s.unit))
                     .filter(v => v > 0);
 
                 if (allSetE1RMs.length > 0) {

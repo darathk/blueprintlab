@@ -63,7 +63,7 @@ export default function BlockImprovements({ logs, dateRange, programs }) {
                     const weight = parseFloat(set.weight || ex.weight || 0);
 
                     if (weight > 0) {
-                        const e1rm = calculateSimpleE1RM(weight, reps, rpe);
+                        const e1rm = calculateSimpleE1RM(weight, reps, rpe, set.unit);
                         if (e1rm > currentLogMax) currentLogMax = e1rm;
                     }
                 });

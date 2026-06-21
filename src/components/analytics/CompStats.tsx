@@ -47,7 +47,7 @@ export default function CompStats({ logs, programs }) {
                     // Strict Match: Competition [Lift]
                     if (ex.name === `Competition ${liftName}`) {
                         ex.sets.forEach(set => {
-                            const e1rm = calculateSimpleE1RM(set.weight, set.reps, set.rpe);
+                            const e1rm = calculateSimpleE1RM(set.weight, set.reps, set.rpe, set.unit);
                             if (e1rm > dailyMax) {
                                 dailyMax = e1rm;
                             }

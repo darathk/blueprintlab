@@ -35,7 +35,7 @@ export default function CompLiftHeatMap({ logs, programs, activeLift = 'Squat' }
                             setsByProgram.get(progId).push({
                                 rawDate: new Date(log.date),
                                 weight, reps, rpe,
-                                e1rm: calculateSimpleE1RM(weight, reps, rpe)
+                                e1rm: calculateSimpleE1RM(weight, reps, rpe, set.unit)
                             });
                         }
                     });

@@ -58,7 +58,7 @@ export function generateVariationImpactReport(logs) {
             log.exercises.forEach(ex => {
                 const parent = getParentLift(ex.name);
                 if (ex.name === parent) { // Only track primary lift gains
-                    const e1rms = ex.sets.map(s => calculateSimpleE1RM(parseFloat(s.weight), parseFloat(s.reps), parseFloat(s.rpe)));
+                    const e1rms = ex.sets.map(s => calculateSimpleE1RM(parseFloat(s.weight), parseFloat(s.reps), parseFloat(s.rpe), s.unit));
                     const maxE1RM = Math.max(0, ...e1rms);
 
                     if (!liftMaxes[parent]) liftMaxes[parent] = { first: maxE1RM, last: maxE1RM };
@@ -145,7 +145,7 @@ export function generateCentralBalanceData(logs) {
             log.exercises.forEach(ex => {
                 const parent = getParentLift(ex.name);
                 if (["Squat", "Bench Press", "Deadlift"].includes(parent) && ex.name === parent) {
-                    const e1rms = ex.sets.map(s => calculateSimpleE1RM(parseFloat(s.weight), parseFloat(s.reps), parseFloat(s.rpe)));
+                    const e1rms = ex.sets.map(s => calculateSimpleE1RM(parseFloat(s.weight), parseFloat(s.reps), parseFloat(s.rpe), s.unit));
                     const max = Math.max(0, ...e1rms);
                     if (max > 0) {
                         if (!liftStarts[parent]) liftStarts[parent] = max;
@@ -246,7 +246,7 @@ export function generateIntensityHeatmap(logs) {
             log.exercises.forEach(ex => {
                 const parent = getParentLift(ex.name);
                 if (["Squat", "Bench Press", "Deadlift"].includes(parent) && ex.name === parent) {
-                    const e1rms = ex.sets.map(s => calculateSimpleE1RM(parseFloat(s.weight), parseFloat(s.reps), parseFloat(s.rpe)));
+                    const e1rms = ex.sets.map(s => calculateSimpleE1RM(parseFloat(s.weight), parseFloat(s.reps), parseFloat(s.rpe), s.unit));
                     const max = Math.max(0, ...e1rms);
                     if (max > 0) {
                         if (!liftStarts[parent]) liftStarts[parent] = max;
@@ -320,7 +320,7 @@ export function generatePrimaryLiftProgress(logs, timeRange) {
             // (Close Grip Bench Press, Incline Bench, Push Up) and non-"Bench Press"
             // exercises like "Competition Bench" would be folded into the same bucket.
             if (progressData[parent] && ex.name === parent) {
-                const e1rms = ex.sets.map(s => calculateSimpleE1RM(parseFloat(s.weight), parseFloat(s.reps), parseFloat(s.rpe)));
+                const e1rms = ex.sets.map(s => calculateSimpleE1RM(parseFloat(s.weight), parseFloat(s.reps), parseFloat(s.rpe), s.unit));
                 const max = Math.max(0, ...e1rms);
                 if (max > 0) {
                      if (!sessionMaxes[parent] || max > sessionMaxes[parent]) {
