@@ -132,7 +132,9 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
     const [dragOverDate, setDragOverDate] = useState(null);
 
     const handleDragStart = (e, weekNum, dayNum) => {
-        e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'session', weekNum, dayNum }));
+        const payload = JSON.stringify({ type: 'session', weekNum, dayNum });
+        e.dataTransfer.setData('text/plain', payload);
+        e.dataTransfer.setData('application/json', payload);
         e.dataTransfer.effectAllowed = 'move';
     };
 
@@ -153,10 +155,13 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
         e.preventDefault();
         setDragOverDate(null);
         try {
-            const raw = e.dataTransfer.getData('text/plain');
+            let raw = e.dataTransfer.getData('text/plain');
+            if (!raw) {
+                raw = e.dataTransfer.getData('application/json');
+            }
             if (!raw) return;
             const data = JSON.parse(raw);
-            if (data.type === 'session' && data.weekNum && data.dayNum) {
+            if ((data.type === 'session' || data.weekNum) && data.weekNum && data.dayNum) {
                 if (onSessionMove) {
                     onSessionMove(data.weekNum, data.dayNum, targetWeekNum, targetDayNum, targetDateStr);
                 }
