@@ -1493,20 +1493,17 @@ export default function ProgramBuilder({
         // Check if date is before start date
         if (new Date(dateStr) < new Date(startDate)) {
             const snapped = snapToSunday(dateStr);
-            if (confirm(`This date is before the current program start date (${startDate}). Do you want to move the start date to ${snapped}?`)) {
-                currentWeeks = getShiftedWeeks(dateStr, weeks);
-                setStartDate(snapped);
-                // Recalculate weekNum/dayNum relative to snapped Sunday start
-                const [dy, dm, dd] = dateStr.split('-').map(Number);
-                const clickedDate = new Date(dy, dm - 1, dd);
-                const [sy, sm, sd] = snapped.split('-').map(Number);
-                const snappedDate = new Date(sy, sm - 1, sd);
-                const diff = Math.round((clickedDate.getTime() - snappedDate.getTime()) / (1000 * 60 * 60 * 24));
-                weekNum = Math.floor(diff / 7) + 1;
-                dayNum = (diff % 7) + 1;
-            } else {
-                return;
-            }
+            currentWeeks = getShiftedWeeks(dateStr, weeks);
+            setStartDate(snapped);
+            showToast(`Moved program start to ${snapped}`);
+            // Recalculate weekNum/dayNum relative to snapped Sunday start
+            const [dy, dm, dd] = dateStr.split('-').map(Number);
+            const clickedDate = new Date(dy, dm - 1, dd);
+            const [sy, sm, sd] = snapped.split('-').map(Number);
+            const snappedDate = new Date(sy, sm - 1, sd);
+            const diff = Math.round((clickedDate.getTime() - snappedDate.getTime()) / (1000 * 60 * 60 * 24));
+            weekNum = Math.floor(diff / 7) + 1;
+            dayNum = (diff % 7) + 1;
         }
 
         // Logic continues with currentWeeks...
@@ -1571,41 +1568,37 @@ export default function ProgramBuilder({
         // Check for date shifting
         if (toDateStr && new Date(toDateStr) < new Date(startDate)) {
             const snapped = snapToSunday(toDateStr);
-            if (confirm(`Move program start to ${snapped}?`)) {
-                // Calculate shifted structure BUT DO NOT SET STATE YET
-                currentWeeks = getShiftedWeeks(toDateStr, weeks);
-                pendingStartDate = snapped;
+            // Calculate shifted structure BUT DO NOT SET STATE YET
+            currentWeeks = getShiftedWeeks(toDateStr, weeks);
+            pendingStartDate = snapped;
+            showToast(`Moved program start to ${snapped}`);
 
-                // Recalculate pointers using snapped start date
-                const [oY, oM, oD] = startDate.split('-').map(Number);
-                const oldStart = new Date(oY, oM - 1, oD);
-                oldStart.setHours(0, 0, 0, 0);
-                const [nY, nM, nD] = snapped.split('-').map(Number);
-                const newStart = new Date(nY, nM - 1, nD);
-                newStart.setHours(0, 0, 0, 0);
+            // Recalculate pointers using snapped start date
+            const [oY, oM, oD] = startDate.split('-').map(Number);
+            const oldStart = new Date(oY, oM - 1, oD);
+            oldStart.setHours(0, 0, 0, 0);
+            const [nY, nM, nD] = snapped.split('-').map(Number);
+            const newStart = new Date(nY, nM - 1, nD);
+            newStart.setHours(0, 0, 0, 0);
 
-                // Compute actual date of the source session
-                const sourceDate = new Date(oldStart);
-                sourceDate.setDate(sourceDate.getDate() + (fromW - 1) * 7 + (fromD - 1));
+            // Compute actual date of the source session
+            const sourceDate = new Date(oldStart);
+            sourceDate.setDate(sourceDate.getDate() + (fromW - 1) * 7 + (fromD - 1));
 
-                // Re-derive week/day relative to new start date
-                const diffFromNew = Math.round((sourceDate.getTime() - newStart.getTime()) / (1000 * 60 * 60 * 24));
-                const newFromW = Math.floor(diffFromNew / 7) + 1;
-                const newFromD = (diffFromNew % 7) + 1;
+            // Re-derive week/day relative to new start date
+            const diffFromNew = Math.round((sourceDate.getTime() - newStart.getTime()) / (1000 * 60 * 60 * 24));
+            const newFromW = Math.floor(diffFromNew / 7) + 1;
+            const newFromD = (diffFromNew % 7) + 1;
 
-                fromD = newFromD;
-                fromW = newFromW;
+            fromD = newFromD;
+            fromW = newFromW;
 
-                // Recalculate target relative to snapped start
-                const [tY, tM, tD] = toDateStr.split('-').map(Number);
-                const targetDate = new Date(tY, tM - 1, tD);
-                const targetDiff = Math.round((targetDate.getTime() - newStart.getTime()) / (1000 * 60 * 60 * 24));
-                targetW = Math.floor(targetDiff / 7) + 1;
-                targetD = (targetDiff % 7) + 1;
-
-            } else {
-                return;
-            }
+            // Recalculate target relative to snapped start
+            const [tY, tM, tD] = toDateStr.split('-').map(Number);
+            const targetDate = new Date(tY, tM - 1, tD);
+            const targetDiff = Math.round((targetDate.getTime() - newStart.getTime()) / (1000 * 60 * 60 * 24));
+            targetW = Math.floor(targetDiff / 7) + 1;
+            targetD = (targetDiff % 7) + 1;
         }
 
         if (fromW === targetW && fromD === targetD) {
