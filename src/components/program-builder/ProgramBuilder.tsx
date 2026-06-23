@@ -1495,6 +1495,7 @@ export default function ProgramBuilder({
             const snapped = snapToSunday(dateStr);
             currentWeeks = getShiftedWeeks(dateStr, weeks);
             setStartDate(snapped);
+            setWeeks(currentWeeks);
             showToast(`Moved program start to ${snapped}`);
             // Recalculate weekNum/dayNum relative to snapped Sunday start
             const [dy, dm, dd] = dateStr.split('-').map(Number);
@@ -1507,7 +1508,7 @@ export default function ProgramBuilder({
         }
 
         // Logic continues with currentWeeks...
-        let newWeeks = [...currentWeeks];
+        let newWeeks = currentWeeks.map(w => ({ ...w, sessions: [...w.sessions] }));
         let weekIndex = newWeeks.findIndex(w => w.weekNumber === weekNum);
 
         if (weekIndex === -1) {
@@ -1555,8 +1556,8 @@ export default function ProgramBuilder({
         let targetW = toW;
 
         // Capture the original session to move BEFORE any shifting
-        const originalSourceWeek = weeks.find(w => w.weekNumber === fromW);
-        const originalSession = originalSourceWeek?.sessions.find(s => s.day === fromD);
+        const originalSourceWeek = weeks.find(w => Number(w.weekNumber) === Number(fromW));
+        const originalSession = originalSourceWeek?.sessions.find(s => Number(s.day) === Number(fromD));
 
         if (!originalSession) {
             console.error("Could not find session to move at source", fromW, fromD);
@@ -1613,7 +1614,7 @@ export default function ProgramBuilder({
         let newWeeks = currentWeeks.map(w => ({ ...w, sessions: [...w.sessions] })); // logic continues with currentWeeks
 
         // Ensure target week exists
-        let targetWeekIndex = newWeeks.findIndex(w => w.weekNumber === targetW);
+        let targetWeekIndex = newWeeks.findIndex(w => Number(w.weekNumber) === Number(targetW));
         if (targetWeekIndex === -1) {
             const max = newWeeks.reduce((m, w) => Math.max(m, w.weekNumber), 0);
             for (let i = max + 1; i <= targetW; i++) {
@@ -1621,19 +1622,19 @@ export default function ProgramBuilder({
                     newWeeks.push({ id: generateId(), weekNumber: i, sessions: [] });
                 }
             }
-            newWeeks.sort((a, b) => a.weekNumber - b.weekNumber);
-            targetWeekIndex = newWeeks.findIndex(w => w.weekNumber === targetW);
+            newWeeks.sort((a, b) => Number(a.weekNumber) - Number(b.weekNumber));
+            targetWeekIndex = newWeeks.findIndex(w => Number(w.weekNumber) === Number(targetW));
         }
 
         // Find SOURCE in structure
-        const sourceWeekIndex = newWeeks.findIndex(w => w.weekNumber === fromW);
+        const sourceWeekIndex = newWeeks.findIndex(w => Number(w.weekNumber) === Number(fromW));
         if (sourceWeekIndex === -1) {
             console.error("Source week not found", fromW, newWeeks);
             // Abort everything, do NOT set partial state
             return;
         }
 
-        const sourceSessionIndex = newWeeks[sourceWeekIndex].sessions.findIndex(s => s.day === fromD);
+        const sourceSessionIndex = newWeeks[sourceWeekIndex].sessions.findIndex(s => Number(s.day) === Number(fromD));
         if (sourceSessionIndex === -1) {
             console.error("Source session not found", fromD, newWeeks[sourceWeekIndex]);
             // Abort
@@ -1644,7 +1645,7 @@ export default function ProgramBuilder({
         const [sessionToMove] = newWeeks[sourceWeekIndex].sessions.splice(sourceSessionIndex, 1);
 
         // Check TARGET occupancy
-        const targetSessionIndex = newWeeks[targetWeekIndex].sessions.findIndex(s => s.day === targetD);
+        const targetSessionIndex = newWeeks[targetWeekIndex].sessions.findIndex(s => Number(s.day) === Number(targetD));
 
         if (targetSessionIndex !== -1) {
             // Swap
