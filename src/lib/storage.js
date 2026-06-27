@@ -499,7 +499,18 @@ export const getAthletePositions = cache(async (coachId) => {
         
         // Start date is stored as YYYY-MM-DD
         const startStr = (typeof p.startDate === 'string') ? p.startDate.split('T')[0] : p.startDate.toISOString().split('T')[0];
-        const startDate = new Date(startStr);
+        let startDate = new Date(startStr);
+        
+        // Dynamically adjust start date for programs with empty leading weeks
+        if (Array.isArray(p.weeks) && p.weeks.length > 0) {
+            // Find first week that actually has sessions
+            const firstNonEmpty = p.weeks.find(w => w.sessions && w.sessions.length > 0);
+            if (firstNonEmpty && typeof firstNonEmpty.weekNumber === 'number' && firstNonEmpty.weekNumber > 1) {
+                // If the first active week is e.g. Week 3, shift the start date forward by 2 weeks
+                const shiftDays = (firstNonEmpty.weekNumber - 1) * 7;
+                startDate.setDate(startDate.getDate() + shiftDays);
+            }
+        }
         
         const diffTime = todayDate.getTime() - startDate.getTime();
         const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
@@ -512,10 +523,9 @@ export const getAthletePositions = cache(async (coachId) => {
             dayNum = (diffDays % 7) + 1;
         }
         
-        // Cap at the end of the program
-        const maxWeek = Array.isArray(p.weeks) && p.weeks.length > 0 
-            ? Math.max(...p.weeks.map(w => w.weekNumber || 1)) 
-            : 1;
+        // Cap at the end of the program based on the actual number of non-empty weeks
+        const activeWeeks = Array.isArray(p.weeks) ? p.weeks.filter(w => w.sessions && w.sessions.length > 0) : [];
+        const maxWeek = activeWeeks.length > 0 ? activeWeeks.length : 1;
             
         if (weekNum > maxWeek) {
             weekNum = maxWeek;
