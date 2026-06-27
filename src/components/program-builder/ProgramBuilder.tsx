@@ -2826,7 +2826,7 @@ export default function ProgramBuilder({
 
             {/* Week Overview toggle */}
             <button
-                onClick={() => setWeekOverviewIndex(prev => prev !== null ? null : 0)}
+                onClick={() => setWeekOverviewIndex(prev => prev !== null ? null : Math.max(0, weeks.findIndex(w => w.sessions.length > 0)))}
                 title="Week Overview"
                 style={{
                     position: 'fixed', bottom: 24, right: 24, zIndex: 800,
@@ -2837,6 +2837,7 @@ export default function ProgramBuilder({
                     cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
                     boxShadow: '0 4px 16px rgba(0,0,0,0.3)', transition: 'all 0.2s',
                     fontSize: 20,
+                    opacity: activeView === 'builder' ? 1 : 0, pointerEvents: activeView === 'builder' ? 'auto' : 'none'
                 }}
             >
                 {weekOverviewIndex !== null ? <X size={20} /> : <CalendarIcon size={20} />}
@@ -2878,21 +2879,24 @@ export default function ProgramBuilder({
 
                 {/* Week tabs */}
                 {weeks.length > 1 && (
-                    <div style={{ display: 'flex', gap: 6, padding: '12px 1rem', overflowX: 'auto', flexShrink: 0 }}>
-                        {weeks.map((w, i) => (
-                            <button
-                                key={w.id}
-                                onClick={() => setWeekOverviewIndex(i)}
-                                style={{
-                                    padding: '6px 16px', borderRadius: 20, border: 'none', cursor: 'pointer',
-                                    fontSize: '0.8rem', fontWeight: 600, whiteSpace: 'nowrap', transition: 'all 0.15s',
-                                    background: weekOverviewIndex === i ? 'var(--primary)' : 'rgba(255,255,255,0.06)',
-                                    color: weekOverviewIndex === i ? '#000' : 'var(--secondary-foreground)',
-                                }}
-                            >
-                                Week {w.weekNumber}
-                            </button>
-                        ))}
+                    <div style={{ display: 'flex', flexWrap: 'nowrap', overflowX: 'auto', gap: 6, padding: '0 24px 16px 24px', scrollbarWidth: 'none' }}>
+                        {weeks.filter(w => w.sessions.length > 0).map((w) => {
+                            const i = weeks.findIndex(x => x.id === w.id);
+                            return (
+                                <button
+                                    key={w.id}
+                                    onClick={() => setWeekOverviewIndex(i)}
+                                    style={{
+                                        padding: '6px 12px', borderRadius: 16, fontSize: '0.85rem', fontWeight: 600, whiteSpace: 'nowrap',
+                                        background: weekOverviewIndex === i ? 'var(--primary)' : 'rgba(255,255,255,0.06)',
+                                        color: weekOverviewIndex === i ? '#000' : 'var(--secondary-foreground)',
+                                        border: 'none', cursor: 'pointer', transition: 'all 0.2s'
+                                    }}
+                                >
+                                    Week {w.weekNumber}
+                                </button>
+                            );
+                        })}
                     </div>
                 )}
 
