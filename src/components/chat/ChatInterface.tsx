@@ -173,11 +173,12 @@ interface Props {
     isEmbedded?: boolean;
     onBack?: () => void;
     headerActions?: React.ReactNode;
+    athletePosition?: { blockName: string; weekNum?: number; dayNum?: number };
 }
 
 export default function ChatInterface({
     currentUserId, otherUserId, currentUserName, otherUserName, athleteId,
-    initialMessages = [], isEmbedded = false, onBack, headerActions
+    initialMessages = [], isEmbedded = false, onBack, headerActions, athletePosition
 }: Props) {
     const router = useRouter();
     
@@ -1320,7 +1321,26 @@ export default function ChatInterface({
                             </div>
                         ) : (
                             <>
-                                <div style={{ flex: 1, fontWeight: 600, color: 'var(--foreground)', fontSize: 16, letterSpacing: '-0.01em' }}>{otherUserName}</div>
+                                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
+                                    <div style={{ fontWeight: 600, color: 'var(--foreground)', fontSize: 16, letterSpacing: '-0.01em' }}>{otherUserName}</div>
+                                    {athletePosition && (() => {
+                                        const pos = athletePosition;
+                                        return (
+                                            <div style={{
+                                                display: 'flex', alignItems: 'center', gap: 4,
+                                                fontSize: 11, fontWeight: 600, color: 'rgba(56,189,248,0.8)',
+                                                background: 'rgba(56,189,248,0.1)',
+                                                border: '1px solid rgba(56,189,248,0.15)',
+                                                borderRadius: 6, padding: '2px 8px',
+                                                whiteSpace: 'nowrap'
+                                            }}>
+                                                <span>{pos.blockName}</span>
+                                                {pos.weekNum && <span style={{ color: 'rgba(255,255,255,0.4)', paddingLeft: 2 }}>W{pos.weekNum}</span>}
+                                                {pos.dayNum && <span style={{ color: 'rgba(255,255,255,0.3)' }}>D{pos.dayNum}</span>}
+                                            </div>
+                                        );
+                                    })()}
+                                </div>
                                 <button
                                     onClick={() => setIsSearchOpen(true)}
                                     style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '50%', width: 34, height: 34, color: 'rgba(255,255,255,0.4)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}

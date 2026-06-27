@@ -2,7 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import { CoachInbox } from '@/components/chat/ClientCoachInbox';
-import { getCoachInbox, getMessagesByAthlete } from '@/lib/storage';
+import { getCoachInbox, getMessagesByAthlete, getAthletePositions } from '@/lib/storage';
 
 export default async function MessagesPage({ searchParams }: { searchParams: Promise<{ athleteId?: string }> }) {
     const params = await searchParams;
@@ -22,10 +22,11 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
         redirect('/dashboard');
     }
 
-    // Pre-fetch in parallel: inbox list + initial athlete's messages (avoids a second round-trip on the client)
-    const [initialConvos, initialMessages] = await Promise.all([
+    // Pre-fetch in parallel: inbox list + initial athlete's messages + program positions
+    const [initialConvos, initialMessages, athletePositions] = await Promise.all([
         getCoachInbox(coach.id) as Promise<any[]>,
         initialAthleteId ? getMessagesByAthlete(initialAthleteId) : Promise.resolve([]),
+        getAthletePositions(coach.id),
     ]);
 
     return (
@@ -36,7 +37,7 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
                 </h1>
             </div>
 
-            <CoachInbox coachId={coach.id} coachName={coach.name} initialConvos={initialConvos} initialAthleteId={initialAthleteId} initialMessages={initialMessages as any} />
+            <CoachInbox coachId={coach.id} coachName={coach.name} initialConvos={initialConvos} initialAthleteId={initialAthleteId} initialMessages={initialMessages as any} athletePositions={athletePositions} />
         </div>
     );
 }

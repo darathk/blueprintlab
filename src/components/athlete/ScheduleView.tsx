@@ -523,7 +523,8 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                     const d = new Date(start);
                     d.setDate(d.getDate() + (wn - 1) * 7 + (day - 1));
                     const ds = toDateStr(d);
-                    const sKey = sessionKey(program.id, wn, day);
+                    const legacyKey = sessionKey(program.id, wn, day);
+                    const sKey = session.id || legacyKey;
                     // Compute calendar-week display number (1-based, only counting weeks with sessions)
                     const sessionSunday = new Date(d);
                     sessionSunday.setDate(sessionSunday.getDate() - sessionSunday.getDay());
@@ -531,7 +532,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                     // sessionNum is the 1-based position of this session in the week (sorted by day)
                     const sessionNum = sortedSessions.findIndex((s: any) => (s?.day || 1) === day) + 1;
                     if (!map[ds]) map[ds] = [];
-                    map[ds].push({ program, weekNum: wn, weekDisplayNum: weekDisplayNum || 1, session, sKey, isActive, isCurrent, sessionNum });
+                    map[ds].push({ program, weekNum: wn, weekDisplayNum: weekDisplayNum || 1, session, sKey, legacyKey, isActive, isCurrent, sessionNum });
                 });
             });
         });
@@ -772,9 +773,9 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                         </div>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                            {selectedDateSessions.map(({ program, weekNum, weekDisplayNum, session, sKey, isActive, isCurrent, sessionNum }) => {
+                            {selectedDateSessions.map(({ program, weekNum, weekDisplayNum, session, sKey, legacyKey, isActive, isCurrent, sessionNum }) => {
                                 const exercises: any[] = Array.isArray(session.exercises) ? session.exercises : [];
-                                const log = Array.isArray(logs) ? logs.find(l => l.sessionId === sKey && l.programId === program.id) : undefined;
+                                const log = Array.isArray(logs) ? logs.find(l => (l.sessionId === sKey || l.sessionId === legacyKey) && l.programId === program.id) : undefined;
                                 const progress = sessionProgress(exercises, log, editState[sKey]);
                                 const sessionOpen = openSessions.has(sKey);
 
@@ -964,20 +965,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                     </div>
                                                 )}
 
-                                                {/* Planned Top Set Input — visible even when session is locked */}
-                                                {!isCoachView && !readySessions.has(sKey) && (
-                                                    <div style={{ padding: '8px 12px' }}>
-                                                        <PlannedTopSetInput
-                                                            athleteId={athleteId}
-                                                            sessionId={sKey}
-                                                            programId={program.id}
-                                                            weekNum={weekNum}
-                                                            dayNum={session.day || 1}
-                                                            exercises={exercises.map((e: any) => ({ name: e.name }))}
-                                                            unit={unit}
-                                                        />
-                                                    </div>
-                                                )}
+
 
                                                 {(editState[sKey] || exercises).map((ex: any, exIdx: number) => {
                                                     const isEdit = !!editState[sKey];
@@ -1224,6 +1212,22 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                         </div>
                                                     );
                                                 })}
+
+                                                {/* Plan Next Week's Top Sets — shown at the bottom of the open session */}
+                                                {!isCoachView && sessionOpen && exercises.length > 0 && (
+                                                    <div style={{ padding: '8px 12px' }}>
+                                                        <PlannedTopSetInput
+                                                            athleteId={athleteId}
+                                                            sessionId={sKey}
+                                                            programId={program.id}
+                                                            weekNum={weekNum}
+                                                            dayNum={session.day || 1}
+                                                            exercises={exercises.map((e: any) => ({ name: e.name }))}
+                                                            unit={unit}
+                                                            targetNextWeek={true}
+                                                        />
+                                                    </div>
+                                                )}
                                             </div>
                                         )}
                                     </div>
@@ -1313,7 +1317,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                             wSessions.forEach((s: any) => {
                                 const sKey = sessionKey(program.id, w.weekNumber || 1, s.day || 1);
                                 const exData: any[] = Array.isArray(s.exercises) ? s.exercises : [];
-                                const log = Array.isArray(logs) ? logs.find(l => l.sessionId === sKey && l.programId === program.id) : undefined;
+                                const log = Array.isArray(logs) ? logs.find(l => (l.sessionId === sKey || l.sessionId === s.id) && l.programId === program.id) : undefined;
                                 const esData = editState[sKey];
 
                                 exData.forEach((ex: any) => {
@@ -1456,7 +1460,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                         const sKey = sessionKey(program.id, weekNum, day);
                                         const sessionOpen = openSessions.has(sKey);
                                         const exercises: any[] = Array.isArray(session.exercises) ? session.exercises : [];
-                                        const log = Array.isArray(logs) ? logs.find(l => l.sessionId === sKey && l.programId === program.id) : undefined;
+                                        const log = Array.isArray(logs) ? logs.find(l => (l.sessionId === sKey || l.sessionId === session.id) && l.programId === program.id) : undefined;
                                         const progress = sessionProgress(exercises, log, editState[sKey]);
 
                                         // Register session metadata for celebration detection
@@ -1585,20 +1589,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                 </div>
                                                             )}
 
-                                                            {/* Planned Top Set Input — visible even when session is locked */}
-                                                            {!isCoachView && !readySessions.has(sKey) && (
-                                                                <div style={{ padding: '8px 12px' }}>
-                                                                    <PlannedTopSetInput
-                                                                        athleteId={athleteId}
-                                                                        sessionId={sKey}
-                                                                        programId={program.id}
-                                                                        weekNum={weekNum}
-                                                                        dayNum={session.day || 1}
-                                                                        exercises={exercises.map((e: any) => ({ name: e.name }))}
-                                                                        unit={unit}
-                                                                    />
-                                                                </div>
-                                                            )}
+
 
                                                             {(editState[sKey] || exercises).map((ex: any, exIdx: number) => {
                                                                 const isEdit = !!editState[sKey];
@@ -1848,6 +1839,22 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                     </div>
                                                                 );
                                                             })}
+
+                                                            {/* Plan Next Week's Top Sets — shown at the bottom of the open session */}
+                                                            {!isCoachView && sessionOpen && exercises.length > 0 && (
+                                                                <div style={{ padding: '8px 12px' }}>
+                                                                    <PlannedTopSetInput
+                                                                        athleteId={athleteId}
+                                                                        sessionId={sKey}
+                                                                        programId={program.id}
+                                                                        weekNum={weekNum}
+                                                                        dayNum={session.day || 1}
+                                                                        exercises={exercises.map((e: any) => ({ name: e.name }))}
+                                                                        unit={unit}
+                                                                        targetNextWeek={true}
+                                                                    />
+                                                                </div>
+                                                            )}
                                                         </div>
                                                     )
                                                 }

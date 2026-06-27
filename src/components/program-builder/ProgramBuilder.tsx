@@ -9,9 +9,10 @@ import ImportProgram from '@/components/programs/ImportProgram';
 import ProgramCalendarGrid from './ProgramCalendarGrid';
 import { calculateStress } from '@/lib/stress-index';
 import { getExerciseCategory } from '@/lib/exercise-db';
-import { StickyNote, Pin, Calendar as CalendarIcon, X, Trash2, Copy, CalendarPlus, BookOpen, LayoutGrid, MessageSquare } from 'lucide-react';
+import { StickyNote, Pin, Calendar as CalendarIcon, X, Trash2, Copy, CalendarPlus, BookOpen, LayoutGrid, MessageSquare, Trophy } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 import ChatInterface from '@/components/chat/ChatInterface';
+import PeriodizationPlanner from '@/components/dashboard/BlockOrganizer';
 
 const StressMatrix = dynamic(() => import('@/components/program-builder/StressMatrix'), {
     loading: () => <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="pulse">Loading stress charts...</div>
@@ -282,6 +283,7 @@ export default function ProgramBuilder({
     athleteLiftTargets = null,
     athleteTrainingSchedule = null,
     athleteName = '',
+    athleteMeetData = null,
     existingPrograms = [],
     initialCoachNotes = [],
     athletes = [],
@@ -294,6 +296,7 @@ export default function ProgramBuilder({
     athleteLiftTargets?: any;
     athleteTrainingSchedule?: string;
     athleteName?: string;
+    athleteMeetData?: { nextMeetName?: string; nextMeetDate?: string; meetAttempts?: any; periodization?: any };
     existingPrograms?: any[];
     initialCoachNotes?: any[];
     athletes?: any[];
@@ -466,6 +469,7 @@ export default function ProgramBuilder({
     const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
     const initialLoadRef = useRef(true);
     const [resumedFromDraft, setResumedFromDraft] = useState<boolean>(initialData?.status === 'draft');
+    const [meetPlannerOpen, setMeetPlannerOpen] = useState(false);
 
     // Load initial data if provided (Edit Mode)
     useEffect(() => {
@@ -1617,8 +1621,9 @@ export default function ProgramBuilder({
         let targetWeekIndex = newWeeks.findIndex(w => Number(w.weekNumber) === Number(targetW));
         if (targetWeekIndex === -1) {
             const max = newWeeks.reduce((m, w) => Math.max(m, w.weekNumber), 0);
-            for (let i = max + 1; i <= targetW; i++) {
-                if (!newWeeks.find(w => w.weekNumber === i)) {
+            const fillTarget = Math.max(max, targetW);
+            for (let i = 1; i <= fillTarget; i++) {
+                if (!newWeeks.find(w => Number(w.weekNumber) === i)) {
                     newWeeks.push({ id: generateId(), weekNumber: i, sessions: [] });
                 }
             }
@@ -1973,6 +1978,46 @@ export default function ProgramBuilder({
                                         <MessageSquare size={14} />
                                         Chat
                                     </button>
+                                    {athleteId && (athleteMeetData?.periodization || athleteMeetData?.nextMeetName) && (() => {
+                                        const meetDaysOut = (() => {
+                                            if (!athleteMeetData?.nextMeetDate) return null;
+                                            const meet = new Date(athleteMeetData.nextMeetDate + 'T00:00:00');
+                                            const today = new Date();
+                                            today.setHours(0, 0, 0, 0);
+                                            return Math.ceil((meet.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                                        })();
+                                        return (
+                                            <button
+                                                onClick={() => setMeetPlannerOpen(true)}
+                                                style={{
+                                                    display: 'inline-flex', alignItems: 'center', gap: 6,
+                                                    background: 'rgba(255,255,255,0.07)',
+                                                    border: '1px solid var(--card-border)',
+                                                    borderRadius: 'var(--radius)', padding: '0.5rem 1rem',
+                                                    color: 'var(--primary)',
+                                                    fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
+                                                    position: 'relative',
+                                                }}
+                                            >
+                                                <Trophy size={14} />
+                                                Meet Planner
+                                                {meetDaysOut !== null && (
+                                                    <span style={{
+                                                        background: meetDaysOut <= 14 ? '#ef4444' : meetDaysOut <= 42 ? '#f59e0b' : 'var(--primary)',
+                                                        color: meetDaysOut <= 42 ? '#000' : '#000',
+                                                        fontSize: '0.65rem',
+                                                        fontWeight: 700,
+                                                        padding: '2px 6px',
+                                                        borderRadius: '4px',
+                                                        lineHeight: 1.2,
+                                                        whiteSpace: 'nowrap',
+                                                    }}>
+                                                        {meetDaysOut}d out
+                                                    </span>
+                                                )}
+                                            </button>
+                                        );
+                                    })()}
                                     <button
                                         onClick={() => {
                                             setNotesOpen(o => {
@@ -3115,6 +3160,42 @@ export default function ProgramBuilder({
                                     </div>
                                 );
                             })}
+                        </div>
+                    </div>
+                </div>
+            )}
+            {/* Meet Planner Modal */}
+            {meetPlannerOpen && athleteId && (
+                <div style={{
+                    position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 900,
+                    background: 'rgba(0,0,0,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    padding: '2rem'
+                }}>
+                    <div style={{
+                        background: 'var(--background)', borderRadius: 'var(--radius)', border: '1px solid var(--card-border)',
+                        width: '100%', maxWidth: '800px', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column',
+                        boxShadow: '0 10px 40px rgba(0,0,0,0.5)'
+                    }}>
+                        <div style={{
+                            padding: '1rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                        }}>
+                            <div style={{ fontWeight: 600, fontSize: '1.1rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <Trophy size={18} color="var(--primary)" />
+                                {athleteMeetData?.nextMeetName ? `Meet Planner: ${athleteMeetData.nextMeetName}` : 'Meet Planner'}
+                            </div>
+                            <button onClick={() => setMeetPlannerOpen(false)} style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer' }}>
+                                <X size={20} />
+                            </button>
+                        </div>
+                        <div style={{ flex: 1, overflowY: 'auto', padding: '1rem' }}>
+                            <PeriodizationPlanner 
+                                athlete={{ 
+                                    id: athleteId, 
+                                    periodization: athleteMeetData?.periodization,
+                                    nextMeetName: athleteMeetData?.nextMeetName, 
+                                    nextMeetDate: athleteMeetData?.nextMeetDate 
+                                }} 
+                            />
                         </div>
                     </div>
                 </div>

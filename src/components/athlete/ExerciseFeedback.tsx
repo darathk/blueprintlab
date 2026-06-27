@@ -262,8 +262,8 @@ export default function ExerciseFeedback({
             const filesToSend = stagedFiles.length > 0 ? [...stagedFiles] : [];
             const textContent = message.trim();
 
-            if (filesToSend.length === 0) {
-                // Just text
+            // 1. Always send the text message first (instant delivery)
+            if (textContent) {
                 const res = await fetch('/api/messages', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -277,13 +277,15 @@ export default function ExerciseFeedback({
                     }),
                 });
                 if (!res.ok) throw new Error('Failed to send text');
-            } else {
-                // Upload all files via ChatUploadManager (background fire-and-forget)
+            }
+
+            // 2. Then upload files in the background (separate messages)
+            if (filesToSend.length > 0) {
                 for (let i = 0; i < filesToSend.length; i++) {
                     const safeMime = getSafeMimeType(filesToSend[i]);
                     const isVid = safeMime.startsWith('video/');
                     const isAudio = safeMime.startsWith('audio/');
-                    const msgContent = i === 0 && textContent ? textContent : isAudio ? 'Voice Message' : isVid ? 'Video' : 'Photo';
+                    const msgContent = isAudio ? 'Voice Message' : isVid ? 'Video' : 'Photo';
                     const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
                     
                     chatUploadManager.startUpload({

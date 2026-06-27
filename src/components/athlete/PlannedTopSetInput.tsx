@@ -11,6 +11,7 @@ interface Props {
     dayNum: number;
     exercises: Array<{ name: string }>;
     unit: string;
+    targetNextWeek?: boolean;
 }
 
 interface TopSetData {
@@ -21,7 +22,8 @@ interface TopSetData {
 }
 
 export default function PlannedTopSetInput({
-    athleteId, sessionId, programId, weekNum, dayNum, exercises, unit
+    athleteId, sessionId, programId, weekNum, dayNum, exercises, unit,
+    targetNextWeek = false,
 }: Props) {
     const [expanded, setExpanded] = useState(false);
     const [topSets, setTopSets] = useState<Record<string, TopSetData>>({});
@@ -29,9 +31,15 @@ export default function PlannedTopSetInput({
     const [saved, setSaved] = useState(false);
     const [loaded, setLoaded] = useState(false);
 
-    // Fetch any existing planned top sets for this session
+    // When targeting next week, the record is stored under the NEXT week's sessionId
+    const targetWeekNum = targetNextWeek ? weekNum + 1 : weekNum;
+    const targetSessionId = targetNextWeek
+        ? `${programId}_w${targetWeekNum}_d${dayNum}`
+        : sessionId;
+
+    // Fetch any existing planned top sets for the target session
     useEffect(() => {
-        fetch(`/api/top-sets?athleteId=${athleteId}&sessionId=${sessionId}`)
+        fetch(`/api/top-sets?athleteId=${athleteId}&sessionId=${targetSessionId}`)
             .then(r => r.ok ? r.json() : [])
             .then(data => {
                 const existing: Record<string, TopSetData> = {};
@@ -49,7 +57,7 @@ export default function PlannedTopSetInput({
                 if (Object.keys(existing).length > 0) setSaved(true);
             })
             .catch(() => setLoaded(true));
-    }, [athleteId, sessionId]);
+    }, [athleteId, targetSessionId]);
 
     const updateField = useCallback((exName: string, field: keyof TopSetData, value: string) => {
         setTopSets(prev => ({
@@ -70,14 +78,14 @@ export default function PlannedTopSetInput({
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             athleteId,
-                            sessionId,
+                            sessionId: targetSessionId,
                             programId,
                             exerciseName: ts.exerciseName,
                             weight: ts.weight || null,
                             reps: ts.reps || null,
                             rpe: ts.rpe || null,
                             unit,
-                            weekNum,
+                            weekNum: targetWeekNum,
                             dayNum,
                         }),
                     })
@@ -95,6 +103,11 @@ export default function PlannedTopSetInput({
     const hasEntries = Object.values(topSets).some(ts => ts.weight || ts.reps);
 
     if (!loaded) return null;
+
+    const title = targetNextWeek ? 'Plan Next Week\'s Top Sets' : 'Planned Top Sets';
+    const subtitle = targetNextWeek
+        ? 'What do you want to hit next week?'
+        : 'Plan your top sets for this session';
 
     return (
         <div style={{
@@ -120,7 +133,7 @@ export default function PlannedTopSetInput({
                         <Target size={14} style={{ color: '#38bdf8' }} />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                        <span style={{ fontSize: 13, fontWeight: 700 }}>Planned Top Sets</span>
+                        <span style={{ fontSize: 13, fontWeight: 700 }}>{title}</span>
                         {!expanded && saved && hasEntries && (
                             <span style={{ fontSize: 10, color: '#38bdf8', fontWeight: 600 }}>
                                 {Object.values(topSets).filter(ts => ts.weight || ts.reps).length} exercise{Object.values(topSets).filter(ts => ts.weight || ts.reps).length !== 1 ? 's' : ''} planned
@@ -128,7 +141,7 @@ export default function PlannedTopSetInput({
                         )}
                         {!expanded && !saved && !hasEntries && (
                             <span style={{ fontSize: 10, color: 'rgba(56,189,248,0.6)', fontWeight: 600 }}>
-                                Plan your top sets for this session
+                                {subtitle}
                             </span>
                         )}
                     </div>
@@ -144,6 +157,15 @@ export default function PlannedTopSetInput({
             {/* Expanded form */}
             {expanded && (
                 <div style={{ padding: '0 12px 12px' }}>
+                    {targetNextWeek && (
+                        <div style={{
+                            fontSize: 11, color: 'rgba(56,189,248,0.7)', fontWeight: 600,
+                            padding: '4px 0 8px', borderBottom: '1px solid rgba(255,255,255,0.04)',
+                            marginBottom: 8,
+                        }}>
+                            → Pre-fills Week {targetWeekNum} prescribed weights
+                        </div>
+                    )}
                     {exercises.slice(0, 4).map((ex, i) => {
                         const ts = topSets[ex.name] || { exerciseName: ex.name, weight: '', reps: '', rpe: '' };
                         return (
@@ -213,7 +235,7 @@ export default function PlannedTopSetInput({
                                 border: saved ? '1px solid rgba(16,185,129,0.3)' : 'none',
                             }}
                         >
-                            {saved ? <><Check size={14} /> Saved</> : saving ? 'Saving...' : 'Save Planned Top Sets'}
+                            {saved ? <><Check size={14} /> Saved for Week {targetWeekNum}</> : saving ? 'Saving...' : `Save for Week ${targetWeekNum}`}
                         </button>
                     )}
                 </div>

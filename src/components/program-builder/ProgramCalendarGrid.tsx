@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef } from 'react';
 
 export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, onSessionMove, onDuplicateSession, onDuplicateSessionToNextWeek, onDuplicateWeekToNextWeek, onClearWeek = null, existingPrograms = [], onGhostSessionClick = null }) {
     const [currentMonth, setCurrentMonth] = useState(() => {
@@ -130,12 +130,22 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
 
     // DnD State
     const [dragOverDate, setDragOverDate] = useState(null);
+    const isDraggingRef = useRef(false);
+    const justDroppedRef = useRef(false);
 
     const handleDragStart = (e, weekNum, dayNum) => {
+        isDraggingRef.current = true;
         const payload = JSON.stringify({ type: 'session', weekNum, dayNum });
         e.dataTransfer.setData('text/plain', payload);
         e.dataTransfer.setData('application/json', payload);
         e.dataTransfer.effectAllowed = 'move';
+    };
+
+    const handleDragEnd = () => {
+        isDraggingRef.current = false;
+        setDragOverDate(null);
+        // Keep justDroppedRef true for a short time to suppress the click
+        setTimeout(() => { justDroppedRef.current = false; }, 100);
     };
 
     const handleDragOver = (e, dateStr) => {
@@ -147,13 +157,15 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
     };
 
     const handleDragLeave = (e) => {
-        // e.preventDefault();
-        // setDragOverDate(null); // Flickers too much, maybe clear on drop or end
+        // Intentionally empty — clearing dragOverDate here causes flicker
     };
 
     const handleDrop = (e, targetWeekNum, targetDayNum, targetDateStr) => {
         e.preventDefault();
+        e.stopPropagation();
         setDragOverDate(null);
+        justDroppedRef.current = true;
+        isDraggingRef.current = false;
         try {
             let raw = e.dataTransfer.getData('text/plain');
             if (!raw) {
@@ -169,6 +181,15 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
         } catch (err) {
             console.error('Drop error', err);
         }
+    };
+
+    const handleCellClick = (weekNum, dayNum, dateStr) => {
+        // Suppress click if it was triggered right after a drop
+        if (justDroppedRef.current || isDraggingRef.current) {
+            justDroppedRef.current = false;
+            return;
+        }
+        onSelectDate(weekNum, dayNum, dateStr);
     };
 
     return (
@@ -194,7 +215,7 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
                 {calendarDays.map((day, i) => (
                     <div
                         key={day.dateStr}
-                        onClick={() => onSelectDate(day.weekNum, day.dayNum, day.dateStr)}
+                        onClick={() => handleCellClick(day.weekNum, day.dayNum, day.dateStr)}
                         onDragOver={(e) => handleDragOver(e, day.dateStr)}
                         onDragLeave={handleDragLeave}
                         onDrop={(e) => handleDrop(e, day.weekNum, day.dayNum, day.dateStr)}
@@ -223,6 +244,7 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
                             <div
                                 draggable
                                 onDragStart={(e) => handleDragStart(e, day.weekNum, day.dayNum)}
+                                onDragEnd={handleDragEnd}
                                 className="session-container"
                             >
                                 <div className="session-text">

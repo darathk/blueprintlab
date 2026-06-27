@@ -468,6 +468,41 @@ export const getLastLogDates = cache(async (coachId) => {
     return map;
 });
 
+/** Returns a map of { athleteId: { blockName, weekNum, dayNum, lastLogDate } } for each athlete's latest logged session */
+export const getAthletePositions = cache(async (coachId) => {
+    if (!coachId) return {};
+    const rows = await prisma.$queryRawUnsafe(`
+        SELECT DISTINCT ON (p."athleteId")
+            p."athleteId",
+            p.name AS "blockName",
+            l."sessionId",
+            l.date AS "lastLogDate"
+        FROM "Log" l
+        JOIN "Program" p ON p.id = l."programId"
+        JOIN "Athlete" a ON a.id = p."athleteId"
+        WHERE a."coachId" = $1
+          AND p.status != 'draft'
+        ORDER BY p."athleteId", l.date DESC, l."sessionId" DESC
+    `, coachId);
+    const map = {};
+    for (const row of rows) {
+        // sessionId format: programId_wX_dY
+        const parts = (row.sessionId || '').split('_');
+        let weekNum = null, dayNum = null;
+        for (const p of parts) {
+            if (p.startsWith('w')) weekNum = parseInt(p.slice(1), 10);
+            if (p.startsWith('d')) dayNum = parseInt(p.slice(1), 10);
+        }
+        map[row.athleteId] = {
+            blockName: row.blockName,
+            weekNum: weekNum || null,
+            dayNum: dayNum || null,
+            lastLogDate: row.lastLogDate,
+        };
+    }
+    return map;
+});
+
 // Dummy functions to prevent older unused routes from crashing during import tree parsing
 export async function readData() { return []; }
 export async function writeData() { }

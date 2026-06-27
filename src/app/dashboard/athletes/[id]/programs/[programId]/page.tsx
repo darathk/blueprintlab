@@ -17,7 +17,7 @@ export default async function EditProgramPage({ params }: { params: Promise<{ id
         getExerciseLibrary(),
         prisma.athlete.findUnique({
             where: { id },
-            select: { id: true, name: true, liftTargets: true, trainingSchedule: true }
+            select: { id: true, name: true, liftTargets: true, trainingSchedule: true, nextMeetName: true, nextMeetDate: true, meetAttempts: true, periodization: true }
         }),
         prisma.program.findMany({
             where: { athleteId: id, status: { not: 'draft' }, id: { not: programId } },
@@ -32,5 +32,5 @@ export default async function EditProgramPage({ params }: { params: Promise<{ id
 
     if (!program) return <div style={{ padding: '2rem' }}>Program not found.</div>;
 
-    return <ProgramBuilder athleteId={id} initialData={program} initialExercises={initialExercises} athleteLiftTargets={athlete?.liftTargets} athleteTrainingSchedule={athlete?.trainingSchedule} athleteName={athlete?.name} existingPrograms={existingPrograms} initialCoachNotes={initialCoachNotes as any} coachId={auth.user.id} />;
+    return <ProgramBuilder athleteId={id} initialData={program} initialExercises={initialExercises} athleteLiftTargets={athlete?.liftTargets} athleteTrainingSchedule={athlete?.trainingSchedule} athleteName={athlete?.name} athleteMeetData={{ nextMeetName: athlete?.nextMeetName, nextMeetDate: athlete?.nextMeetDate, meetAttempts: athlete?.meetAttempts, periodization: athlete?.periodization }} existingPrograms={existingPrograms} initialCoachNotes={initialCoachNotes as any} coachId={auth.user.id} />;
 }

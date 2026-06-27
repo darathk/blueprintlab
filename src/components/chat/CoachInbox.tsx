@@ -21,9 +21,9 @@ interface Message {
 
 interface ConvSummary { athleteId: string; athleteName: string; lastMessage: string; lastMessageAt: string; unreadCount: number; }
 
-interface Props { coachId: string; coachName: string; initialConvos?: ConvSummary[]; initialAthleteId?: string; initialMessages?: Message[]; }
+interface Props { coachId: string; coachName: string; initialConvos?: ConvSummary[]; initialAthleteId?: string; initialMessages?: Message[]; athletePositions?: Record<string, { blockName: string; weekNum: number | null; dayNum: number | null; lastLogDate: string }>; }
 
-export default function CoachInbox({ coachId, coachName, initialConvos = [], initialAthleteId, initialMessages = [] }: Props) {
+export default function CoachInbox({ coachId, coachName, initialConvos = [], initialAthleteId, initialMessages = [], athletePositions = {} }: Props) {
     const router = useRouter();
     
     // Aggressively prefetch dashboard so exiting chat is instant
@@ -277,6 +277,7 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                         initialMessages={selectedId === initialAthleteId ? initialMessages : undefined}
                         isEmbedded={true}
                         onBack={isMobile ? () => setSelectedId(null) : undefined}
+                        athletePosition={athletePositions[selectedId]}
                         headerActions={
                             <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
                                 <Link
