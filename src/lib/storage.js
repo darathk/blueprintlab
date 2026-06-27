@@ -475,6 +475,7 @@ export const getAthletePositions = cache(async (coachId) => {
         SELECT DISTINCT ON (p."athleteId")
             p."athleteId",
             p.name AS "blockName",
+            p.weeks AS "weeks",
             l."sessionId",
             l.date AS "lastLogDate"
         FROM "Log" l
@@ -486,13 +487,32 @@ export const getAthletePositions = cache(async (coachId) => {
     `, coachId);
     const map = {};
     for (const row of rows) {
-        // sessionId format: programId_wX_dY
-        const parts = (row.sessionId || '').split('_');
         let weekNum = null, dayNum = null;
-        for (const p of parts) {
-            if (p.startsWith('w')) weekNum = parseInt(p.slice(1), 10);
-            if (p.startsWith('d')) dayNum = parseInt(p.slice(1), 10);
+        
+        // sessionId format could be a UUID (new format) or programId_wX_dY (legacy format)
+        if (row.weeks && Array.isArray(row.weeks)) {
+            // Search through the weeks JSON for the session ID
+            for (const week of row.weeks) {
+                if (week.sessions && Array.isArray(week.sessions)) {
+                    const session = week.sessions.find(s => s.id === row.sessionId);
+                    if (session) {
+                        weekNum = week.weekNumber;
+                        dayNum = session.day;
+                        break;
+                    }
+                }
+            }
         }
+        
+        // Fallback for legacy format if not found in JSON (e.g. legacy logs where session id isn't in current program weeks)
+        if (!weekNum || !dayNum) {
+            const parts = (row.sessionId || '').split('_');
+            for (const p of parts) {
+                if (p.startsWith('w')) weekNum = parseInt(p.slice(1), 10);
+                if (p.startsWith('d')) dayNum = parseInt(p.slice(1), 10);
+            }
+        }
+        
         map[row.athleteId] = {
             blockName: row.blockName,
             weekNum: weekNum || null,
