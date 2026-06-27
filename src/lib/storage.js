@@ -471,53 +471,62 @@ export const getLastLogDates = cache(async (coachId) => {
 /** Returns a map of { athleteId: { blockName, weekNum, dayNum, lastLogDate } } for each athlete's latest logged session */
 export const getAthletePositions = cache(async (coachId) => {
     if (!coachId) return {};
-    const rows = await prisma.$queryRawUnsafe(`
-        SELECT DISTINCT ON (p."athleteId")
-            p."athleteId",
-            p.name AS "blockName",
-            p.weeks AS "weeks",
-            l."sessionId",
-            l.date AS "lastLogDate"
-        FROM "Log" l
-        JOIN "Program" p ON p.id = l."programId"
-        JOIN "Athlete" a ON a.id = p."athleteId"
-        WHERE a."coachId" = $1
-          AND p.status != 'draft'
-        ORDER BY p."athleteId", l.date DESC, l."sessionId" DESC
-    `, coachId);
+    
+    // Fetch active programs for athletes under this coach
+    const activePrograms = await prisma.program.findMany({
+        where: {
+            athlete: { coachId },
+            status: 'active'
+        },
+        select: {
+            athleteId: true,
+            name: true,
+            weeks: true,
+            startDate: true
+        }
+    });
+
     const map = {};
-    for (const row of rows) {
-        let weekNum = null, dayNum = null;
+    
+    // Calculate current day in athlete's timezone? We'll use server's local date for now, matching ScheduleView.
+    // Ensure we strip time to get accurate day diffs
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    const todayDate = new Date(todayStr);
+
+    for (const p of activePrograms) {
+        if (!p.startDate) continue;
         
-        // sessionId format could be a UUID (new format) or programId_wX_dY (legacy format)
-        if (row.weeks && Array.isArray(row.weeks)) {
-            // Search through the weeks JSON for the session ID
-            for (const week of row.weeks) {
-                if (week.sessions && Array.isArray(week.sessions)) {
-                    const session = week.sessions.find(s => s.id === row.sessionId);
-                    if (session) {
-                        weekNum = week.weekNumber;
-                        dayNum = session.day;
-                        break;
-                    }
-                }
-            }
+        // Start date is stored as YYYY-MM-DD
+        const startStr = (typeof p.startDate === 'string') ? p.startDate.split('T')[0] : p.startDate.toISOString().split('T')[0];
+        const startDate = new Date(startStr);
+        
+        const diffTime = todayDate.getTime() - startDate.getTime();
+        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        
+        let weekNum = 1;
+        let dayNum = 1;
+        
+        if (diffDays >= 0) {
+            weekNum = Math.floor(diffDays / 7) + 1;
+            dayNum = (diffDays % 7) + 1;
         }
         
-        // Fallback for legacy format if not found in JSON (e.g. legacy logs where session id isn't in current program weeks)
-        if (!weekNum || !dayNum) {
-            const parts = (row.sessionId || '').split('_');
-            for (const p of parts) {
-                if (p.startsWith('w')) weekNum = parseInt(p.slice(1), 10);
-                if (p.startsWith('d')) dayNum = parseInt(p.slice(1), 10);
-            }
+        // Cap at the end of the program
+        const maxWeek = Array.isArray(p.weeks) && p.weeks.length > 0 
+            ? Math.max(...p.weeks.map(w => w.weekNumber || 1)) 
+            : 1;
+            
+        if (weekNum > maxWeek) {
+            weekNum = maxWeek;
+            dayNum = 7;
         }
-        
-        map[row.athleteId] = {
-            blockName: row.blockName,
-            weekNum: weekNum || null,
-            dayNum: dayNum || null,
-            lastLogDate: row.lastLogDate,
+
+        map[p.athleteId] = {
+            blockName: p.name,
+            weekNum,
+            dayNum,
+            lastLogDate: todayStr
         };
     }
     return map;

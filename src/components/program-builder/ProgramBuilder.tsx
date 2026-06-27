@@ -1212,15 +1212,28 @@ export default function ProgramBuilder({
         let adjustedStart = snappedStart;
 
         if (firstNonEmptyIdx >= 0 && lastNonEmptyIdx >= 0) {
-            // Slice to only include weeks from first to last non-empty
-            // We DO NOT renumber weekNumber to preserve sessionIDs that match existing readiness and logs,
-            // UNLESS it's missing (for older programs)
-            compactedWeeks = weeks.slice(firstNonEmptyIdx, lastNonEmptyIdx + 1).map((w, i) => {
-                if (typeof w.weekNumber !== 'number') {
-                    return { ...w, weekNumber: i + 1 };
-                }
-                return w;
-            });
+            if (firstNonEmptyIdx > 0) {
+                // There are leading empty weeks! The user shifted everything down.
+                // We should adjust the program start date forward to match the first actual week.
+                const shiftedWeeks = firstNonEmptyIdx;
+                const d = new Date(adjustedStart);
+                d.setDate(d.getDate() + shiftedWeeks * 7);
+                adjustedStart = d.toISOString().split('T')[0];
+                
+                // Remove empty weeks and renumber
+                compactedWeeks = weeks.slice(firstNonEmptyIdx, lastNonEmptyIdx + 1).map((w, i) => ({
+                    ...w,
+                    weekNumber: i + 1
+                }));
+            } else {
+                // Slice to only include weeks from first to last non-empty
+                compactedWeeks = weeks.slice(firstNonEmptyIdx, lastNonEmptyIdx + 1).map((w, i) => {
+                    if (typeof w.weekNumber !== 'number') {
+                        return { ...w, weekNumber: i + 1 };
+                    }
+                    return w;
+                });
+            }
         }
 
         const start = new Date(adjustedStart);
@@ -2186,10 +2199,12 @@ export default function ProgramBuilder({
                                     </div>
                                     
                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                                        {(selectedHistoryProgram.weeks || []).map((week: any) => (
+                                        {(selectedHistoryProgram.weeks || []).map((week: any, weekIndex: number) => (
                                             <div key={week.id} style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
                                                 <div style={{ padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid var(--card-border)', fontWeight: 700, color: 'var(--foreground)' }}>
-                                                    Week {week.weekNumber}
+                                                    <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0 }}>
+                                                        Week {weekIndex + 1}
+                                                    </h3>
                                                 </div>
                                                 <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                                                     {(!week.sessions || week.sessions.length === 0) ? (
@@ -2869,9 +2884,9 @@ export default function ProgramBuilder({
 
                 {/* Header */}
                 <div style={{ textAlign: 'center', padding: '0 1rem 1rem 1rem', borderBottom: '1px solid var(--card-border)' }}>
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--foreground)', margin: 0 }}>
-                        Week Overview
-                    </h2>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--foreground)' }}>
+                        Week {weekOverviewIndex !== null ? weekOverviewIndex + 1 : ''} Overview
+                    </h3>
                     <p style={{ fontSize: '0.85rem', color: 'var(--secondary-foreground)', margin: '4px 0 0 0' }}>
                         {programName || 'Untitled Program'}
                     </p>
@@ -2880,8 +2895,7 @@ export default function ProgramBuilder({
                 {/* Week tabs */}
                 {weeks.length > 1 && (
                     <div style={{ display: 'flex', flexWrap: 'nowrap', overflowX: 'auto', gap: 6, padding: '0 24px 16px 24px', scrollbarWidth: 'none' }}>
-                        {weeks.filter(w => w.sessions.length > 0).map((w) => {
-                            const i = weeks.findIndex(x => x.id === w.id);
+                        {weeks.map((w, i) => {
                             return (
                                 <button
                                     key={w.id}
@@ -2893,7 +2907,7 @@ export default function ProgramBuilder({
                                         border: 'none', cursor: 'pointer', transition: 'all 0.2s'
                                     }}
                                 >
-                                    Week {w.weekNumber}
+                                    Week {i + 1}
                                 </button>
                             );
                         })}
