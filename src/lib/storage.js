@@ -472,27 +472,50 @@ export const getLastLogDates = cache(async (coachId) => {
 export const getAthletePositions = cache(async (coachId) => {
     if (!coachId) return {};
     
-    // Fetch active programs for athletes under this coach
-    const activePrograms = await prisma.program.findMany({
+    // Fetch non-draft programs for athletes under this coach
+    const allPrograms = await prisma.program.findMany({
         where: {
             athlete: { coachId },
-            status: 'active'
+            status: { not: 'draft' }
         },
         select: {
             athleteId: true,
             name: true,
             weeks: true,
             startDate: true
-        }
+        },
+        orderBy: { startDate: 'desc' }
     });
 
-    const map = {};
-    
-    // Calculate current day in athlete's timezone? We'll use server's local date for now, matching ScheduleView.
-    // Ensure we strip time to get accurate day diffs
     const now = new Date();
     const todayStr = now.toISOString().split('T')[0];
     const todayDate = new Date(todayStr);
+
+    const activeProgramsMap = new Map();
+    
+    for (const p of allPrograms) {
+        if (!p.startDate) continue;
+        const startStr = (typeof p.startDate === 'string') ? p.startDate.split('T')[0] : p.startDate.toISOString().split('T')[0];
+        
+        if (!activeProgramsMap.has(p.athleteId)) {
+            activeProgramsMap.set(p.athleteId, p);
+        } else {
+            const existing = activeProgramsMap.get(p.athleteId);
+            const existingStart = (typeof existing.startDate === 'string') ? existing.startDate.split('T')[0] : existing.startDate.toISOString().split('T')[0];
+            
+            // If the initially selected program is in the future, but this older program has already started,
+            // then the athlete is still currently doing this older program!
+            if (existingStart > todayStr && startStr <= todayStr) {
+                activeProgramsMap.set(p.athleteId, p);
+            }
+        }
+    }
+    
+    const activePrograms = Array.from(activeProgramsMap.values());
+
+    const map = {};
+    
+
 
     for (const p of activePrograms) {
         if (!p.startDate) continue;
