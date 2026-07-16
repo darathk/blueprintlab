@@ -67,7 +67,7 @@ export async function GET(request: Request) {
                 replyTo: { select: { id: true, content: true, mediaUrl: true, mediaType: true, sender: { select: { name: true } } } }
             },
             orderBy: { createdAt: 'desc' },
-            take: since ? 50 : 100
+            take: since ? 50 : 1000
         });
 
         return NextResponse.json(all.reverse());

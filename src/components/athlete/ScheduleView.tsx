@@ -318,6 +318,27 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
         latestEditStateRef.current = editState;
     }, [editState]);
 
+    useEffect(() => {
+        const handleVisibilityChange = () => {
+            if (document.visibilityState === 'hidden') {
+                // Flush all pending saves immediately
+                Object.entries(saveTimersRef.current).forEach(([sKey, data]) => {
+                    clearTimeout(data.timer);
+                    if (handleSaveRef.current) {
+                        handleSaveRef.current(sKey, data.programId);
+                    }
+                    delete saveTimersRef.current[sKey];
+                });
+            }
+        };
+        document.addEventListener('visibilitychange', handleVisibilityChange);
+        window.addEventListener('pagehide', handleVisibilityChange);
+        return () => {
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            window.removeEventListener('pagehide', handleVisibilityChange);
+        };
+    }, []);
+
     // Track per-session in-flight saves to prevent concurrent requests
     const savingInFlightRef = useRef<Set<string>>(new Set());
     const pendingSavesRef = useRef<Map<string, string>>(new Map()); // sKey -> programId
@@ -348,6 +369,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
             const res = await fetch('/api/logs', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                keepalive: true,
                 body: JSON.stringify({ athleteId, programId, sessionId: sKey, date: new Date().toISOString(), exercises: cleanLogs })
             });
 
@@ -380,17 +402,33 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
     };
 
     // Auto-save throttle logic
-    const saveTimersRef = useRef<Record<string, NodeJS.Timeout>>({});
+    const saveTimersRef = useRef<Record<string, { timer: NodeJS.Timeout, programId: string }>>({});
+
+    useEffect(() => {
+        return () => {
+            // Flush all pending saves immediately on unmount
+            Object.entries(saveTimersRef.current).forEach(([sKey, data]) => {
+                clearTimeout(data.timer);
+                if (handleSaveRef.current) {
+                    handleSaveRef.current(sKey, data.programId);
+                }
+            });
+        };
+    }, []);
 
     const triggerAutoSave = useCallback((sKey: string, programId: string) => {
         if (saveTimersRef.current[sKey]) {
-            clearTimeout(saveTimersRef.current[sKey]);
+            clearTimeout(saveTimersRef.current[sKey].timer);
         }
-        saveTimersRef.current[sKey] = setTimeout(() => {
-            if (handleSaveRef.current) {
-                handleSaveRef.current(sKey, programId);
-            }
-        }, 1500); // Save 1.5 seconds after last edit
+        saveTimersRef.current[sKey] = {
+            programId,
+            timer: setTimeout(() => {
+                if (handleSaveRef.current) {
+                    handleSaveRef.current(sKey, programId);
+                }
+                delete saveTimersRef.current[sKey];
+            }, 1500)
+        };
     }, []);
 
     const updateSet = (sKey: string, exIdx: number, setIdx: number, field: string, value: string, programId: string) => {
@@ -985,7 +1023,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                     });
                                                     const maxE1RM = e1rms.length > 0 ? Math.max(...e1rms) : 0;
 
-                                                    let exStress = { total: 0, central: 0, peripheral: 0 };
+                                                    const exStress = { total: 0, central: 0, peripheral: 0 };
                                                     let tonnage = 0;
                                                     let totalNL = 0;
                                                     sets.forEach((s: any) => {
@@ -1610,7 +1648,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                 });
                                                                 const maxE1RM = e1rms.length > 0 ? Math.max(...e1rms) : 0;
 
-                                                                let exStress = { total: 0, central: 0, peripheral: 0 };
+                                                                const exStress = { total: 0, central: 0, peripheral: 0 };
                                                                 let tonnage = 0;
                                                                 let totalNL = 0;
                                                                 sets.forEach((s: any) => {

@@ -173,7 +173,7 @@ interface Props {
     isEmbedded?: boolean;
     onBack?: () => void;
     headerActions?: React.ReactNode;
-    athletePosition?: { blockName: string; weekNum?: number; dayNum?: number };
+    athletePosition?: { blockName: string; weekNum?: number; dayNum?: number; isFinished?: boolean };
 }
 
 export default function ChatInterface({
@@ -220,7 +220,7 @@ export default function ChatInterface({
     // Pre-upload job IDs per staged file index — upload starts immediately on staging
     const [stagedPreUploadIds, setStagedPreUploadIds] = useState<Record<number, string>>({});
     // Expanded media panel state (desktop side-panel instead of native fullscreen)
-    const [expandedMedia, setExpandedMedia] = useState<{ url: string, type: 'video' | 'image' } | null>(null);
+    const [expandedMedia, setExpandedMedia] = useState<{ url: string, type: 'video' | 'image', message?: Message } | null>(null);
     // Subscribe to pre-upload progress so thumbnails update live
     const preUploadJobs = usePreUploadJobs();
     // Helper: get pre-upload progress (0-100) for a staged file index
@@ -267,26 +267,37 @@ export default function ChatInterface({
 
     // Initial fetch — once
     useEffect(() => {
+        const ac = new AbortController();
         if (initialMessages.length === 0) {
-            fetch(`/api/messages?athleteId=${athleteId}`)
+            fetch(`/api/messages?athleteId=${athleteId}`, { signal: ac.signal })
                 .then(r => r.ok ? r.json() : [])
-                .then(data => { setMessages(data); setLoaded(true); });
+                .then(data => { setMessages(data); setLoaded(true); })
+                .catch(e => { if (e.name !== 'AbortError') console.error(e); });
         } else {
             setLoaded(true);
         }
         // Mark as read and immediately refresh nav badge
         fetch('/api/messages', {
             method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ athleteId: otherUserId, readerId: currentUserId })
+            body: JSON.stringify({ athleteId: otherUserId, readerId: currentUserId }),
+            signal: ac.signal
         }).then(() => {
             window.dispatchEvent(new Event('unread-refresh'));
-        });
-    }, [athleteId, currentUserId, otherUserId]);
+        }).catch(e => { if (e.name !== 'AbortError') console.error(e); });
+
+        return () => ac.abort();
+    }, [athleteId, currentUserId, otherUserId, initialMessages.length]);
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const scrollTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     // Track if user has scrolled up — if so, don't auto-jump on polling updates
     const userScrolledUp = useRef(false);
+
+    useEffect(() => {
+        return () => {
+            if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
+        };
+    }, []);
 
     const scrollToBottom = useCallback((force = false) => {
         if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
@@ -423,6 +434,16 @@ export default function ChatInterface({
     const audioChunksRef = useRef<Blob[]>([]);
     const timerRef = useRef<NodeJS.Timeout | null>(null);
     const longPressRef = useRef<NodeJS.Timeout | null>(null);
+    const mediaStreamRef = useRef<MediaStream | null>(null);
+
+    useEffect(() => {
+        return () => {
+            if (timerRef.current) clearInterval(timerRef.current);
+            if (mediaStreamRef.current) {
+                mediaStreamRef.current.getTracks().forEach(track => track.stop());
+            }
+        };
+    }, []);
 
     const formatRecordingTime = (seconds: number) => {
         const mins = Math.floor(seconds / 60);
@@ -433,6 +454,7 @@ export default function ChatInterface({
     const startRecording = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+            mediaStreamRef.current = stream;
 
             // Critical: iOS/Safari needs audio/mp4 for smooth recording/playback in native players
             let mimeType = 'audio/webm';
@@ -531,7 +553,7 @@ export default function ChatInterface({
     }, []);
 
     // Send — optimistic
-    const handleSend = async () => {
+    const handleSend = async (overrideReplyTo?: any) => {
         const text = newMessage.trim();
         if (!text && stagedFiles.length === 0) return;
 
@@ -541,6 +563,8 @@ export default function ChatInterface({
             await handleEditMessage(editingMessage.id, text);
             return;
         }
+
+        const targetReplyTo = overrideReplyTo !== undefined ? overrideReplyTo : replyingTo;
 
         // Clear UI state immediately
         const filesToSend = [...stagedFiles];
@@ -567,7 +591,7 @@ export default function ChatInterface({
                 id: tempId, senderId: currentUserId, receiverId: otherUserId, content: text,
                 mediaUrl: null, mediaType: null,
                 createdAt: new Date().toISOString(), read: false,
-                replyToId: replyingTo?.id || null, replyTo: replyingTo ? { id: replyingTo.id, content: replyingTo.content, mediaUrl: replyingTo.mediaUrl, mediaType: replyingTo.mediaType, sender: replyingTo.sender } : null,
+                replyToId: targetReplyTo?.id || null, replyTo: targetReplyTo ? { id: targetReplyTo.id, content: targetReplyTo.content, mediaUrl: targetReplyTo.mediaUrl, mediaType: targetReplyTo.mediaType, sender: targetReplyTo.sender } : null,
                 sender: { id: currentUserId, name: currentUserName, email: '' },
                 receiver: { id: otherUserId, name: otherUserName, email: '' },
             });
@@ -583,8 +607,8 @@ export default function ChatInterface({
                     mediaUrl: urlsToSend[index],
                     mediaType: file.type,
                     createdAt: new Date().toISOString(), read: false,
-                    replyToId: index === 0 ? (replyingTo?.id || null) : null,
-                    replyTo: index === 0 ? (replyingTo ? { id: replyingTo.id, content: replyingTo.content, mediaUrl: replyingTo.mediaUrl, mediaType: replyingTo.mediaType, sender: replyingTo.sender } : null) : null,
+                    replyToId: index === 0 ? (targetReplyTo?.id || null) : null,
+                    replyTo: index === 0 ? (targetReplyTo ? { id: targetReplyTo.id, content: targetReplyTo.content, mediaUrl: targetReplyTo.mediaUrl, mediaType: targetReplyTo.mediaType, sender: targetReplyTo.sender } : null) : null,
                     sender: { id: currentUserId, name: currentUserName, email: '' },
                     receiver: { id: otherUserId, name: otherUserName, email: '' },
                 });
@@ -600,7 +624,7 @@ export default function ChatInterface({
                 const tempId = optimisticMessages[0].id;
                 const res = await fetch('/api/messages', {
                     method: 'POST', headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ senderId: currentUserId, receiverId: otherUserId, content: text, mediaUrl: null, mediaType: null, replyToId: replyingTo?.id || null })
+                    body: JSON.stringify({ senderId: currentUserId, receiverId: otherUserId, content: text, mediaUrl: null, mediaType: null, replyToId: targetReplyTo?.id || null })
                 });
                 if (res.ok) {
                     const real = await res.json();
@@ -623,7 +647,7 @@ export default function ChatInterface({
                     const content = i === 0 && text
                         ? text
                         : isAudio ? 'Voice Message' : isVid ? 'Video' : 'Photo';
-                    const replyToId = i === 0 ? (replyingTo?.id || null) : null;
+                    const replyToId = i === 0 ? (targetReplyTo?.id || null) : null;
                     const preJobId = preUploadIdsToSend[i];
                     const preResult = preJobId ? chatUploadManager.getPreUploadResult(preJobId) : null;
 
@@ -821,6 +845,14 @@ export default function ChatInterface({
         video.preload = 'auto';
         video.src = URL.createObjectURL(file);
 
+        let cleanedUp = false;
+        const cleanup = () => {
+            if (cleanedUp) return;
+            cleanedUp = true;
+            URL.revokeObjectURL(video.src);
+            video.remove();
+        };
+
         video.onloadeddata = () => {
             video.currentTime = 0.5;
         };
@@ -838,9 +870,10 @@ export default function ChatInterface({
             } catch (e) {
                 console.error('Poster generation failed:', e);
             }
-            URL.revokeObjectURL(video.src);
-            video.remove();
+            cleanup();
         };
+        video.onerror = () => cleanup();
+        setTimeout(cleanup, 5000);
     };
 
     // Handle pasting images from clipboard
@@ -1250,6 +1283,62 @@ export default function ChatInterface({
                             />
                         )}
                     </div>
+
+                    {/* Quick Reply Bar */}
+                    <div style={{
+                        padding: '16px 20px',
+                        paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
+                        background: 'rgba(255,255,255,0.03)',
+                        borderTop: '1px solid rgba(255,255,255,0.06)',
+                        flexShrink: 0,
+                    }}>
+                        <div style={{
+                            background: 'rgba(0,0,0,0.5)',
+                            borderRadius: 24,
+                            border: '1px solid rgba(255,255,255,0.1)',
+                            padding: '6px 6px 6px 18px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            maxWidth: 800,
+                            margin: '0 auto',
+                        }}>
+                            <input 
+                                type="text"
+                                value={newMessage} 
+                                onChange={e => setNewMessage(e.target.value)}
+                                onKeyDown={e => {
+                                    if (e.key === 'Enter' && newMessage.trim()) {
+                                        handleSend(expandedMedia.message);
+                                        setExpandedMedia(null);
+                                    }
+                                }}
+                                placeholder="Type a reply..."
+                                disabled={uploading}
+                                style={{
+                                    flex: 1, background: 'transparent', border: 'none',
+                                    color: 'var(--foreground)', fontSize: 15, outline: 'none',
+                                    opacity: uploading ? 0.5 : 1
+                                }}
+                            />
+                            <button 
+                                onClick={() => {
+                                    handleSend(expandedMedia.message);
+                                    setExpandedMedia(null);
+                                }}
+                                disabled={uploading || !newMessage.trim()}
+                                style={{
+                                    width: 36, height: 36, borderRadius: '50%',
+                                    background: newMessage.trim() ? 'var(--primary)' : 'rgba(255,255,255,0.1)',
+                                    color: newMessage.trim() ? '#000' : 'rgba(255,255,255,0.3)',
+                                    border: 'none', cursor: newMessage.trim() && !uploading ? 'pointer' : 'default',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    transition: 'all 0.2s', flexShrink: 0
+                                }}
+                            >
+                                {uploading ? <div className="spinner" style={{ width: 14, height: 14, border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 1s linear infinite' }} /> : <Send size={16} />}
+                            </button>
+                        </div>
+                    </div>
                 </div>
             )}
             <style>{`
@@ -1328,15 +1417,21 @@ export default function ChatInterface({
                                         return (
                                             <div style={{
                                                 display: 'flex', alignItems: 'center', gap: 4,
-                                                fontSize: 11, fontWeight: 600, color: 'rgba(56,189,248,0.8)',
-                                                background: 'rgba(56,189,248,0.1)',
-                                                border: '1px solid rgba(56,189,248,0.15)',
+                                                fontSize: 11, fontWeight: 600, color: pos.isFinished ? 'rgba(255,255,255,0.5)' : 'rgba(56,189,248,0.8)',
+                                                background: pos.isFinished ? 'rgba(255,255,255,0.05)' : 'rgba(56,189,248,0.1)',
+                                                border: pos.isFinished ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(56,189,248,0.15)',
                                                 borderRadius: 6, padding: '2px 8px',
                                                 whiteSpace: 'nowrap'
                                             }}>
-                                                <span>{pos.blockName}</span>
-                                                {pos.weekNum && <span style={{ color: 'rgba(255,255,255,0.4)', paddingLeft: 2 }}>W{pos.weekNum}</span>}
-                                                {pos.dayNum && <span style={{ color: 'rgba(255,255,255,0.3)' }}>D{pos.dayNum}</span>}
+                                                {pos.isFinished ? (
+                                                    <span>Finished {pos.blockName}</span>
+                                                ) : (
+                                                    <>
+                                                        <span>{pos.blockName}</span>
+                                                        {pos.weekNum && <span style={{ color: 'rgba(255,255,255,0.4)', paddingLeft: 2 }}>W{pos.weekNum}</span>}
+                                                        {pos.dayNum && <span style={{ color: 'rgba(255,255,255,0.3)' }}>D{pos.dayNum}</span>}
+                                                    </>
+                                                )}
                                             </div>
                                         );
                                     })()}
@@ -1456,7 +1551,7 @@ export default function ChatInterface({
                                                         src={msg.mediaUrl}
                                                         onLoadedData={() => scrollToBottom(false)}
                                                         style={{ width: '100%', maxWidth: '100%', maxHeight: 300, display: 'block', objectFit: 'contain' }}
-                                                        onExpand={(videoSrc) => setExpandedMedia({ url: videoSrc, type: 'video' })}
+                                                        onExpand={(videoSrc) => setExpandedMedia({ url: videoSrc, type: 'video', message: msg })}
                                                     />
                                                     {/* Upload/processing progress overlay */}
                                                     {uploadProgress[msg.id] !== undefined && uploadProgress[msg.id] < 100 && (
@@ -1488,7 +1583,7 @@ export default function ChatInterface({
                                             {/* Image */}
                                             {msg.mediaUrl && isImg && (
                                                 <div style={{ position: 'relative' }}>
-                                                    <img src={msg.mediaUrl} alt="" loading="lazy" onClick={() => setExpandedMedia({ url: msg.mediaUrl!, type: 'image' })} onLoad={() => scrollToBottom(false)}
+                                                    <img src={msg.mediaUrl} alt="" loading="lazy" onClick={() => setExpandedMedia({ url: msg.mediaUrl!, type: 'image', message: msg })} onLoad={() => scrollToBottom(false)}
                                                         style={{ width: '100%', maxWidth: '100%', maxHeight: 200, borderRadius: 14, display: 'block', cursor: 'pointer', objectFit: 'cover' }} />
                                                     {uploadProgress[msg.id] !== undefined && uploadProgress[msg.id] < 100 && (
                                                         <div style={{

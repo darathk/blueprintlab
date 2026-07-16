@@ -114,6 +114,15 @@ export default function MasterProgramCalendar({
         return null;
     };
 
+    // Build a set of logged sessionIds for quick lookup
+    const loggedSessionIds = useMemo(() => {
+        const set = new Set<string>();
+        if (Array.isArray(logs)) {
+            logs.forEach(l => { if (l.sessionId) set.add(l.sessionId); });
+        }
+        return set;
+    }, [logs]);
+
     // Generate grid
     const calendarDays = useMemo(() => {
         const year = currentMonth.getFullYear();
@@ -133,17 +142,26 @@ export default function MasterProgramCalendar({
             const isTravel = travelDates.includes(dateStr);
             const isMeet = nextMeetDate === dateStr;
 
+            // Check if this session has been logged by the athlete
+            // Athlete-side may save with session.id (UUID) or legacy key (programId_wX_dY)
+            let isLogged = false;
+            if (data?.program && data?.weekNum && data?.dayNum) {
+                const sKey = `${data.program.id}_w${data.weekNum}_d${data.dayNum}`;
+                isLogged = loggedSessionIds.has(sKey) || (data.session?.id && loggedSessionIds.has(data.session.id));
+            }
+
             days.push({
                 date,
                 dateStr,
                 isCurrentMonth: date.getMonth() === month,
                 isTravel,
                 isMeet,
+                isLogged,
                 ...data
             });
         }
         return days;
-    }, [currentMonth, athletePrograms, travelDates, nextMeetDate]);
+    }, [currentMonth, athletePrograms, travelDates, nextMeetDate, loggedSessionIds]);
 
     const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
@@ -197,8 +215,12 @@ export default function MasterProgramCalendar({
 
                                     {hasSession && (
                                         <div className="session-container" style={{
-                                            background: isActive ? 'var(--secondary)' : 'rgba(255,255,255,0.015)',
-                                            borderLeft: isActive ? '3px solid var(--primary)' : '3px solid rgba(255,255,255,0.1)',
+                                            background: day.isLogged
+                                                ? 'rgba(34, 197, 94, 0.12)'
+                                                : (isActive ? 'var(--secondary)' : 'rgba(255,255,255,0.015)'),
+                                            borderLeft: day.isLogged
+                                                ? '3px solid #22c55e'
+                                                : (isActive ? '3px solid var(--primary)' : '3px solid rgba(255,255,255,0.1)'),
                                             padding: '6px',
                                             borderRadius: '0 6px 6px 0',
                                             boxShadow: isActive ? '0 2px 4px rgba(0,0,0,0.2)' : 'none',
@@ -207,22 +229,24 @@ export default function MasterProgramCalendar({
                                             minWidth: 0,
                                         }}>
                                             <div className="session-text" style={{ minWidth: 0, overflow: 'hidden' }}>
-                                                <div style={{ fontWeight: 600, color: isActive ? 'var(--primary)' : 'var(--secondary-foreground)', overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
+                                                <div style={{ fontWeight: 600, color: day.isLogged ? '#22c55e' : (isActive ? 'var(--primary)' : 'var(--secondary-foreground)'), overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>
                                                     {day.program.name}
                                                 </div>
                                                 <div style={{ marginTop: '2px', overflow: 'hidden' }}>
-                                                    <div style={{ color: isActive ? 'var(--primary)' : 'var(--secondary-foreground)', fontWeight: 500, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{day.session.name}</div>
+                                                    <div style={{ color: day.isLogged ? '#22c55e' : (isActive ? 'var(--primary)' : 'var(--secondary-foreground)'), fontWeight: 500, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{day.session.name}</div>
                                                     <div style={{ opacity: 0.7, fontSize: '0.7rem' }}>{day.session.exercises.length} Exercises</div>
                                                 </div>
                                             </div>
                                             <div className="session-icon">
                                                 <div style={{
                                                     width: 20, height: 20, borderRadius: '50%',
-                                                    background: isActive ? 'linear-gradient(135deg, #38bdf8, #34d399)' : 'rgba(255,255,255,0.1)',
+                                                    background: day.isLogged
+                                                        ? 'linear-gradient(135deg, #22c55e, #16a34a)'
+                                                        : (isActive ? 'linear-gradient(135deg, #38bdf8, #34d399)' : 'rgba(255,255,255,0.1)'),
                                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    color: isActive ? '#000' : 'var(--secondary-foreground)', fontSize: 10
+                                                    color: day.isLogged ? '#fff' : (isActive ? '#000' : 'var(--secondary-foreground)'), fontSize: 10
                                                 }}>
-                                                    📋
+                                                    {day.isLogged ? '✓' : '📋'}
                                                 </div>
                                             </div>
                                         </div>

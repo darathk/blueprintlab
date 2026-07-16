@@ -9,9 +9,10 @@ import ImportProgram from '@/components/programs/ImportProgram';
 import ProgramCalendarGrid from './ProgramCalendarGrid';
 import { calculateStress } from '@/lib/stress-index';
 import { getExerciseCategory } from '@/lib/exercise-db';
-import { StickyNote, Pin, Calendar as CalendarIcon, X, Trash2, Copy, CalendarPlus, BookOpen, LayoutGrid, MessageSquare, Trophy } from 'lucide-react';
+import { Trash2, Plus, ArrowRight, ArrowDown, GripVertical, Check, MessageSquare, FileText, Activity, Save, RefreshCw, Layers, Copy, CopyPlus, Scissors, ClipboardPaste, ArrowUp, Zap, ExternalLink, Menu, X, Trophy, Calendar as CalendarIcon, CalendarPlus, LayoutGrid, BookOpen, StickyNote, Pin, LayoutDashboard } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 import ChatInterface from '@/components/chat/ChatInterface';
+import BlockReviewPanel from '@/components/program-builder/BlockReviewPanel';
 import PeriodizationPlanner from '@/components/dashboard/BlockOrganizer';
 
 const StressMatrix = dynamic(() => import('@/components/program-builder/StressMatrix'), {
@@ -289,6 +290,7 @@ export default function ProgramBuilder({
     athletes = [],
     coachId,
     isEmbedded = false,
+    athleteLogs = [],
 }: {
     athleteId?: string;
     initialData?: any;
@@ -302,6 +304,7 @@ export default function ProgramBuilder({
     athletes?: any[];
     coachId?: string;
     isEmbedded?: boolean;
+    athleteLogs?: any[];
 }) {
     const router = useRouter();
     const [programName, setProgramName] = useState('');
@@ -445,19 +448,10 @@ export default function ProgramBuilder({
         athletes?: any[];
     }
 
-    // ... (rest of component state)
-
     const [weeks, setWeeks] = useState<Week[]>([{
         id: generateId(),
         weekNumber: 1,
-        sessions: [{
-            id: generateId(),
-            day: 1,
-            name: 'Session 1',
-            exercises: [],
-            scheduledDate: '',
-            warmupDrills: ''
-        }]
+        sessions: []
     }]);
     const [isSaving, setIsSaving] = useState(false);
     // useTransition tracks the in-flight router.push so the "Saving..." button
@@ -469,18 +463,33 @@ export default function ProgramBuilder({
     const autoSaveTimerRef = useRef<NodeJS.Timeout | null>(null);
     const initialLoadRef = useRef(true);
     const [resumedFromDraft, setResumedFromDraft] = useState<boolean>(initialData?.status === 'draft');
+    const [notesOpen, setNotesOpen] = useState(false);
+    const [chatOpen, setChatOpen] = useState(false);
+    const [reviewOpen, setReviewOpen] = useState(false);
     const [meetPlannerOpen, setMeetPlannerOpen] = useState(false);
+    const [toolsMenuOpen, setToolsMenuOpen] = useState(false);
 
     // Load initial data if provided (Edit Mode)
     useEffect(() => {
         if (initialData) {
             setProgramName(initialData.name || '');
-            const rawStartDate = initialData.startDate || new Date().toISOString().split('T')[0];
+            let rawStartDate = '';
+            if (initialData.startDate) {
+                rawStartDate = typeof initialData.startDate === 'string' 
+                    ? initialData.startDate.split('T')[0] 
+                    : new Date(initialData.startDate).toISOString().split('T')[0];
+            } else {
+                rawStartDate = new Date().toISOString().split('T')[0];
+            }
             const snappedStartDate = snapToSunday(rawStartDate);
             setStartDate(snappedStartDate);
-            if (initialData.weeks && initialData.weeks.length > 0) {
+            let parsedWeeks = initialData.weeks;
+            if (typeof parsedWeeks === 'string') {
+                try { parsedWeeks = JSON.parse(parsedWeeks); } catch(e) { parsedWeeks = []; }
+            }
+            if (Array.isArray(parsedWeeks) && parsedWeeks.length > 0) {
                 // Sanitize weeks to ensure IDs and structure exist (handles legacy data)
-                const sanitizedWeeks = initialData.weeks.map(w => ({
+                const sanitizedWeeks = parsedWeeks.map(w => ({
                     ...w,
                     id: w.id || generateId(),
                     sessions: (w.sessions || []).map(s => ({
@@ -569,9 +578,6 @@ export default function ProgramBuilder({
     // Week overview drawer
     const [weekOverviewIndex, setWeekOverviewIndex] = useState<number | null>(null);
 
-    // Coach Notes panel
-    const [notesOpen, setNotesOpen] = useState(false);
-    const [chatOpen, setChatOpen] = useState(false);
     const { user } = useUser();
     const [coachNotes, setCoachNotes] = useState<any[]>(initialCoachNotes || []);
     const [notesLoading, setNotesLoading] = useState(false);
@@ -587,29 +593,35 @@ export default function ProgramBuilder({
         { value: 'preferences', label: 'Prefs', color: '#a855f7' },
     ];
 
-    const fetchNotes = async (showSpinner: boolean) => {
+    const fetchNotes = useCallback(async (showSpinner: boolean, signal?: AbortSignal) => {
         if (!athleteId) return;
         if (showSpinner) setNotesLoading(true);
         try {
-            const r = await fetch(`/api/coach-notes?athleteId=${athleteId}`);
+            const r = await fetch(`/api/coach-notes?athleteId=${athleteId}`, { signal });
             if (r.ok) setCoachNotes(await r.json());
-        } catch { /* ignore */ }
+        } catch (e: any) {
+            if (e.name !== 'AbortError') console.error('Failed to fetch notes', e);
+        }
         notesFetchedRef.current = true;
         if (showSpinner) setNotesLoading(false);
-    };
+    }, [athleteId]);
 
     useEffect(() => {
+        const ac = new AbortController();
         if (notesOpen && athleteId && !notesFetchedRef.current) {
-            fetchNotes(true);
+            fetchNotes(true, ac.signal);
         }
-    }, [notesOpen, athleteId]);
+        return () => ac.abort();
+    }, [notesOpen, athleteId, fetchNotes]);
 
     // Background prefetch on mount so the panel opens instantly the first time
     useEffect(() => {
+        const ac = new AbortController();
         if (athleteId && !notesFetchedRef.current) {
-            fetchNotes(false);
+            fetchNotes(false, ac.signal);
         }
-    }, [athleteId]);
+        return () => ac.abort();
+    }, [athleteId, fetchNotes]);
 
     const addNote = async () => {
         if (!newNoteContent.trim() || !athleteId) return;
@@ -1317,7 +1329,7 @@ export default function ProgramBuilder({
     // debounce window loses their most recent edits. Using fetch with
     // keepalive:true lets the request complete even after the page is gone.
     const buildPayloadRef = useRef(buildPayload);
-    useEffect(() => { buildPayloadRef.current = buildPayload; });
+    buildPayloadRef.current = buildPayload;
 
     useEffect(() => {
         const flushPendingSave = () => {
@@ -1393,23 +1405,11 @@ export default function ProgramBuilder({
         setIsSaving(false);
     };
 
-    // ... (previous state)
     const [editingSession, setEditingSession] = useState<{ w: number, s: number } | null>(null);
     const [progressionSession, setProgressionSession] = useState<{ day: number, name: string } | null>(null);
 
-    // ... (helpers)
-
-    // Helper: get the Sunday that starts the week containing a given date
-    const getSunday = (d: Date) => {
-        const s = new Date(d);
-        s.setDate(s.getDate() - s.getDay());
-        s.setHours(0, 0, 0, 0);
-        return s;
-    };
-
     const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-    /** Compute the date range label for a given program week, anchored to startDate */
     const weekDateRange = (weekNumber: number): string => {
         if (!startDate) return `Week ${weekNumber}`;
         const [sy, sm, sd] = startDate.split('-').map(Number);
@@ -1424,26 +1424,21 @@ export default function ProgramBuilder({
     };
 
     const getShiftedWeeks = (newStartDateStr: string, currentWeeks: any[]) => {
-        // Parse as LOCAL time to ensure consistency with Calendar Grid
         const [oldY, oldM, oldD] = startDate.split('-').map(Number);
         const oldStart = new Date(oldY, oldM - 1, oldD);
         oldStart.setHours(0, 0, 0, 0);
 
-        // Snap new start date to Sunday to keep weeks aligned with calendar
         const snappedNewStart = snapToSunday(newStartDateStr);
         const [newY, newM, newD] = snappedNewStart.split('-').map(Number);
         const newStart = new Date(newY, newM - 1, newD);
         newStart.setHours(0, 0, 0, 0);
 
-        // Flatten sessions: convert each to an actual date, then re-bucket using startDate-anchored weeks
         const allSessions: any[] = [];
         currentWeeks.forEach(w => {
             w.sessions.forEach(s => {
-                // Compute actual date: oldStart + (weekNumber-1)*7 + (day-1)
                 const actualDate = new Date(oldStart);
                 actualDate.setDate(actualDate.getDate() + (w.weekNumber - 1) * 7 + (s.day - 1));
 
-                // Compute new week/day relative to new start date
                 const diffTime = actualDate.getTime() - newStart.getTime();
                 const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
@@ -1460,13 +1455,11 @@ export default function ProgramBuilder({
             });
         });
 
-        // Re-bucket
         const reorganizedWeeks: any[][] = [];
         allSessions.forEach(s => {
             const wn = s._tempWeekNum;
             if (!reorganizedWeeks[wn]) reorganizedWeeks[wn] = [];
 
-            // clean up temp prop
             const { _tempWeekNum, ...cleanSession } = s;
             reorganizedWeeks[wn].push(cleanSession);
         });
@@ -1489,32 +1482,15 @@ export default function ProgramBuilder({
         return finalWeeks;
     };
 
-    // Kept for backward compatibility if used by click handler, but updated to use atomic logic
-    const shiftProgramDates = (newStartDateStr: string) => {
-        const finalWeeks = getShiftedWeeks(newStartDateStr, weeks);
-        setStartDate(snapToSunday(newStartDateStr));
-        // We must usually set weeks too if we use this standalone
-        // But the previous implementation returned finalWeeks and expected caller to handle?
-        // No, previous implementation returned finalWeeks but didn't setWeeks explicitly?
-        // Wait, handleSelectDate called `currentWeeks = shiftProgramDates(...)`.
-        // It relied on the return value.
-        // It did NOT assume setWeeks was called.
-        // BUT it did assume setStartDate WAS called.
-        // So I should keep this behavior for handleSelectDate.
-        return finalWeeks;
-    };
-
     const handleSelectDate = (weekNum: number, dayNum: number, dateStr: string) => {
         let currentWeeks = weeks;
 
-        // Check if date is before start date
         if (new Date(dateStr) < new Date(startDate)) {
             const snapped = snapToSunday(dateStr);
             currentWeeks = getShiftedWeeks(dateStr, weeks);
             setStartDate(snapped);
             setWeeks(currentWeeks);
             showToast(`Moved program start to ${snapped}`);
-            // Recalculate weekNum/dayNum relative to snapped Sunday start
             const [dy, dm, dd] = dateStr.split('-').map(Number);
             const clickedDate = new Date(dy, dm - 1, dd);
             const [sy, sm, sd] = snapped.split('-').map(Number);
@@ -1524,34 +1500,20 @@ export default function ProgramBuilder({
             dayNum = (diff % 7) + 1;
         }
 
-        // Logic continues with currentWeeks...
-        let newWeeks = currentWeeks.map(w => ({ ...w, sessions: [...w.sessions] }));
+        const newWeeks = currentWeeks.map(w => ({ ...w, sessions: [...w.sessions] }));
         let weekIndex = newWeeks.findIndex(w => w.weekNumber === weekNum);
 
         if (weekIndex === -1) {
             const currentMaxWeek = newWeeks.reduce((m, w) => Math.max(m, w.weekNumber || 0), 0);
-            // Fill gaps
             for (let i = currentMaxWeek + 1; i <= weekNum; i++) {
-                newWeeks.push({
-                    id: generateId(),
-                    weekNumber: i,
-                    sessions: []
-                });
+                newWeeks.push({ id: generateId(), weekNumber: i, sessions: [] });
             }
-            // Re-find index
             weekIndex = newWeeks.findIndex(w => w.weekNumber === weekNum);
-            // Safety check if still -1 (shouldn't happen unless logic error)
-            if (weekIndex === -1) {
-                // Force create one if something went wrong
-                newWeeks.push({ id: generateId(), weekNumber: weekNum, sessions: [] });
-                weekIndex = newWeeks.length - 1;
-            }
         }
 
         const sessionIndex = newWeeks[weekIndex].sessions.findIndex(s => s.day === dayNum);
 
         if (sessionIndex === -1) {
-            // Count total sessions across all weeks for sequential naming
             const totalSessions = newWeeks.reduce((sum, w) => sum + w.sessions.length, 0);
             newWeeks[weekIndex].sessions.push({
                 id: generateId(),
@@ -1572,26 +1534,19 @@ export default function ProgramBuilder({
         let targetD = toD;
         let targetW = toW;
 
-        // Capture the original session to move BEFORE any shifting
         const originalSourceWeek = weeks.find(w => Number(w.weekNumber) === Number(fromW));
         const originalSession = originalSourceWeek?.sessions.find(s => Number(s.day) === Number(fromD));
 
-        if (!originalSession) {
-            console.error("Could not find session to move at source", fromW, fromD);
-            return;
-        }
+        if (!originalSession) return;
 
         let pendingStartDate = null;
 
-        // Check for date shifting
         if (toDateStr && new Date(toDateStr) < new Date(startDate)) {
             const snapped = snapToSunday(toDateStr);
-            // Calculate shifted structure BUT DO NOT SET STATE YET
             currentWeeks = getShiftedWeeks(toDateStr, weeks);
             pendingStartDate = snapped;
             showToast(`Moved program start to ${snapped}`);
 
-            // Recalculate pointers using snapped start date
             const [oY, oM, oD] = startDate.split('-').map(Number);
             const oldStart = new Date(oY, oM - 1, oD);
             oldStart.setHours(0, 0, 0, 0);
@@ -1599,19 +1554,13 @@ export default function ProgramBuilder({
             const newStart = new Date(nY, nM - 1, nD);
             newStart.setHours(0, 0, 0, 0);
 
-            // Compute actual date of the source session
             const sourceDate = new Date(oldStart);
             sourceDate.setDate(sourceDate.getDate() + (fromW - 1) * 7 + (fromD - 1));
 
-            // Re-derive week/day relative to new start date
             const diffFromNew = Math.round((sourceDate.getTime() - newStart.getTime()) / (1000 * 60 * 60 * 24));
-            const newFromW = Math.floor(diffFromNew / 7) + 1;
-            const newFromD = (diffFromNew % 7) + 1;
+            fromD = (diffFromNew % 7) + 1;
+            fromW = Math.floor(diffFromNew / 7) + 1;
 
-            fromD = newFromD;
-            fromW = newFromW;
-
-            // Recalculate target relative to snapped start
             const [tY, tM, tD] = toDateStr.split('-').map(Number);
             const targetDate = new Date(tY, tM - 1, tD);
             const targetDiff = Math.round((targetDate.getTime() - newStart.getTime()) / (1000 * 60 * 60 * 24));
@@ -1620,7 +1569,6 @@ export default function ProgramBuilder({
         }
 
         if (fromW === targetW && fromD === targetD) {
-            // Only update if we shifted
             if (currentWeeks !== weeks) {
                 setWeeks(currentWeeks);
                 if (pendingStartDate) setStartDate(pendingStartDate);
@@ -1628,9 +1576,7 @@ export default function ProgramBuilder({
             return;
         }
 
-        let newWeeks = currentWeeks.map(w => ({ ...w, sessions: [...w.sessions] })); // logic continues with currentWeeks
-
-        // Ensure target week exists
+        const newWeeks = currentWeeks.map(w => ({ ...w, sessions: [...w.sessions] }));
         let targetWeekIndex = newWeeks.findIndex(w => Number(w.weekNumber) === Number(targetW));
         if (targetWeekIndex === -1) {
             const max = newWeeks.reduce((m, w) => Math.max(m, w.weekNumber), 0);
@@ -1644,51 +1590,26 @@ export default function ProgramBuilder({
             targetWeekIndex = newWeeks.findIndex(w => Number(w.weekNumber) === Number(targetW));
         }
 
-        // Find SOURCE in structure
         const sourceWeekIndex = newWeeks.findIndex(w => Number(w.weekNumber) === Number(fromW));
-        if (sourceWeekIndex === -1) {
-            console.error("Source week not found", fromW, newWeeks);
-            // Abort everything, do NOT set partial state
-            return;
-        }
-
         const sourceSessionIndex = newWeeks[sourceWeekIndex].sessions.findIndex(s => Number(s.day) === Number(fromD));
-        if (sourceSessionIndex === -1) {
-            console.error("Source session not found", fromD, newWeeks[sourceWeekIndex]);
-            // Abort
-            return;
-        }
-
-        // Perform Move
         const [sessionToMove] = newWeeks[sourceWeekIndex].sessions.splice(sourceSessionIndex, 1);
-
-        // Check TARGET occupancy
         const targetSessionIndex = newWeeks[targetWeekIndex].sessions.findIndex(s => Number(s.day) === Number(targetD));
 
         if (targetSessionIndex !== -1) {
-            // Swap
             const [targetSession] = newWeeks[targetWeekIndex].sessions.splice(targetSessionIndex, 1);
             targetSession.day = fromD;
             targetSession.scheduledDate = '';
             newWeeks[sourceWeekIndex].sessions.push(targetSession);
-            showToast(`Swapped sessions`);
         }
 
         sessionToMove.day = targetD;
         sessionToMove.scheduledDate = '';
         newWeeks[targetWeekIndex].sessions.push(sessionToMove);
 
-        // Clean up empty source week if desired?
-        // Logic currently allows empty weeks.
-
-        // Final atomic update
         setWeeks(newWeeks);
-        if (pendingStartDate) {
-            setStartDate(pendingStartDate);
-        }
+        if (pendingStartDate) setStartDate(pendingStartDate);
     };
 
-    // Lightweight toast notification for copy/duplicate/move operations
     const [toast, setToast] = useState<{ message: string; key: number } | null>(null);
     const toastTimerRef = useRef<NodeJS.Timeout | null>(null);
     const showToast = (msg: string) => {
@@ -1700,7 +1621,6 @@ export default function ProgramBuilder({
     const closeEditor = () => {
         if (editingSession) {
             const { w, s } = editingSession;
-            // Auto-remove empty session to prevent "ghost" sessions from accidental clicks
             if (weeks[w] && weeks[w].sessions[s] && weeks[w].sessions[s].exercises.length === 0) {
                 setWeeks(prev => prev.map((week, wi) =>
                     wi !== w ? week : {
@@ -1714,7 +1634,7 @@ export default function ProgramBuilder({
     };
 
     return (
-        <div className="program-builder-layout" style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 3fr', gap: '1.5rem', height: 'calc(100vh - 100px)', paddingTop: '1.5rem', paddingLeft: (notesOpen || chatOpen) && athleteId ? 360 : 0, transition: 'padding-left 0.25s ease' }}>
+        <div className="program-builder-layout" style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 3fr', gap: '1.5rem', height: 'calc(100vh - 100px)', paddingTop: '1.5rem', paddingLeft: (notesOpen || chatOpen || reviewOpen) && athleteId ? (reviewOpen ? 'calc(100vw - 380px)' : 360) : 0, transition: 'padding-left 0.25s ease' }}>
 
             {/* LEFTSIDE BAR: Exercise Picker + Stress Index */}
             <div className="program-builder-sidebar" style={{ display: 'flex', flexDirection: 'column', gap: '0', height: '100%', overflow: 'hidden' }}>
@@ -1940,8 +1860,6 @@ export default function ProgramBuilder({
 
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1rem' }}>
                         <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                            {/* View Toggle removed for streamlined Calendar UI */}
-
                             {resumedFromDraft && autoSaveStatus === 'idle' && (
                                 <span
                                     title="This program was auto-saved as a draft. Click Save & Assign to publish it."
@@ -1971,86 +1889,20 @@ export default function ProgramBuilder({
                             )}
 
                             {athleteId && (
-                                <>
-                                    <button
-                                        onClick={() => {
-                                            setChatOpen(o => {
-                                                if (!o) setNotesOpen(false);
-                                                return !o;
-                                            });
-                                        }}
-                                        style={{
-                                            display: 'inline-flex', alignItems: 'center', gap: 6,
-                                            background: chatOpen ? 'rgba(125,135,210,0.15)' : 'rgba(255,255,255,0.07)',
-                                            border: `1px solid ${chatOpen ? 'var(--primary)' : 'var(--card-border)'}`,
-                                            borderRadius: 'var(--radius)', padding: '0.5rem 1rem',
-                                            color: chatOpen ? 'var(--primary)' : 'var(--secondary-foreground)',
-                                            fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
-                                        }}
-                                    >
-                                        <MessageSquare size={14} />
-                                        Chat
-                                    </button>
-                                    {athleteId && (athleteMeetData?.periodization || athleteMeetData?.nextMeetName) && (() => {
-                                        const meetDaysOut = (() => {
-                                            if (!athleteMeetData?.nextMeetDate) return null;
-                                            const meet = new Date(athleteMeetData.nextMeetDate + 'T00:00:00');
-                                            const today = new Date();
-                                            today.setHours(0, 0, 0, 0);
-                                            return Math.ceil((meet.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-                                        })();
-                                        return (
-                                            <button
-                                                onClick={() => setMeetPlannerOpen(true)}
-                                                style={{
-                                                    display: 'inline-flex', alignItems: 'center', gap: 6,
-                                                    background: 'rgba(255,255,255,0.07)',
-                                                    border: '1px solid var(--card-border)',
-                                                    borderRadius: 'var(--radius)', padding: '0.5rem 1rem',
-                                                    color: 'var(--primary)',
-                                                    fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
-                                                    position: 'relative',
-                                                }}
-                                            >
-                                                <Trophy size={14} />
-                                                Meet Planner
-                                                {meetDaysOut !== null && (
-                                                    <span style={{
-                                                        background: meetDaysOut <= 14 ? '#ef4444' : meetDaysOut <= 42 ? '#f59e0b' : 'var(--primary)',
-                                                        color: meetDaysOut <= 42 ? '#000' : '#000',
-                                                        fontSize: '0.65rem',
-                                                        fontWeight: 700,
-                                                        padding: '2px 6px',
-                                                        borderRadius: '4px',
-                                                        lineHeight: 1.2,
-                                                        whiteSpace: 'nowrap',
-                                                    }}>
-                                                        {meetDaysOut}d out
-                                                    </span>
-                                                )}
-                                            </button>
-                                        );
-                                    })()}
-                                    <button
-                                        onClick={() => {
-                                            setNotesOpen(o => {
-                                                if (!o) setChatOpen(false);
-                                                return !o;
-                                            });
-                                        }}
-                                        style={{
-                                            display: 'inline-flex', alignItems: 'center', gap: 6,
-                                            background: notesOpen ? 'rgba(125,135,210,0.15)' : 'rgba(255,255,255,0.07)',
-                                            border: `1px solid ${notesOpen ? 'var(--primary)' : 'var(--card-border)'}`,
-                                            borderRadius: 'var(--radius)', padding: '0.5rem 1rem',
-                                            color: notesOpen ? 'var(--primary)' : 'var(--secondary-foreground)',
-                                            fontSize: '0.85rem', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s',
-                                        }}
-                                    >
-                                        <StickyNote size={14} />
-                                        Notes{coachNotes.length > 0 ? ` (${coachNotes.length})` : ''}
-                                    </button>
-                                </>
+                                <button
+                                    onClick={() => setToolsMenuOpen(true)}
+                                    style={{
+                                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                                        background: 'rgba(255,255,255,0.07)',
+                                        border: '1px solid var(--card-border)',
+                                        borderRadius: 'var(--radius)', padding: '0.5rem',
+                                        color: 'var(--secondary-foreground)',
+                                        cursor: 'pointer', transition: 'all 0.2s',
+                                    }}
+                                    title="Open Tools Menu"
+                                >
+                                    <Menu size={20} />
+                                </button>
                             )}
                             <button onClick={handleSave} className="btn btn-primary" disabled={isSaving || isNavigating}>
                                 {isSaving ? 'Saving...' : isNavigating ? 'Loading dashboard...' : 'Save & Assign'}
@@ -2078,6 +1930,27 @@ export default function ProgramBuilder({
                     
                     {/* Tab Navigation */}
                     <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '0.5rem', maxWidth: '1200px', margin: '0 auto 1.5rem auto' }}>
+                        {athleteId && (
+                            <button
+                                onClick={() => router.push(`/dashboard/athletes/${athleteId}`)}
+                                style={{
+                                    background: 'transparent',
+                                    color: 'var(--secondary-foreground)',
+                                    border: 'none',
+                                    borderRadius: '4px',
+                                    padding: '6px 16px',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 600,
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: 6
+                                }}
+                            >
+                                <LayoutDashboard size={14} /> Dashboard
+                            </button>
+                        )}
                         <button
                             onClick={() => setActiveView('builder')}
                             style={{
@@ -2642,6 +2515,133 @@ export default function ProgramBuilder({
                     </div>
                 </div>
             )}
+
+            {/* Tools Menu Side Navigation */}
+            {toolsMenuOpen && (
+                <div style={{
+                    position: 'fixed', top: 'var(--header-height, 56px)', right: 0, bottom: 0, width: 300, zIndex: 900,
+                    background: 'var(--background)', borderLeft: '1px solid var(--card-border)',
+                    display: 'flex', flexDirection: 'column', boxShadow: '-4px 0 24px rgba(0,0,0,0.5)',
+                    animation: 'slideInRight 0.3s cubic-bezier(0.16, 1, 0.3, 1)'
+                }}>
+                    <div style={{
+                        padding: '1.25rem', borderBottom: '1px solid var(--card-border)',
+                        display: 'flex', justifyContent: 'space-between', alignItems: 'center'
+                    }}>
+                        <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--foreground)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                            Program Tools
+                        </div>
+                        <button 
+                            onClick={() => setToolsMenuOpen(false)}
+                            style={{ background: 'transparent', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer' }}
+                        >
+                            <X size={20} />
+                        </button>
+                    </div>
+                    <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                        <button
+                            onClick={() => {
+                                setChatOpen(true);
+                                setNotesOpen(false);
+                                setReviewOpen(false);
+                                setToolsMenuOpen(false);
+                            }}
+                            className="nav-link"
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem',
+                                background: 'transparent', border: 'none', width: '100%', textAlign: 'left',
+                                cursor: 'pointer', borderRadius: '8px', color: 'var(--secondary-foreground)',
+                                fontWeight: 600, fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            <MessageSquare size={20} />
+                            Chat
+                        </button>
+
+                        <button
+                            onClick={() => {
+                                setMeetPlannerOpen(true);
+                                setToolsMenuOpen(false);
+                            }}
+                            className="nav-link"
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem',
+                                background: 'transparent', border: 'none', width: '100%', textAlign: 'left',
+                                cursor: 'pointer', borderRadius: '8px', color: 'var(--primary)',
+                                fontWeight: 600, fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em',
+                                transition: 'all 0.2s', position: 'relative'
+                            }}
+                        >
+                            <Trophy size={20} />
+                            Meet Planner
+                            {athleteMeetData?.nextMeetDate && (() => {
+                                const meet = new Date(athleteMeetData.nextMeetDate + 'T00:00:00');
+                                const today = new Date();
+                                today.setHours(0, 0, 0, 0);
+                                const meetDaysOut = Math.ceil((meet.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                                return (
+                                    <span style={{
+                                        background: meetDaysOut <= 14 ? '#ef4444' : meetDaysOut <= 42 ? '#f59e0b' : 'var(--primary)',
+                                        color: meetDaysOut <= 42 ? '#000' : '#000',
+                                        fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: '12px',
+                                        marginLeft: 'auto'
+                                    }}>
+                                        {meetDaysOut}d out
+                                    </span>
+                                );
+                            })()}
+                        </button>
+
+                        <button
+                            onClick={() => {
+                                setNotesOpen(true);
+                                setChatOpen(false);
+                                setReviewOpen(false);
+                                setToolsMenuOpen(false);
+                            }}
+                            className="nav-link"
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem',
+                                background: 'transparent', border: 'none', width: '100%', textAlign: 'left',
+                                cursor: 'pointer', borderRadius: '8px', color: 'var(--secondary-foreground)',
+                                fontWeight: 600, fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            <FileText size={20} />
+                            Notes
+                        </button>
+
+                        <button
+                            onClick={() => {
+                                setReviewOpen(true);
+                                setChatOpen(false);
+                                setNotesOpen(false);
+                                setToolsMenuOpen(false);
+                            }}
+                            className="nav-link"
+                            style={{
+                                display: 'flex', alignItems: 'center', gap: '1rem', padding: '1rem',
+                                background: 'transparent', border: 'none', width: '100%', textAlign: 'left',
+                                cursor: 'pointer', borderRadius: '8px', color: 'var(--secondary-foreground)',
+                                fontWeight: 600, fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em',
+                                transition: 'all 0.2s'
+                            }}
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21.21 15.89A10 10 0 1 1 8 2.83"></path><path d="M22 12A10 10 0 0 0 12 2v10z"></path></svg>
+                            Review
+                        </button>
+                    </div>
+                </div>
+            )}
+            {toolsMenuOpen && (
+                <div 
+                    onClick={() => setToolsMenuOpen(false)}
+                    style={{ position: 'fixed', inset: 0, zIndex: 890, background: 'rgba(0,0,0,0.4)', backdropFilter: 'blur(2px)' }} 
+                />
+            )}
+
             {/* Coach Notes Side Panel */}
             {notesOpen && athleteId && (
                 <>
@@ -3072,7 +3072,7 @@ export default function ProgramBuilder({
                     {toast.message}
                 </div>
             )}
-            <style>{`@keyframes toast-in { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }`}</style>
+            <style>{`@keyframes toast-in { from { opacity: 0; transform: translateX(-50%) translateY(10px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } } @keyframes slideInRight { from { transform: translateX(100%); } to { transform: translateX(0); } }`}</style>
 
             {/* Progression View: full-width matrix of the same session slot across every week */}
             {progressionSession && (
@@ -3217,6 +3217,16 @@ export default function ProgramBuilder({
                         </div>
                     </div>
                 </div>
+            )}
+            {/* Block Review Side Panel */}
+            {reviewOpen && athleteId && (
+                <BlockReviewPanel
+                    athleteId={athleteId}
+                    coachId={coachId as string}
+                    existingPrograms={existingPrograms}
+                    athleteLogs={athleteLogs || []}
+                    onClose={() => setReviewOpen(false)}
+                />
             )}
         </div>
     );

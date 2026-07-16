@@ -9,38 +9,38 @@ datasource db {
 }
 
 model Athlete {
-  id               String      @id @default(uuid())
-  name             String
-  email            String      @unique
-  role             String      @default("athlete") // 'coach' or 'athlete'
-  coachId          String? // If role is 'athlete', this links them to their coach
-  coach            Athlete?    @relation("CoachToAthlete", fields: [coachId], references: [id])
-  guidedAthletes   Athlete[]   @relation("CoachToAthlete")
-  nextMeetName     String?
-  nextMeetDate     String?
-  weightClass      Float?   // kg, e.g. 83.0
-  gender           String?  // "male" or "female"
-  federation       String?  @default("IPF")
-  periodization    Json?
-  meetAttempts     Json?
-  pastMeets        Json?
-  liftTargets      Json?     // { liftName: { timeToPeak: weeks, stressTarget: number } }
-  trainingSchedule String?   // Preferred training schedule (e.g., "Mon, Wed, Fri")
-  coachMarkedUnread Boolean  @default(false) // Coach manually marked this athlete's conversation as unread
-  competitors      Json?     // Saved competitor profiles for scouting
-  programs         Program[]
-  reports          Report[]
-  readiness        Readiness[]
-  sentMessages     Message[]   @relation("SentMessages")
-  receivedMessages Message[]   @relation("ReceivedMessages")
+  id                String             @id @default(uuid())
+  name              String
+  email             String             @unique
+  role              String             @default("athlete") // 'coach' or 'athlete'
+  coachId           String? // If role is 'athlete', this links them to their coach
+  coach             Athlete?           @relation("CoachToAthlete", fields: [coachId], references: [id])
+  guidedAthletes    Athlete[]          @relation("CoachToAthlete")
+  nextMeetName      String?
+  nextMeetDate      String?
+  weightClass       Float? // kg, e.g. 83.0
+  gender            String? // "male" or "female"
+  federation        String?            @default("IPF")
+  periodization     Json?
+  meetAttempts      Json?
+  pastMeets         Json?
+  liftTargets       Json? // { liftName: { timeToPeak: weeks, stressTarget: number } }
+  trainingSchedule  String? // Preferred training schedule (e.g., "Mon, Wed, Fri")
+  coachMarkedUnread Boolean            @default(false) // Coach manually marked this athlete's conversation as unread
+  competitors       Json? // Saved competitor profiles for scouting
+  programs          Program[]
+  reports           Report[]
+  readiness         Readiness[]
+  sentMessages      Message[]          @relation("SentMessages")
+  receivedMessages  Message[]          @relation("ReceivedMessages")
   pushSubscriptions PushSubscription[]
   programTemplates  ProgramTemplate[]  @relation("CoachTemplates")
   coachNotes        CoachNote[]        @relation("CoachNotes")
   athleteNotes      CoachNote[]        @relation("AthleteNotes")
   travelEvents      TravelEvent[]
   personalRecords   PersonalRecord[]
-  plannedTopSets    PlannedTopSet[]  @relation("AthleteTopSets")
-  coachTopSets      PlannedTopSet[]  @relation("CoachTopSets")
+  plannedTopSets    PlannedTopSet[]    @relation("AthleteTopSets")
+  coachTopSets      PlannedTopSet[]    @relation("CoachTopSets")
   announcements     Announcement[]
 
   @@index([coachId])
@@ -50,7 +50,7 @@ model TravelEvent {
   id        String   @id @default(uuid())
   athleteId String
   athlete   Athlete  @relation(fields: [athleteId], references: [id], onDelete: Cascade)
-  date      String   // YYYY-MM-DD
+  date      String // YYYY-MM-DD
   note      String?
   createdAt DateTime @default(now())
 
@@ -59,30 +59,32 @@ model TravelEvent {
 }
 
 model Program {
-  id        String   @id @default(uuid())
-  athleteId String
-  athlete   Athlete  @relation(fields: [athleteId], references: [id], onDelete: Cascade)
-  name      String
-  startDate String
-  endDate   String?
-  weeks     Json // Storing complex nested structure easily
-  status    String   @default("active")
-  createdAt DateTime @default(now())
-  logs      Log[]
+  id         String      @id @default(uuid())
+  athleteId  String
+  athlete    Athlete     @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  name       String
+  startDate  String
+  endDate    String?
+  weeks      Json // Storing complex nested structure easily
+  status     String      @default("active")
+  createdAt  DateTime    @default(now())
+  logs       Log[]
+  coachNotes CoachNote[]
 
   @@index([athleteId, status])
 }
 
 model Log {
-  id        String  @id @default(uuid())
-  programId String
-  program   Program @relation(fields: [programId], references: [id], onDelete: Cascade)
-  sessionId String
-  date      String
-  exercises Json // Completed sets, reps, rpes
+  id           String  @id @default(uuid())
+  programId    String
+  program      Program @relation(fields: [programId], references: [id], onDelete: Cascade)
+  sessionId    String
+  date         String
+  exercises    Json // Completed sets, reps, rpes
   warmupDrills String? @default("") // Pre-workout warm-up drills instruction/notes
 
   @@unique([programId, sessionId])
+  @@index([programId, date])
 }
 
 model Report {
@@ -92,6 +94,8 @@ model Report {
   created   DateTime @default(now())
   status    String   @default("Complete")
   config    Json // Stores report parameters
+
+  @@index([athleteId])
 }
 
 model CustomExercise {
@@ -128,8 +132,8 @@ model Message {
   replyToId  String?
   replyTo    Message?  @relation("MessageReplies", fields: [replyToId], references: [id], onDelete: SetNull)
   replies    Message[] @relation("MessageReplies")
-  reactions  Json?     // Storing emoji reactions as map: { emoji: [userIds] }
-  sessionId  String?   // programId_wX_dY — set when message originates from ExerciseFeedback
+  reactions  Json? // Storing emoji reactions as map: { emoji: [userIds] }
+  sessionId  String? // programId_wX_dY — set when message originates from ExerciseFeedback
 
   @@index([senderId, createdAt])
   @@index([receiverId, createdAt])
@@ -156,7 +160,7 @@ model ProgramTemplate {
   name        String
   description String?
   weeks       Json
-  tags        Json?    // string[] for categorization
+  tags        Json? // string[] for categorization
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -169,13 +173,16 @@ model CoachNote {
   coach     Athlete  @relation("CoachNotes", fields: [coachId], references: [id], onDelete: Cascade)
   athleteId String
   athlete   Athlete  @relation("AthleteNotes", fields: [athleteId], references: [id], onDelete: Cascade)
-  content   String
+  programId String?
+  program   Program? @relation(fields: [programId], references: [id], onDelete: Cascade)
+  content   String   @db.Text
   category  String   @default("general") // general, injury, cues, preferences
   pinned    Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([coachId, athleteId])
+  @@index([athleteId, programId])
 }
 
 model Announcement {
@@ -183,8 +190,8 @@ model Announcement {
   coachId   String
   coach     Athlete  @relation(fields: [coachId], references: [id], onDelete: Cascade)
   message   String
-  startDate String   // YYYY-MM-DD inclusive
-  endDate   String   // YYYY-MM-DD inclusive
+  startDate String // YYYY-MM-DD inclusive
+  endDate   String // YYYY-MM-DD inclusive
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -202,15 +209,16 @@ model PersonalRecord {
   unit         String   @default("lbs")
   videoUrl     String?
   videoType    String?
-  sessionId    String?  // programId_wX_dY
+  sessionId    String? // programId_wX_dY
   programName  String?
   weekNum      Int?
   dayNum       Int?
   note         String?
-  date         String   // YYYY-MM-DD
+  date         String // YYYY-MM-DD
   createdAt    DateTime @default(now())
 
   @@index([athleteId, date])
+  @@index([athleteId, exerciseName])
 }
 
 model PlannedTopSet {
@@ -220,16 +228,16 @@ model PlannedTopSet {
   coachId      String?
   coach        Athlete? @relation("CoachTopSets", fields: [coachId], references: [id], onDelete: SetNull)
   exerciseName String
-  weight       String?  // planned weight
-  reps         String?  // planned reps
-  rpe          String?  // planned RPE
+  weight       String? // planned weight
+  reps         String? // planned reps
+  rpe          String? // planned RPE
   unit         String   @default("lbs")
-  sessionId    String   // programId_wX_dY
+  sessionId    String // programId_wX_dY
   programId    String
   weekNum      Int
   dayNum       Int
   note         String?
-  date         String?  // YYYY-MM-DD target date
+  date         String? // YYYY-MM-DD target date
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

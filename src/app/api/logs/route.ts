@@ -16,6 +16,14 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'programId and sessionId are required' }, { status: 400 });
         }
 
+        if (!Array.isArray(body.exercises)) {
+            return NextResponse.json({ error: 'exercises must be an array' }, { status: 400 });
+        }
+
+        if (typeof body.date !== 'string') {
+            return NextResponse.json({ error: 'date must be a string' }, { status: 400 });
+        }
+
         // Ensure program exists and verify access
         const programRecord = await prisma.program.findUnique({
             where: { id: body.programId },

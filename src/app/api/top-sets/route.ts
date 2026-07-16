@@ -61,13 +61,13 @@ export async function POST(request: Request) {
                 const nextWeekNum = (parseInt(body.weekNum) || 1) + 1;
                 const weeks = program.weeks as any[];
                 
-                for (let w of weeks) {
+                for (const w of weeks) {
                     if (w.weekNumber === nextWeekNum && w.sessions) {
-                        for (let s of w.sessions) {
+                        for (const s of w.sessions) {
                             if (s.exercises) {
-                                for (let e of s.exercises) {
+                                for (const e of s.exercises) {
                                     if (e.name === body.exerciseName && e.sets) {
-                                        for (let set of e.sets) {
+                                        for (const set of e.sets) {
                                             set.target = set.target || {};
                                             set.target.weight = body.weight;
                                             updated = true;
@@ -104,7 +104,7 @@ export async function GET(request: Request) {
     const sessionId = searchParams.get('sessionId');
 
     try {
-        let where: any = {};
+        const where: any = {};
 
         if (athleteId) {
             const access = await requireAccessToAthlete(athleteId, auth);

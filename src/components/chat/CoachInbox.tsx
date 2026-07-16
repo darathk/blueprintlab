@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import { MessageSquare, Calendar as CalendarIcon, Search, X, MailOpen, LayoutDashboard, Pencil } from 'lucide-react';
+import { MessageSquare, Calendar as CalendarIcon, Search, X, MailOpen, LayoutDashboard, Pencil, Menu } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ChatInterface from './ChatInterface';
@@ -21,7 +21,7 @@ interface Message {
 
 interface ConvSummary { athleteId: string; athleteName: string; lastMessage: string; lastMessageAt: string; unreadCount: number; }
 
-interface Props { coachId: string; coachName: string; initialConvos?: ConvSummary[]; initialAthleteId?: string; initialMessages?: Message[]; athletePositions?: Record<string, { blockName: string; weekNum: number | null; dayNum: number | null; lastLogDate: string }>; }
+interface Props { coachId: string; coachName: string; initialConvos?: ConvSummary[]; initialAthleteId?: string; initialMessages?: Message[]; athletePositions?: Record<string, { blockName: string; weekNum: number | null; dayNum: number | null; isFinished?: boolean; lastLogDate: string }>; }
 
 export default function CoachInbox({ coachId, coachName, initialConvos = [], initialAthleteId, initialMessages = [], athletePositions = {} }: Props) {
     const router = useRouter();
@@ -41,6 +41,8 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
     const [activeSidebar, setActiveSidebar] = useState<'view' | 'edit' | 'notes' | null>(null);
     const [builderActive, setBuilderActive] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
+    const [filterType, setFilterType] = useState<'all' | 'unread'>('all');
+    const [actionsMenuOpen, setActionsMenuOpen] = useState(false);
 
     // Sort conversations: unread first, then by latest message
     const sortedConvos = [...convos].sort((a, b) => {
@@ -51,10 +53,13 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
         return new Date(b.lastMessageAt).getTime() - new Date(a.lastMessageAt).getTime();
     });
 
-    // Filtered conversations based on search term
-    const filteredConvos = sortedConvos.filter(c =>
-        c.athleteName.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    // Filtered conversations based on search term and toggle
+    const filteredConvos = sortedConvos.filter(c => {
+        const matchesSearch = c.athleteName.toLowerCase().includes(searchTerm.toLowerCase());
+        if (!matchesSearch) return false;
+        if (filterType === 'unread') return c.unreadCount > 0;
+        return true;
+    });
 
     const totalUnread = convos.reduce((s, c) => s + c.unreadCount, 0);
 
@@ -200,6 +205,32 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                     </div>
                 </div>
 
+                {/* Filter Toggle */}
+                <div style={{ padding: '8px 16px', display: 'flex', gap: 6, borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                    <button
+                        onClick={() => setFilterType('all')}
+                        style={{
+                            flex: 1, padding: '6px 0', borderRadius: 6, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer',
+                            background: filterType === 'all' ? 'rgba(125,135,210,0.15)' : 'transparent',
+                            color: filterType === 'all' ? 'var(--primary)' : 'rgba(255,255,255,0.4)',
+                            transition: 'all 0.2s'
+                        }}
+                    >
+                        All
+                    </button>
+                    <button
+                        onClick={() => setFilterType('unread')}
+                        style={{
+                            flex: 1, padding: '6px 0', borderRadius: 6, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer',
+                            background: filterType === 'unread' ? 'rgba(125,135,210,0.15)' : 'transparent',
+                            color: filterType === 'unread' ? 'var(--primary)' : 'rgba(255,255,255,0.4)',
+                            transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6
+                        }}
+                    >
+                        Unread {totalUnread > 0 && <span style={{ background: filterType === 'unread' ? 'var(--primary)' : 'rgba(255,255,255,0.2)', color: filterType === 'unread' ? '#fff' : '#fff', fontSize: 10, padding: '2px 6px', borderRadius: 10 }}>{totalUnread}</span>}
+                    </button>
+                </div>
+
                 <div style={{ flex: 1, overflowY: 'auto' }}>
                     {filteredConvos.length === 0 && <div style={{ textAlign: 'center', padding: 32, fontSize: 12, color: 'var(--secondary-foreground)' }}>{searchTerm ? 'No athletes match your search' : 'No conversations'}</div>}
                     {filteredConvos.map(c => (
@@ -279,67 +310,83 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                         onBack={isMobile ? () => setSelectedId(null) : undefined}
                         athletePosition={athletePositions[selectedId]}
                         headerActions={
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0 }}>
-                                <Link
-                                    prefetch={true}
-                                    href={`/dashboard/athletes/${selectedId}`}
-                                    title="Dashboard"
-                                    style={{
-                                        display: 'flex', alignItems: 'center', gap: 5,
-                                        background: 'rgba(255,255,255,0.1)',
-                                        border: 'none', borderRadius: 6, padding: isMobile ? '7px 8px' : '6px 10px',
-                                        color: '#fff', fontSize: 12, fontWeight: 500, cursor: 'pointer',
-                                        textDecoration: 'none', transition: 'background 0.2s', whiteSpace: 'nowrap',
-                                    }}
-                                >
-                                    <LayoutDashboard size={14} />
-                                    {!isMobile && 'Dashboard'}
-                                </Link>
+                            <div style={{ position: 'relative' }}>
                                 <button
-                                    onClick={() => setActiveSidebar(activeSidebar === 'notes' ? null : 'notes')}
-                                    title={activeSidebar === 'notes' ? 'Close Notes' : 'Coach Notes'}
+                                    onClick={() => setActionsMenuOpen(!actionsMenuOpen)}
                                     style={{
-                                        display: 'flex', alignItems: 'center', gap: 5,
-                                        background: activeSidebar === 'notes' ? 'var(--primary)' : 'rgba(255,255,255,0.1)',
-                                        border: 'none', borderRadius: 6, padding: isMobile ? '7px 8px' : '6px 10px',
-                                        color: activeSidebar === 'notes' ? '#000' : '#fff', fontSize: 12, fontWeight: 500, cursor: 'pointer',
-                                        transition: 'background 0.2s', whiteSpace: 'nowrap',
+                                        display: 'flex', alignItems: 'center', gap: 6,
+                                        background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                                        borderRadius: 8, padding: '6px 12px',
+                                        color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                                        transition: 'background 0.2s', whiteSpace: 'nowrap'
                                     }}
                                 >
-                                    <StickyNote size={14} />
-                                    {!isMobile && (activeSidebar === 'notes' ? 'Close Notes' : 'Notes')}
+                                    <Menu size={14} /> Actions
                                 </button>
-                                <button
-                                    onClick={() => setActiveSidebar(activeSidebar === 'edit' ? null : 'edit')}
-                                    title={activeSidebar === 'edit' ? 'Close Editor' : 'Edit Program'}
-                                    style={{
-                                        display: 'flex', alignItems: 'center', gap: 5,
-                                        background: activeSidebar === 'edit' ? 'var(--primary)' : 'rgba(125,135,210,0.2)',
-                                        border: activeSidebar === 'edit' ? 'none' : '1px solid rgba(125,135,210,0.3)',
-                                        borderRadius: 6,
-                                        padding: isMobile ? '6px 7px' : '6px 10px',
-                                        color: activeSidebar === 'edit' ? '#fff' : 'var(--primary)',
-                                        fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                                        transition: 'background 0.2s', whiteSpace: 'nowrap',
-                                    }}
-                                >
-                                    <Pencil size={14} />
-                                    {!isMobile && (activeSidebar === 'edit' ? 'Close Editor' : 'Edit Program')}
-                                </button>
-                                <button
-                                    onClick={() => setActiveSidebar(activeSidebar === 'view' ? null : 'view')}
-                                    title={activeSidebar === 'view' ? 'Hide Program' : 'View Program'}
-                                    style={{
-                                        display: 'flex', alignItems: 'center', gap: 5,
-                                        background: activeSidebar === 'view' ? 'var(--primary)' : 'rgba(255,255,255,0.1)',
-                                        border: 'none', borderRadius: 6, padding: isMobile ? '7px 8px' : '6px 10px',
-                                        color: '#fff', fontSize: 12, fontWeight: 500, cursor: 'pointer',
-                                        transition: 'background 0.2s', whiteSpace: 'nowrap',
-                                    }}
-                                >
-                                    <CalendarIcon size={14} />
-                                    {!isMobile && (activeSidebar === 'view' ? 'Hide Program' : 'View Program')}
-                                </button>
+
+                                {actionsMenuOpen && (
+                                    <>
+                                        <div onClick={() => setActionsMenuOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
+                                        <div style={{
+                                            position: 'absolute', top: '100%', right: 0, marginTop: 8,
+                                            background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.1)',
+                                            borderRadius: 8, padding: 6, display: 'flex', flexDirection: 'column', gap: 4, zIndex: 50,
+                                            minWidth: 160, boxShadow: '0 10px 40px rgba(0,0,0,0.5)'
+                                        }}>
+                                            <Link
+                                                prefetch={true}
+                                                href={`/dashboard/athletes/${selectedId}`}
+                                                title="Dashboard"
+                                                onClick={() => setActionsMenuOpen(false)}
+                                                style={{
+                                                    display: 'flex', alignItems: 'center', gap: 8,
+                                                    background: 'transparent',
+                                                    border: 'none', borderRadius: 6, padding: '8px 12px',
+                                                    color: '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                                                    textDecoration: 'none', transition: 'background 0.2s'
+                                                }}
+                                            >
+                                                <LayoutDashboard size={14} /> Dashboard
+                                            </Link>
+                                            <button
+                                                onClick={() => { setActiveSidebar(activeSidebar === 'notes' ? null : 'notes'); setActionsMenuOpen(false); }}
+                                                style={{
+                                                    display: 'flex', alignItems: 'center', gap: 8,
+                                                    background: activeSidebar === 'notes' ? 'var(--primary)' : 'transparent',
+                                                    border: 'none', borderRadius: 6, padding: '8px 12px',
+                                                    color: activeSidebar === 'notes' ? '#000' : '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                                                    textAlign: 'left'
+                                                }}
+                                            >
+                                                <StickyNote size={14} /> {activeSidebar === 'notes' ? 'Close Notes' : 'Notes'}
+                                            </button>
+                                            <button
+                                                onClick={() => { setActiveSidebar(activeSidebar === 'edit' ? null : 'edit'); setActionsMenuOpen(false); }}
+                                                style={{
+                                                    display: 'flex', alignItems: 'center', gap: 8,
+                                                    background: activeSidebar === 'edit' ? 'var(--primary)' : 'transparent',
+                                                    border: 'none', borderRadius: 6, padding: '8px 12px',
+                                                    color: activeSidebar === 'edit' ? '#000' : '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                                                    textAlign: 'left'
+                                                }}
+                                            >
+                                                <Pencil size={14} /> {activeSidebar === 'edit' ? 'Close Editor' : 'Edit Program'}
+                                            </button>
+                                            <button
+                                                onClick={() => { setActiveSidebar(activeSidebar === 'view' ? null : 'view'); setActionsMenuOpen(false); }}
+                                                style={{
+                                                    display: 'flex', alignItems: 'center', gap: 8,
+                                                    background: activeSidebar === 'view' ? 'var(--primary)' : 'transparent',
+                                                    border: 'none', borderRadius: 6, padding: '8px 12px',
+                                                    color: activeSidebar === 'view' ? '#000' : '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                                                    textAlign: 'left'
+                                                }}
+                                            >
+                                                <CalendarIcon size={14} /> {activeSidebar === 'view' ? 'Hide Program' : 'View Program'}
+                                            </button>
+                                        </div>
+                                    </>
+                                )}
                             </div>
                         }
                     />

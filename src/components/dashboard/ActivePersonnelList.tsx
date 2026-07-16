@@ -204,7 +204,7 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
 
         const currentProgram = programs.find(p => p.id === activeProgId);
 
-        let progress = {
+        const progress = {
             completedSessions: 0,
             totalSessions: 0,
             currentWeek: 1,

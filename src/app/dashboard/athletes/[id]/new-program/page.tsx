@@ -8,7 +8,7 @@ export default async function NewProgramPage({ params }: { params: Promise<{ id:
     const auth = await requireAuth();
     if ('error' in auth) return auth.error;
     
-    const [initialExercises, athlete, existingPrograms, initialCoachNotes, latestDraft] = await Promise.all([
+    const [initialExercises, athlete, existingPrograms, initialCoachNotes, latestDraft, athleteLogs] = await Promise.all([
         getExerciseLibrary(),
         prisma.athlete.findUnique({
             where: { id },
@@ -30,6 +30,10 @@ export default async function NewProgramPage({ params }: { params: Promise<{ id:
             orderBy: { createdAt: 'desc' },
             select: { id: true, name: true, startDate: true, endDate: true, weeks: true, status: true, createdAt: true }
         }),
+        prisma.log.findMany({
+            where: { program: { athleteId: id } },
+            orderBy: { date: 'desc' }
+        })
     ]);
 
     // Only resume a draft if it has actual content (at least one exercise).
@@ -49,10 +53,15 @@ export default async function NewProgramPage({ params }: { params: Promise<{ id:
         }).catch(() => {});
     }
 
+    const prefilledData: any = draftHasContent ? latestDraft : null;
+
+    // The user requested NOT to pre-populate new programs with previous block's exercises.
+    // They want a clean slate when clicking 'New Program'.
+
     return (
         <ProgramBuilder
             athleteId={id}
-            initialData={draftHasContent ? latestDraft : null}
+            initialData={prefilledData}
             initialExercises={initialExercises}
             athleteLiftTargets={athlete?.liftTargets}
             athleteTrainingSchedule={athlete?.trainingSchedule}
@@ -61,6 +70,7 @@ export default async function NewProgramPage({ params }: { params: Promise<{ id:
             existingPrograms={existingPrograms}
             initialCoachNotes={initialCoachNotes as any}
             coachId={auth.user.id}
+            athleteLogs={athleteLogs}
         />
     );
 }

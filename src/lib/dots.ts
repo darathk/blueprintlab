@@ -177,7 +177,7 @@ export function getCompetitionDataPoints(
     entries.sort((a, b) => a.scheduledDate.getTime() - b.scheduledDate.getTime());
 
     const points: CompetitionDataPoint[] = [];
-    let lastKnown = { squat: 0, bench: 0, deadlift: 0 };
+    const lastKnown = { squat: 0, bench: 0, deadlift: 0 };
 
     for (const { dateLabel, squatE1rm, benchE1rm, deadliftE1rm } of entries) {
         if (squatE1rm > 0) lastKnown.squat = squatE1rm;

@@ -9,6 +9,7 @@ import { useMemo, useState } from 'react';
 
 export default function CompetitionLiftHeatMap({ blocks, logs, primaryLift }) {
     const [selectedCell, setSelectedCell] = useState(null); // { reps, rpe, data: [blocks], val }
+    const [expandedBlockId, setExpandedBlockId] = useState(null);
     const [metric, setMetric] = useState('Gain'); // 'End E1RM', 'Peak E1RM', 'Gain', '# of Blocks'
     const [viewMode, setViewMode] = useState('grid'); // 'grid' | 'radial'
     const [showInfo, setShowInfo] = useState(false);
@@ -353,65 +354,225 @@ export default function CompetitionLiftHeatMap({ blocks, logs, primaryLift }) {
             </div>
 
             {/* Modal */}
-            {selectedCell && (
+            {selectedCell && (() => {
+                // Build session-level protocol data for each block in the selected cell
+                const blocksWithSessions = selectedCell.blocks.map(block => {
+                    const blockLogs = logs.filter(l =>
+                        (l.programId === block.id || (!l.programId && l.programName === block.name)) &&
+                        l.exercises.some(e =>
+                            e.name === `Competition ${primaryLift}` || e.isPrimary
+                        )
+                    );
+
+                    // Find sessions that actually contain the selected reps/rpe combo
+                    const matchingSessions = [];
+                    blockLogs.forEach(log => {
+                        const matchingExercises = [];
+                        log.exercises.forEach(e => {
+                            if (e.name === `Competition ${primaryLift}` || e.isPrimary) {
+                                const matchingSets = (e.sets || []).filter(s => {
+                                    const sReps = Math.round(s.reps || e.reps || 0);
+                                    const sRpe = Math.round((s.rpe || e.rpe || 0) * 2) / 2;
+                                    return sReps === selectedCell.reps && sRpe === selectedCell.rpe;
+                                });
+                                if (matchingSets.length > 0) {
+                                    matchingExercises.push({ name: e.name, sets: matchingSets });
+                                }
+                            }
+                        });
+                        if (matchingExercises.length > 0) {
+                            matchingSessions.push({
+                                date: log.date,
+                                sessionName: log.sessionName || log.name || 'Session',
+                                matchingExercises,
+                                allExercises: log.exercises
+                            });
+                        }
+                    });
+
+                    return { ...block, matchingSessions };
+                });
+
+                return (
                 <div style={{
                     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
                     background: 'rgba(5, 10, 20, 0.8)', zIndex: 1000,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     backdropFilter: 'blur(8px)'
-                }} onClick={() => setSelectedCell(null)}>
+                }} onClick={() => { setSelectedCell(null); setExpandedBlockId(null); }}>
                     <div className="solid-panel" style={{
                         padding: '2rem', borderRadius: '12px',
-                        width: '450px', maxWidth: '90vw', border: '1px solid var(--primary)'
+                        width: '650px', maxWidth: '90vw', maxHeight: '85vh', border: '1px solid var(--primary)',
+                        display: 'flex', flexDirection: 'column'
                     }} onClick={e => e.stopPropagation()}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '1rem' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '1rem', flexShrink: 0 }}>
                             <h3 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--foreground)' }}>
                                 <span style={{ color: 'var(--primary)' }}>{selectedCell.reps}</span> Reps @ <span style={{ color: 'var(--accent)' }}>RPE {selectedCell.rpe}</span>
                             </h3>
-                            <button onClick={() => setSelectedCell(null)} style={{ background: 'transparent', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', fontSize: '1.5rem', lineHeight: 0.5 }}>&times;</button>
+                            <button onClick={() => { setSelectedCell(null); setExpandedBlockId(null); }} style={{ background: 'transparent', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', fontSize: '1.5rem', lineHeight: 0.5 }}>&times;</button>
                         </div>
 
-                        <div style={{ marginBottom: '1.5rem', fontSize: '1rem', color: 'var(--muted)' }}>
+                        <div style={{ marginBottom: '1.5rem', fontSize: '1rem', color: 'var(--muted)', flexShrink: 0 }}>
                             Average {metric}: <span style={{ color: 'var(--foreground)', fontWeight: 'bold', fontSize: '1.2rem', marginLeft: '0.5rem' }}>
                                 {metric === '# of Blocks' ? selectedCell.val : selectedCell.val.toFixed(1)}
                             </span>
                         </div>
 
-                        <div style={{ maxHeight: '300px', overflowY: 'auto' }}>
-                            <table style={{ width: '100%', fontSize: '0.9rem', borderCollapse: 'collapse' }}>
-                                <thead>
-                                    <tr style={{ borderBottom: '1px solid var(--card-border)', color: 'var(--secondary-foreground)', textAlign: 'left' }}>
-                                        <th style={{ padding: '0.75rem 0.5rem' }}>Phase / Mission</th>
-                                        <th style={{ padding: '0.75rem 0.5rem', textAlign: 'right' }}>{metric}</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {selectedCell.blocks.map((b, i) => {
-                                        let bVal = 0;
-                                        if (metric === '# of Blocks') bVal = 1;
-                                        else if (metric === 'End E1RM') bVal = b.endE1RM || 0;
-                                        else if (metric === 'Peak E1RM') bVal = b.peakE1RM || 0;
-                                        else if (metric === 'Gain') bVal = b.gain || 0;
+                        <div style={{ overflowY: 'auto', flex: 1, minHeight: 0 }}>
+                            {blocksWithSessions.map((b, i) => {
+                                let bVal = 0;
+                                if (metric === '# of Blocks') bVal = 1;
+                                else if (metric === 'End E1RM') bVal = b.endE1RM || 0;
+                                else if (metric === 'Peak E1RM') bVal = b.peakE1RM || 0;
+                                else if (metric === 'Gain') bVal = b.gain || 0;
 
-                                        return (
-                                            <tr key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-                                                <td style={{ padding: '0.75rem 0.5rem', color: 'var(--foreground)' }}>{b.name}</td>
-                                                <td style={{ padding: '0.75rem 0.5rem', textAlign: 'right', color: metric === 'Gain' && bVal > 0 ? 'var(--success)' : (metric === 'Gain' && bVal < 0 ? 'var(--danger)' : 'var(--foreground)'), fontWeight: 600 }}>
-                                                    {metric === 'Gain' && bVal > 0 ? '+' : ''}{metric === '# of Blocks' ? bVal : bVal.toFixed(1)} {metric !== '# of Blocks' && 'lbs'}
-                                                </td>
-                                            </tr>
-                                        );
-                                    })}
-                                </tbody>
-                            </table>
+                                const isExpanded = expandedBlockId === b.id;
+
+                                return (
+                                    <div key={i} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)', marginBottom: isExpanded ? '1rem' : 0 }}>
+                                        {/* Block Row - Clickable */}
+                                        <div
+                                            onClick={() => setExpandedBlockId(isExpanded ? null : b.id)}
+                                            style={{
+                                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                                padding: '0.75rem 0.5rem', cursor: 'pointer', transition: 'background 0.15s',
+                                                borderRadius: '6px',
+                                                background: isExpanded ? 'rgba(125,135,210,0.08)' : 'transparent',
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                                                <span style={{
+                                                    color: 'var(--secondary-foreground)', fontSize: '0.75rem',
+                                                    transition: 'transform 0.2s',
+                                                    display: 'inline-block',
+                                                    transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)'
+                                                }}>▶</span>
+                                                <div>
+                                                    <div style={{ color: 'var(--foreground)', fontWeight: 600, fontSize: '0.9rem' }}>{b.name}</div>
+                                                    <div style={{ color: 'var(--secondary-foreground)', fontSize: '0.75rem', marginTop: '2px' }}>
+                                                        {b.startDate && new Date(b.startDate).toLocaleDateString()} – {b.endDate && b.endDate !== 'Ongoing' ? new Date(b.endDate).toLocaleDateString() : 'Ongoing'}
+                                                        {b.matchingSessions.length > 0 && <span style={{ marginLeft: '0.5rem', color: 'var(--primary)' }}>• {b.matchingSessions.length} session{b.matchingSessions.length !== 1 ? 's' : ''}</span>}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div style={{
+                                                textAlign: 'right',
+                                                color: metric === 'Gain' && bVal > 0 ? 'var(--success)' : (metric === 'Gain' && bVal < 0 ? 'var(--danger)' : 'var(--foreground)'),
+                                                fontWeight: 600, fontSize: '0.9rem'
+                                            }}>
+                                                {metric === 'Gain' && bVal > 0 ? '+' : ''}{metric === '# of Blocks' ? bVal : bVal.toFixed(1)} {metric !== '# of Blocks' && 'lbs'}
+                                            </div>
+                                        </div>
+
+                                        {/* Expanded Protocol Detail */}
+                                        {isExpanded && (
+                                            <div style={{
+                                                padding: '0 0.5rem 1rem 2.25rem',
+                                                animation: 'fadeIn 0.2s ease'
+                                            }}>
+                                                {/* Block Stats Summary */}
+                                                <div style={{
+                                                    display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.75rem',
+                                                    marginBottom: '1rem', padding: '0.75rem',
+                                                    background: 'rgba(255,255,255,0.03)', borderRadius: '8px', border: '1px solid var(--card-border)'
+                                                }}>
+                                                    <div style={{ textAlign: 'center' }}>
+                                                        <div style={{ fontSize: '0.65rem', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Start E1RM</div>
+                                                        <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--foreground)', marginTop: '2px' }}>{b.startE1RM?.toFixed(1) || '—'}</div>
+                                                    </div>
+                                                    <div style={{ textAlign: 'center' }}>
+                                                        <div style={{ fontSize: '0.65rem', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>End E1RM</div>
+                                                        <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--foreground)', marginTop: '2px' }}>{b.endE1RM?.toFixed(1) || '—'}</div>
+                                                    </div>
+                                                    <div style={{ textAlign: 'center' }}>
+                                                        <div style={{ fontSize: '0.65rem', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Peak E1RM</div>
+                                                        <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--foreground)', marginTop: '2px' }}>{b.peakE1RM?.toFixed(1) || '—'}</div>
+                                                    </div>
+                                                    <div style={{ textAlign: 'center' }}>
+                                                        <div style={{ fontSize: '0.65rem', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Gain</div>
+                                                        <div style={{ fontSize: '1rem', fontWeight: 700, color: (b.gain || 0) > 0 ? 'var(--success)' : (b.gain || 0) < 0 ? 'var(--danger)' : 'var(--foreground)', marginTop: '2px' }}>
+                                                            {(b.gain || 0) > 0 ? '+' : ''}{b.gain?.toFixed(1) || '0.0'} lbs
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Session Protocol List */}
+                                                <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--secondary-foreground)', fontWeight: 700, marginBottom: '0.5rem' }}>
+                                                    Sessions with {selectedCell.reps}×{selectedCell.rpe} RPE Protocol
+                                                </div>
+
+                                                {b.matchingSessions.length === 0 ? (
+                                                    <div style={{ fontSize: '0.85rem', color: 'var(--secondary-foreground)', padding: '0.5rem 0' }}>
+                                                        No matching sessions found.
+                                                    </div>
+                                                ) : (
+                                                    b.matchingSessions.map((session, si) => (
+                                                        <div key={si} style={{
+                                                            background: 'rgba(255,255,255,0.02)', border: '1px solid var(--card-border)',
+                                                            borderRadius: '8px', padding: '0.75rem', marginBottom: '0.5rem'
+                                                        }}>
+                                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                                                                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--foreground)' }}>
+                                                                    {session.sessionName}
+                                                                </div>
+                                                                <div style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)' }}>
+                                                                    {new Date(session.date).toLocaleDateString()}
+                                                                </div>
+                                                            </div>
+
+                                                            {/* Matching comp lift sets */}
+                                                            {session.matchingExercises.map((ex, ei) => (
+                                                                <div key={ei} style={{ marginBottom: '0.25rem' }}>
+                                                                    <div style={{ fontSize: '0.8rem', color: 'var(--primary)', fontWeight: 600, marginBottom: '4px' }}>{ex.name}</div>
+                                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                                                                        {ex.sets.map((s, si2) => (
+                                                                            <span key={si2} style={{
+                                                                                fontSize: '0.75rem', padding: '3px 8px',
+                                                                                background: 'rgba(125,135,210,0.12)', border: '1px solid rgba(125,135,210,0.25)',
+                                                                                borderRadius: '4px', color: 'var(--foreground)', fontFamily: 'monospace',
+                                                                                whiteSpace: 'nowrap'
+                                                                            }}>
+                                                                                {s.weight || '—'}lbs × {s.reps || '—'} @{s.rpe || '—'}
+                                                                            </span>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            ))}
+
+                                                            {/* Other exercises in this session */}
+                                                            {session.allExercises.filter(e => e.name !== `Competition ${primaryLift}` && !e.isPrimary).length > 0 && (
+                                                                <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+                                                                    <div style={{ fontSize: '0.65rem', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>Other exercises this session</div>
+                                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.35rem' }}>
+                                                                        {session.allExercises.filter(e => e.name !== `Competition ${primaryLift}` && !e.isPrimary).map((e, aei) => (
+                                                                            <span key={aei} style={{
+                                                                                fontSize: '0.7rem', padding: '2px 6px',
+                                                                                background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)',
+                                                                                borderRadius: '4px', color: 'var(--secondary-foreground)'
+                                                                            }}>
+                                                                                {e.name} ({e.sets?.length || 0}s)
+                                                                            </span>
+                                                                        ))}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    ))
+                                                )}
+                                            </div>
+                                        )}
+                                    </div>
+                                );
+                            })}
                         </div>
 
-                        <div style={{ marginTop: '2rem', textAlign: 'right' }}>
-                            <button className="btn btn-primary" onClick={() => setSelectedCell(null)}>Close Data</button>
+                        <div style={{ marginTop: '1.5rem', textAlign: 'right', flexShrink: 0 }}>
+                            <button className="btn btn-primary" onClick={() => { setSelectedCell(null); setExpandedBlockId(null); }}>Close Data</button>
                         </div>
                     </div>
                 </div>
-            )}
+                );
+            })()}
         </div>
     );
 }

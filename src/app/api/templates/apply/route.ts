@@ -42,25 +42,27 @@ export async function POST(request: Request) {
             }))
             : template.weeks;
 
-        const newProgram = await prisma.program.create({
-            data: {
-                athleteId,
-                name: programName || template.name,
-                startDate: startDate || new Date().toISOString(),
-                weeks: clonedWeeks,
-                status: 'active',
-            },
-        });
+        const results = await prisma.$transaction([
+            // Deactivate other active programs first so the new one isn't touched
+            prisma.program.updateMany({
+                where: {
+                    athleteId,
+                    status: 'active',
+                },
+                data: { status: 'completed' },
+            }),
+            prisma.program.create({
+                data: {
+                    athleteId,
+                    name: programName || template.name,
+                    startDate: startDate || new Date().toISOString(),
+                    weeks: clonedWeeks,
+                    status: 'active',
+                },
+            })
+        ]);
 
-        // Deactivate other active programs
-        await prisma.program.updateMany({
-            where: {
-                athleteId,
-                id: { not: newProgram.id },
-                status: 'active',
-            },
-            data: { status: 'completed' },
-        });
+        const newProgram = results[1];
 
         return NextResponse.json({ success: true, programId: newProgram.id }, { status: 201 });
     } catch (error) {

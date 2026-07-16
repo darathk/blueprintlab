@@ -550,15 +550,18 @@ export const getAthletePositions = cache(async (coachId) => {
         const activeWeeks = Array.isArray(p.weeks) ? p.weeks.filter(w => w.sessions && w.sessions.length > 0) : [];
         const maxWeek = activeWeeks.length > 0 ? activeWeeks.length : 1;
             
+        let isFinished = false;
         if (weekNum > maxWeek) {
             weekNum = maxWeek;
             dayNum = 7;
+            isFinished = true;
         }
 
         map[p.athleteId] = {
             blockName: p.name,
             weekNum,
             dayNum,
+            isFinished,
             lastLogDate: todayStr
         };
     }

@@ -11,6 +11,8 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const athleteId = searchParams.get('athleteId');
 
+    const programId = searchParams.get('programId');
+
     if (!athleteId) {
         return NextResponse.json({ error: 'Missing athleteId' }, { status: 400 });
     }
@@ -19,8 +21,17 @@ export async function GET(request: Request) {
     if ('error' in access) return access.error;
 
     try {
+        const whereClause: any = { coachId: auth.user.id, athleteId };
+        
+        // If programId is provided, fetch notes for that program. 
+        // If not, maybe we fetch general notes only (programId: null), or all.
+        // Usually, we want general notes when looking at the dashboard, and program notes in the block review.
+        if (programId !== null) {
+            whereClause.programId = programId === 'null' ? null : programId;
+        }
+
         const notes = await prisma.coachNote.findMany({
-            where: { coachId: auth.user.id, athleteId },
+            where: whereClause,
             orderBy: [{ pinned: 'desc' }, { updatedAt: 'desc' }],
         });
         return NextResponse.json(notes);
@@ -35,10 +46,10 @@ export async function POST(request: Request) {
     if ('error' in auth) return auth.error;
 
     try {
-        const { athleteId, content, category } = await request.json();
+        const { athleteId, content, category, programId } = await request.json();
 
         if (!athleteId || !content) {
-            return NextResponse.json({ error: 'Missing athleteId or content' }, { status: 400 });
+            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
         }
 
         if (typeof content !== 'string' || content.length > 5000) {
@@ -54,6 +65,7 @@ export async function POST(request: Request) {
                 athleteId,
                 content,
                 category: category || 'general',
+                programId: programId || null
             },
         });
         return NextResponse.json(note, { status: 201 });

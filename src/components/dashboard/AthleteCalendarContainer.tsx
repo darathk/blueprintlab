@@ -56,12 +56,13 @@ export default function AthleteCalendarContainer({ programs, athleteId, currentP
         const session = week?.sessions.find(s => s.day === dayNum);
 
         if (session) {
-            // Build the same session key the athlete side uses: "programId_wX_dY"
+            // Build the legacy key: "programId_wX_dY"
             const sKey = `${program.id}_w${weekNum}_d${dayNum}`;
 
-            // Find latest log from LOCAL state using the athlete's sessionId format
+            // Athlete-side may save with session.id (UUID) OR the legacy key format.
+            // Check both to find the matching log.
             const sessionLog = localLogs
-                .filter(l => l.sessionId === sKey)
+                .filter(l => l.sessionId === sKey || (session.id && l.sessionId === session.id))
                 .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0];
 
             setSelectedSession({

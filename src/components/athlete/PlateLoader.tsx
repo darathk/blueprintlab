@@ -45,18 +45,18 @@ export default function PlateLoader({
     // Calculate Mode Logic
     const calculatedPlates = useMemo(() => {
         if (mode !== 'calculate') return [];
-        let target = parseFloat(targetStr);
+        const target = parseFloat(targetStr);
         if (isNaN(target) || target <= 0) return [];
 
         // In Powerlifting, LB targets map to the nearest 2.5kg increment
-        let targetKg = unit === 'lb' ? Math.round((target / 2.20462) / 2.5) * 2.5 : target;
-        let effectiveBarWeight = barWeight + (includeCollars ? 5 : 0);
-        let remaining = targetKg - effectiveBarWeight;
+        const targetKg = unit === 'lb' ? Math.round((target / 2.20462) / 2.5) * 2.5 : target;
+        const effectiveBarWeight = barWeight + (includeCollars ? 5 : 0);
+        const remaining = targetKg - effectiveBarWeight;
 
         if (remaining <= 0) return [];
 
         let perSide = remaining / 2;
-        let loaded: number[] = [];
+        const loaded: number[] = [];
 
         for (const p of PLATES) {
             while (perSide >= p.weight - 0.01) { // -0.01 for floating point safety

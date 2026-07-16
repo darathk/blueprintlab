@@ -62,7 +62,7 @@ export async function GET(request: Request) {
     const coachId = searchParams.get('coachId');
 
     try {
-        let where: any = {};
+        const where: any = {};
 
         if (athleteId) {
             const access = await requireAccessToAthlete(athleteId, auth);

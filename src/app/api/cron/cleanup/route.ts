@@ -63,14 +63,15 @@ export async function GET(request: Request) {
             // Delete messages from Prisma
             const ids = oldMessages.map(m => m.id);
 
-            await prisma.message.updateMany({
-                where: { replyToId: { in: ids } },
-                data: { replyToId: null }
-            });
-
-            await prisma.message.deleteMany({
-                where: { id: { in: ids } }
-            });
+            await prisma.$transaction([
+                prisma.message.updateMany({
+                    where: { replyToId: { in: ids } },
+                    data: { replyToId: null }
+                }),
+                prisma.message.deleteMany({
+                    where: { id: { in: ids } }
+                })
+            ]);
 
             messagesDeleted = ids.length;
         }

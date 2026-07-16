@@ -99,8 +99,8 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
             const diffTime = date.getTime() - progStart.getTime();
             const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
-            let weekNum = Math.floor(diffDays / 7) + 1;
-            let dayNum = (diffDays % 7) + 1; // 1=startDate weekday, 7=day before next week
+            const weekNum = Math.floor(diffDays / 7) + 1;
+            const dayNum = (diffDays % 7) + 1; // 1=startDate weekday, 7=day before next week
 
             const isBeforeProgram = date.getTime() < progStart.getTime();
 

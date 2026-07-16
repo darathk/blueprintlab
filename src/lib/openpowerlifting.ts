@@ -124,16 +124,16 @@ export function analyzeCompetitor(slug: string, meets: OPLMeet[]): CompetitorPro
     let dlMade = 0, dlTot = 0, dl3Made = 0, dl3Tot = 0;
     let bombOuts = 0;
 
-    let sqJumps1to2: number[] = [];
-    let sqJumps2to3: number[] = [];
-    let bnJumps1to2: number[] = [];
-    let bnJumps2to3: number[] = [];
-    let dlJumps1to2: number[] = [];
-    let dlJumps2to3: number[] = [];
+    const sqJumps1to2: number[] = [];
+    const sqJumps2to3: number[] = [];
+    const bnJumps1to2: number[] = [];
+    const bnJumps2to3: number[] = [];
+    const dlJumps1to2: number[] = [];
+    const dlJumps2to3: number[] = [];
 
     const history = [];
 
-    let name = meets.length > 0 ? meets[0].Name : slug;
+    const name = meets.length > 0 ? meets[0].Name : slug;
 
     let heaviestTotal = 0;
     let heaviestTotalWeightClass = '';

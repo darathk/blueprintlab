@@ -233,7 +233,7 @@ export default function MetaBlockReview({ programs, logs, reportParams }) {
                 <h3 style={{ marginBottom: '1.5rem', fontSize: '1.5rem', color: 'var(--primary)', letterSpacing: '-0.02em' }}>
                     <span className="neon-text">///</span> METABLOCK ANALYTICS
                 </h3>
-                <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center' }}>
+                <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
                     {['Squat', 'Bench', 'Deadlift'].map(lift => {
                         let activeColor = 'var(--primary)';
                         if (lift === 'Bench') activeColor = 'var(--accent)';

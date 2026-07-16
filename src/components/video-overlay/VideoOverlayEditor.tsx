@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState, useCallback, useEffect } from 'react';
+import React, { useRef, useState, useCallback, useEffect, useMemo } from 'react';
 import { X, Download, ImageIcon, Video, Loader2, CheckCircle2 } from 'lucide-react';
 import OverlayCard, { drawCardToCanvas, type ClipSetData } from './OverlayCard';
 import { useDragResize } from './useDragResize';
@@ -58,7 +58,7 @@ export default function VideoOverlayEditor({
 }: VideoOverlayEditorProps) {
     const [videoObjectUrl, setVideoObjectUrl] = useState<string | null>(null);
     const [videoFile, setVideoFile] = useState<File | null>(null);
-    const [selectedSetIdx, setSelectedSetIdx] = useState(0);
+    const [setIdxOverride, setSetIdxOverride] = useState<number | null>(null);
     const [exportState, setExportState] = useState<ExportState>('idle');
     const [exportProgress, setExportProgress] = useState(0);
     const [finalBlob, setFinalBlob] = useState<{ blob: Blob; name: string } | null>(null);
@@ -75,22 +75,32 @@ export default function VideoOverlayEditor({
         onCardPointerDown, onResizePointerDown,
     } = useDragResize({ initialPos: { x: 16, y: 16 }, initialWidth: 260 });
 
-    // Auto-select heaviest set
-    useEffect(() => {
-        if (!isOpen) return;
+    // Auto-select heaviest set (derived, no setState in useEffect)
+    const derivedSetIdx = useMemo(() => {
+        if (!isOpen) return 0;
         let best = 0, bestIdx = 0;
         sets.forEach((s, i) => {
             const w = parseFloat(s.weight) || 0;
             if (w > best) { best = w; bestIdx = i; }
         });
-        setSelectedSetIdx(bestIdx);
+        return bestIdx;
     }, [isOpen, sets]);
+
+    // Reset manual override when derived default changes (dialog open / sets change)
+    useEffect(() => {
+        setSetIdxOverride(null);
+    }, [derivedSetIdx]);
+
+    const selectedSetIdx = setIdxOverride ?? derivedSetIdx;
+    const setSelectedSetIdx = setSetIdxOverride;
 
     // Pre-load logo for canvas drawing
     useEffect(() => {
+        let isMounted = true;
         const img = new Image();
         img.src = '/logo.png';
-        img.onload = () => setLogoImg(img);
+        img.onload = () => { if (isMounted) setLogoImg(img); };
+        return () => { isMounted = false; };
     }, []);
 
     // Clean up blob URL on unmount / video change

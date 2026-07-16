@@ -30,8 +30,15 @@ export default function SessionDetailsModal({ session, programName, programId, s
         if (session) {
             const initialLog = {};
 
+            let parsedLogExercises = [];
+            if (existingLog && existingLog.exercises) {
+                parsedLogExercises = typeof existingLog.exercises === 'string' 
+                    ? JSON.parse(existingLog.exercises) 
+                    : existingLog.exercises;
+            }
+
             session.exercises.forEach((ex, exIndex) => {
-                const savedEx = existingLog?.exercises?.find(e => e.name === ex.name);
+                const savedEx = parsedLogExercises.find((e: any) => e.name === ex.name);
                 const savedSets = savedEx?.sets || [];
 
                 initialLog[ex.id || exIndex] = (ex.sets || []).map((s, setIndex) => {

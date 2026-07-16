@@ -119,7 +119,7 @@ export default function AssistForceGraph({ assistData, primaryLift }) {
             const repulsionForce = 1.2;
 
             for (let i = 1; i < nodes.length; i++) {
-                let n = nodes[i];
+                const n = nodes[i];
 
                 // 1. Spring towards center target distance
                 const dx = center.x - n.x;
@@ -137,7 +137,7 @@ export default function AssistForceGraph({ assistData, primaryLift }) {
                 // 2. Repulsion to prevent overlaps
                 for (let j = 0; j < nodes.length; j++) {
                     if (i === j) continue;
-                    let other = nodes[j];
+                    const other = nodes[j];
 
                     const dx2 = n.x - other.x;
                     const dy2 = n.y - other.y;
@@ -156,7 +156,7 @@ export default function AssistForceGraph({ assistData, primaryLift }) {
             // 3. Apply velocity
             let totalKineticEnergy = 0;
             for (let i = 1; i < nodes.length; i++) {
-                let n = nodes[i];
+                const n = nodes[i];
                 n.vx *= friction;
                 n.vy *= friction;
                 n.x += n.vx;
