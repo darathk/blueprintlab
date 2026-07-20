@@ -42,7 +42,7 @@ export async function PATCH(
         if ('error' in auth) return auth.error;
 
         const body = await request.json();
-        const { weightClass, gender, federation, liftTargets, email: rawEmail, trainingSchedule, competitors } = body;
+        const { weightClass, gender, federation, liftTargets, email: rawEmail, trainingSchedule, competitors, status } = body;
         const email = rawEmail !== undefined ? (typeof rawEmail === 'string' ? rawEmail.toLowerCase() : rawEmail) : undefined;
 
         // Validate inputs
@@ -57,6 +57,9 @@ export async function PATCH(
         }
         if (federation !== undefined && federation !== null && !['IPF', 'USAPL'].includes(federation)) {
             return NextResponse.json({ error: 'Invalid federation' }, { status: 400 });
+        }
+        if (status !== undefined && status !== null && !['active', 'archived'].includes(status)) {
+            return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
         }
         if (email !== undefined) {
             if (typeof email !== 'string' || !email.includes('@')) {
@@ -79,6 +82,7 @@ export async function PATCH(
                 ...(trainingSchedule !== undefined && { trainingSchedule }),
                 ...(email !== undefined && { email }),
                 ...(competitors !== undefined && { competitors }),
+                ...(status !== undefined && { status }),
             },
         });
         return NextResponse.json({ success: true });
@@ -108,14 +112,14 @@ export async function DELETE(
             return NextResponse.json({ error: 'Not your athlete' }, { status: 403 });
         }
 
-        // Perform a safe deletion of the athlete. 
-        // All related records (Programs, Logs, Messages, etc) will be automatically 
-        // deleted via the schema's onDelete: Cascade rules.
-        await prisma.athlete.delete({
-            where: { id: id }
+        // Perform a "soft delete" (archive) of the athlete. 
+        // This preserves their programs, logs, and messages so they can be restored later.
+        await prisma.athlete.update({
+            where: { id: id },
+            data: { status: 'archived' }
         });
 
-        return NextResponse.json({ success: true, message: 'Athlete and all associated data deleted successfully.' });
+        return NextResponse.json({ success: true, message: 'Athlete archived successfully.' });
     } catch (error: any) {
         console.error('Error deleting athlete:', error);
         return NextResponse.json({

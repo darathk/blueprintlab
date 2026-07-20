@@ -129,7 +129,9 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
     };
 
     // Pre-calculate progress for all athletes to allow sorting
-    const enrichedAthletes = (athletes || []).map(athlete => {
+    const enrichedAthletes = (athletes || [])
+        .filter(athlete => athlete.status !== 'archived')
+        .map(athlete => {
         const athletePrograms = programs.filter(p => p.athleteId === athlete.id);
         const athleteLogs = logSummaries.filter(l => l.program?.athleteId === athlete.id);
 

@@ -15,6 +15,7 @@ export const getAthletes = cache(async (coachId) => {
             name: true,
             email: true,
             role: true,
+            status: true,
             coachId: true,
             nextMeetName: true,
             nextMeetDate: true,

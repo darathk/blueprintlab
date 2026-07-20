@@ -13,6 +13,7 @@ model Athlete {
   name              String
   email             String             @unique
   role              String             @default("athlete") // 'coach' or 'athlete'
+  status            String             @default("active") // 'active' or 'archived'
   coachId           String? // If role is 'athlete', this links them to their coach
   coach             Athlete?           @relation("CoachToAthlete", fields: [coachId], references: [id])
   guidedAthletes    Athlete[]          @relation("CoachToAthlete")
