@@ -420,7 +420,8 @@ export default function ChatInterface({
                 .then(data => {
                     if (data && data.length > 0) {
                         setMessages(prev => {
-                            if (prev.length !== data.length || prev[prev.length - 1]?.id !== data[data.length - 1]?.id) {
+                            const optimisticMessages = prev.filter(m => String(m.id).startsWith('temp-'));
+                            if (prev.length - optimisticMessages.length !== data.length || prev[prev.length - optimisticMessages.length - 1]?.id !== data[data.length - 1]?.id) {
                                 const hasUnread = data.some((m: any) => m.receiverId === currentUserId && !m.read);
                                 if (hasUnread) {
                                     fetch('/api/messages', {
@@ -428,7 +429,8 @@ export default function ChatInterface({
                                         body: JSON.stringify({ athleteId: otherUserId, readerId: currentUserId })
                                     }).then(() => window.dispatchEvent(new Event('unread-refresh')));
                                 }
-                                return data;
+                                // Return server data merged with any active optimistic messages
+                                return [...data, ...optimisticMessages];
                             }
                             return prev;
                         });
