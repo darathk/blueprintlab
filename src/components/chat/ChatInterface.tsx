@@ -299,6 +299,17 @@ export default function ChatInterface({
         };
     }, []);
 
+    // Clean up staged blob URLs on unmount to prevent memory leaks
+    const stagedUrlsRef = useRef(stagedFileUrls);
+    stagedUrlsRef.current = stagedFileUrls;
+    useEffect(() => {
+        return () => {
+            stagedUrlsRef.current.forEach(url => {
+                try { URL.revokeObjectURL(url); } catch {}
+            });
+        };
+    }, []);
+
     const scrollToBottom = useCallback((force = false) => {
         if (scrollTimeoutRef.current) clearTimeout(scrollTimeoutRef.current);
         const el = scrollContainerRef.current;
@@ -552,10 +563,13 @@ export default function ChatInterface({
         };
     }, []);
 
-    // Send — optimistic
+    // Send — optimistic (with double-send guard)
+    const sendingRef = useRef(false);
     const handleSend = async (overrideReplyTo?: any) => {
         const text = newMessage.trim();
         if (!text && stagedFiles.length === 0) return;
+        if (sendingRef.current) return; // Prevent double-send
+        sendingRef.current = true;
 
         // If in edit mode, update the existing message rather than sending a new one
         if (editingMessage) {
@@ -586,7 +600,7 @@ export default function ChatInterface({
 
         if (filesToSend.length === 0) {
             // Just text
-            const tempId = `temp-${Date.now()}`;
+            const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
             optimisticMessages.push({
                 id: tempId, senderId: currentUserId, receiverId: otherUserId, content: text,
                 mediaUrl: null, mediaType: null,
@@ -709,6 +723,7 @@ export default function ChatInterface({
             setSending(false);
             setUploading(false);
             setStatusText('');
+            sendingRef.current = false;
         }
     };
 
@@ -898,10 +913,17 @@ export default function ChatInterface({
         const startIndex = stagedFiles.length;
         setStagedFiles(prev => [...prev, ...pastedFiles]);
         setStagedFileUrls(prev => [...prev, ...pastedFiles.map(f => URL.createObjectURL(f))]);
+        // Start pre-uploads immediately (was previously missing for pasted files)
+        pastedFiles.forEach((f, i) => {
+            if (!f.type.startsWith('audio/')) {
+                const preJobId = chatUploadManager.preUpload(f, athleteId);
+                setStagedPreUploadIds(prev => ({ ...prev, [startIndex + i]: preJobId }));
+            }
+        });
         pastedFiles.forEach((f, i) => {
             if (f.type.startsWith('video/')) generateVideoPoster(f, startIndex + i);
         });
-    }, [stagedFiles.length]);
+    }, [stagedFiles.length, athleteId]);
 
     const handleCropComplete = (file: File, trimStart?: number, trimEnd?: number) => {
         // Check if we're re-trimming an already staged file

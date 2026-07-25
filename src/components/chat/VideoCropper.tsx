@@ -72,6 +72,10 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
         }
 
         setThumbnails(thumbs);
+        // Properly release the media pipeline resource (critical for iOS Safari)
+        thumbVideo.pause();
+        thumbVideo.src = '';
+        thumbVideo.load();
         thumbVideo.remove();
     }, [videoUrl, duration]);
 

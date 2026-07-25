@@ -64,12 +64,47 @@ export interface UploadCompleteDetail {
 
 const isBrowser = typeof window !== 'undefined';
 
+// ── Retry helper ────────────────────────────────────────────────────
+const MAX_RETRIES = 3;
+const RETRY_DELAYS = [1000, 2000, 4000]; // exponential backoff
+
+async function withRetry<T>(fn: () => Promise<T>, retries = MAX_RETRIES): Promise<T> {
+    let lastErr: Error | null = null;
+    for (let attempt = 0; attempt <= retries; attempt++) {
+        try {
+            return await fn();
+        } catch (err: any) {
+            lastErr = err;
+            if (attempt < retries) {
+                await new Promise(r => setTimeout(r, RETRY_DELAYS[attempt] || 4000));
+            }
+        }
+    }
+    throw lastErr;
+}
+
+// ── Dynamic timeout: scale based on file size ───────────────────────
+// Minimum 60s, otherwise assume ~500 KB/s worst-case cellular upload speed
+function computeTimeout(fileSize: number): number {
+    const MIN_TIMEOUT = 60_000;   // 1 minute minimum
+    const MAX_TIMEOUT = 1_800_000; // 30 minutes cap
+    // Assume worst-case 500 KB/s upload speed with 2x safety factor
+    const estimated = (fileSize / (500 * 1024)) * 1000 * 2;
+    return Math.min(MAX_TIMEOUT, Math.max(MIN_TIMEOUT, estimated));
+}
+
 class ChatUploadManager {
     private jobs = new Map<string, ChatUploadJob>();
     private preJobs = new Map<string, PreUploadJob>();
     private listeners = new Set<() => void>();
     private cachedSnapshot: ChatUploadJob[] = [];
     private cachedPreSnapshot: PreUploadJob[] = [];
+
+    // Track active XHRs for cancellation support
+    private activeXhrs = new Map<string, XMLHttpRequest>();
+
+    // beforeunload warning — added/removed based on active upload count
+    private beforeUnloadHandler: ((e: BeforeUnloadEvent) => void) | null = null;
 
     getJobs(): ChatUploadJob[] {
         return this.cachedSnapshot;
@@ -88,7 +123,11 @@ class ChatUploadManager {
     }
 
     dismissJob(id: string) {
-        if (this.jobs.delete(id)) this.notify();
+        this.activeXhrs.delete(id);
+        if (this.jobs.delete(id)) {
+            this.notify();
+            this.updateBeforeUnload();
+        }
     }
 
     clearFinished() {
@@ -96,10 +135,32 @@ class ChatUploadManager {
         for (const [id, j] of this.jobs) {
             if (j.status === 'done' || j.status === 'error') {
                 this.jobs.delete(id);
+                this.activeXhrs.delete(id);
                 changed = true;
             }
         }
-        if (changed) this.notify();
+        if (changed) {
+            this.notify();
+            this.updateBeforeUnload();
+        }
+    }
+
+    /** Cancel an in-progress upload by aborting the XHR. */
+    cancelUpload(id: string) {
+        const xhr = this.activeXhrs.get(id);
+        if (xhr) {
+            xhr.abort();
+            this.activeXhrs.delete(id);
+        }
+        const job = this.jobs.get(id);
+        if (job) {
+            this.update(id, { status: 'error', error: 'Upload cancelled' });
+        }
+        const preJob = this.preJobs.get(id);
+        if (preJob) {
+            this.updatePre(id, { status: 'error', error: 'Upload cancelled' });
+        }
+        this.updateBeforeUnload();
     }
 
     /**
@@ -121,6 +182,7 @@ class ChatUploadManager {
         };
         this.preJobs.set(id, job);
         this.notify();
+        this.updateBeforeUnload();
         this.runPreUpload(id, file, athleteId, mime).catch(err => {
             console.error('[chat-upload-manager] pre-upload error', err);
             this.updatePre(id, { status: 'error', error: err?.message || 'Upload failed' });
@@ -143,7 +205,11 @@ class ChatUploadManager {
     }
 
     dismissPreJob(id: string) {
-        if (this.preJobs.delete(id)) this.notify();
+        this.activeXhrs.delete(id);
+        if (this.preJobs.delete(id)) {
+            this.notify();
+            this.updateBeforeUnload();
+        }
     }
 
     private async runPreUpload(id: string, file: File, athleteId: string, mime: string) {
@@ -175,9 +241,11 @@ class ChatUploadManager {
 
         const ext = this.mimeToExt(mime);
         const uploadPath = `${athleteId}/${Date.now()}-${id}${ext}`;
+        const timeout = computeTimeout(blob.size);
 
-        const publicUrl = await new Promise<string>((resolve, reject) => {
+        const publicUrl = await withRetry(() => new Promise<string>((resolve, reject) => {
             const xhr = new XMLHttpRequest();
+            this.activeXhrs.set(id, xhr);
             const url = `${supabaseUrl}/storage/v1/object/lift-videos/${uploadPath}`;
             xhr.upload.onprogress = (e) => {
                 if (e.lengthComputable) {
@@ -185,6 +253,7 @@ class ChatUploadManager {
                 }
             };
             xhr.onload = () => {
+                this.activeXhrs.delete(id);
                 if (xhr.status >= 200 && xhr.status < 300) {
                     const { data: u } = supabase.storage.from('lift-videos').getPublicUrl(uploadPath);
                     resolve(u.publicUrl);
@@ -192,24 +261,31 @@ class ChatUploadManager {
                     reject(new Error(`Pre-upload failed: ${xhr.status} ${xhr.responseText}`));
                 }
             };
-            xhr.onerror = () => reject(new Error('Network error during pre-upload'));
-            xhr.ontimeout = () => reject(new Error('Pre-upload timed out'));
-            xhr.timeout = 300000;
+            xhr.onerror = () => { this.activeXhrs.delete(id); reject(new Error('Network error during pre-upload')); };
+            xhr.ontimeout = () => { this.activeXhrs.delete(id); reject(new Error('Pre-upload timed out')); };
+            xhr.onabort = () => { this.activeXhrs.delete(id); reject(new Error('Upload cancelled')); };
+            xhr.timeout = timeout;
             xhr.open('POST', url, true);
             xhr.setRequestHeader('Authorization', `Bearer ${supabaseKey}`);
             xhr.setRequestHeader('apikey', supabaseKey);
             xhr.setRequestHeader('Content-Type', mime);
-            xhr.setRequestHeader('Cache-Control', '604800');
+            xhr.setRequestHeader('Cache-Control', 'public, max-age=604800');
             xhr.setRequestHeader('x-upsert', 'true');
             xhr.send(blob);
-        }).catch((err: Error) => {
+        })).catch((err: Error) => {
             this.updatePre(id, { status: 'error', error: err.message, progress: 0 });
-            setTimeout(() => this.dismissPreJob(id), 30000);
+            // Keep the pre-upload result available for 5 minutes so slow
+            // composers don't trigger a redundant re-upload.
+            setTimeout(() => this.dismissPreJob(id), 300_000);
+            this.updateBeforeUnload();
             throw err;
         });
 
         this.updatePre(id, { status: 'done', progress: 100, publicUrl, mime });
-        setTimeout(() => this.dismissPreJob(id), 30000);
+        this.updateBeforeUnload();
+        // Keep the pre-upload result available for 5 minutes so slow
+        // composers don't trigger a redundant re-upload.
+        setTimeout(() => this.dismissPreJob(id), 300_000);
     }
 
     private resolveMime(file: File): string {
@@ -222,6 +298,8 @@ class ChatUploadManager {
             else if (name.endsWith('.m4a')) mime = 'audio/mp4';
             else if (name.endsWith('.jpg') || name.endsWith('.jpeg')) mime = 'image/jpeg';
             else if (name.endsWith('.png')) mime = 'image/png';
+            else if (name.endsWith('.heic') || name.endsWith('.heif')) mime = 'image/heic';
+            else if (name.endsWith('.3gp')) mime = 'video/3gpp';
             else mime = 'application/octet-stream';
         }
         return mime;
@@ -230,8 +308,10 @@ class ChatUploadManager {
     private mimeToExt(mime: string): string {
         if (mime.includes('png')) return '.png';
         if (mime.includes('jpeg') || mime.includes('jpg')) return '.jpg';
+        if (mime.includes('heic') || mime.includes('heif')) return '.heic';
         if (mime.includes('quicktime')) return '.mov';
         if (mime.includes('webm')) return '.webm';
+        if (mime.includes('3gpp') || mime.includes('3gp')) return '.3gp';
         if (mime.includes('audio')) return '.m4a';
         return '.mp4';
     }
@@ -255,6 +335,7 @@ class ChatUploadManager {
         };
         this.jobs.set(id, job);
         this.notify();
+        this.updateBeforeUnload();
         // Fire-and-forget — errors are surfaced via job.status === 'error'
         this.runUpload(id, payload).catch(err => {
             console.error('[chat-upload-manager] unhandled error', err);
@@ -299,22 +380,28 @@ class ChatUploadManager {
             else if (name.endsWith('.m4a')) mime = 'audio/mp4';
             else if (name.endsWith('.jpg') || name.endsWith('.jpeg')) mime = 'image/jpeg';
             else if (name.endsWith('.png')) mime = 'image/png';
+            else if (name.endsWith('.heic') || name.endsWith('.heif')) mime = 'image/heic';
+            else if (name.endsWith('.3gp')) mime = 'video/3gpp';
             else mime = 'application/octet-stream';
         }
 
         const ext = mime.includes('png') ? '.png'
             : mime.includes('jpeg') || mime.includes('jpg') ? '.jpg'
+            : mime.includes('heic') || mime.includes('heif') ? '.heic'
             : mime.includes('quicktime') ? '.mov'
             : mime.includes('webm') ? '.webm'
+            : mime.includes('3gpp') || mime.includes('3gp') ? '.3gp'
             : mime.includes('audio') ? '.m4a'
             : '.mp4';
         const uploadPath = `${payload.athleteId}/${Date.now()}-${id}${ext}`;
+        const timeout = computeTimeout(blob.size);
 
         this.update(id, { status: 'uploading', mime, progress: 0 });
 
-        // XHR for progress events
-        const publicUrl = await new Promise<string>((resolve, reject) => {
+        // XHR for progress events — with retry
+        const publicUrl = await withRetry(() => new Promise<string>((resolve, reject) => {
             const xhr = new XMLHttpRequest();
+            this.activeXhrs.set(id, xhr);
             const url = `${supabaseUrl}/storage/v1/object/lift-videos/${uploadPath}`;
 
             xhr.upload.onprogress = (e) => {
@@ -324,6 +411,7 @@ class ChatUploadManager {
                 }
             };
             xhr.onload = () => {
+                this.activeXhrs.delete(id);
                 if (xhr.status >= 200 && xhr.status < 300) {
                     const { data: u } = supabase.storage.from('lift-videos').getPublicUrl(uploadPath);
                     resolve(u.publicUrl);
@@ -331,19 +419,21 @@ class ChatUploadManager {
                     reject(new Error(`Upload failed: ${xhr.status} ${xhr.responseText}`));
                 }
             };
-            xhr.onerror = () => reject(new Error('Network error during upload'));
-            xhr.ontimeout = () => reject(new Error('Upload timed out'));
-            xhr.timeout = 300000;
+            xhr.onerror = () => { this.activeXhrs.delete(id); reject(new Error('Network error during upload')); };
+            xhr.ontimeout = () => { this.activeXhrs.delete(id); reject(new Error('Upload timed out')); };
+            xhr.onabort = () => { this.activeXhrs.delete(id); reject(new Error('Upload cancelled')); };
+            xhr.timeout = timeout;
 
             xhr.open('POST', url, true);
             xhr.setRequestHeader('Authorization', `Bearer ${supabaseKey}`);
             xhr.setRequestHeader('apikey', supabaseKey);
             xhr.setRequestHeader('Content-Type', mime);
-            xhr.setRequestHeader('Cache-Control', '604800');
+            xhr.setRequestHeader('Cache-Control', 'public, max-age=604800');
             xhr.setRequestHeader('x-upsert', 'true');
             xhr.send(blob);
-        }).catch((err: Error) => {
+        })).catch((err: Error) => {
             this.update(id, { status: 'error', error: err.message, progress: 0 });
+            this.updateBeforeUnload();
             if (isBrowser) {
                 window.dispatchEvent(new CustomEvent('chat-upload-error', {
                     detail: { tempMessageId: payload.tempMessageId, error: err.message },
@@ -358,33 +448,47 @@ class ChatUploadManager {
 
         this.update(id, { status: 'sending', progress: 100 });
 
-        const res = await fetch('/api/messages', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                senderId: payload.currentUserId,
-                receiverId: payload.otherUserId,
-                content: payload.content,
-                mediaUrl,
-                mediaType: mime,
-                replyToId: payload.replyToId,
-                sessionId: payload.sessionId || null,
-            }),
-        });
-
-        if (!res.ok) {
-            const body = await res.text().catch(() => '');
-            this.update(id, { status: 'error', error: `Save failed: ${res.status} ${body}` });
+        // Save the message record — also with retry
+        let res: Response;
+        try {
+            res = await withRetry(() => fetch('/api/messages', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    senderId: payload.currentUserId,
+                    receiverId: payload.otherUserId,
+                    content: payload.content,
+                    mediaUrl,
+                    mediaType: mime,
+                    replyToId: payload.replyToId,
+                    sessionId: payload.sessionId || null,
+                }),
+            }).then(r => {
+                if (!r.ok) throw new Error(`Save failed: ${r.status}`);
+                return r;
+            }));
+        } catch (err: any) {
+            // Message save failed after retries — clean up the orphaned storage file
+            this.update(id, { status: 'error', error: err?.message || 'Save failed' });
+            this.updateBeforeUnload();
             if (isBrowser) {
                 window.dispatchEvent(new CustomEvent('chat-upload-error', {
-                    detail: { tempMessageId: payload.tempMessageId, error: `Save failed: ${res.status}` },
+                    detail: { tempMessageId: payload.tempMessageId, error: err?.message || 'Save failed' },
                 }));
+            }
+            // Attempt to delete the orphaned file from storage
+            try {
+                await supabase.storage.from('lift-videos').remove([uploadPath]);
+                console.log('[chat-upload-manager] Cleaned up orphaned storage file:', uploadPath);
+            } catch (cleanupErr) {
+                console.warn('[chat-upload-manager] Failed to clean up orphaned file:', uploadPath, cleanupErr);
             }
             return;
         }
 
         const realMessage = await res.json();
         this.update(id, { status: 'done', progress: 100 });
+        this.updateBeforeUnload();
 
         if (isBrowser) {
             window.dispatchEvent(new CustomEvent<UploadCompleteDetail>('chat-upload-complete', {
@@ -414,6 +518,34 @@ class ChatUploadManager {
 
     getPreUploadSnapshot(): PreUploadJob[] {
         return this.cachedPreSnapshot;
+    }
+
+    /** Returns true if any uploads are currently in progress. */
+    hasActiveUploads(): boolean {
+        for (const j of this.jobs.values()) {
+            if (j.status === 'uploading' || j.status === 'sending' || j.status === 'compressing') return true;
+        }
+        for (const j of this.preJobs.values()) {
+            if (j.status === 'uploading') return true;
+        }
+        return false;
+    }
+
+    /** Manage the beforeunload warning based on active upload state. */
+    private updateBeforeUnload() {
+        if (!isBrowser) return;
+        const active = this.hasActiveUploads();
+        if (active && !this.beforeUnloadHandler) {
+            this.beforeUnloadHandler = (e: BeforeUnloadEvent) => {
+                e.preventDefault();
+                // Modern browsers ignore custom messages but still show a generic prompt
+                return '';
+            };
+            window.addEventListener('beforeunload', this.beforeUnloadHandler);
+        } else if (!active && this.beforeUnloadHandler) {
+            window.removeEventListener('beforeunload', this.beforeUnloadHandler);
+            this.beforeUnloadHandler = null;
+        }
     }
 
     private notify() {
