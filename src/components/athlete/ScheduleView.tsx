@@ -1044,7 +1044,10 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                     const category = exerciseData.category || ex.category || getExerciseCategory(exerciseData.name || ex.name);
                                                     const catColor = CATEGORY_COLORS[category] || '#94A3B8';
 
-                                                    const isLocked = !isCoachView && !readySessions.has(sKey);
+                                                    const exName = (exerciseData.name || ex.name || '').toLowerCase();
+                                                    const isWarmup = category === 'Warm Up' || category === 'Drills' || exName.includes('warm up') || exName.includes('warmup') || exName.includes('drill');
+
+                                                    const isLocked = !isCoachView && !readySessions.has(sKey) && !isWarmup;
 
                                                     return (
                                                         <div key={exIdx} className={shakeKey === exKey ? 'readiness-shake' : ''} style={{ background: 'var(--background)', borderBottom: '1px solid var(--card-border)', opacity: isLocked ? 0.5 : 1, transition: 'opacity 0.3s' }}>
@@ -1666,7 +1669,10 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                     }
                                                                 });
 
-                                                                const isLocked = !isCoachView && !readySessions.has(sKey);
+                                                                const exName = (exerciseData.name || ex.name || '').toLowerCase();
+                                                                const isWarmup = category === 'Warm Up' || category === 'Drills' || exName.includes('warm up') || exName.includes('warmup') || exName.includes('drill');
+                                                                
+                                                                const isLocked = !isCoachView && !readySessions.has(sKey) && !isWarmup;
 
                                                                 return (
                                                                     <div key={exIdx} className={shakeKey === exKey ? 'readiness-shake' : ''} style={{ background: 'var(--background)', borderBottom: '1px solid #cbd5e1', opacity: isLocked ? 0.5 : 1, transition: 'opacity 0.3s' }}>
