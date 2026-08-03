@@ -21,7 +21,7 @@ interface Message {
 
 interface ConvSummary { athleteId: string; athleteName: string; lastMessage: string; lastMessageAt: string; unreadCount: number; }
 
-interface Props { coachId: string; coachName: string; initialConvos?: ConvSummary[]; initialAthleteId?: string; initialMessages?: Message[]; athletePositions?: Record<string, { blockName: string; weekNum: number | null; dayNum: number | null; isFinished?: boolean; lastLogDate: string }>; }
+interface Props { coachId: string; coachName: string; initialConvos?: ConvSummary[]; initialAthleteId?: string; initialMessages?: Message[]; athletePositions?: Record<string, { blockName: string; weekNum: number | null; dayNum: number | null; totalWeeks?: number; isFinished?: boolean; lastLogDate: string }>; }
 
 export default function CoachInbox({ coachId, coachName, initialConvos = [], initialAthleteId, initialMessages = [], athletePositions = {} }: Props) {
     const router = useRouter();

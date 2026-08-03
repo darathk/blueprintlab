@@ -173,7 +173,7 @@ interface Props {
     isEmbedded?: boolean;
     onBack?: () => void;
     headerActions?: React.ReactNode;
-    athletePosition?: { blockName: string; weekNum?: number; dayNum?: number; isFinished?: boolean };
+    athletePosition?: { blockName: string; weekNum?: number; dayNum?: number; totalWeeks?: number; isFinished?: boolean };
 }
 
 export default function ChatInterface({
@@ -1452,7 +1452,7 @@ export default function ChatInterface({
                                                 ) : (
                                                     <>
                                                         <span>{pos.blockName}</span>
-                                                        {pos.weekNum && <span style={{ color: 'rgba(255,255,255,0.4)', paddingLeft: 2 }}>W{pos.weekNum}</span>}
+                                                        {pos.weekNum && <span style={{ color: 'rgba(255,255,255,0.4)', paddingLeft: 2 }}>W{pos.weekNum}{pos.totalWeeks ? `/${pos.totalWeeks}` : ''}</span>}
                                                         {pos.dayNum && <span style={{ color: 'rgba(255,255,255,0.3)' }}>D{pos.dayNum}</span>}
                                                     </>
                                                 )}

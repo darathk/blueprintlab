@@ -339,7 +339,7 @@ export const getMessagesByAthlete = cache(async (athleteId) => {
                 ]
             },
             orderBy: { createdAt: 'desc' },
-            take: 100,
+            take: 1000,
             select: {
                 id: true,
                 senderId: true,
@@ -375,7 +375,7 @@ export const getMessagesByAthlete = cache(async (athleteId) => {
                 ]
             },
             orderBy: { createdAt: 'desc' },
-            take: 100,
+            take: 1000,
             select: {
                 id: true,
                 senderId: true,
@@ -469,7 +469,7 @@ export const getLastLogDates = cache(async (coachId) => {
     return map;
 });
 
-/** Returns a map of { athleteId: { blockName, weekNum, dayNum, lastLogDate } } for each athlete's latest logged session */
+/** Returns a map of { athleteId: { blockName, weekNum, dayNum, totalWeeks, isFinished, lastLogDate } } for each athlete's current program position */
 export const getAthletePositions = cache(async (coachId) => {
     if (!coachId) return {};
     
@@ -480,81 +480,89 @@ export const getAthletePositions = cache(async (coachId) => {
             status: { not: 'draft' }
         },
         select: {
+            id: true,
             athleteId: true,
             name: true,
             weeks: true,
+            status: true,
             startDate: true
         },
         orderBy: { startDate: 'desc' }
     });
 
-    const now = new Date();
-    const todayStr = now.toISOString().split('T')[0];
-    const todayDate = new Date(todayStr);
-
+    // For each athlete, pick the best "current" program:
+    // 1. Prefer status='active' programs (most recently started)
+    // 2. Fall back to the most recent non-draft program
     const activeProgramsMap = new Map();
     
     for (const p of allPrograms) {
-        if (!p.startDate) continue;
-        const startStr = (typeof p.startDate === 'string') ? p.startDate.split('T')[0] : p.startDate.toISOString().split('T')[0];
+        const existing = activeProgramsMap.get(p.athleteId);
         
-        if (!activeProgramsMap.has(p.athleteId)) {
+        if (!existing) {
             activeProgramsMap.set(p.athleteId, p);
         } else {
-            const existing = activeProgramsMap.get(p.athleteId);
-            const existingStart = (typeof existing.startDate === 'string') ? existing.startDate.split('T')[0] : existing.startDate.toISOString().split('T')[0];
-            
-            // If the initially selected program is in the future, but this older program has already started,
-            // then the athlete is still currently doing this older program!
-            if (existingStart > todayStr && startStr <= todayStr) {
+            // If the new program is active and the existing one is not, prefer it
+            if (p.status === 'active' && existing.status !== 'active') {
                 activeProgramsMap.set(p.athleteId, p);
             }
+            // If both are active, prefer the one with the more recent start date (already sorted desc)
+            // The first one encountered is already the most recent, so no swap needed
         }
     }
     
     const activePrograms = Array.from(activeProgramsMap.values());
+    
+    // Batch-fetch the latest log for each active program
+    const programIds = activePrograms.map(p => p.id);
+    const latestLogs = programIds.length > 0
+        ? await prisma.log.findMany({
+            where: { programId: { in: programIds } },
+            orderBy: { date: 'desc' },
+            select: { programId: true, sessionId: true, date: true }
+        })
+        : [];
+    
+    // Group logs by programId, keeping only the latest per program
+    const latestLogByProgram = new Map();
+    for (const log of latestLogs) {
+        if (!latestLogByProgram.has(log.programId)) {
+            latestLogByProgram.set(log.programId, log);
+        }
+    }
 
     const map = {};
-    
-
 
     for (const p of activePrograms) {
-        if (!p.startDate) continue;
-        
-        // Start date is stored as YYYY-MM-DD
-        const startStr = (typeof p.startDate === 'string') ? p.startDate.split('T')[0] : p.startDate.toISOString().split('T')[0];
-        let startDate = new Date(startStr);
-        
-        // Dynamically adjust start date for programs with empty leading weeks
-        if (Array.isArray(p.weeks) && p.weeks.length > 0) {
-            // Find first week that actually has sessions
-            const firstNonEmpty = p.weeks.find(w => w.sessions && w.sessions.length > 0);
-            if (firstNonEmpty && typeof firstNonEmpty.weekNumber === 'number' && firstNonEmpty.weekNumber > 1) {
-                // If the first active week is e.g. Week 3, shift the start date forward by 2 weeks
-                const shiftDays = (firstNonEmpty.weekNumber - 1) * 7;
-                startDate.setDate(startDate.getDate() + shiftDays);
-            }
-        }
-        
-        const diffTime = todayDate.getTime() - startDate.getTime();
-        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+        // Calculate total weeks from the program's weeks array
+        const weeks = Array.isArray(p.weeks) ? p.weeks : [];
+        const activeWeeks = weeks.filter(w => w.sessions && w.sessions.length > 0);
+        const totalWeeks = activeWeeks.length || weeks.length || 1;
         
         let weekNum = 1;
         let dayNum = 1;
+        let isFinished = false;
+        let lastLogDate = null;
         
-        if (diffDays >= 0) {
-            weekNum = Math.floor(diffDays / 7) + 1;
-            dayNum = (diffDays % 7) + 1;
+        const latestLog = latestLogByProgram.get(p.id);
+        
+        if (latestLog && latestLog.sessionId) {
+            lastLogDate = latestLog.date;
+            // Parse sessionId format: programId_wX_dY
+            const match = latestLog.sessionId.match(/_w(\d+)_d(\d+)$/);
+            if (match) {
+                weekNum = parseInt(match[1], 10);
+                dayNum = parseInt(match[2], 10);
+            }
+            
+            // Check if the program is fully completed
+            if (p.status === 'completed') {
+                isFinished = true;
+            }
         }
         
-        // Cap at the end of the program based on the actual number of non-empty weeks
-        const activeWeeks = Array.isArray(p.weeks) ? p.weeks.filter(w => w.sessions && w.sessions.length > 0) : [];
-        const maxWeek = activeWeeks.length > 0 ? activeWeeks.length : 1;
-            
-        let isFinished = false;
-        if (weekNum > maxWeek) {
-            weekNum = maxWeek;
-            dayNum = 7;
+        // Cap weekNum at totalWeeks
+        if (weekNum > totalWeeks) {
+            weekNum = totalWeeks;
             isFinished = true;
         }
 
@@ -562,8 +570,9 @@ export const getAthletePositions = cache(async (coachId) => {
             blockName: p.name,
             weekNum,
             dayNum,
+            totalWeeks,
             isFinished,
-            lastLogDate: todayStr
+            lastLogDate: lastLogDate || new Date().toISOString().split('T')[0]
         };
     }
     return map;
