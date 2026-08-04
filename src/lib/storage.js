@@ -490,23 +490,44 @@ export const getAthletePositions = cache(async (coachId) => {
         orderBy: { startDate: 'desc' }
     });
 
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+
     // For each athlete, pick the best "current" program:
-    // 1. Prefer status='active' programs (most recently started)
-    // 2. Fall back to the most recent non-draft program
     const activeProgramsMap = new Map();
-    
+    const athletePrograms = new Map();
     for (const p of allPrograms) {
-        const existing = activeProgramsMap.get(p.athleteId);
+        if (!athletePrograms.has(p.athleteId)) athletePrograms.set(p.athleteId, []);
+        athletePrograms.get(p.athleteId).push(p);
+    }
+
+    for (const [athleteId, progs] of athletePrograms.entries()) {
+        let selected = null;
         
-        if (!existing) {
-            activeProgramsMap.set(p.athleteId, p);
-        } else {
-            // If the new program is active and the existing one is not, prefer it
-            if (p.status === 'active' && existing.status !== 'active') {
-                activeProgramsMap.set(p.athleteId, p);
-            }
-            // If both are active, prefer the one with the more recent start date (already sorted desc)
-            // The first one encountered is already the most recent, so no swap needed
+        // 1. Find most recent ACTIVE program that has already started
+        selected = progs.find(p => {
+            if (!p.startDate) return false;
+            const startStr = (typeof p.startDate === 'string') ? p.startDate.split('T')[0] : p.startDate.toISOString().split('T')[0];
+            return p.status === 'active' && startStr <= todayStr;
+        });
+        
+        // 2. If none, find most recent program of ANY status that has already started (e.g., recently completed)
+        if (!selected) {
+            selected = progs.find(p => {
+                if (!p.startDate) return false;
+                const startStr = (typeof p.startDate === 'string') ? p.startDate.split('T')[0] : p.startDate.toISOString().split('T')[0];
+                return startStr <= todayStr;
+            });
+        }
+        
+        // 3. If all programs are in the future, pick the one closest to starting (earliest future date)
+        if (!selected) {
+            // progs is ordered by startDate desc, so the earliest is at the end
+            selected = progs[progs.length - 1]; 
+        }
+        
+        if (selected) {
+            activeProgramsMap.set(athleteId, selected);
         }
     }
     
@@ -532,8 +553,6 @@ export const getAthletePositions = cache(async (coachId) => {
 
     const map = {};
 
-    const now = new Date();
-    const todayStr = now.toISOString().split('T')[0];
     const todayDate = new Date(todayStr);
 
     for (const p of activePrograms) {
