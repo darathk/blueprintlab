@@ -137,7 +137,7 @@ export default function GlobalUploadStatus() {
                                 ? 'Tap ✕ to dismiss, then try sending again.'
                                 : allDone
                                     ? 'Your coach has received everything.'
-                                    : 'Your video is uploading — you can keep using the app.'}
+                                    : 'Uploading... Please keep the app open until finished.'}
                         </div>
 
                         {/* Individual file progress for multiple uploads */}

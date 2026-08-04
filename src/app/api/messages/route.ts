@@ -52,10 +52,10 @@ export async function GET(request: Request) {
         if (since) {
             whereClause.createdAt = { gt: new Date(since) };
         }
-        // sessionId filter disabled until `prisma db push` adds the column
-        // if (sessionId) {
-        //     whereClause.sessionId = sessionId;
-        // }
+        
+        if (sessionId) {
+            whereClause.sessionId = sessionId;
+        }
 
         const all = await prisma.message.findMany({
             where: whereClause,
@@ -112,7 +112,7 @@ export async function POST(request: Request) {
         }
 
         const message = await prisma.message.create({
-            data: { senderId, receiverId, content: content || '', mediaUrl: mediaUrl || null, mediaType: mediaType || null, replyToId: replyToId || null },
+            data: { senderId, receiverId, content: content || '', mediaUrl: mediaUrl || null, mediaType: mediaType || null, replyToId: replyToId || null, sessionId: sessionId || null },
             select: {
                 id: true, senderId: true, receiverId: true, content: true,
                 mediaUrl: true, mediaType: true, createdAt: true, read: true, replyToId: true, reactions: true,
