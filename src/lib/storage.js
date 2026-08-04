@@ -532,6 +532,10 @@ export const getAthletePositions = cache(async (coachId) => {
 
     const map = {};
 
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+    const todayDate = new Date(todayStr);
+
     for (const p of activePrograms) {
         // Calculate total weeks from the program's weeks array
         const weeks = Array.isArray(p.weeks) ? p.weeks : [];
@@ -544,25 +548,37 @@ export const getAthletePositions = cache(async (coachId) => {
         let lastLogDate = null;
         
         const latestLog = latestLogByProgram.get(p.id);
-        
         if (latestLog && latestLog.sessionId) {
             lastLogDate = latestLog.date;
-            // Parse sessionId format: programId_wX_dY
-            const match = latestLog.sessionId.match(/_w(\d+)_d(\d+)$/);
-            if (match) {
-                weekNum = parseInt(match[1], 10);
-                dayNum = parseInt(match[2], 10);
-            }
-            
-            // Check if the program is fully completed
             if (p.status === 'completed') {
                 isFinished = true;
+            }
+        }
+
+        if (p.startDate) {
+            const startStr = (typeof p.startDate === 'string') ? p.startDate.split('T')[0] : p.startDate.toISOString().split('T')[0];
+            let startDate = new Date(startStr);
+            
+            // Dynamically adjust start date for programs with empty leading weeks
+            const firstNonEmpty = weeks.find(w => w.sessions && w.sessions.length > 0);
+            if (firstNonEmpty && typeof firstNonEmpty.weekNumber === 'number' && firstNonEmpty.weekNumber > 1) {
+                const shiftDays = (firstNonEmpty.weekNumber - 1) * 7;
+                startDate.setDate(startDate.getDate() + shiftDays);
+            }
+            
+            const diffTime = todayDate.getTime() - startDate.getTime();
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays >= 0) {
+                weekNum = Math.floor(diffDays / 7) + 1;
+                dayNum = (diffDays % 7) + 1;
             }
         }
         
         // Cap weekNum at totalWeeks
         if (weekNum > totalWeeks) {
             weekNum = totalWeeks;
+            dayNum = 7;
             isFinished = true;
         }
 
