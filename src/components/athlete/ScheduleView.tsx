@@ -300,6 +300,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                 exerciseId: ex.id,
                 name: ex.name,
                 notes: logEx?.notes || ex.notes || '',
+                unit: logEx?.unit || unit,
                 sets: sets.map((s: any, i: number) => {
                     const saved = logEx?.sets?.[i];
                     return {
@@ -437,6 +438,15 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
             if (copy[sKey]?.[exIdx]?.sets?.[setIdx]?.actual) {
                 copy[sKey][exIdx].sets[setIdx].actual[field] = value;
             }
+            return copy;
+        });
+        triggerAutoSave(sKey, programId);
+    };
+
+    const updateExerciseUnit = (sKey: string, exIdx: number, value: 'lbs' | 'kg', programId: string) => {
+        setEditState(prev => {
+            const copy = JSON.parse(JSON.stringify(prev));
+            if (copy[sKey]?.[exIdx]) copy[sKey][exIdx].unit = value;
             return copy;
         });
         triggerAutoSave(sKey, programId);
@@ -1144,7 +1154,26 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                     })()}
 
                                                                     <div style={{ display: 'flex', marginBottom: 8, fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)' }}>
-                                                                        <span style={{ flex: 1, textAlign: 'center' }}>Weight</span>
+                                                                        <span style={{ flex: 1, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                                                                            Weight
+                                                                            <button 
+                                                                                onClick={() => {
+                                                                                    if (!editState[sKey]) {
+                                                                                        initEdit(sKey, exercises, log);
+                                                                                        setTimeout(() => {
+                                                                                            const current = exerciseData.unit || unit;
+                                                                                            updateExerciseUnit(sKey, exIdx, current === 'lbs' ? 'kg' : 'lbs', program.id);
+                                                                                        }, 50);
+                                                                                    } else {
+                                                                                        const current = exerciseData.unit || unit;
+                                                                                        updateExerciseUnit(sKey, exIdx, current === 'lbs' ? 'kg' : 'lbs', program.id);
+                                                                                    }
+                                                                                }}
+                                                                                style={{ fontSize: '0.65rem', padding: '2px 4px', borderRadius: 4, border: '1px solid var(--primary)', background: 'transparent', color: 'var(--primary)', cursor: 'pointer' }}
+                                                                            >
+                                                                                {exerciseData.unit || unit}
+                                                                            </button>
+                                                                        </span>
                                                                         <span style={{ flex: 1, textAlign: 'center' }}>Reps</span>
                                                                         <span style={{ flex: 1, textAlign: 'center' }}>RPE</span>
                                                                         {(!activeTabs[exKey] || activeTabs[exKey] === 'actual') && <div style={{ width: '40px' }} />}
@@ -1769,7 +1798,26 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                 })()}
 
                                                                                 <div style={{ display: 'flex', marginBottom: 8, fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)' }}>
-                                                                                    <span style={{ flex: 1, textAlign: 'center' }}>Weight</span>
+                                                                                    <span style={{ flex: 1, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                                                                                        Weight
+                                                                                        <button 
+                                                                                            onClick={() => {
+                                                                                                if (!editState[sKey]) {
+                                                                                                    initEdit(sKey, exercises, log);
+                                                                                                    setTimeout(() => {
+                                                                                                        const current = exerciseData.unit || unit;
+                                                                                                        updateExerciseUnit(sKey, exIdx, current === 'lbs' ? 'kg' : 'lbs', program.id);
+                                                                                                    }, 50);
+                                                                                                } else {
+                                                                                                    const current = exerciseData.unit || unit;
+                                                                                                    updateExerciseUnit(sKey, exIdx, current === 'lbs' ? 'kg' : 'lbs', program.id);
+                                                                                                }
+                                                                                            }}
+                                                                                            style={{ fontSize: '0.65rem', padding: '2px 4px', borderRadius: 4, border: '1px solid var(--primary)', background: 'transparent', color: 'var(--primary)', cursor: 'pointer' }}
+                                                                                        >
+                                                                                            {exerciseData.unit || unit}
+                                                                                        </button>
+                                                                                    </span>
                                                                                     <span style={{ flex: 1, textAlign: 'center' }}>Reps</span>
                                                                                     <span style={{ flex: 1, textAlign: 'center' }}>RPE</span>
                                                                                     {(!activeTabs[exKey] || activeTabs[exKey] === 'actual') && <div style={{ width: '40px' }} />}
