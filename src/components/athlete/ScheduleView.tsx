@@ -1669,6 +1669,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                     }
                                                                 });
 
+                                                                const category = exerciseData.category || ex.category || getExerciseCategory(exerciseData.name || ex.name);
                                                                 const exName = (exerciseData.name || ex.name || '').toLowerCase();
                                                                 const isWarmup = category === 'Warm Up' || category === 'Drills' || exName.includes('warm up') || exName.includes('warmup') || exName.includes('drill');
                                                                 

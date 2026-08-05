@@ -2580,6 +2580,14 @@ export default function ProgramBuilder({
                                 const today = new Date();
                                 today.setHours(0, 0, 0, 0);
                                 const meetDaysOut = Math.ceil((meet.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                                
+                                let outText = `${meetDaysOut}d out`;
+                                if (meetDaysOut >= 7) {
+                                    const w = Math.floor(meetDaysOut / 7);
+                                    const d = meetDaysOut % 7;
+                                    outText = d > 0 ? `${w}w ${d}d out` : `${w}w out`;
+                                }
+
                                 return (
                                     <span style={{
                                         background: meetDaysOut <= 14 ? '#ef4444' : meetDaysOut <= 42 ? '#f59e0b' : 'var(--primary)',
@@ -2587,7 +2595,7 @@ export default function ProgramBuilder({
                                         fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: '12px',
                                         marginLeft: 'auto'
                                     }}>
-                                        {meetDaysOut}d out
+                                        {outText}
                                     </span>
                                 );
                             })()}
