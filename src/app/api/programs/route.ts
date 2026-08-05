@@ -81,13 +81,23 @@ export async function POST(request: Request) {
         // Deactivate first (before create) so the new program is never caught by the updateMany.
         const ops: any[] = [];
         if (status === 'active') {
-            ops.push(prisma.program.updateMany({
-                where: {
-                    athleteId: program.athleteId,
-                    status: 'active'
-                },
-                data: { status: 'completed' }
-            }));
+            // Only deactivate if the new program starts today or in the past
+            let shouldDeactivate = true;
+            if (createData.startDate) {
+                const assignedDateStr = createData.startDate.split('T')[0];
+                const todayStr = new Date().toISOString().split('T')[0];
+                if (assignedDateStr > todayStr) shouldDeactivate = false;
+            }
+
+            if (shouldDeactivate) {
+                ops.push(prisma.program.updateMany({
+                    where: {
+                        athleteId: program.athleteId,
+                        status: 'active'
+                    },
+                    data: { status: 'completed' }
+                }));
+            }
         }
         ops.push(prisma.program.create({ data: createData }));
 
@@ -134,14 +144,25 @@ export async function PUT(request: Request) {
         // filter and auto-advance logic.
         const ops: any[] = [];
         if (program.status === 'active') {
-            ops.push(prisma.program.updateMany({
-                where: {
-                    athleteId: existing.athleteId,
-                    status: 'active',
-                    id: { not: program.id },
-                },
-                data: { status: 'completed' },
-            }));
+            // Only deactivate if the program being activated starts today or in the past
+            const assignedStart = program.startDate;
+            let shouldDeactivate = true;
+            if (assignedStart) {
+                const assignedDateStr = (typeof assignedStart === 'string') ? assignedStart.split('T')[0] : new Date(assignedStart).toISOString().split('T')[0];
+                const todayStr = new Date().toISOString().split('T')[0];
+                if (assignedDateStr > todayStr) shouldDeactivate = false;
+            }
+
+            if (shouldDeactivate) {
+                ops.push(prisma.program.updateMany({
+                    where: {
+                        athleteId: existing.athleteId,
+                        status: 'active',
+                        id: { not: program.id },
+                    },
+                    data: { status: 'completed' },
+                }));
+            }
         }
         ops.push(prisma.program.update({
             where: { id: program.id },

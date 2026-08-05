@@ -76,12 +76,18 @@ export async function POST(request: Request) {
             select: { id: true, startDate: true }
         });
 
-        // Only deactivate programs with an earlier or same startDate (or no startDate).
-        // Programs with a later startDate stay active — they're future/current blocks.
+        // Only deactivate programs if the NEW program has already started or starts today.
+        // If the new program is in the future, leave current programs active.
         const toDeactivate = otherActive
             .filter(p => {
                 if (!assignedStart) return true; // no date on new → deactivate all older
                 if (!p.startDate) return true;    // no date on old → treat as older
+                
+                // If the newly assigned program starts in the future, don't deactivate anything yet
+                const assignedDateStr = (typeof assignedStart === 'string') ? assignedStart.split('T')[0] : assignedStart.toISOString().split('T')[0];
+                const todayStr = new Date().toISOString().split('T')[0];
+                if (assignedDateStr > todayStr) return false; 
+                
                 return p.startDate <= assignedStart;
             })
             .map(p => p.id);

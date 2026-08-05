@@ -42,27 +42,36 @@ export async function POST(request: Request) {
             }))
             : template.weeks;
 
-        const results = await prisma.$transaction([
-            // Deactivate other active programs first so the new one isn't touched
-            prisma.program.updateMany({
+        const ops: any[] = [];
+        let shouldDeactivate = true;
+        const newStartDate = startDate || new Date().toISOString();
+        const assignedDateStr = newStartDate.split('T')[0];
+        const todayStr = new Date().toISOString().split('T')[0];
+        if (assignedDateStr > todayStr) shouldDeactivate = false;
+
+        if (shouldDeactivate) {
+            ops.push(prisma.program.updateMany({
                 where: {
                     athleteId,
                     status: 'active',
                 },
                 data: { status: 'completed' },
-            }),
-            prisma.program.create({
-                data: {
-                    athleteId,
-                    name: programName || template.name,
-                    startDate: startDate || new Date().toISOString(),
-                    weeks: clonedWeeks,
-                    status: 'active',
-                },
-            })
-        ]);
+            }));
+        }
 
-        const newProgram = results[1];
+        ops.push(prisma.program.create({
+            data: {
+                athleteId,
+                name: programName || template.name,
+                startDate: newStartDate,
+                weeks: clonedWeeks,
+                status: 'active',
+                templateId: template.id
+            },
+        }));
+
+        const results = await prisma.$transaction(ops);
+        const newProgram = results[results.length - 1];
 
         return NextResponse.json({ success: true, programId: newProgram.id }, { status: 201 });
     } catch (error) {
