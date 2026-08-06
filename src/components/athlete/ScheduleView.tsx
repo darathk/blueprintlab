@@ -1210,7 +1210,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                             value={actual[f]}
                                                                                                             onChange={e => updateSet(sKey, exIdx, setIdx, f, e.target.value, program.id)}
                                                                                                             onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
-                                                                                                            placeholder={target[f] || ''}
+                                                                                                            placeholder={f === 'weight' ? (target[f] || '') : ''}
                                                                                                             style={{
                                                                                                                 flex: 1, padding: '8px', border: '1px solid rgba(148,163,184,0.3)', borderRadius: '6px',
                                                                                                                 background: 'var(--background)', textAlign: 'center', fontSize: '1rem',
@@ -1863,7 +1863,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                                     value={actual[f]}
                                                                                                                     onChange={e => updateSet(sKey, exIdx, setIdx, f, e.target.value, program.id)}
                                                                                                                     onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
-                                                                                                                    placeholder={target[f] || ''}
+                                                                                                                    placeholder={f === 'weight' ? (target[f] || '') : ''}
                                                                                                                     style={{
                                                                                                                         flex: 1, padding: '8px', border: '1px solid rgba(148,163,184,0.3)', borderRadius: '6px',
                                                                                                                         background: 'var(--background)', textAlign: 'center', fontSize: '1rem',
