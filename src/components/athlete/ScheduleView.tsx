@@ -773,28 +773,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                     ))}
                 </div>
 
-                {/* Unit toggle */}
-                <div style={{
-                    display: 'flex', background: 'var(--card-bg)', borderRadius: 10,
-                    padding: 3, border: '1px solid var(--card-border)',
-                }}>
-                    {(['kg', 'lbs'] as const).map(u => (
-                        <button
-                            key={u}
-                            onClick={() => toggleUnit(u)}
-                            style={{
-                                padding: '6px 14px', border: 'none', cursor: 'pointer',
-                                fontSize: '0.75rem', fontWeight: 600, borderRadius: 8,
-                                transition: 'all 0.2s',
-                                background: unit === u ? 'var(--primary)' : 'transparent',
-                                color: unit === u ? 'white' : 'var(--secondary-foreground)',
-                                minWidth: 50,
-                            }}
-                        >
-                            {u.toUpperCase()}
-                        </button>
-                    ))}
-                </div>
+                {/* Unit toggle (Removed per user request) */}
             </div>
 
             {/* ═══ SCHEDULE VIEW (Date-based) ═══ */}
@@ -1227,17 +1206,25 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                         <div style={{ display: 'flex', flex: 1, alignItems: 'center', gap: '8px' }}>
                                                                                             {['weight', 'reps', 'rpe'].map(f => {
                                                                                                 return (
-                                                                                                    <input key={f} type="number" inputMode="decimal"
-                                                                                                        value={actual[f]}
-                                                                                                        onChange={e => updateSet(sKey, exIdx, setIdx, f, e.target.value, program.id)}
-                                                                                                        onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
-                                                                                                        placeholder={target[f] || ''}
-                                                                                                        style={{
-                                                                                                            flex: 1, padding: '8px', border: '1px solid rgba(148,163,184,0.3)', borderRadius: '6px',
-                                                                                                            background: 'var(--background)', textAlign: 'center', fontSize: '1rem',
-                                                                                                            color: 'var(--foreground)', width: '100%', outlineColor: 'var(--primary)'
-                                                                                                        }}
-                                                                                                    />
+                                                                                                    <div key={f} style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
+                                                                                                        <input type="number" inputMode="decimal"
+                                                                                                            value={actual[f]}
+                                                                                                            onChange={e => updateSet(sKey, exIdx, setIdx, f, e.target.value, program.id)}
+                                                                                                            onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
+                                                                                                            placeholder={target[f] || ''}
+                                                                                                            style={{
+                                                                                                                flex: 1, padding: '8px', border: '1px solid rgba(148,163,184,0.3)', borderRadius: '6px',
+                                                                                                                background: 'var(--background)', textAlign: 'center', fontSize: '1rem',
+                                                                                                                color: 'var(--foreground)', width: '100%', outlineColor: 'var(--primary)',
+                                                                                                                paddingRight: f === 'weight' ? '30px' : '8px'
+                                                                                                            }}
+                                                                                                        />
+                                                                                                        {f === 'weight' && (
+                                                                                                            <span style={{ position: 'absolute', right: '10px', fontSize: '0.75rem', color: 'var(--secondary-foreground)', opacity: 0.6, pointerEvents: 'none' }}>
+                                                                                                                {exerciseData.unit || unit}
+                                                                                                            </span>
+                                                                                                        )}
+                                                                                                    </div>
                                                                                                 );
                                                                                             })}
                                                                                         </div>
@@ -1869,27 +1856,31 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                 </div>
                                                                                             )}
                                                                                             {currentTab === 'actual' && (
-                                                                                                <>
-                                                                                                    <div style={{ display: 'flex', flex: 1, alignItems: 'center', gap: '8px' }}>
-                                                                                                        {['weight', 'reps', 'rpe'].map(f => {
-                                                                                                            const placeholderVal = target[f] || '';
-                                                                                                            return (
-                                                                                                                <input key={f} type="number" inputMode="decimal"
+                                                                                                <div style={{ display: 'flex', flex: 1, gap: '8px' }}>
+                                                                                                    {['weight', 'reps', 'rpe'].map(f => {
+                                                                                                        return (
+                                                                                                            <div key={f} style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
+                                                                                                                <input type="number" inputMode="decimal"
                                                                                                                     value={actual[f]}
                                                                                                                     onChange={e => updateSet(sKey, exIdx, setIdx, f, e.target.value, program.id)}
                                                                                                                     onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
-                                                                                                                    placeholder={placeholderVal?.toString()}
+                                                                                                                    placeholder={target[f] || ''}
                                                                                                                     style={{
                                                                                                                         flex: 1, padding: '8px', border: '1px solid rgba(148,163,184,0.3)', borderRadius: '6px',
                                                                                                                         background: 'var(--background)', textAlign: 'center', fontSize: '1rem',
-                                                                                                                        color: 'var(--foreground)', width: '100%', outlineColor: 'var(--primary)'
+                                                                                                                        color: 'var(--foreground)', width: '100%', outlineColor: 'var(--primary)',
+                                                                                                                        paddingRight: f === 'weight' ? '30px' : '8px'
                                                                                                                     }}
                                                                                                                 />
-                                                                                                            );
-                                                                                                        })}
-                                                                                                    </div>
-
-                                                                                                </>
+                                                                                                                {f === 'weight' && (
+                                                                                                                    <span style={{ position: 'absolute', right: '10px', fontSize: '0.75rem', color: 'var(--secondary-foreground)', opacity: 0.6, pointerEvents: 'none' }}>
+                                                                                                                        {exerciseData.unit || unit}
+                                                                                                                    </span>
+                                                                                                                )}
+                                                                                                            </div>
+                                                                                                        );
+                                                                                                    })}
+                                                                                                </div>
                                                                                             )}
                                                                                         </div>
                                                                                     );
