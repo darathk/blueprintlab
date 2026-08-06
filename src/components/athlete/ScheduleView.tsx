@@ -1153,8 +1153,8 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                         );
                                                                     })()}
 
-                                                                    <div style={{ display: 'flex', marginBottom: 8, fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)' }}>
-                                                                        <span style={{ flex: 1, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                                                                    <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 8, fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)' }}>
+                                                                        <span style={{ flex: 1, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
                                                                             Weight
                                                                             <div style={{ display: 'flex', background: 'rgba(148,163,184,0.15)', borderRadius: 12, padding: 2, cursor: 'pointer' }}>
                                                                                 <div 
@@ -1804,8 +1804,8 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                     );
                                                                                 })()}
 
-                                                                                <div style={{ display: 'flex', marginBottom: 8, fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)' }}>
-                                                                                    <span style={{ flex: 1, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+                                                                                <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 8, fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)' }}>
+                                                                                    <span style={{ flex: 1, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
                                                                                         Weight
                                                                                         <div style={{ display: 'flex', background: 'rgba(148,163,184,0.15)', borderRadius: 12, padding: 2, cursor: 'pointer' }}>
                                                                                             <div 
