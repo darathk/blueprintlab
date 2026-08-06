@@ -1250,11 +1250,11 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', padding: '16px 0 8px 0', marginTop: 12, borderTop: '1px solid rgba(148,163,184,0.1)' }}>
                                                                         {/* Stats Panel */}
                                                                         <div style={{ border: '1px solid rgba(148,163,184,0.2)', borderRadius: '12px', padding: '16px', background: 'rgba(148,163,184,0.03)' }}>
-                                                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', fontSize: '0.85rem' }}>
-                                                                                <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 12px', borderRadius: '16px', color: 'var(--foreground)', fontWeight: 600, width: '100%', marginBottom: '4px' }}>E1RM: {toDisplay(maxE1RM)} {unit}</div>
-                                                                                <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 12px', borderRadius: '16px', color: 'var(--foreground)', fontWeight: 600 }}>Stress Index: Total {exStress.total.toFixed(2)}</div>
-                                                                                <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 12px', borderRadius: '16px', color: 'var(--foreground)', fontWeight: 600 }}>Stress Index: Peripheral {exStress.peripheral.toFixed(2)}</div>
-                                                                                <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 12px', borderRadius: '16px', color: 'var(--foreground)', fontWeight: 600 }}>Stress Index: Central {exStress.central.toFixed(2)}</div>
+                                                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '0.9rem' }}>
+                                                                                <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>E1RM: {toDisplay(maxE1RM)} {unit}</div>
+                                                                                <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>Total SI: {exStress.total.toFixed(2)}</div>
+                                                                                <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>Peripheral SI: {exStress.peripheral.toFixed(2)}</div>
+                                                                                <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>Central SI: {exStress.central.toFixed(2)}</div>
                                                                             </div>
                                                                         </div>
 
@@ -1295,17 +1295,6 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                     );
                                                 })}
 
-                                                {/* Complete Session Button */}
-                                                {sessionOpen && exercises.length > 0 && (
-                                                    <div style={{ padding: '16px' }}>
-                                                        <button 
-                                                            onClick={() => alert("Session complete logic will go here")}
-                                                            style={{ width: '100%', padding: '16px', borderRadius: '12px', border: 'none', background: '#4ade80', color: '#064e3b', fontWeight: 700, fontSize: '1rem', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(74, 222, 128, 0.3)' }}
-                                                        >
-                                                            Complete Session
-                                                        </button>
-                                                    </div>
-                                                )}
 
                                                 {/* Plan Next Week's Top Sets — shown at the bottom of the open session */}
                                                 {!isCoachView && sessionOpen && exercises.length > 0 && (
@@ -1910,11 +1899,11 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', padding: '16px 0 8px 0', marginTop: 12, borderTop: '1px solid rgba(148,163,184,0.1)' }}>
                                                                                     {/* Stats Panel */}
                                                                                     <div style={{ border: '1px solid rgba(148,163,184,0.2)', borderRadius: '12px', padding: '16px', background: 'rgba(148,163,184,0.03)' }}>
-                                                                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', fontSize: '0.85rem' }}>
-                                                                                            <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 12px', borderRadius: '16px', color: 'var(--foreground)', fontWeight: 600, width: '100%', marginBottom: '4px' }}>E1RM: {toDisplay(maxE1RM)} {unit}</div>
-                                                                                            <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 12px', borderRadius: '16px', color: 'var(--foreground)', fontWeight: 600 }}>Stress Index: Total {exStress.total.toFixed(2)}</div>
-                                                                                            <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 12px', borderRadius: '16px', color: 'var(--foreground)', fontWeight: 600 }}>Stress Index: Peripheral {exStress.peripheral.toFixed(2)}</div>
-                                                                                            <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 12px', borderRadius: '16px', color: 'var(--foreground)', fontWeight: 600 }}>Stress Index: Central {exStress.central.toFixed(2)}</div>
+                                                                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '0.9rem' }}>
+                                                                                            <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>E1RM: {toDisplay(maxE1RM)} {unit}</div>
+                                                                                            <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>Total SI: {exStress.total.toFixed(2)}</div>
+                                                                                            <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>Peripheral SI: {exStress.peripheral.toFixed(2)}</div>
+                                                                                            <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>Central SI: {exStress.central.toFixed(2)}</div>
                                                                                         </div>
                                                                                     </div>
 
@@ -1971,17 +1960,6 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                 </div>
                                                             )}
 
-                                                            {/* Complete Session Button */}
-                                                            {sessionOpen && exercises.length > 0 && (
-                                                                <div style={{ padding: '16px', marginBottom: '8px' }}>
-                                                                    <button 
-                                                                        onClick={() => alert("Session complete logic will go here")}
-                                                                        style={{ width: '100%', padding: '16px', borderRadius: '12px', border: 'none', background: '#4ade80', color: '#064e3b', fontWeight: 700, fontSize: '1.05rem', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(74, 222, 128, 0.3)' }}
-                                                                    >
-                                                                        Complete Session
-                                                                    </button>
-                                                                </div>
-                                                            )}
                                                         </div>
                                                     )
                                                 }
