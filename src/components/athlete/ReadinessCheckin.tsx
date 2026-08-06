@@ -388,41 +388,46 @@ export default function ReadinessCheckin({ athleteId, sessionKey, programId, onR
                 onClick={() => setExpanded(true)}
                 style={{
                     width: '100%', display: 'flex', flexDirection: 'column', gap: 0,
-                    background: 'rgba(16, 185, 129, 0.06)',
-                    border: '1px solid rgba(16, 185, 129, 0.18)',
-                    borderRadius: 14, padding: 0, cursor: 'pointer', marginBottom: 12,
+                    background: 'rgba(16, 185, 129, 0.05)',
+                    border: '1px solid rgba(16, 185, 129, 0.15)',
+                    borderRadius: 16, padding: 0, cursor: 'pointer', marginBottom: 12,
                     boxSizing: 'border-box', overflow: 'hidden',
                 }}
             >
                 {/* Top row: icon + label + avg */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '12px 14px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <Activity size={15} style={{ color: '#10b981', flexShrink: 0 }} />
-                        <span style={{ fontSize: 13, color: 'var(--foreground)', fontWeight: 600 }}>Readiness</span>
-                        <span style={{ fontSize: 11, color: '#10b981', fontWeight: 600 }}>✓</span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '16px 20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        <Activity size={20} style={{ color: '#10b981', flexShrink: 0 }} />
+                        <span style={{ fontSize: 16, color: 'var(--foreground)', fontWeight: 600 }}>Readiness</span>
+                        <span style={{ fontSize: 14, color: '#10b981', fontWeight: 600, marginLeft: 2 }}>✓</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ fontSize: 16, fontWeight: 800, color: avgColor }}>{avgScore}</span>
-                        <span style={{ fontSize: 10, color: 'var(--secondary-foreground)' }}>/ 5</span>
-                        <ChevronDown size={14} style={{ color: 'var(--secondary-foreground)' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <span style={{ fontSize: 20, fontWeight: 700, color: avgColor }}>{avgScore}</span>
+                        <span style={{ fontSize: 12, color: 'var(--secondary-foreground)' }}>/ 5</span>
+                        <div style={{ 
+                            marginLeft: 8, width: 28, height: 28, borderRadius: 8, 
+                            background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' 
+                        }}>
+                            <ChevronUp size={16} style={{ color: 'var(--secondary-foreground)' }} />
+                        </div>
                     </div>
                 </div>
                 {/* Separator */}
                 <div style={{ height: 1, background: 'rgba(16, 185, 129, 0.12)', width: '100%' }} />
                 {/* Bottom row: score pills with labels */}
-                <div style={{ display: 'flex', gap: 6, width: '100%', justifyContent: 'space-between', padding: '10px 12px 12px' }}>
+                <div style={{ display: 'flex', gap: 8, width: '100%', justifyContent: 'space-between', padding: '16px 20px' }}>
                     {METRICS.map(m => (
-                        <div key={m.id} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, minWidth: 0 }}>
+                        <div key={m.id} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, minWidth: 0 }}>
                             <div style={{
-                                width: '100%', height: 28, borderRadius: 7, fontSize: 12, fontWeight: 800,
+                                width: '100%', height: 36, borderRadius: 12, fontSize: 15, fontWeight: 700,
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                background: `${SCORE_COLORS[scores[m.id]] || '#555'}18`,
+                                background: `${SCORE_COLORS[scores[m.id]] || '#555'}15`,
                                 color: SCORE_COLORS[scores[m.id]] || '#999',
-                                border: `1px solid ${SCORE_COLORS[scores[m.id]] || '#555'}33`,
+                                border: `1px solid ${SCORE_COLORS[scores[m.id]] || '#555'}40`,
                             }}>
                                 {scores[m.id]}
                             </div>
-                            <span style={{ fontSize: 8, fontWeight: 600, color: 'var(--secondary-foreground)', letterSpacing: '0.02em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
+                            <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--secondary-foreground)', letterSpacing: '0.04em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
                                 {METRIC_ABBREVS[m.id] || m.label}
                             </span>
                         </div>

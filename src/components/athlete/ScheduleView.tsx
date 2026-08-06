@@ -853,127 +853,126 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                 Past Program
                                             </div>
                                         )}
-                                        {/* Session Card Header */}
-                                        <div
-                                            onClick={() => {
-                                                toggle(openSessions, sKey, setOpenSessions);
-                                                if (!openSessions.has(sKey)) initEdit(sKey, exercises, log);
-                                            }}
-                                            style={{
-                                                padding: '14px 16px',
-                                                cursor: 'pointer',
-                                                background: sessionOpen ? (isActive ? 'rgba(125, 135, 210, 0.08)' : 'rgba(255,255,255,0.02)') : 'transparent',
-                                                transition: 'background 0.2s',
-                                            }}
-                                        >
-                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                                <div style={{ flex: 1 }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                                        <span style={{
-                                                            color: sessionOpen ? 'var(--primary)' : 'var(--secondary-foreground)',
-                                                            fontSize: '0.75rem',
-                                                            transition: 'transform 0.2s',
-                                                            display: 'inline-block',
-                                                            transform: sessionOpen ? 'rotate(90deg)' : 'rotate(0deg)',
-                                                        }}>▶</span>
-                                                        <div>
-                                                            <div style={{ fontSize: '1.05rem', fontWeight: 600, color: 'var(--foreground)' }}>
-                                                                {session.name || `Session ${session.day}`}
+                                        <div style={{ marginBottom: sessionOpen ? 16 : 8 }}>
+                                            {/* Session Card Header */}
+                                            <div
+                                                style={{
+                                                    display: 'flex', flexDirection: 'column',
+                                                    padding: '16px 20px',
+                                                    background: 'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%)',
+                                                    color: '#fff',
+                                                    borderRadius: 16,
+                                                    border: '1px solid rgba(255,255,255,0.1)',
+                                                    boxShadow: '0 4px 24px rgba(0,0,0,0.2)',
+                                                }}
+                                            >
+                                                {/* Top Row: Title, Week Info, Collapse All */}
+                                                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', width: '100%' }}>
+                                                    <div style={{ flex: 1, display: 'flex', gap: 16 }}>
+                                                        {/* Week Overview Button */}
+                                                        <button
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                const weekObj = program.weeks?.find((w: any) => w.weekNumber === weekNum) || { weekNumber: weekNum, sessions: [] };
+                                                                openWeekDrawer(program, weekObj);
+                                                            }}
+                                                            title="View week overview"
+                                                            style={{
+                                                                background: 'rgba(59, 130, 246, 0.2)',
+                                                                color: '#60a5fa',
+                                                                border: '1px solid rgba(59, 130, 246, 0.4)',
+                                                                width: '36px',
+                                                                height: '36px',
+                                                                borderRadius: '8px',
+                                                                cursor: 'pointer',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
+                                                                transition: 'all 0.2s',
+                                                                marginTop: '2px',
+                                                            }}
+                                                        >
+                                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                                                                <line x1="16" y1="2" x2="16" y2="6"></line>
+                                                                <line x1="8" y1="2" x2="8" y2="6"></line>
+                                                                <line x1="3" y1="10" x2="21" y2="10"></line>
+                                                            </svg>
+                                                        </button>
+
+                                                        <div style={{ cursor: 'pointer', flex: 1 }} onClick={() => {
+                                                            toggle(openSessions, sKey, setOpenSessions);
+                                                            if (!openSessions.has(sKey)) initEdit(sKey, exercises, log);
+                                                        }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                                                {sessionOpen ? (
+                                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--primary)' }}><path d="m6 9 6 6 6-6"/></svg>
+                                                                ) : (
+                                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--secondary-foreground)' }}><path d="m9 18 6-6-6-6"/></svg>
+                                                                )}
+                                                                <div style={{ fontSize: '1.4rem', fontWeight: 600 }}>
+                                                                    {session.name || `Session ${session.day}`}
+                                                                </div>
                                                             </div>
-                                                            <div style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', marginTop: 2 }}>
+                                                            <div style={{ fontSize: '0.85rem', color: 'var(--secondary-foreground)', marginTop: 4, marginLeft: 30 }}>
                                                                 {program.name} — Week {weekDisplayNum} • {weekDateRangeFromDate(program.startDate, weekNum)}
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </div>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                                    {/* Week Overview Button */}
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            const weekObj = program.weeks?.find((w: any) => w.weekNumber === weekNum) || { weekNumber: weekNum, sessions: [] };
-                                                            openWeekDrawer(program, weekObj);
-                                                        }}
-                                                        title="View week overview"
-                                                        style={{
-                                                            background: '#3B82F6',
-                                                            color: 'white',
-                                                            border: 'none',
-                                                            width: '28px',
-                                                            height: '28px',
-                                                            borderRadius: '6px',
-                                                            cursor: 'pointer',
-                                                            display: 'flex',
-                                                            alignItems: 'center',
-                                                            justifyContent: 'center',
-                                                            boxShadow: '0 1px 4px rgba(59, 130, 246, 0.3)',
-                                                            transition: 'transform 0.1s, background 0.1s',
-                                                        }}
-                                                    >
-                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                                                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                                            <line x1="16" y1="2" x2="16" y2="6"></line>
-                                                            <line x1="8" y1="2" x2="8" y2="6"></line>
-                                                            <line x1="3" y1="10" x2="21" y2="10"></line>
-                                                        </svg>
-                                                    </button>
-                                                    <div style={{
-                                                        fontSize: '0.8rem',
-                                                        fontWeight: 600,
-                                                        color: progress === 100 ? 'var(--success)' : progress > 0 ? 'var(--primary)' : 'var(--secondary-foreground)',
-                                                    }}>
-                                                        {progress}%
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            {/* Progress bar */}
-                                            <div style={{ marginTop: 10, height: 4, borderRadius: 2, background: 'var(--background)', overflow: 'hidden' }}>
-                                                <div style={{
-                                                    height: '100%', borderRadius: 2, transition: 'width 300ms',
-                                                    width: `${progress}%`,
-                                                    background: progress === 100 ? 'var(--success)' : 'var(--primary)',
-                                                }} />
-                                            </div>
-                                        </div>
 
-                                        {/* Expanded: Toggle All + Save Status */}
-                                        {sessionOpen && (
-                                            <div style={{
-                                                padding: '8px 16px',
-                                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                                borderTop: '1px solid var(--card-border)',
-                                                background: 'rgba(125, 135, 210, 0.04)',
-                                            }}>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        if (!isCoachView && !readySessions.has(sKey)) {
-                                                            handleLockedExerciseClick(sKey, `${sKey}-expand-all`);
-                                                            return;
-                                                        }
-                                                        const anyOpen = exercises.some((_, idx) => openExercises.has(`${sKey}-ex${idx}`));
-                                                        toggleSessionExercises(sKey, exercises, !anyOpen);
-                                                    }}
-                                                    style={{
-                                                        padding: '2px 8px', height: '22px',
-                                                        background: 'rgba(125, 135, 210, 0.15)',
-                                                        border: '1px solid rgba(125, 135, 210, 0.3)',
-                                                        borderRadius: '4px', color: 'var(--primary)',
-                                                        fontSize: '0.6rem', fontWeight: 700, cursor: 'pointer',
-                                                        textTransform: 'uppercase', letterSpacing: '0.1em',
+                                                    {sessionOpen && (
+                                                        <div 
+                                                            onClick={(e) => {
+                                                                e.stopPropagation();
+                                                                if (!isCoachView && !readySessions.has(sKey)) {
+                                                                    handleLockedExerciseClick(sKey, `${sKey}-expand-all`);
+                                                                    return;
+                                                                }
+                                                                const anyOpen = exercises.some((_, idx) => openExercises.has(`${sKey}-ex${idx}`));
+                                                                toggleSessionExercises(sKey, exercises, !anyOpen);
+                                                            }}
+                                                            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'var(--secondary-foreground)', cursor: 'pointer' }}
+                                                        >
+                                                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: -2 }}><path d="m7 6 5 5 5-5"/><path d="m7 13 5 5 5-5"/></svg>
+                                                            <span style={{ fontSize: '0.65rem', fontWeight: 500 }}>
+                                                                {exercises.some((_, idx) => openExercises.has(`${sKey}-ex${idx}`)) ? 'Collapse All' : 'Expand All'}
+                                                            </span>
+                                                        </div>
+                                                    )}
+                                                </div>
+
+                                                {/* Progress Bar Row */}
+                                                <div 
+                                                    style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 16, cursor: 'pointer' }}
+                                                    onClick={() => {
+                                                        toggle(openSessions, sKey, setOpenSessions);
+                                                        if (!openSessions.has(sKey)) initEdit(sKey, exercises, log);
                                                     }}
                                                 >
-                                                    {exercises.some((_, idx) => openExercises.has(`${sKey}-ex${idx}`)) ? 'Collapse All' : 'Expand All'}
-                                                </button>
-                                                <div style={{ fontSize: '0.75rem' }}>
-                                                    {saving.has(sKey) ? (
-                                                        <span style={{ color: 'var(--warning)' }}>Saving...</span>
-                                                    ) : savedKeys.has(sKey) ? (
-                                                        <span style={{ color: 'var(--success)' }}>Saved</span>
-                                                    ) : null}
+                                                    <div style={{ flex: 1, height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.1)', overflow: 'hidden', marginLeft: 46 }}>
+                                                        <div style={{
+                                                            height: '100%', borderRadius: 4, transition: 'width 300ms',
+                                                            width: `${progress}%`,
+                                                            background: progress === 100 ? '#4ade80' : 'var(--primary)',
+                                                            boxShadow: progress === 100 ? '0 0 12px rgba(74,222,128,0.8)' : 'none'
+                                                        }} />
+                                                    </div>
+                                                    <span style={{ fontSize: '0.9rem', color: 'var(--secondary-foreground)', fontWeight: 600 }}>
+                                                        {progress}%
+                                                    </span>
                                                 </div>
+
+                                                {/* Save Status Row */}
+                                                {sessionOpen && (
+                                                    <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.1)', fontSize: '0.95rem' }}>
+                                                        {saving.has(sKey) ? (
+                                                            <span style={{ color: 'var(--warning)', fontWeight: 500 }}>Saving...</span>
+                                                        ) : savedKeys.has(sKey) ? (
+                                                            <span style={{ color: '#4ade80', fontWeight: 500 }}>All Changes Saved.</span>
+                                                        ) : <span style={{ color: 'transparent' }}>-</span>}
+                                                    </div>
+                                                )}
                                             </div>
-                                        )}
 
                                         {/* Expanded: Readiness + Exercise Cards */}
                                         {sessionOpen && (
@@ -1557,38 +1556,34 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                         sessionMetaRef.current[sKey] = { exercises, sessionName: session.name || `Session ${day}` };
 
                                         return (
-                                            <div key={sKey} id={`session-${sKey}`} style={{ borderBottom: '1px solid var(--card-border)', borderLeft: '1px solid var(--card-border)', borderRight: '1px solid var(--card-border)' }}>
-                                                {/* Session header */}
-                                                <div style={{
-                                                    display: 'flex',
-                                                    flexDirection: 'column',
-                                                    padding: '12px 16px',
-                                                    background: sessionOpen ? 'rgba(6, 182, 212, 0.1)' : 'var(--card-bg)',
-                                                    color: 'var(--foreground)',
-                                                    transition: 'all 0.2s'
-                                                }}>
-                                                    {/* Top Row: Title and Toggle Button */}
-                                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%' }}>
-                                                        <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => {
+                                                <div style={{ marginBottom: sessionOpen ? 16 : 8 }}>
+                                                    {/* Session header */}
+                                                    <div style={{
+                                                        display: 'flex', flexDirection: 'column',
+                                                        padding: '16px 20px',
+                                                        background: 'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%)',
+                                                        color: '#fff',
+                                                        borderRadius: 16,
+                                                        border: '1px solid rgba(255,255,255,0.1)',
+                                                        boxShadow: '0 4px 24px rgba(0,0,0,0.2)',
+                                                    }}>
+                                                        {/* Top Row: Title and Collapse All */}
+                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', cursor: 'pointer' }} onClick={() => {
                                                             toggle(openSessions, sKey, setOpenSessions);
                                                             if (!openSessions.has(sKey)) initEdit(sKey, exercises, log);
                                                         }}>
                                                             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                                                                 {sessionOpen ? (
-                                                                    <span style={{ color: 'var(--primary)' }}>▼</span>
+                                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--primary)' }}><path d="m6 9 6 6 6-6"/></svg>
                                                                 ) : (
-                                                                    <span style={{ color: 'var(--secondary-foreground)' }}>▶</span>
+                                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--secondary-foreground)' }}><path d="m9 18 6-6-6-6"/></svg>
                                                                 )}
-                                                                <div style={{ fontSize: '1.1rem', fontWeight: 600 }}>
+                                                                <div style={{ fontSize: '1.4rem', fontWeight: 600 }}>
                                                                     {session.name || `Session ${day}`}
                                                                 </div>
                                                             </div>
-                                                        </div>
-
-                                                        {/* Toggle All Button & Save Status */}
-                                                        {sessionOpen && (
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                                                <button
+                                                            {sessionOpen && (
+                                                                <div 
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
                                                                         if (!readySessions.has(sKey)) {
@@ -1598,54 +1593,42 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                         const anyOpen = exercises.some((_, idx) => openExercises.has(`${sKey}-ex${idx}`));
                                                                         toggleSessionExercises(sKey, exercises, !anyOpen);
                                                                     }}
-                                                                    style={{
-                                                                        padding: '2px 8px',
-                                                                        height: '22px',
-                                                                        background: 'rgba(6, 182, 212, 0.2)',
-                                                                        border: '1px solid var(--primary)',
-                                                                        borderRadius: '4px',
-                                                                        color: 'var(--primary)',
-                                                                        fontSize: '0.6rem',
-                                                                        fontWeight: 700,
-                                                                        cursor: 'pointer',
-                                                                        textTransform: 'uppercase',
-                                                                        letterSpacing: '0.1em',
-                                                                        whiteSpace: 'nowrap'
-                                                                    }}
+                                                                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'var(--secondary-foreground)' }}
                                                                 >
-                                                                    {exercises.some((_, idx) => openExercises.has(`${sKey}-ex${idx}`)) ? 'Collapse All' : 'Expand All'}
-                                                                </button>
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: '0.75rem', minWidth: 60, justifyContent: 'flex-end' }}>
-                                                                    {saving.has(sKey) ? (
-                                                                        <span style={{ color: 'var(--warning)' }}>Saving...</span>
-                                                                    ) : savedKeys.has(sKey) ? (
-                                                                        <span style={{ color: 'var(--success)' }}>✓ Saved</span>
-                                                                    ) : null}
+                                                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: -2 }}><path d="m7 6 5 5 5-5"/><path d="m7 13 5 5 5-5"/></svg>
+                                                                    <span style={{ fontSize: '0.65rem', fontWeight: 500 }}>
+                                                                        {exercises.some((_, idx) => openExercises.has(`${sKey}-ex${idx}`)) ? 'Collapse All' : 'Expand All'}
+                                                                    </span>
                                                                 </div>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Progress Bar Row */}
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 16 }}>
+                                                            <div style={{ flex: 1, height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
+                                                                <div style={{
+                                                                    height: '100%', borderRadius: 4, transition: 'width 300ms',
+                                                                    width: `${progress}%`,
+                                                                    background: progress === 100 ? '#4ade80' : 'var(--primary)',
+                                                                    boxShadow: progress === 100 ? '0 0 12px rgba(74,222,128,0.8)' : 'none'
+                                                                }} />
+                                                            </div>
+                                                            <span style={{ fontSize: '0.9rem', color: 'var(--secondary-foreground)', fontWeight: 600 }}>
+                                                                {progress}%
+                                                            </span>
+                                                        </div>
+                                                        
+                                                        {/* Save Status Row */}
+                                                        {sessionOpen && (
+                                                            <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.1)', fontSize: '0.95rem' }}>
+                                                                {saving.has(sKey) ? (
+                                                                    <span style={{ color: 'var(--warning)', fontWeight: 500 }}>Saving...</span>
+                                                                ) : savedKeys.has(sKey) ? (
+                                                                    <span style={{ color: '#4ade80', fontWeight: 500 }}>All Changes Saved.</span>
+                                                                ) : <span style={{ color: 'transparent' }}>-</span>}
                                                             </div>
                                                         )}
                                                     </div>
-
-                                                    {/* Bottom Row: Full Width Progress Bar */}
-                                                    <div
-                                                        onClick={() => {
-                                                            toggle(openSessions, sKey, setOpenSessions);
-                                                            if (!openSessions.has(sKey)) initEdit(sKey, exercises, log);
-                                                        }}
-                                                        style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, cursor: 'pointer' }}
-                                                    >
-                                                        <div style={{ flex: 1, height: 6, borderRadius: 3, background: 'var(--background)', overflow: 'hidden' }}>
-                                                            <div style={{
-                                                                height: '100%', borderRadius: 3, transition: 'width 300ms',
-                                                                width: `${progress}%`,
-                                                                background: progress === 100 ? 'var(--success)' : 'var(--primary)'
-                                                            }} />
-                                                        </div>
-                                                        <span style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', fontWeight: 600 }}>
-                                                            {progress}%
-                                                        </span>
-                                                    </div>
-                                                </div>
 
                                                 {/* ═══ Expanded Session: Exercise Cards ═══ */}
                                                 {
