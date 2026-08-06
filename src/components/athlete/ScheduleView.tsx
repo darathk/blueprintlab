@@ -12,7 +12,6 @@ const ExerciseFeedback = dynamic(() => import('@/components/athlete/ExerciseFeed
 const ReadinessCheckin = dynamic(() => import('@/components/athlete/ReadinessCheckin'), { ssr: false });
 const CelebrationScreen = dynamic(() => import('@/components/athlete/CelebrationScreen'), { ssr: false });
 const PRToggle = dynamic(() => import('@/components/athlete/PRToggle'), { ssr: false });
-const ClipCreator = dynamic(() => import('@/components/athlete/ClipCreator'), { ssr: false });
 const PlannedTopSetInput = dynamic(() => import('@/components/athlete/PlannedTopSetInput'), { ssr: false });
 
 /* ─────────── constants ─────────── */
@@ -1061,39 +1060,51 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
 
                                                     return (
                                                         <div key={exIdx} className={shakeKey === exKey ? 'readiness-shake' : ''} style={{ background: 'var(--background)', borderBottom: '1px solid var(--card-border)', opacity: isLocked ? 0.5 : 1, transition: 'opacity 0.3s' }}>
-                                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--card-bg)', borderBottom: exOpen ? '1px solid var(--card-border)' : 'none' }}>
+                                                            <div 
+                                                                onClick={() => {
+                                                                    if (isLocked) {
+                                                                        handleLockedExerciseClick(sKey, exKey);
+                                                                        return;
+                                                                    }
+                                                                    toggle(openExercises, exKey, setOpenExercises);
+                                                                    if (!editState[sKey]) initEdit(sKey, exercises, log);
+                                                                }}
+                                                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'rgba(255,255,255,0.06)', cursor: 'pointer', borderTopLeftRadius: exIdx === 0 ? 8 : 0, borderTopRightRadius: exIdx === 0 ? 8 : 0, borderBottom: '1px solid var(--card-border)' }}
+                                                            >
                                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                                                                     <div style={{ width: 3, height: 20, borderRadius: 2, background: catColor }} />
-                                                                    <div
-                                                                        onClick={() => {
-                                                                            if (isLocked) {
-                                                                                handleLockedExerciseClick(sKey, exKey);
-                                                                                return;
-                                                                            }
-                                                                            toggle(openExercises, exKey, setOpenExercises);
-                                                                            if (!editState[sKey]) initEdit(sKey, exercises, log);
-                                                                        }}
-                                                                        style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}
-                                                                    >
-                                                                        {isLocked && <span style={{ fontSize: '0.8rem' }}>🔒</span>}
-                                                                        <span style={{
-                                                                            color: 'var(--secondary-foreground)', fontSize: '0.7rem',
-                                                                            transition: 'transform 0.2s', display: 'inline-block',
-                                                                            transform: exOpen ? 'rotate(90deg)' : 'rotate(0deg)',
-                                                                        }}>▶</span>
-                                                                        <span style={{ fontSize: '0.95rem', color: 'var(--foreground)', fontWeight: 500 }}>{exerciseData.name || ex.name}</span>
-                                                                    </div>
+                                                                    <span style={{ fontSize: '1rem', color: '#fff', fontWeight: 600 }}>{exerciseData.name || ex.name}</span>
+                                                                    {isLocked && <span style={{ fontSize: '0.8rem' }}>🔒</span>}
                                                                 </div>
-                                                                <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', fontWeight: 600 }}>
-                                                                    {sets.length} sets
-                                                                </div>
+                                                                <span style={{
+                                                                    color: 'var(--secondary-foreground)', fontSize: '0.8rem',
+                                                                    transition: 'transform 0.2s', display: 'inline-block',
+                                                                    transform: exOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                                                                }}>▼</span>
                                                             </div>
 
                                                             {exOpen && (
                                                                 <div style={{ padding: '0 8px 16px 8px' }}>
+                                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, marginTop: 12, padding: '0 8px' }}>
+                                                                        <div style={{ fontSize: '0.85rem', color: '#818cf8', fontWeight: 500 }}>
+                                                                            <span style={{ color: 'var(--foreground)' }}>Session: </span>
+                                                                            {(() => {
+                                                                                const prevForHeader = getPrevSets(exerciseData.name || ex.name, sKey);
+                                                                                const prevDateLabel = (() => { const raw = prevForHeader?.date; if (!raw) return null; const d = new Date(raw.slice(0, 10)); return isNaN(d.getTime()) ? null : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); })();
+                                                                                return prevDateLabel ? `${prevDateLabel} - Prev` : 'New - Prev';
+                                                                            })()}
+                                                                        </div>
+                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', color: 'var(--foreground)', fontWeight: 500 }}>
+                                                                            <span>Sets:</span>
+                                                                            <div style={{ padding: '2px 8px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, background: 'rgba(255,255,255,0.03)' }}>
+                                                                                {sets.length}
+                                                                            </div>
+                                                                        </div>
+                                                                    </div>
+
                                                                     {/* Coach's notes — surfaced first so the athlete reads any
                                                                         prescribed cues/instructions before seeing the protocol. */}
-                                                                    <div style={{ display: 'flex', padding: '12px 0 8px 0', alignItems: 'flex-start' }}>
+                                                                    <div style={{ display: 'flex', padding: '0 0 8px 0', alignItems: 'flex-start' }}>
                                                                         <textarea
                                                                             value={exerciseData.notes || ''}
                                                                             onChange={e => updateNotes(sKey, exIdx, e.target.value, program.id)}
@@ -1238,51 +1249,55 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                             </div>
                                                                         );
                                                                     })}
-                                                                    <div style={{ padding: '12px 0 8px 0', borderBottom: '1px dashed var(--card-border)', fontSize: '0.85rem', color: 'var(--foreground)' }}>
-                                                                        <div style={{ display: 'flex', gap: '16px', fontWeight: 600 }}>
-                                                                            <span>E1RM: {toDisplay(maxE1RM)} {unit}</span>
-                                                                            <span>NL: {totalNL}</span>
-                                                                            <span>Tonnage: {toDisplay(tonnage)} {unit}</span>
+                                                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', padding: '16px 0 8px 0', marginTop: 12, borderTop: '1px solid rgba(148,163,184,0.1)' }}>
+                                                                        {/* Stats Panel */}
+                                                                        <div style={{ border: '1px solid rgba(148,163,184,0.2)', borderRadius: '12px', padding: '16px', background: 'rgba(148,163,184,0.03)' }}>
+                                                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', fontSize: '0.85rem' }}>
+                                                                                <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 12px', borderRadius: '16px', color: 'var(--foreground)', fontWeight: 600 }}>E1RM: {toDisplay(maxE1RM)} {unit}</div>
+                                                                                <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 12px', borderRadius: '16px', color: 'var(--foreground)', fontWeight: 600 }}>NL: {totalNL}</div>
+                                                                                <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 12px', borderRadius: '16px', color: 'var(--foreground)', fontWeight: 600, width: '100%', marginBottom: '4px' }}>Tonnage: {toDisplay(tonnage)} {unit}</div>
+                                                                                <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 12px', borderRadius: '16px', color: 'var(--foreground)', fontWeight: 600 }}>Fatigue: {exStress.total.toFixed(2)}</div>
+                                                                                <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 12px', borderRadius: '16px', color: 'var(--foreground)', fontWeight: 600 }}>Fatigue: {exStress.peripheral.toFixed(2)}</div>
+                                                                                <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 12px', borderRadius: '16px', color: 'var(--foreground)', fontWeight: 600 }}>Central: {exStress.central.toFixed(2)}</div>
+                                                                            </div>
                                                                         </div>
-                                                                        <div style={{ display: 'flex', gap: '16px', marginTop: 4 }}>
-                                                                            <span>Total: <span style={{ fontWeight: 'normal' }}>{exStress.total.toFixed(2)}</span></span>
-                                                                            <span>Peripheral: <span style={{ fontWeight: 'normal' }}>{exStress.peripheral.toFixed(2)}</span></span>
-                                                                            <span>Central: <span style={{ fontWeight: 'normal' }}>{exStress.central.toFixed(2)}</span></span>
-                                                                        </div>
-                                                                    </div>
-                                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '8px 16px' }}>
-                                                                        <ExerciseFeedback
-                                                                            athleteId={athleteId}
-                                                                            coachId={coachId || ''}
-                                                                            exerciseName={exerciseData.name || ex.name}
-                                                                            weekNum={weekDisplayNum}
-                                                                            dayNum={sessionNum}
-                                                                            blockName={program.name}
-                                                                            sessionId={sKey}
-                                                                            unit={unit}
-                                                                            sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any, i: number) => ({ setNumber: i + 1, actual: s.actual || { weight: '', reps: '', rpe: '' } }))}
-                                                                        />
-                                                                        {!isCoachView && (
-                                                                            <>
-                                                                                <PRToggle
+
+                                                                        {/* Actions Panel */}
+                                                                        <div style={{ border: '1px solid rgba(148,163,184,0.2)', borderRadius: '12px', padding: '16px', background: 'rgba(148,163,184,0.03)' }}>
+                                                                            <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '16px' }}>Session Actions</div>
+                                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                                                                <button 
+                                                                                    onClick={() => alert("Session complete logic will go here")}
+                                                                                    style={{ width: '100%', padding: '12px', borderRadius: '8px', border: 'none', background: '#c7d2fe', color: '#312e81', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer', transition: 'all 0.2s' }}
+                                                                                >
+                                                                                    Complete Session
+                                                                                </button>
+                                                                                <ExerciseFeedback
                                                                                     athleteId={athleteId}
+                                                                                    coachId={coachId || ''}
                                                                                     exerciseName={exerciseData.name || ex.name}
-                                                                                    sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any) => (s.actual || { weight: '', reps: '', rpe: '' }))}
-                                                                                    unit={unit}
-                                                                                    sessionId={sKey}
-                                                                                    programName={program.name}
                                                                                     weekNum={weekDisplayNum}
                                                                                     dayNum={sessionNum}
-                                                                                    date={new Date().toISOString().split('T')[0]}
+                                                                                    blockName={program.name}
+                                                                                    sessionId={sKey}
+                                                                                    unit={unit}
+                                                                                    sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any, i: number) => ({ setNumber: i + 1, actual: s.actual || { weight: '', reps: '', rpe: '' } }))}
                                                                                 />
-                                                                                <ClipCreator
-                                                                                    exerciseName={exerciseData.name || ex.name}
-                                                                                    sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any) => (s.actual || { weight: '', reps: '', rpe: '' }))}
-                                                                                    sessionLabel={`Week ${weekDisplayNum} · ${program.name}`}
-                                                                                    athleteId={athleteId}
-                                                                                />
-                                                                            </>
-                                                                        )}
+                                                                                {!isCoachView && (
+                                                                                    <PRToggle
+                                                                                        athleteId={athleteId}
+                                                                                        exerciseName={exerciseData.name || ex.name}
+                                                                                        sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any) => (s.actual || { weight: '', reps: '', rpe: '' }))}
+                                                                                        unit={unit}
+                                                                                        sessionId={sKey}
+                                                                                        programName={program.name}
+                                                                                        weekNum={weekDisplayNum}
+                                                                                        dayNum={sessionNum}
+                                                                                        date={new Date().toISOString().split('T')[0]}
+                                                                                    />
+                                                                                )}
+                                                                            </div>
+                                                                        </div>
                                                                     </div>
                                                                 </div>
                                                             )}
@@ -1714,38 +1729,51 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                 return (
                                                                     <div key={exIdx} className={shakeKey === exKey ? 'readiness-shake' : ''} style={{ background: 'var(--background)', borderBottom: '1px solid #cbd5e1', opacity: isLocked ? 0.5 : 1, transition: 'opacity 0.3s' }}>
                                                                         {/* Exercise header */}
-                                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'var(--card-bg)', borderBottom: '1px solid #e2e8f0' }}>
+                                                                        <div 
+                                                                            onClick={() => {
+                                                                                if (isLocked) {
+                                                                                    handleLockedExerciseClick(sKey, exKey);
+                                                                                    return;
+                                                                                }
+                                                                                toggle(openExercises, exKey, setOpenExercises);
+                                                                                if (!editState[sKey]) initEdit(sKey, exercises, log);
+                                                                            }}
+                                                                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'rgba(255,255,255,0.06)', cursor: 'pointer', borderTopLeftRadius: exIdx === 0 ? 8 : 0, borderTopRightRadius: exIdx === 0 ? 8 : 0, borderBottom: '1px solid var(--card-border)' }}
+                                                                        >
                                                                             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                                                                <div
-                                                                                    onClick={() => {
-                                                                                        if (isLocked) {
-                                                                                            handleLockedExerciseClick(sKey, exKey);
-                                                                                            return;
-                                                                                        }
-                                                                                        toggle(openExercises, exKey, setOpenExercises);
-                                                                                        if (!editState[sKey]) initEdit(sKey, exercises, log);
-                                                                                    }}
-                                                                                    style={{
-                                                                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                                                        color: 'var(--secondary-foreground)', cursor: 'pointer', padding: '4px',
-                                                                                        transition: 'transform 0.2s', transform: exOpen ? 'rotate(90deg)' : 'rotate(0deg)'
-                                                                                    }}
-                                                                                >
-                                                                                    ▶
-                                                                                </div>
-                                                                                <span style={{ fontSize: '1rem', color: 'var(--primary)', fontWeight: 500 }}>{exerciseData.name || ex.name}</span>
+                                                                                <span style={{ fontSize: '1rem', color: '#fff', fontWeight: 600 }}>{exerciseData.name || ex.name}</span>
+                                                                                {isLocked && <span style={{ fontSize: '0.8rem' }}>🔒</span>}
                                                                             </div>
-                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: '0.9rem', color: 'var(--foreground)', fontWeight: 600 }}>
-                                                                                Sets <div style={{ minWidth: 40, padding: '4px 8px', border: '1px solid var(--card-border)', borderRadius: 4, textAlign: 'center', background: 'var(--background)' }}>{sets.length}</div>
-                                                                            </div>
+                                                                            <span style={{
+                                                                                color: 'var(--secondary-foreground)', fontSize: '0.8rem',
+                                                                                transition: 'transform 0.2s', display: 'inline-block',
+                                                                                transform: exOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                                                                            }}>▼</span>
                                                                         </div>
 
                                                                         {/* Exercise body / Input rows */}
                                                                         {exOpen && (
                                                                             <div style={{ padding: '0 8px 16px 8px' }}>
+                                                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, marginTop: 12, padding: '0 8px' }}>
+                                                                                    <div style={{ fontSize: '0.85rem', color: '#818cf8', fontWeight: 500 }}>
+                                                                                        <span style={{ color: 'var(--foreground)' }}>Session: </span>
+                                                                                        {(() => {
+                                                                                            const prevForHeader = getPrevSets(exerciseData.name || ex.name, sKey);
+                                                                                            const prevDateLabel = (() => { const raw = prevForHeader?.date; if (!raw) return null; const d = new Date(raw.slice(0, 10)); return isNaN(d.getTime()) ? null : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); })();
+                                                                                            return prevDateLabel ? `${prevDateLabel} - Prev` : 'New - Prev';
+                                                                                        })()}
+                                                                                    </div>
+                                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', color: 'var(--foreground)', fontWeight: 500 }}>
+                                                                                        <span>Sets:</span>
+                                                                                        <div style={{ padding: '2px 8px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, background: 'rgba(255,255,255,0.03)' }}>
+                                                                                            {sets.length}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
+
                                                                                 {/* Coach's notes — surfaced first so the athlete reads any
                                                                                     prescribed cues/instructions before seeing the protocol. */}
-                                                                                <div style={{ display: 'flex', padding: '12px 0 8px 0', alignItems: 'flex-start' }}>
+                                                                                <div style={{ display: 'flex', padding: '0 0 8px 0', alignItems: 'flex-start' }}>
                                                                                     <textarea
                                                                                         value={exerciseData.notes || ''}
                                                                                         onChange={e => updateNotes(sKey, exIdx, e.target.value, program.id)}
@@ -1892,54 +1920,56 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                     );
                                                                                 })}
 
-                                                                                {/* Stats row */}
-                                                                                <div style={{ padding: '12px 0 8px 0', borderBottom: '1px dashed #cbd5e1', fontSize: '0.85rem', color: 'var(--foreground)' }}>
-                                                                                    <div style={{ display: 'flex', gap: '16px', fontWeight: 600 }}>
-                                                                                        <span>E1RM: {toDisplay(maxE1RM)} {unit}</span>
-                                                                                        <span>NL: {totalNL}</span>
-                                                                                        <span>Tonnage: {toDisplay(tonnage)} {unit}</span>
+                                                                                {/* Stats and Actions Grid */}
+                                                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', padding: '16px 0 8px 0', marginTop: 12, borderTop: '1px solid rgba(148,163,184,0.1)' }}>
+                                                                                    {/* Stats Panel */}
+                                                                                    <div style={{ border: '1px solid rgba(148,163,184,0.2)', borderRadius: '12px', padding: '16px', background: 'rgba(148,163,184,0.03)' }}>
+                                                                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', fontSize: '0.85rem' }}>
+                                                                                            <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 12px', borderRadius: '16px', color: 'var(--foreground)', fontWeight: 600 }}>E1RM: {toDisplay(maxE1RM)} {unit}</div>
+                                                                                            <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 12px', borderRadius: '16px', color: 'var(--foreground)', fontWeight: 600 }}>NL: {totalNL}</div>
+                                                                                            <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 12px', borderRadius: '16px', color: 'var(--foreground)', fontWeight: 600, width: '100%', marginBottom: '4px' }}>Tonnage: {toDisplay(tonnage)} {unit}</div>
+                                                                                            <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 12px', borderRadius: '16px', color: 'var(--foreground)', fontWeight: 600 }}>Fatigue: {exStress.total.toFixed(2)}</div>
+                                                                                            <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 12px', borderRadius: '16px', color: 'var(--foreground)', fontWeight: 600 }}>Fatigue: {exStress.peripheral.toFixed(2)}</div>
+                                                                                            <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 12px', borderRadius: '16px', color: 'var(--foreground)', fontWeight: 600 }}>Central: {exStress.central.toFixed(2)}</div>
+                                                                                        </div>
                                                                                     </div>
-                                                                                    <div style={{ display: 'flex', gap: '16px', marginTop: 4 }}>
-                                                                                        <span>Total: <span style={{ fontWeight: 'normal' }}>{exStress.total.toFixed(2)}</span></span>
-                                                                                        <span>Peripheral: <span style={{ fontWeight: 'normal' }}>{exStress.peripheral.toFixed(2)}</span></span>
-                                                                                        <span>Central: <span style={{ fontWeight: 'normal' }}>{exStress.central.toFixed(2)}</span></span>
-                                                                                    </div>
-                                                                                </div>
 
-                                                                                {/* Send Feedback */}
-                                                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, padding: '8px 16px' }}>
-                                                                                    <ExerciseFeedback
-                                                                                        athleteId={athleteId}
-                                                                                        coachId={coachId || ''}
-                                                                                        exerciseName={exerciseData.name || ex.name}
-                                                                                        weekNum={weekDisplayNum}
-                                                                                        dayNum={sessionNum}
-                                                                                        blockName={program.name}
-                                                                                        sessionId={sKey}
-                                                                                        unit={unit}
-                                                                                        sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any, i: number) => ({ setNumber: i + 1, actual: s.actual || { weight: '', reps: '', rpe: '' } }))}
-                                                                                    />
-                                                                                    {!isCoachView && (
-                                                                                        <>
-                                                                                            <PRToggle
+                                                                                    {/* Actions Panel */}
+                                                                                    <div style={{ border: '1px solid rgba(148,163,184,0.2)', borderRadius: '12px', padding: '16px', background: 'rgba(148,163,184,0.03)' }}>
+                                                                                        <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '16px' }}>Session Actions</div>
+                                                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                                                                            <button 
+                                                                                                onClick={() => alert("Session complete logic will go here")}
+                                                                                                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: 'none', background: '#c7d2fe', color: '#312e81', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer', transition: 'all 0.2s' }}
+                                                                                            >
+                                                                                                Complete Session
+                                                                                            </button>
+                                                                                            <ExerciseFeedback
                                                                                                 athleteId={athleteId}
+                                                                                                coachId={coachId || ''}
                                                                                                 exerciseName={exerciseData.name || ex.name}
-                                                                                                sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any) => (s.actual || { weight: '', reps: '', rpe: '' }))}
-                                                                                                unit={unit}
-                                                                                                sessionId={sKey}
-                                                                                                programName={program.name}
                                                                                                 weekNum={weekDisplayNum}
                                                                                                 dayNum={sessionNum}
-                                                                                                date={new Date().toISOString().split('T')[0]}
+                                                                                                blockName={program.name}
+                                                                                                sessionId={sKey}
+                                                                                                unit={unit}
+                                                                                                sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any, i: number) => ({ setNumber: i + 1, actual: s.actual || { weight: '', reps: '', rpe: '' } }))}
                                                                                             />
-                                                                                            <ClipCreator
-                                                                                                exerciseName={exerciseData.name || ex.name}
-                                                                                                sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any) => (s.actual || { weight: '', reps: '', rpe: '' }))}
-                                                                                                sessionLabel={`Week ${weekDisplayNum} · ${program.name}`}
-                                                                                                athleteId={athleteId}
-                                                                                            />
-                                                                                        </>
-                                                                                    )}
+                                                                                            {!isCoachView && (
+                                                                                                <PRToggle
+                                                                                                    athleteId={athleteId}
+                                                                                                    exerciseName={exerciseData.name || ex.name}
+                                                                                                    sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any) => (s.actual || { weight: '', reps: '', rpe: '' }))}
+                                                                                                    unit={unit}
+                                                                                                    sessionId={sKey}
+                                                                                                    programName={program.name}
+                                                                                                    weekNum={weekDisplayNum}
+                                                                                                    dayNum={sessionNum}
+                                                                                                    date={new Date().toISOString().split('T')[0]}
+                                                                                                />
+                                                                                            )}
+                                                                                        </div>
+                                                                                    </div>
                                                                                 </div>
                                                                             </div>
                                                                         )}
