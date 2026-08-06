@@ -1260,14 +1260,8 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
 
                                                                         {/* Actions Panel */}
                                                                         <div style={{ border: '1px solid rgba(148,163,184,0.2)', borderRadius: '12px', padding: '16px', background: 'rgba(148,163,184,0.03)' }}>
-                                                                            <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '16px' }}>Session Actions</div>
+                                                                            <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '16px' }}>Exercise Actions</div>
                                                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                                                                <button 
-                                                                                    onClick={() => alert("Session complete logic will go here")}
-                                                                                    style={{ width: '100%', padding: '12px', borderRadius: '8px', border: 'none', background: '#c7d2fe', color: '#312e81', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer', transition: 'all 0.2s' }}
-                                                                                >
-                                                                                    Complete Session
-                                                                                </button>
                                                                                 <ExerciseFeedback
                                                                                     athleteId={athleteId}
                                                                                     coachId={coachId || ''}
@@ -1300,6 +1294,18 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                         </div>
                                                     );
                                                 })}
+
+                                                {/* Complete Session Button */}
+                                                {sessionOpen && exercises.length > 0 && (
+                                                    <div style={{ padding: '16px' }}>
+                                                        <button 
+                                                            onClick={() => alert("Session complete logic will go here")}
+                                                            style={{ width: '100%', padding: '16px', borderRadius: '12px', border: 'none', background: '#4ade80', color: '#064e3b', fontWeight: 700, fontSize: '1rem', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(74, 222, 128, 0.3)' }}
+                                                        >
+                                                            Complete Session
+                                                        </button>
+                                                    </div>
+                                                )}
 
                                                 {/* Plan Next Week's Top Sets — shown at the bottom of the open session */}
                                                 {!isCoachView && sessionOpen && exercises.length > 0 && (
@@ -1914,14 +1920,8 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
 
                                                                                     {/* Actions Panel */}
                                                                                     <div style={{ border: '1px solid rgba(148,163,184,0.2)', borderRadius: '12px', padding: '16px', background: 'rgba(148,163,184,0.03)' }}>
-                                                                                        <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '16px' }}>Session Actions</div>
+                                                                                        <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '16px' }}>Exercise Actions</div>
                                                                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                                                                            <button 
-                                                                                                onClick={() => alert("Session complete logic will go here")}
-                                                                                                style={{ width: '100%', padding: '12px', borderRadius: '8px', border: 'none', background: '#c7d2fe', color: '#312e81', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer', transition: 'all 0.2s' }}
-                                                                                            >
-                                                                                                Complete Session
-                                                                                            </button>
                                                                                             <ExerciseFeedback
                                                                                                 athleteId={athleteId}
                                                                                                 coachId={coachId || ''}
@@ -1968,6 +1968,18 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                         unit={unit}
                                                                         targetNextWeek={true}
                                                                     />
+                                                                </div>
+                                                            )}
+
+                                                            {/* Complete Session Button */}
+                                                            {sessionOpen && exercises.length > 0 && (
+                                                                <div style={{ padding: '16px', marginBottom: '8px' }}>
+                                                                    <button 
+                                                                        onClick={() => alert("Session complete logic will go here")}
+                                                                        style={{ width: '100%', padding: '16px', borderRadius: '12px', border: 'none', background: '#4ade80', color: '#064e3b', fontWeight: 700, fontSize: '1.05rem', cursor: 'pointer', transition: 'all 0.2s', boxShadow: '0 4px 12px rgba(74, 222, 128, 0.3)' }}
+                                                                    >
+                                                                        Complete Session
+                                                                    </button>
                                                                 </div>
                                                             )}
                                                         </div>
