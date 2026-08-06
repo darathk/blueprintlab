@@ -853,8 +853,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                 Past Program
                                             </div>
                                         )}
-                                        <div style={{ marginBottom: sessionOpen ? 16 : 8 }}>
-                                            {/* Session Card Header */}
+                                        {/* Session Card Header */}
                                             <div
                                                 style={{
                                                     display: 'flex', flexDirection: 'column',
