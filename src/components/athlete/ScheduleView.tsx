@@ -751,9 +751,9 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
             `}</style>
 
             {/* ═══ VIEW MODE TOGGLE ═══ */}
-            <div style={{ padding: '0 16px 12px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div style={{ padding: '0 16px 12px', display: 'flex', width: '100%' }}>
                 <div style={{
-                    display: 'flex', background: 'var(--card-bg)', borderRadius: 10,
+                    display: 'flex', width: '100%', background: 'var(--card-bg)', borderRadius: 10,
                     padding: 3, border: '1px solid var(--card-border)',
                 }}>
                     {([['date', 'Schedule'], ['blocks', 'All Blocks']] as const).map(([mode, label]) => (
@@ -761,8 +761,9 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                             key={mode}
                             onClick={() => setViewMode(mode as 'date' | 'blocks')}
                             style={{
-                                padding: '6px 14px', border: 'none', cursor: 'pointer',
-                                fontSize: '0.75rem', fontWeight: 600, borderRadius: 8,
+                                flex: 1,
+                                padding: '8px 14px', border: 'none', cursor: 'pointer',
+                                fontSize: '0.85rem', fontWeight: 600, borderRadius: 8,
                                 transition: 'all 0.2s',
                                 background: viewMode === mode ? 'var(--primary)' : 'transparent',
                                 color: viewMode === mode ? 'white' : 'var(--secondary-foreground)',
@@ -772,8 +773,6 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                         </button>
                     ))}
                 </div>
-
-                {/* Unit toggle (Removed per user request) */}
             </div>
 
             {/* ═══ SCHEDULE VIEW (Date-based) ═══ */}
