@@ -1154,25 +1154,32 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                     })()}
 
                                                                     <div style={{ display: 'flex', marginBottom: 8, fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)' }}>
-                                                                        <span style={{ flex: 1, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                                                                        <span style={{ flex: 1, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                                                                             Weight
-                                                                            <button 
-                                                                                onClick={() => {
-                                                                                    if (!editState[sKey]) {
-                                                                                        initEdit(sKey, exercises, log);
-                                                                                        setTimeout(() => {
-                                                                                            const current = exerciseData.unit || unit;
-                                                                                            updateExerciseUnit(sKey, exIdx, current === 'lbs' ? 'kg' : 'lbs', program.id);
-                                                                                        }, 50);
-                                                                                    } else {
-                                                                                        const current = exerciseData.unit || unit;
-                                                                                        updateExerciseUnit(sKey, exIdx, current === 'lbs' ? 'kg' : 'lbs', program.id);
-                                                                                    }
-                                                                                }}
-                                                                                style={{ fontSize: '0.65rem', padding: '2px 4px', borderRadius: 4, border: '1px solid var(--primary)', background: 'transparent', color: 'var(--primary)', cursor: 'pointer' }}
-                                                                            >
-                                                                                {exerciseData.unit || unit}
-                                                                            </button>
+                                                                            <div style={{ display: 'flex', background: 'rgba(148,163,184,0.15)', borderRadius: 12, padding: 2, cursor: 'pointer' }}>
+                                                                                <div 
+                                                                                    onClick={() => {
+                                                                                        if (!editState[sKey]) {
+                                                                                            initEdit(sKey, exercises, log);
+                                                                                            setTimeout(() => updateExerciseUnit(sKey, exIdx, 'lbs', program.id), 50);
+                                                                                        } else updateExerciseUnit(sKey, exIdx, 'lbs', program.id);
+                                                                                    }}
+                                                                                    style={{ padding: '2px 6px', fontSize: '0.65rem', borderRadius: 10, background: (exerciseData.unit || unit) === 'lbs' ? 'var(--primary)' : 'transparent', color: (exerciseData.unit || unit) === 'lbs' ? '#000' : 'var(--secondary-foreground)', fontWeight: (exerciseData.unit || unit) === 'lbs' ? 700 : 500, transition: 'all 0.2s' }}
+                                                                                >
+                                                                                    lbs
+                                                                                </div>
+                                                                                <div 
+                                                                                    onClick={() => {
+                                                                                        if (!editState[sKey]) {
+                                                                                            initEdit(sKey, exercises, log);
+                                                                                            setTimeout(() => updateExerciseUnit(sKey, exIdx, 'kg', program.id), 50);
+                                                                                        } else updateExerciseUnit(sKey, exIdx, 'kg', program.id);
+                                                                                    }}
+                                                                                    style={{ padding: '2px 6px', fontSize: '0.65rem', borderRadius: 10, background: (exerciseData.unit || unit) === 'kg' ? 'var(--primary)' : 'transparent', color: (exerciseData.unit || unit) === 'kg' ? '#000' : 'var(--secondary-foreground)', fontWeight: (exerciseData.unit || unit) === 'kg' ? 700 : 500, transition: 'all 0.2s' }}
+                                                                                >
+                                                                                    kg
+                                                                                </div>
+                                                                            </div>
                                                                         </span>
                                                                         <span style={{ flex: 1, textAlign: 'center' }}>Reps</span>
                                                                         <span style={{ flex: 1, textAlign: 'center' }}>RPE</span>
@@ -1798,25 +1805,32 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                 })()}
 
                                                                                 <div style={{ display: 'flex', marginBottom: 8, fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)' }}>
-                                                                                    <span style={{ flex: 1, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4 }}>
+                                                                                    <span style={{ flex: 1, textAlign: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
                                                                                         Weight
-                                                                                        <button 
-                                                                                            onClick={() => {
-                                                                                                if (!editState[sKey]) {
-                                                                                                    initEdit(sKey, exercises, log);
-                                                                                                    setTimeout(() => {
-                                                                                                        const current = exerciseData.unit || unit;
-                                                                                                        updateExerciseUnit(sKey, exIdx, current === 'lbs' ? 'kg' : 'lbs', program.id);
-                                                                                                    }, 50);
-                                                                                                } else {
-                                                                                                    const current = exerciseData.unit || unit;
-                                                                                                    updateExerciseUnit(sKey, exIdx, current === 'lbs' ? 'kg' : 'lbs', program.id);
-                                                                                                }
-                                                                                            }}
-                                                                                            style={{ fontSize: '0.65rem', padding: '2px 4px', borderRadius: 4, border: '1px solid var(--primary)', background: 'transparent', color: 'var(--primary)', cursor: 'pointer' }}
-                                                                                        >
-                                                                                            {exerciseData.unit || unit}
-                                                                                        </button>
+                                                                                        <div style={{ display: 'flex', background: 'rgba(148,163,184,0.15)', borderRadius: 12, padding: 2, cursor: 'pointer' }}>
+                                                                                            <div 
+                                                                                                onClick={() => {
+                                                                                                    if (!editState[sKey]) {
+                                                                                                        initEdit(sKey, exercises, log);
+                                                                                                        setTimeout(() => updateExerciseUnit(sKey, exIdx, 'lbs', program.id), 50);
+                                                                                                    } else updateExerciseUnit(sKey, exIdx, 'lbs', program.id);
+                                                                                                }}
+                                                                                                style={{ padding: '2px 6px', fontSize: '0.65rem', borderRadius: 10, background: (exerciseData.unit || unit) === 'lbs' ? 'var(--primary)' : 'transparent', color: (exerciseData.unit || unit) === 'lbs' ? '#000' : 'var(--secondary-foreground)', fontWeight: (exerciseData.unit || unit) === 'lbs' ? 700 : 500, transition: 'all 0.2s' }}
+                                                                                            >
+                                                                                                lbs
+                                                                                            </div>
+                                                                                            <div 
+                                                                                                onClick={() => {
+                                                                                                    if (!editState[sKey]) {
+                                                                                                        initEdit(sKey, exercises, log);
+                                                                                                        setTimeout(() => updateExerciseUnit(sKey, exIdx, 'kg', program.id), 50);
+                                                                                                    } else updateExerciseUnit(sKey, exIdx, 'kg', program.id);
+                                                                                                }}
+                                                                                                style={{ padding: '2px 6px', fontSize: '0.65rem', borderRadius: 10, background: (exerciseData.unit || unit) === 'kg' ? 'var(--primary)' : 'transparent', color: (exerciseData.unit || unit) === 'kg' ? '#000' : 'var(--secondary-foreground)', fontWeight: (exerciseData.unit || unit) === 'kg' ? 700 : 500, transition: 'all 0.2s' }}
+                                                                                            >
+                                                                                                kg
+                                                                                            </div>
+                                                                                        </div>
                                                                                     </span>
                                                                                     <span style={{ flex: 1, textAlign: 'center' }}>Reps</span>
                                                                                     <span style={{ flex: 1, textAlign: 'center' }}>RPE</span>
