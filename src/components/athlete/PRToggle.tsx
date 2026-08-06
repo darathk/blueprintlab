@@ -109,6 +109,11 @@ export default function PRToggle({
             alert('Please make sure both weight and reps are filled out for the selected set. Use 0 for bodyweight exercises.');
             return;
         }
+        
+        if (!videoFile) {
+            alert('Please attach a video of your lift to submit a PR.');
+            return;
+        }
 
         setSaving(true);
         setUploadProgress(0);
