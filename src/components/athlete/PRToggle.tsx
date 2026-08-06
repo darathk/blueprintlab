@@ -158,9 +158,7 @@ export default function PRToggle({
         }
     };
 
-    // Don't show if no actual sets have data
     const hasData = sets.some(s => s.weight && s.reps);
-    if (!hasData) return null;
 
     if (saved && !open) {
         return (
@@ -205,27 +203,33 @@ export default function PRToggle({
                     {/* Set selector */}
                     <div style={{ marginBottom: 10 }}>
                         <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', marginBottom: 6, fontWeight: 600 }}>Which set was the PR?</div>
-                        <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                            {sets.map((s, i) => {
-                                if (!s.weight && !s.reps) return null;
-                                const sel = selectedSet === i;
-                                return (
-                                    <button
-                                        key={i}
-                                        onClick={() => setSelectedSet(i)}
-                                        style={{
-                                            padding: '5px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,
-                                            background: sel ? 'rgba(251,191,36,0.2)' : 'rgba(255,255,255,0.04)',
-                                            border: sel ? '1px solid rgba(251,191,36,0.5)' : '1px solid rgba(255,255,255,0.08)',
-                                            color: sel ? '#fbbf24' : 'var(--secondary-foreground)',
-                                            cursor: 'pointer', transition: 'all 0.15s',
-                                        }}
-                                    >
-                                        S{i + 1}: {s.weight}×{s.reps}{s.rpe ? ` @${s.rpe}` : ''}
-                                    </button>
-                                );
-                            })}
-                        </div>
+                        {!hasData ? (
+                            <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', fontStyle: 'italic', padding: '4px 0' }}>
+                                Please log your weight and reps in the workout first.
+                            </div>
+                        ) : (
+                            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                                {sets.map((s, i) => {
+                                    if (!s.weight && !s.reps) return null;
+                                    const sel = selectedSet === i;
+                                    return (
+                                        <button
+                                            key={i}
+                                            onClick={() => setSelectedSet(i)}
+                                            style={{
+                                                padding: '5px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,
+                                                background: sel ? 'rgba(251,191,36,0.2)' : 'rgba(255,255,255,0.04)',
+                                                border: sel ? '1px solid rgba(251,191,36,0.5)' : '1px solid rgba(255,255,255,0.08)',
+                                                color: sel ? '#fbbf24' : 'var(--secondary-foreground)',
+                                                cursor: 'pointer', transition: 'all 0.15s',
+                                            }}
+                                        >
+                                            S{i + 1}: {s.weight}×{s.reps}{s.rpe ? ` @${s.rpe}` : ''}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
                     </div>
 
                     {/* Note input */}
@@ -297,14 +301,14 @@ export default function PRToggle({
                     {/* Submit */}
                     <button
                         onClick={handleSubmit}
-                        disabled={saving}
+                        disabled={saving || !hasData}
                         style={{
                             width: '100%', padding: '9px', borderRadius: 8, border: 'none',
-                            cursor: saving ? 'default' : 'pointer',
+                            cursor: saving || !hasData ? 'default' : 'pointer',
                             background: 'linear-gradient(135deg, #f59e0b, #fbbf24)',
                             color: '#000', fontSize: 13, fontWeight: 700,
                             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                            opacity: saving ? 0.7 : 1,
+                            opacity: saving || !hasData ? 0.7 : 1,
                         }}
                     >
                         {saving ? (uploadProgress > 0 ? `Uploading ${uploadProgress}%` : 'Saving...') : <><Trophy size={14} /> Submit PR</>}
