@@ -1235,16 +1235,6 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                         );
                                                                     })}
                                                                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', padding: '16px 0 8px 0', marginTop: 12, borderTop: '1px solid rgba(148,163,184,0.1)' }}>
-                                                                        {/* Stats Panel */}
-                                                                        <div style={{ border: '1px solid rgba(148,163,184,0.2)', borderRadius: '12px', padding: '16px', background: 'rgba(148,163,184,0.03)' }}>
-                                                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '0.9rem' }}>
-                                                                                <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>E1RM: {toDisplay(maxE1RM)} {unit}</div>
-                                                                                <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>Total SI: {exStress.total.toFixed(2)}</div>
-                                                                                <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>Peripheral SI: {exStress.peripheral.toFixed(2)}</div>
-                                                                                <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>Central SI: {exStress.central.toFixed(2)}</div>
-                                                                            </div>
-                                                                        </div>
-
                                                                         {/* Actions Panel */}
                                                                         <div style={{ border: '1px solid rgba(148,163,184,0.2)', borderRadius: '12px', padding: '16px', background: 'rgba(148,163,184,0.03)' }}>
                                                                             <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '16px' }}>Exercise Actions</div>
@@ -1273,6 +1263,16 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                         date={new Date().toISOString().split('T')[0]}
                                                                                     />
                                                                                 )}
+                                                                            </div>
+                                                                        </div>
+
+                                                                        {/* Stats Panel */}
+                                                                        <div style={{ border: '1px solid rgba(148,163,184,0.2)', borderRadius: '12px', padding: '16px', background: 'rgba(148,163,184,0.03)' }}>
+                                                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '0.9rem' }}>
+                                                                                <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>E1RM: {toDisplay(maxE1RM)} {unit}</div>
+                                                                                <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>Total SI: {exStress.total.toFixed(2)}</div>
+                                                                                <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>Peripheral SI: {exStress.peripheral.toFixed(2)}</div>
+                                                                                <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>Central SI: {exStress.central.toFixed(2)}</div>
                                                                             </div>
                                                                         </div>
                                                                     </div>
@@ -1888,16 +1888,6 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
 
                                                                                 {/* Stats and Actions Grid */}
                                                                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', padding: '16px 0 8px 0', marginTop: 12, borderTop: '1px solid rgba(148,163,184,0.1)' }}>
-                                                                                    {/* Stats Panel */}
-                                                                                    <div style={{ border: '1px solid rgba(148,163,184,0.2)', borderRadius: '12px', padding: '16px', background: 'rgba(148,163,184,0.03)' }}>
-                                                                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '0.9rem' }}>
-                                                                                            <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>E1RM: {toDisplay(maxE1RM)} {unit}</div>
-                                                                                            <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>Total SI: {exStress.total.toFixed(2)}</div>
-                                                                                            <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>Peripheral SI: {exStress.peripheral.toFixed(2)}</div>
-                                                                                            <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>Central SI: {exStress.central.toFixed(2)}</div>
-                                                                                        </div>
-                                                                                    </div>
-
                                                                                     {/* Actions Panel */}
                                                                                     <div style={{ border: '1px solid rgba(148,163,184,0.2)', borderRadius: '12px', padding: '16px', background: 'rgba(148,163,184,0.03)' }}>
                                                                                         <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '16px' }}>Exercise Actions</div>
@@ -1926,6 +1916,16 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                     date={new Date().toISOString().split('T')[0]}
                                                                                                 />
                                                                                             )}
+                                                                                        </div>
+                                                                                    </div>
+
+                                                                                    {/* Stats Panel */}
+                                                                                    <div style={{ border: '1px solid rgba(148,163,184,0.2)', borderRadius: '12px', padding: '16px', background: 'rgba(148,163,184,0.03)' }}>
+                                                                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '0.9rem' }}>
+                                                                                            <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>E1RM: {toDisplay(maxE1RM)} {unit}</div>
+                                                                                            <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>Total SI: {exStress.total.toFixed(2)}</div>
+                                                                                            <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>Peripheral SI: {exStress.peripheral.toFixed(2)}</div>
+                                                                                            <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>Central SI: {exStress.central.toFixed(2)}</div>
                                                                                         </div>
                                                                                     </div>
                                                                                 </div>
