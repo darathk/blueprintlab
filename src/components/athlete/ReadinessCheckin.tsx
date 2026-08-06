@@ -401,11 +401,13 @@ export default function ReadinessCheckin({ athleteId, sessionKey, programId, onR
                         <span style={{ fontSize: 16, color: 'var(--foreground)', fontWeight: 600 }}>Readiness</span>
                         <span style={{ fontSize: 14, color: '#10b981', fontWeight: 600, marginLeft: 2 }}>✓</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 20, fontWeight: 700, color: avgColor }}>{avgScore}</span>
-                        <span style={{ fontSize: 12, color: 'var(--secondary-foreground)' }}>/ 5</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                        <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
+                            <span style={{ fontSize: 20, fontWeight: 700, color: avgColor }}>{avgScore}</span>
+                            <span style={{ fontSize: 12, color: 'var(--secondary-foreground)' }}>/ 5</span>
+                        </div>
                         <div style={{ 
-                            marginLeft: 8, width: 28, height: 28, borderRadius: 8, 
+                            width: 28, height: 28, borderRadius: 8, 
                             background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' 
                         }}>
                             <ChevronUp size={16} style={{ color: 'var(--secondary-foreground)' }} />
@@ -417,9 +419,9 @@ export default function ReadinessCheckin({ athleteId, sessionKey, programId, onR
                 {/* Bottom row: score pills with labels */}
                 <div style={{ display: 'flex', gap: 8, width: '100%', justifyContent: 'space-between', padding: '16px 20px' }}>
                     {METRICS.map(m => (
-                        <div key={m.id} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, minWidth: 0 }}>
+                        <div key={m.id} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, minWidth: 0 }}>
                             <div style={{
-                                width: '100%', height: 36, borderRadius: 12, fontSize: 15, fontWeight: 700,
+                                width: '100%', height: 34, borderRadius: 20, fontSize: 15, fontWeight: 700,
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 background: `${SCORE_COLORS[scores[m.id]] || '#555'}15`,
                                 color: SCORE_COLORS[scores[m.id]] || '#999',
