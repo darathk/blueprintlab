@@ -838,9 +838,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                     padding: '16px 20px',
                                                     background: 'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%)',
                                                     color: '#fff',
-                                                    borderRadius: 16,
-                                                    border: '1px solid rgba(255,255,255,0.1)',
-                                                    boxShadow: '0 4px 24px rgba(0,0,0,0.2)',
+                                                    borderBottom: '1px solid rgba(255,255,255,0.1)',
                                                 }}
                                             >
                                                 {/* Top Row: Title, Week Info, Collapse All */}
