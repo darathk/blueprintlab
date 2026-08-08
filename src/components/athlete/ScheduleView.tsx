@@ -1244,7 +1244,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                     dayNum={sessionNum}
                                                                                     blockName={program.name}
                                                                                     sessionId={sKey}
-                                                                                    unit={unit}
+                                                                                    unit={exerciseData.unit || unit}
                                                                                     sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any, i: number) => ({ setNumber: i + 1, actual: s.actual || { weight: '', reps: '', rpe: '' } }))}
                                                                                 />
                                                                                 {!isCoachView && (
@@ -1252,7 +1252,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                         athleteId={athleteId}
                                                                                         exerciseName={exerciseData.name || ex.name}
                                                                                         sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any) => (s.actual || { weight: '', reps: '', rpe: '' }))}
-                                                                                        unit={unit}
+                                                                                        unit={exerciseData.unit || unit}
                                                                                         sessionId={sKey}
                                                                                         programName={program.name}
                                                                                         weekNum={weekDisplayNum}
@@ -1897,7 +1897,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                 dayNum={sessionNum}
                                                                                                 blockName={program.name}
                                                                                                 sessionId={sKey}
-                                                                                                unit={unit}
+                                                                                                unit={exerciseData.unit || unit}
                                                                                                 sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any, i: number) => ({ setNumber: i + 1, actual: s.actual || { weight: '', reps: '', rpe: '' } }))}
                                                                                             />
                                                                                             {!isCoachView && (
@@ -1905,7 +1905,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                     athleteId={athleteId}
                                                                                                     exerciseName={exerciseData.name || ex.name}
                                                                                                     sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any) => (s.actual || { weight: '', reps: '', rpe: '' }))}
-                                                                                                    unit={unit}
+                                                                                                    unit={exerciseData.unit || unit}
                                                                                                     sessionId={sKey}
                                                                                                     programName={program.name}
                                                                                                     weekNum={weekDisplayNum}
