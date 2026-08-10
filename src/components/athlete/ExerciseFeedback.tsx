@@ -344,9 +344,17 @@ export default function ExerciseFeedback({
                 }}>
                     {/* Auto-filled message textarea */}
                     <textarea
+                        ref={(el) => {
+                            if (el && open) {
+                                // Place cursor at the end (where "Feedback:" is) and scroll down
+                                el.selectionStart = el.selectionEnd = el.value.length;
+                                el.scrollTop = el.scrollHeight;
+                                el.focus();
+                            }
+                        }}
                         value={message}
                         onChange={e => setMessage(e.target.value)}
-                        rows={9}
+                        rows={12}
                         style={{
                             width: '100%', background: 'rgba(15,23,42,0.8)',
                             border: '1px solid rgba(99,102,241,0.3)', borderRadius: 8,
