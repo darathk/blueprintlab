@@ -421,6 +421,9 @@ export default function ChatInterface({
                     if (data && data.length > 0) {
                         setMessages(prev => {
                             const optimisticMessages = prev.filter(m => String(m.id).startsWith('temp-'));
+                            const serverIds = new Set(data.map((m: any) => m.id));
+                            // Only keep optimistic messages that haven't been confirmed by the server yet
+                            const pendingOptimistic = optimisticMessages.filter(m => !serverIds.has(m.id));
                             if (prev.length - optimisticMessages.length !== data.length || prev[prev.length - optimisticMessages.length - 1]?.id !== data[data.length - 1]?.id) {
                                 const hasUnread = data.some((m: any) => m.receiverId === currentUserId && !m.read);
                                 if (hasUnread) {
@@ -429,8 +432,8 @@ export default function ChatInterface({
                                         body: JSON.stringify({ athleteId: otherUserId, readerId: currentUserId })
                                     }).then(() => window.dispatchEvent(new Event('unread-refresh')));
                                 }
-                                // Return server data merged with any active optimistic messages
-                                return [...data, ...optimisticMessages];
+                                // Return server data merged with only pending optimistic messages
+                                return [...data, ...pendingOptimistic];
                             }
                             return prev;
                         });
@@ -577,6 +580,7 @@ export default function ChatInterface({
         if (editingMessage) {
             setNewMessage('');
             await handleEditMessage(editingMessage.id, text);
+            sendingRef.current = false;
             return;
         }
 
@@ -764,9 +768,37 @@ export default function ChatInterface({
 
             if (!res.ok) {
                 console.error('Failed to toggle reaction');
+                // Revert the optimistic reaction update
+                setMessages(prev => prev.map(m => {
+                    if (m.id !== messageId) return m;
+                    const revertedReactions = { ...(m.reactions || {}) } as Record<string, string[]>;
+                    const userIds = revertedReactions[emoji] || [];
+                    if (userIds.includes(currentUser)) {
+                        // Was added optimistically, remove it
+                        const reverted = userIds.filter(id => id !== currentUser);
+                        if (reverted.length > 0) { revertedReactions[emoji] = reverted; } else { delete revertedReactions[emoji]; }
+                    } else {
+                        // Was removed optimistically, add it back
+                        revertedReactions[emoji] = [...userIds, currentUser];
+                    }
+                    return { ...m, reactions: revertedReactions };
+                }));
             }
         } catch (e) {
             console.error('Reaction toggle error:', e);
+            // Revert the optimistic reaction update
+            setMessages(prev => prev.map(m => {
+                if (m.id !== messageId) return m;
+                const revertedReactions = { ...(m.reactions || {}) } as Record<string, string[]>;
+                const userIds = revertedReactions[emoji] || [];
+                if (userIds.includes(currentUser)) {
+                    const reverted = userIds.filter(id => id !== currentUser);
+                    if (reverted.length > 0) { revertedReactions[emoji] = reverted; } else { delete revertedReactions[emoji]; }
+                } else {
+                    revertedReactions[emoji] = [...userIds, currentUser];
+                }
+                return { ...m, reactions: revertedReactions };
+            }));
         }
     };
 
