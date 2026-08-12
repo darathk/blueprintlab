@@ -7,6 +7,9 @@ const ActivePersonnelList = dynamic(() => import('@/components/dashboard/ActiveP
     loading: () => <div style={{ textAlign: 'center', padding: '50px', color: 'var(--muted)' }}>Loading Command Center...</div>
 });
 
+const CoachIntel = dynamic(() => import('@/components/dashboard/CoachIntel'), {
+    loading: () => <div style={{ height: 60, borderRadius: 16, background: 'rgba(255,255,255,0.05)', marginBottom: 24 }} className="pulse"></div>
+});
 
 import { currentUser } from '@clerk/nextjs/server';
 
@@ -51,6 +54,7 @@ export default async function DashboardPage() {
                 </h1>
             </div>
 
+            <CoachIntel coachId={coachId} />
 
             <Suspense fallback={<div style={{ textAlign: 'center', padding: '50px', color: 'var(--secondary-foreground)' }} className="pulse">Loading athletes...</div>}>
                 <DashboardData coachId={coachId} />
