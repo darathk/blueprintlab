@@ -67,26 +67,21 @@ export default function HighlightsClient() {
     const [weekIndex, setWeekIndex] = useState(0);
     const currentWeek = weekGroups[weekIndex];
 
-    const handleDownload = useCallback(async (url: string, athleteName: string, exerciseName: string) => {
-        try {
-            const r = await fetch(url);
-            const b = await r.blob();
-            const ext = url.includes('.mov') ? '.mov' : url.includes('.webm') ? '.webm' : '.mp4';
-            const filename = `${athleteName.replace(/\s+/g, '_')}_${exerciseName.replace(/\s+/g, '_')}_PR${ext}`;
-
-            if (navigator.share && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-                const file = new File([b], filename, { type: b.type });
-                try { await navigator.share({ files: [file] }); return; } catch { }
-            }
-
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(b);
-            a.download = filename;
-            a.click();
-            URL.revokeObjectURL(a.href);
-        } catch {
-            window.open(url, '_blank');
-        }
+    const handleDownload = useCallback((url: string, athleteName: string, exerciseName: string) => {
+        const ext = url.includes('.mov') ? '.mov' : url.includes('.webm') ? '.webm' : '.mp4';
+        const filename = `${athleteName.replace(/\s+/g, '_')}_${exerciseName.replace(/\s+/g, '_')}_PR${ext}`;
+        
+        // Append ?download= to force Content-Disposition: attachment on Supabase Storage
+        // This triggers the browser's native download prompt immediately without fetching into memory first.
+        const separator = url.includes('?') ? '&' : '?';
+        const downloadUrl = `${url}${separator}download=${encodeURIComponent(filename)}`;
+        
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
     }, []);
 
     const handleDelete = useCallback(async (pr: PR) => {
