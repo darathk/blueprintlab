@@ -795,6 +795,30 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                             <p style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', margin: '6px 0 0', opacity: 0.7 }}>
                                 Rest day
                             </p>
+                            <div style={{ marginTop: '1.5rem', display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                                <button 
+                                    onClick={() => setViewMode('blocks')}
+                                    className="btn btn-secondary"
+                                    style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}
+                                >
+                                    View Full Block
+                                </button>
+                                {(() => {
+                                    const nextDates = Object.keys(sessionsByDate).filter(d => d > selectedDate).sort();
+                                    if (nextDates.length > 0) {
+                                        return (
+                                            <button 
+                                                onClick={() => setSelectedDate(nextDates[0])}
+                                                className="btn btn-primary"
+                                                style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}
+                                            >
+                                                Next Session
+                                            </button>
+                                        );
+                                    }
+                                    return null;
+                                })()}
+                            </div>
                         </div>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
