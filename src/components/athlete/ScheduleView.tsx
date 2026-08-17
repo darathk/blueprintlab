@@ -295,11 +295,12 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
         const state = (exercises || []).map((ex: any) => {
             const logEx = log?.exercises?.find((l: any) => l.exerciseId === ex.id || l.name === ex.name);
             const sets = Array.isArray(ex.sets) ? ex.sets : [];
+            const savedUnit = logEx?.sets?.[0]?.unit || logEx?.unit;
             return {
                 exerciseId: ex.id,
                 name: ex.name,
                 notes: logEx?.notes || ex.notes || '',
-                unit: logEx?.unit || unit,
+                unit: savedUnit || unit,
                 sets: sets.map((s: any, i: number) => {
                     const saved = logEx?.sets?.[i];
                     return {
@@ -363,7 +364,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                 exerciseId: ex.exerciseId,
                 name: ex.name,
                 notes: ex.notes || '',
-                sets: ex.sets.map((s: any) => ({ weight: s.actual.weight || '', reps: s.actual.reps, rpe: s.actual.rpe, unit }))
+                sets: ex.sets.map((s: any) => ({ weight: s.actual.weight || '', reps: s.actual.reps, rpe: s.actual.rpe, unit: ex.unit || unit }))
             }));
 
             const res = await fetch('/api/logs', {
