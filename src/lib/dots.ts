@@ -93,13 +93,30 @@ export interface CompetitionDataPoint {
  * Returns a Date object (midnight local) or null if it can't be determined.
  */
 function getScheduledDate(log: any, programMap: Map<string, any>): Date | null {
-    const match = (log.sessionId ?? '').match(/_w(\d+)_d(\d+)$/);
-    if (!match) return null;
-    const weekNum = parseInt(match[1], 10);
-    const dayNum  = parseInt(match[2], 10);
-
     const program = programMap.get(log.programId);
     if (!program?.startDate) return null;
+
+    let weekNum: number | null = null;
+    let dayNum: number | null = null;
+
+    const match = (log.sessionId ?? '').match(/_w(\d+)_d(\d+)$/);
+    if (match) {
+        weekNum = parseInt(match[1], 10);
+        dayNum  = parseInt(match[2], 10);
+    } else {
+        const weeksArr = Array.isArray(program.weeks) ? program.weeks : [];
+        for (const week of weeksArr) {
+            const sessionsArr = Array.isArray(week.sessions) ? week.sessions : [];
+            const session = sessionsArr.find((s: any) => s.id === log.sessionId);
+            if (session) {
+                weekNum = week.weekNumber || 1;
+                dayNum = session.day || 1;
+                break;
+            }
+        }
+    }
+
+    if (weekNum == null || dayNum == null) return null;
 
     // startDate may be a Date object or ISO string
     const raw = typeof program.startDate === 'string' ? program.startDate : program.startDate.toISOString();
