@@ -88,8 +88,8 @@ async function withRetry<T>(fn: () => Promise<T>, retries = MAX_RETRIES): Promis
 function computeTimeout(fileSize: number): number {
     const MIN_TIMEOUT = 60_000;   // 1 minute minimum
     const MAX_TIMEOUT = 1_800_000; // 30 minutes cap
-    // Assume worst-case 500 KB/s upload speed with 2x safety factor
-    const estimated = (fileSize / (500 * 1024)) * 1000 * 2;
+    // Assume worst-case 333 KB/s upload speed with 3x safety factor
+    const estimated = (fileSize / (500 * 1024)) * 1000 * 3;
     return Math.min(MAX_TIMEOUT, Math.max(MIN_TIMEOUT, estimated));
 }
 
@@ -270,7 +270,6 @@ class ChatUploadManager {
             xhr.setRequestHeader('apikey', supabaseKey);
             xhr.setRequestHeader('Content-Type', mime);
             xhr.setRequestHeader('Cache-Control', 'public, max-age=604800');
-            xhr.setRequestHeader('x-upsert', 'true');
             xhr.send(blob);
         })).catch((err: Error) => {
             this.updatePre(id, { status: 'error', error: err.message, progress: 0 });
@@ -429,7 +428,6 @@ class ChatUploadManager {
             xhr.setRequestHeader('apikey', supabaseKey);
             xhr.setRequestHeader('Content-Type', mime);
             xhr.setRequestHeader('Cache-Control', 'public, max-age=604800');
-            xhr.setRequestHeader('x-upsert', 'true');
             xhr.send(blob);
         })).catch((err: Error) => {
             this.update(id, { status: 'error', error: err.message, progress: 0 });
