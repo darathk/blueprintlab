@@ -44,6 +44,13 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
     const [filterType, setFilterType] = useState<'all' | 'unread'>('all');
     const [actionsMenuOpen, setActionsMenuOpen] = useState(false);
 
+    // Ensure full-screen builder mode is instantly disabled if we leave the edit sidebar
+    useEffect(() => {
+        if (activeSidebar !== 'edit') {
+            setBuilderActive(false);
+        }
+    }, [activeSidebar]);
+
     // Sort conversations: unread first, then by latest message
     const sortedConvos = [...convos].sort((a, b) => {
         const aUnread = a.unreadCount > 0;
