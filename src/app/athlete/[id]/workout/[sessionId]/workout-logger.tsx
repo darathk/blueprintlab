@@ -280,7 +280,8 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                 sets: ex.sets.map(s => ({
                     weight: s.actual.weight,
                     reps: s.actual.reps,
-                    rpe: s.actual.rpe
+                    rpe: s.actual.rpe,
+                    unit: unit
                 })),
                 notes: ex.notes
             }));
@@ -553,7 +554,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                                                                     {currentTab === 'prescribed' && (
                                                                                         <div style={{ display: 'flex', flex: 1, gap: '8px' }}>
                                                                                             <div style={{ flex: 1, padding: '8px', border: '1px solid var(--card-border)', borderRadius: '6px', background: 'var(--card-bg)', textAlign: 'center', color: 'var(--foreground)' }}>
-                                                                                                {set.target.weight ? `${unit === 'kg' ? (parseFloat(set.target.weight) * 0.45359237).toFixed(1).replace(/\\.0$/, '') : set.target.weight} ${unit}` : '-'}
+                                                                                                {set.target.weight ? `${set.target.weight} ${unit}` : '-'}
                                                                                             </div>
                                                                                             <div style={{ flex: 1, padding: '8px', border: '1px solid var(--card-border)', borderRadius: '6px', background: 'var(--card-bg)', textAlign: 'center', color: 'var(--foreground)' }}>
                                                                                                 {cleanReps || '-'}
@@ -571,7 +572,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                                                                                         internalValue={set.actual.weight}
                                                                                                         unit={unit}
                                                                                                         onChange={(val) => updateSet(exIndex, sIndex, 'weight', val)}
-                                                                                                        placeholder={set.target.weight ? (unit === 'kg' ? (parseFloat(set.target.weight) * 0.45359237).toFixed(1).replace(/\\.0$/, '') : set.target.weight).toString() : ''}
+                                                                                                        placeholder={set.target.weight ? (set.target.weight).toString() : ''}
                                                                                                         style={{ width: '100%', padding: '8px', paddingRight: '28px', border: '1px solid #94a3b8', borderRadius: '6px', background: 'var(--background)', textAlign: 'center', fontSize: '1rem', color: 'var(--foreground)', outlineColor: 'var(--primary)' }}
                                                                                                     />
                                                                                                     <span style={{ position: 'absolute', right: '8px', top: '50%', transform: 'translateY(-50%)', fontSize: '0.7rem', color: 'var(--secondary-foreground)', pointerEvents: 'none', fontWeight: 600 }}>{unit}</span>
@@ -621,9 +622,9 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                         {/* Stats row */}
                                         <div style={{ padding: '12px 0 8px 0', borderBottom: '1px dashed var(--card-border)', fontSize: '0.85rem', color: 'var(--foreground)' }}>
                                             <div style={{ display: 'flex', alignItems: 'center', gap: 4, background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: 4 }}>
-                                                <span>E1RM: {unit === 'kg' ? (maxE1RM * 0.45359237).toFixed(1).replace(/\\.0$/, '') : maxE1RM} {unit}</span>
+                                                <span>E1RM: {maxE1RM} {unit}</span>
                                                 <span>NL: {totalNL}</span>
-                                                <span>Tonnage: {unit === 'kg' ? (tonnage * 0.45359237).toFixed(1).replace(/\\.0$/, '') : tonnage.toLocaleString()} {unit}</span>
+                                                <span>Tonnage: {tonnage.toLocaleString()} {unit}</span>
                                             </div>
                                             <div style={{ display: 'flex', gap: '16px', marginTop: 4 }}>
                                                 <span>Total: <span style={{ fontWeight: 'normal' }}>{exStress.total.toFixed(2)}</span></span>

@@ -311,7 +311,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
             };
         });
         setEditState(prev => ({ ...prev, [sKey]: state }));
-    }, [editState]);
+    }, [editState, unit]);
 
     // Auto-save debounced effect
     const latestEditStateRef = useRef(editState);

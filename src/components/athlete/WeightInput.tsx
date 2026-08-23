@@ -1,35 +1,24 @@
 import React, { useState, useEffect } from 'react';
 
-const toDisplay = (val: any, unit: string) => {
+const toDisplay = (val: any) => {
     if (val === undefined || val === null || val === '') return '';
-    const num = parseFloat(val);
-    if (isNaN(num)) return val;
-    if (unit === 'lbs') return val.toString();
-    return (num * 0.45359237).toFixed(1).replace(/\.0$/, '');
-};
-
-const toInternal = (val: any, unit: string) => {
-    if (val === undefined || val === null || val === '') return '';
-    const num = parseFloat(val);
-    if (isNaN(num)) return val;
-    if (unit === 'lbs') return val.toString();
-    return (num / 0.45359237).toFixed(1).replace(/\.0$/, '');
+    return val.toString();
 };
 
 export default function WeightInput({ internalValue, unit, onChange, onFocus, placeholder, style }) {
-    const [localValue, setLocalValue] = useState(() => toDisplay(internalValue, unit));
+    const [localValue, setLocalValue] = useState(() => toDisplay(internalValue));
     const [isFocused, setIsFocused] = useState(false);
 
     useEffect(() => {
         if (!isFocused) {
-            setLocalValue(toDisplay(internalValue, unit));
+            setLocalValue(toDisplay(internalValue));
         }
-    }, [internalValue, unit, isFocused]);
+    }, [internalValue, isFocused]);
 
     const handleChange = (e) => {
         const val = e.target.value;
         setLocalValue(val);
-        onChange(toInternal(val, unit));
+        onChange(val);
     };
 
     return (
@@ -44,7 +33,7 @@ export default function WeightInput({ internalValue, unit, onChange, onFocus, pl
             }}
             onBlur={() => {
                 setIsFocused(false);
-                setLocalValue(toDisplay(internalValue, unit));
+                setLocalValue(toDisplay(internalValue));
             }}
             placeholder={placeholder}
             style={style}
