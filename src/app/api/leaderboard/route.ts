@@ -76,14 +76,76 @@ function calculateStreaks(dates: string[]): { currentStreak: number; longestStre
     return { currentStreak, longestStreak };
 }
 
-function getTier(rank: number, total: number): string {
-    if (total <= 1) return 'champion';
-    const percentile = rank / total;
-    if (rank === 1) return 'champion';
-    if (percentile <= 0.25) return 'gold';
-    if (percentile <= 0.5) return 'silver';
-    if (percentile <= 0.75) return 'bronze';
-    return 'iron';
+export const MONTHLY_TIERS = [
+    { key: 'iron', name: 'Iron', minLogs: 0, icon: '⚙️', color: '#64748b' },
+    { key: 'bronze', name: 'Bronze', minLogs: 4, icon: '🥉', color: '#d97706' },
+    { key: 'silver', name: 'Silver', minLogs: 8, icon: '🥈', color: '#94a3b8' },
+    { key: 'gold', name: 'Gold', minLogs: 12, icon: '🥇', color: '#f59e0b' },
+    { key: 'platinum', name: 'Platinum', minLogs: 16, icon: '🛡️', color: '#10b981' },
+    { key: 'diamond', name: 'Diamond', minLogs: 20, icon: '💎', color: '#38bdf8' },
+    { key: 'master', name: 'Master', minLogs: 24, icon: '⚔️', color: '#a855f7' },
+];
+
+export const ALL_TIME_TIERS = [
+    { key: 'iron', name: 'Iron', minLogs: 0, icon: '⚙️', color: '#64748b' },
+    { key: 'bronze', name: 'Bronze', minLogs: 10, icon: '🥉', color: '#d97706' },
+    { key: 'silver', name: 'Silver', minLogs: 25, icon: '🥈', color: '#94a3b8' },
+    { key: 'gold', name: 'Gold', minLogs: 50, icon: '🥇', color: '#f59e0b' },
+    { key: 'platinum', name: 'Platinum', minLogs: 80, icon: '🛡️', color: '#10b981' },
+    { key: 'diamond', name: 'Diamond', minLogs: 120, icon: '💎', color: '#38bdf8' },
+    { key: 'master', name: 'Master', minLogs: 170, icon: '⚔️', color: '#a855f7' },
+    { key: 'grandmaster', name: 'Grandmaster', minLogs: 230, icon: '🔥', color: '#ef4444' },
+];
+
+function getLoLTier(logs: number, rank: number, isMonthly: boolean) {
+    if (rank === 1 && logs >= (isMonthly ? 10 : 40)) {
+        return {
+            tier: 'challenger',
+            tierName: 'Challenger',
+            icon: '👑',
+            nextTierName: null,
+            nextTierLogs: null,
+            progressPercent: 100,
+        };
+    }
+    if ((rank === 2 || rank === 3) && logs >= (isMonthly ? 10 : 40)) {
+        return {
+            tier: 'grandmaster',
+            tierName: 'Grandmaster',
+            icon: '🔥',
+            nextTierName: 'Challenger',
+            nextTierLogs: null,
+            progressPercent: 90,
+        };
+    }
+
+    const thresholds = isMonthly ? MONTHLY_TIERS : ALL_TIME_TIERS;
+    let currentIdx = 0;
+    for (let i = thresholds.length - 1; i >= 0; i--) {
+        if (logs >= thresholds[i].minLogs) {
+            currentIdx = i;
+            break;
+        }
+    }
+
+    const current = thresholds[currentIdx];
+    const next = thresholds[currentIdx + 1] || null;
+
+    let progressPercent = 100;
+    if (next) {
+        const span = next.minLogs - current.minLogs;
+        const gained = logs - current.minLogs;
+        progressPercent = Math.min(Math.round((gained / span) * 100), 100);
+    }
+
+    return {
+        tier: current.key,
+        tierName: current.name,
+        icon: current.icon,
+        nextTierName: next ? next.name : (isMonthly ? 'Grandmaster' : 'Challenger'),
+        nextTierLogs: next ? next.minLogs : null,
+        progressPercent,
+    };
 }
 
 export async function GET(request: Request) {
@@ -250,11 +312,19 @@ export async function GET(request: Request) {
             if (b.totalLogs !== a.totalLogs) return b.totalLogs - a.totalLogs;
             return b.completionRate - a.completionRate;
         });
-        const monthlyRanked = monthlyList.map((entry, index) => ({
-            ...entry,
-            rank: index + 1,
-            tier: getTier(index + 1, monthlyList.length),
-        }));
+        const monthlyRanked = monthlyList.map((entry, index) => {
+            const tierInfo = getLoLTier(entry.totalLogs, index + 1, true);
+            return {
+                ...entry,
+                rank: index + 1,
+                tier: tierInfo.tier,
+                tierName: tierInfo.tierName,
+                tierIcon: tierInfo.icon,
+                nextTierName: tierInfo.nextTierName,
+                nextTierLogs: tierInfo.nextTierLogs,
+                progressPercent: tierInfo.progressPercent,
+            };
+        });
 
         // 3. Build and Sort All-Time Leaderboard
         const allTimeList = Array.from(athleteAllTimeMap.values());
@@ -262,11 +332,19 @@ export async function GET(request: Request) {
             if (b.totalLogs !== a.totalLogs) return b.totalLogs - a.totalLogs;
             return b.completionRate - a.completionRate;
         });
-        const allTimeRanked = allTimeList.map((entry, index) => ({
-            ...entry,
-            rank: index + 1,
-            tier: getTier(index + 1, allTimeList.length),
-        }));
+        const allTimeRanked = allTimeList.map((entry, index) => {
+            const tierInfo = getLoLTier(entry.totalLogs, index + 1, false);
+            return {
+                ...entry,
+                rank: index + 1,
+                tier: tierInfo.tier,
+                tierName: tierInfo.tierName,
+                tierIcon: tierInfo.icon,
+                nextTierName: tierInfo.nextTierName,
+                nextTierLogs: tierInfo.nextTierLogs,
+                progressPercent: tierInfo.progressPercent,
+            };
+        });
 
         // 4. Build Past Monthly History & Champions
         // Filter out current month so only completed past months are shown
@@ -315,13 +393,18 @@ export async function GET(request: Request) {
                 hallOfFameMap.set(winner.athleteId, existing);
             }
 
-            const standings = monthAthletes.map((a, idx) => ({
-                rank: idx + 1,
-                id: a.athleteId,
-                name: a.name,
-                totalLogs: a.logsCount,
-                tier: getTier(idx + 1, monthAthletes.length),
-            }));
+            const standings = monthAthletes.map((a, idx) => {
+                const tierInfo = getLoLTier(a.logsCount, idx + 1, true);
+                return {
+                    rank: idx + 1,
+                    id: a.athleteId,
+                    name: a.name,
+                    totalLogs: a.logsCount,
+                    tier: tierInfo.tier,
+                    tierName: tierInfo.tierName,
+                    tierIcon: tierInfo.icon,
+                };
+            });
 
             const monthData = {
                 monthKey: mKey,

@@ -65,9 +65,12 @@ export default function HighlightsClient() {
     }, [prs]);
 
     const [weekIndex, setWeekIndex] = useState(0);
+    const [downloadingId, setDownloadingId] = useState<string | null>(null);
     const currentWeek = weekGroups[weekIndex];
 
-    const handleDownload = useCallback((url: string, athleteName: string, exerciseName: string) => {
+    const handleDownload = useCallback((url: string, athleteName: string, exerciseName: string, prId?: string) => {
+        if (prId) setDownloadingId(prId);
+
         const ext = url.includes('.mov') ? '.mov' : url.includes('.webm') ? '.webm' : '.mp4';
         const filename = `${athleteName.replace(/\s+/g, '_')}_${exerciseName.replace(/\s+/g, '_')}_PR${ext}`;
         
@@ -82,6 +85,10 @@ export default function HighlightsClient() {
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
+
+        setTimeout(() => {
+            setDownloadingId(null);
+        }, 2500);
     }, []);
 
     const handleDelete = useCallback(async (pr: PR) => {
@@ -212,17 +219,24 @@ export default function HighlightsClient() {
                                     </div>
                                     {/* Download button overlay */}
                                     <button
-                                        onClick={(e) => { e.stopPropagation(); handleDownload(pr.videoUrl!, pr.athlete.name, pr.exerciseName); }}
+                                        onClick={(e) => { e.stopPropagation(); handleDownload(pr.videoUrl!, pr.athlete.name, pr.exerciseName, pr.id); }}
+                                        disabled={downloadingId === pr.id}
                                         style={{
                                             position: 'absolute', bottom: 8, right: 8,
-                                            background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)',
+                                            background: downloadingId === pr.id ? 'var(--primary)' : 'rgba(0,0,0,0.6)',
+                                            backdropFilter: 'blur(4px)',
                                             border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8,
-                                            padding: '6px 10px', cursor: 'pointer',
+                                            padding: '6px 10px', cursor: downloadingId === pr.id ? 'default' : 'pointer',
                                             display: 'flex', alignItems: 'center', gap: 4,
                                             color: '#fff', fontSize: 11, fontWeight: 600,
+                                            transition: 'all 0.15s ease',
                                         }}
                                     >
-                                        <Download size={13} /> Save
+                                        {downloadingId === pr.id ? (
+                                            <><span>⏳</span> Saving...</>
+                                        ) : (
+                                            <><Download size={13} /> Save</>
+                                        )}
                                     </button>
                                 </div>
                             ) : (
@@ -289,11 +303,29 @@ export default function HighlightsClient() {
                                         </span>
                                     )}
                                 </div>
-                                {pr.programName && (
-                                    <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', marginTop: 6 }}>
-                                        {pr.programName}{pr.weekNum ? ` · W${pr.weekNum}` : ''}{pr.dayNum ? ` D${pr.dayNum}` : ''}
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 8, paddingTop: 8, borderTop: '1px solid var(--card-border)' }}>
+                                    <div style={{ fontSize: 11, color: 'var(--secondary-foreground)' }}>
+                                        {pr.programName ? `${pr.programName}${pr.weekNum ? ` · W${pr.weekNum}` : ''}${pr.dayNum ? ` D${pr.dayNum}` : ''}` : 'Personal Record'}
                                     </div>
-                                )}
+                                    {pr.videoUrl && (
+                                        <button
+                                            onClick={() => handleDownload(pr.videoUrl!, pr.athlete.name, pr.exerciseName, pr.id)}
+                                            style={{
+                                                background: 'transparent',
+                                                border: 'none',
+                                                color: downloadingId === pr.id ? 'var(--primary)' : 'var(--secondary-foreground)',
+                                                fontSize: 11,
+                                                fontWeight: 600,
+                                                cursor: 'pointer',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 4,
+                                            }}
+                                        >
+                                            <Download size={12} /> {downloadingId === pr.id ? 'Saving...' : 'Download'}
+                                        </button>
+                                    )}
+                                </div>
                                 {pr.note && (
                                     <div style={{ fontSize: 12, color: 'var(--secondary-foreground)', marginTop: 6, fontStyle: 'italic' }}>
                                         "{pr.note}"
@@ -316,18 +348,35 @@ export default function HighlightsClient() {
                         padding: 20,
                     }}
                 >
-                    <button
-                        onClick={() => setExpandedVideo(null)}
-                        style={{
-                            position: 'absolute', top: 16, right: 16,
-                            background: 'rgba(255,255,255,0.1)', border: 'none', borderRadius: '50%',
-                            width: 40, height: 40, cursor: 'pointer',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            color: '#fff', zIndex: 10,
-                        }}
-                    >
-                        <X size={22} />
-                    </button>
+                    <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', alignItems: 'center', gap: 10, zIndex: 10 }}>
+                        <button
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                handleDownload(expandedVideo, 'Highlight', 'Lift');
+                            }}
+                            style={{
+                                background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(6px)',
+                                border: '1px solid rgba(255,255,255,0.2)', borderRadius: 20,
+                                padding: '8px 14px', cursor: 'pointer',
+                                display: 'flex', alignItems: 'center', gap: 6,
+                                color: '#fff', fontSize: 12, fontWeight: 700,
+                            }}
+                        >
+                            <Download size={14} /> Save Video
+                        </button>
+
+                        <button
+                            onClick={() => setExpandedVideo(null)}
+                            style={{
+                                background: 'rgba(255,255,255,0.15)', border: 'none', borderRadius: '50%',
+                                width: 38, height: 38, cursor: 'pointer',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                color: '#fff',
+                            }}
+                        >
+                            <X size={20} />
+                        </button>
+                    </div>
                     <video
                         src={expandedVideo}
                         controls autoPlay playsInline
