@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import {
     BarChart, Bar, XAxis, YAxis, CartesianGrid,
@@ -841,6 +842,7 @@ export function LeaderboardRankWidget({
     athleteId: string;
     athleteName: string;
 }) {
+    const router = useRouter();
     const [mode, setMode] = useState<'monthly' | 'allTime'>('monthly');
     const [monthlyData, setMonthlyData] = useState<LeaderboardEntry | null>(null);
     const [allTimeData, setAllTimeData] = useState<LeaderboardEntry | null>(null);
@@ -919,15 +921,18 @@ export function LeaderboardRankWidget({
     const tierCfg = TIER_CONFIG[activeData.tier] || TIER_CONFIG.iron;
 
     return (
-        <div style={{
-            borderRadius: 16,
-            border: `1px solid ${tierCfg.color}50`,
-            background: `linear-gradient(135deg, ${tierCfg.color}10 0%, rgba(15,23,42,0.6) 100%)`,
-            padding: '1rem',
-            boxShadow: `0 0 18px ${tierCfg.glow}`,
-            cursor: 'pointer',
-            transition: 'all 0.2s ease',
-        }}>
+        <div
+            onClick={() => router.push(`/athlete/${athleteId}/leaderboard`)}
+            style={{
+                borderRadius: 16,
+                border: `1px solid ${tierCfg.color}50`,
+                background: `linear-gradient(135deg, ${tierCfg.color}10 0%, rgba(15,23,42,0.6) 100%)`,
+                padding: '1rem',
+                boxShadow: `0 0 18px ${tierCfg.glow}`,
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+            }}
+        >
             {/* Widget Top Header with Mode Toggle */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: tierCfg.color }}>
@@ -942,7 +947,10 @@ export function LeaderboardRankWidget({
 
                 {/* Interactive pill switcher on dashboard card */}
                 <div
-                    onClick={(e) => e.stopPropagation()}
+                    onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                    }}
                     style={{
                         display: 'flex',
                         background: 'rgba(0, 0, 0, 0.35)',
@@ -952,7 +960,12 @@ export function LeaderboardRankWidget({
                     }}
                 >
                     <button
-                        onClick={(e) => { e.stopPropagation(); setMode('monthly'); }}
+                        type="button"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            setMode('monthly');
+                        }}
                         style={{
                             padding: '3px 9px',
                             borderRadius: 16,
@@ -968,7 +981,12 @@ export function LeaderboardRankWidget({
                         Monthly
                     </button>
                     <button
-                        onClick={(e) => { e.stopPropagation(); setMode('allTime'); }}
+                        type="button"
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            e.preventDefault();
+                            setMode('allTime');
+                        }}
                         style={{
                             padding: '3px 9px',
                             borderRadius: 16,

@@ -59,9 +59,9 @@ export default async function AthleteDashboard({ params }) {
             )}
 
             {athlete.coachId && (
-                <Link href={`/athlete/${id}/leaderboard`} style={{ textDecoration: 'none', color: 'inherit', display: 'block', marginBottom: '1rem', padding: '0 1rem' }}>
+                <div style={{ marginBottom: '1rem', padding: '0 1rem' }}>
                     <LeaderboardRankWidget coachId={athlete.coachId} athleteId={id} athleteName={athlete.name} />
-                </Link>
+                </div>
             )}
 
             <div>
