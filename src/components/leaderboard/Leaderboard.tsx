@@ -1299,15 +1299,10 @@ export function LeaderboardRankWidget({
             }}
         >
             {/* Widget Top Header with Mode Toggle */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: tierCfg.color }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: tierCfg.color, whiteSpace: 'nowrap' }}>
                     <span>🏆</span>
                     <span>Leaderboard</span>
-                    {mode === 'monthly' && cycle && (
-                        <span style={{ fontSize: '0.65rem', color: 'var(--secondary-foreground)', fontWeight: 500, textTransform: 'none', marginLeft: 4 }}>
-                            · Resets in {cycle.daysRemaining}d
-                        </span>
-                    )}
                 </div>
 
                 {/* Interactive pill switcher on dashboard card */}
@@ -1318,7 +1313,7 @@ export function LeaderboardRankWidget({
                     }}
                     style={{
                         display: 'flex',
-                        background: 'rgba(0, 0, 0, 0.35)',
+                        background: 'rgba(0, 0, 0, 0.4)',
                         borderRadius: 20,
                         padding: 2,
                         border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -1386,9 +1381,9 @@ export function LeaderboardRankWidget({
                         {tierCfg.icon}
                     </div>
                     <div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexWrap: 'wrap' }}>
                             <span style={{
-                                fontSize: '0.6rem',
+                                fontSize: '0.62rem',
                                 fontWeight: 800,
                                 textTransform: 'uppercase',
                                 letterSpacing: '0.06em',
@@ -1400,11 +1395,15 @@ export function LeaderboardRankWidget({
                             }}>
                                 {tierCfg.label}
                             </span>
-                            <span style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--secondary-foreground)' }}>
-                                {mode === 'monthly' ? 'Month' : 'Lifetime'}
+                            <span style={{ fontSize: '0.68rem', fontWeight: 600, color: 'var(--secondary-foreground)' }}>
+                                {mode === 'monthly' ? (
+                                    <>Month{cycle ? ` · Resets in ${cycle.daysRemaining}d` : ''}</>
+                                ) : (
+                                    <>Lifetime</>
+                                )}
                             </span>
                         </div>
-                        <div style={{ fontSize: '1.35rem', fontWeight: 800, color: '#f8fafc', lineHeight: 1.1, marginTop: 2 }}>
+                        <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#f8fafc', lineHeight: 1.1, marginTop: 2 }}>
                             #{activeData.rank} <span style={{ fontSize: '0.75rem', fontWeight: 400, color: 'var(--secondary-foreground)' }}>of {activeTotal}</span>
                         </div>
                     </div>
