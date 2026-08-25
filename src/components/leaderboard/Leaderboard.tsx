@@ -841,19 +841,31 @@ export function LeaderboardRankWidget({
     athleteId: string;
     athleteName: string;
 }) {
-    const [data, setData] = useState<LeaderboardEntry | null>(null);
-    const [total, setTotal] = useState(0);
+    const [mode, setMode] = useState<'monthly' | 'allTime'>('monthly');
+    const [monthlyData, setMonthlyData] = useState<LeaderboardEntry | null>(null);
+    const [allTimeData, setAllTimeData] = useState<LeaderboardEntry | null>(null);
+    const [monthlyTotal, setMonthlyTotal] = useState(0);
+    const [allTimeTotal, setAllTimeTotal] = useState(0);
+    const [cycle, setCycle] = useState<CycleInfo | null>(null);
     const [loading, setLoading] = useState(true);
 
     const fetchRank = useCallback(async () => {
         try {
             const res = await fetch(`/api/leaderboard?coachId=${coachId}`);
             if (res.ok) {
-                const json = await res.json();
-                const entries: LeaderboardEntry[] = json.monthly?.entries || json.entries || [];
-                setTotal(entries.length);
-                const me = entries.find(e => e.id === athleteId);
-                if (me) setData(me);
+                const json: LeaderboardResponse = await res.json();
+                const mEntries: LeaderboardEntry[] = json.monthly?.entries || json.entries || [];
+                const aEntries: LeaderboardEntry[] = json.allTime?.entries || [];
+
+                setMonthlyTotal(mEntries.length);
+                setAllTimeTotal(aEntries.length);
+                setCycle(json.monthly?.cycle || json.cycle || null);
+
+                const mMe = mEntries.find(e => e.id === athleteId);
+                const aMe = aEntries.find(e => e.id === athleteId);
+
+                if (mMe) setMonthlyData(mMe);
+                if (aMe) setAllTimeData(aMe);
             }
         } catch (e) {
             console.error('Failed to fetch rank:', e);
@@ -866,7 +878,7 @@ export function LeaderboardRankWidget({
         fetchRank();
 
         const channel = supabase
-            .channel('rank-widget-logs')
+            .channel('rank-widget-logs-v2')
             .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'Log' }, () => fetchRank())
             .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'Athlete' }, () => fetchRank())
             .subscribe();
@@ -879,7 +891,10 @@ export function LeaderboardRankWidget({
         };
     }, [fetchRank]);
 
-    if (loading || !data) {
+    const activeData = mode === 'monthly' ? monthlyData : allTimeData;
+    const activeTotal = mode === 'monthly' ? monthlyTotal : allTimeTotal;
+
+    if (loading || !activeData) {
         return (
             <div style={{
                 borderRadius: 16,
@@ -901,74 +916,135 @@ export function LeaderboardRankWidget({
         );
     }
 
-    const tierCfg = TIER_CONFIG[data.tier] || TIER_CONFIG.iron;
+    const tierCfg = TIER_CONFIG[activeData.tier] || TIER_CONFIG.iron;
 
     return (
         <div style={{
             borderRadius: 16,
             border: `1px solid ${tierCfg.color}50`,
-            background: `linear-gradient(135deg, ${tierCfg.color}08, rgba(0,0,0,0.2))`,
+            background: `linear-gradient(135deg, ${tierCfg.color}10 0%, rgba(15,23,42,0.6) 100%)`,
             padding: '1rem',
-            boxShadow: `0 0 15px ${tierCfg.glow}`,
+            boxShadow: `0 0 18px ${tierCfg.glow}`,
             cursor: 'pointer',
+            transition: 'all 0.2s ease',
         }}>
+            {/* Widget Top Header with Mode Toggle */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.75rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: tierCfg.color }}>
+                    <span>🏆</span>
+                    <span>Leaderboard</span>
+                    {mode === 'monthly' && cycle && (
+                        <span style={{ fontSize: '0.65rem', color: 'var(--secondary-foreground)', fontWeight: 500, textTransform: 'none', marginLeft: 4 }}>
+                            · Resets in {cycle.daysRemaining}d
+                        </span>
+                    )}
+                </div>
+
+                {/* Interactive pill switcher on dashboard card */}
+                <div
+                    onClick={(e) => e.stopPropagation()}
+                    style={{
+                        display: 'flex',
+                        background: 'rgba(0, 0, 0, 0.35)',
+                        borderRadius: 20,
+                        padding: 2,
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                    }}
+                >
+                    <button
+                        onClick={(e) => { e.stopPropagation(); setMode('monthly'); }}
+                        style={{
+                            padding: '3px 9px',
+                            borderRadius: 16,
+                            border: 'none',
+                            fontSize: '0.65rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            background: mode === 'monthly' ? tierCfg.color : 'transparent',
+                            color: mode === 'monthly' ? '#000000' : 'var(--secondary-foreground)',
+                            transition: 'all 0.15s ease',
+                        }}
+                    >
+                        Monthly
+                    </button>
+                    <button
+                        onClick={(e) => { e.stopPropagation(); setMode('allTime'); }}
+                        style={{
+                            padding: '3px 9px',
+                            borderRadius: 16,
+                            border: 'none',
+                            fontSize: '0.65rem',
+                            fontWeight: 700,
+                            cursor: 'pointer',
+                            background: mode === 'allTime' ? tierCfg.color : 'transparent',
+                            color: mode === 'allTime' ? '#000000' : 'var(--secondary-foreground)',
+                            transition: 'all 0.15s ease',
+                        }}
+                    >
+                        All-Time
+                    </button>
+                </div>
+            </div>
+
+            {/* Main Rank & Logs Stats */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <div style={{
-                        fontSize: '1.5rem',
-                        width: 40,
-                        height: 40,
+                        fontSize: '1.6rem',
+                        width: 44,
+                        height: 44,
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        borderRadius: 10,
-                        background: `${tierCfg.color}15`,
+                        borderRadius: 12,
+                        background: `${tierCfg.color}20`,
+                        border: `1px solid ${tierCfg.color}40`,
                     }}>
                         {tierCfg.icon}
                     </div>
                     <div>
-                        <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: tierCfg.color }}>
-                            Leaderboard
+                        <div style={{ fontSize: '0.65rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--secondary-foreground)', letterSpacing: '0.05em' }}>
+                            {mode === 'monthly' ? 'Current Month Rank' : 'Lifetime Rank'}
                         </div>
-                        <div style={{ fontSize: '1.25rem', fontWeight: 800 }}>
-                            Rank #{data.rank} <span style={{ fontSize: '0.75rem', fontWeight: 400, color: 'var(--secondary-foreground)' }}>/ {total}</span>
+                        <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#f8fafc', lineHeight: 1.1 }}>
+                            #{activeData.rank} <span style={{ fontSize: '0.75rem', fontWeight: 400, color: 'var(--secondary-foreground)' }}>of {activeTotal}</span>
                         </div>
                     </div>
                 </div>
+
                 <div style={{ textAlign: 'right' }}>
-                    <div style={{ fontSize: '1.1rem', fontWeight: 800, color: tierCfg.color }}>
-                        {data.totalLogs} {getStreakEmoji(data.currentStreak)}
+                    <div style={{ fontSize: '1.25rem', fontWeight: 800, color: tierCfg.color }}>
+                        {activeData.totalLogs} {getStreakEmoji(activeData.currentStreak)}
                     </div>
-                    <div style={{ fontSize: '0.6rem', color: 'var(--secondary-foreground)', textTransform: 'uppercase', fontWeight: 600 }}>
-                        logs filled
+                    <div style={{ fontSize: '0.62rem', color: 'var(--secondary-foreground)', textTransform: 'uppercase', fontWeight: 600 }}>
+                        {mode === 'monthly' ? 'monthly logs' : 'lifetime logs'}
                     </div>
                 </div>
             </div>
-            {data.rank > 1 && (
-                <div style={{
-                    marginTop: '0.5rem',
-                    paddingTop: '0.5rem',
-                    borderTop: `1px solid ${tierCfg.color}20`,
-                    fontSize: '0.75rem',
-                    color: 'var(--secondary-foreground)',
-                    textAlign: 'center',
-                }}>
-                    Keep logging to climb the ranks! 💪
+
+            {/* Sub-stats summary */}
+            <div style={{
+                display: 'flex',
+                gap: '0.75rem',
+                marginTop: '0.75rem',
+                paddingTop: '0.6rem',
+                borderTop: `1px solid ${tierCfg.color}20`,
+                fontSize: '0.72rem',
+                color: 'var(--secondary-foreground)',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+            }}>
+                <div style={{ display: 'flex', gap: '0.75rem' }}>
+                    <span>🎯 <strong>{activeData.completionRate}%</strong> complete</span>
+                    {activeData.currentStreak > 0 && (
+                        <span>🔥 <strong>{activeData.currentStreak}</strong> streak</span>
+                    )}
                 </div>
-            )}
-            {data.rank === 1 && (
-                <div style={{
-                    marginTop: '0.5rem',
-                    paddingTop: '0.5rem',
-                    borderTop: `1px solid ${tierCfg.color}20`,
-                    fontSize: '0.75rem',
-                    color: tierCfg.color,
-                    textAlign: 'center',
-                    fontWeight: 600,
-                }}>
-                    👑 You're the champion! Stay on top!
-                </div>
-            )}
+
+                <span style={{ fontSize: '0.68rem', color: tierCfg.color, fontWeight: 700 }}>
+                    View Standings →
+                </span>
+            </div>
         </div>
     );
 }
