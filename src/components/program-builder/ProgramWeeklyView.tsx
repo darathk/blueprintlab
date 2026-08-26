@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { calculateStress } from '@/lib/stress-index';
 import { getExerciseCategory } from '@/lib/exercise-db';
-import { Plus, Trash2, Copy, ChevronLeft, ChevronRight, CopyPlus } from 'lucide-react';
+import { Plus, Trash2, Copy, ChevronLeft, ChevronRight, CopyPlus, CheckCircle2 } from 'lucide-react';
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
@@ -19,7 +19,6 @@ const CATEGORY_COLORS: Record<string, string> = {
     'Isolation/Accessory': '#64748B',
 };
 
-const DAY_NAMES = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
 const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 function formatSetsSummary(sets: any[]) {
@@ -51,6 +50,10 @@ interface WeeklyViewProps {
     startDate: string;
     initialExercises?: any;
     liftTargets?: Record<string, { timeToPeak: string; stressTarget: string }>;
+    selectedDay?: number;
+    onSelectDay?: (dayNum: number) => void;
+    currentWeekNum?: number;
+    setCurrentWeekNum?: (weekNum: number) => void;
 }
 
 export default function ProgramWeeklyView({
@@ -59,13 +62,23 @@ export default function ProgramWeeklyView({
     startDate,
     initialExercises,
     liftTargets,
+    selectedDay: controlledSelectedDay,
+    onSelectDay: controlledOnSelectDay,
+    currentWeekNum: controlledWeekNum,
+    setCurrentWeekNum: controlledSetWeekNum,
 }: WeeklyViewProps) {
-    // Which week number we are viewing
-    const [currentWeekNum, setCurrentWeekNum] = useState(() => {
-        // Default to the first week with sessions, or week 1
+    // Week number state (controlled or internal)
+    const [internalWeekNum, setInternalWeekNum] = useState(() => {
         const first = weeks.find(w => w.sessions && w.sessions.length > 0);
         return first ? first.weekNumber : 1;
     });
+    const currentWeekNum = controlledWeekNum !== undefined ? controlledWeekNum : internalWeekNum;
+    const setCurrentWeekNum = controlledSetWeekNum !== undefined ? controlledSetWeekNum : setInternalWeekNum;
+
+    // Selected day state (controlled or internal)
+    const [internalSelectedDay, setInternalSelectedDay] = useState<number>(1);
+    const selectedDay = controlledSelectedDay !== undefined ? controlledSelectedDay : internalSelectedDay;
+    const onSelectDay = controlledOnSelectDay !== undefined ? controlledOnSelectDay : setInternalSelectedDay;
 
     // Drag state for exercises between days
     const [dragSource, setDragSource] = useState<{ weekIdx: number; sessionIdx: number; exerciseIdx: number } | null>(null);
@@ -74,7 +87,6 @@ export default function ProgramWeeklyView({
 
     // Current week object
     const currentWeek = useMemo(() => weeks.find(w => w.weekNumber === currentWeekNum), [weeks, currentWeekNum]);
-
     const maxWeekNum = useMemo(() => weeks.reduce((m, w) => Math.max(m, w.weekNumber || 0), 0), [weeks]);
 
     // Build sessions by day (1=Mon, 2=Tue, ... 7=Sun in the Monday-start data model)
@@ -84,7 +96,7 @@ export default function ProgramWeeklyView({
     const sessionsByDay = useMemo(() => {
         const map: Record<number, any> = {};
         if (!currentWeek) return map;
-        currentWeek.sessions.forEach((s: any) => {
+        (currentWeek.sessions || []).forEach((s: any) => {
             map[s.day] = s;
         });
         return map;
@@ -115,15 +127,43 @@ export default function ProgramWeeklyView({
         return `${SHORT_MONTHS[d.getMonth()]} ${d.getDate()}`;
     }, [startDate, currentWeekNum]);
 
+    // ──── Category Targets from Athlete Lift Targets ────
+    const categoryTargets = useMemo(() => {
+        if (!liftTargets) return {};
+        const result: Record<string, number> = {};
+        Object.entries(liftTargets).forEach(([lift, { stressTarget }]) => {
+            const target = parseFloat(stressTarget);
+            if (!target || isNaN(target)) return;
+            const category = getExerciseCategory(lift);
+            if (category) {
+                result[category] = (result[category] || 0) + target;
+            }
+        });
+        return result;
+    }, [liftTargets]);
+
+    const totalTarget = useMemo(() => {
+        return Object.values(categoryTargets).reduce((s, v) => s + v, 0);
+    }, [categoryTargets]);
+
     // ──── Stress Metrics Computation ────
+    const METRIC_CATS = ['Knee', 'Horizontal Push', 'Hip', 'Vertical Push', 'Horizontal Pull', 'Vertical Pull'];
+    const METRIC_SHORT: Record<string, string> = {
+        'Knee': 'Knee',
+        'Horizontal Push': 'HPush',
+        'Hip': 'Hip',
+        'Vertical Push': 'VPush',
+        'Horizontal Pull': 'HPull',
+        'Vertical Pull': 'VPull',
+    };
+
     const stressMetrics = useMemo(() => {
-        const categories = ['Knee', 'Horizontal Push', 'Hip', 'Vertical Push', 'Horizontal Pull', 'Vertical Pull'];
         const stats: Record<string, { total: number; central: number; peripheral: number; reps: number }> = {};
-        categories.forEach(c => stats[c] = { total: 0, central: 0, peripheral: 0, reps: 0 });
+        METRIC_CATS.forEach(c => stats[c] = { total: 0, central: 0, peripheral: 0, reps: 0 });
 
         if (!currentWeek) return { stats, grandTotal: 0, grandCentral: 0, grandPeripheral: 0, grandReps: 0 };
 
-        currentWeek.sessions.forEach((session: any) => {
+        (currentWeek.sessions || []).forEach((session: any) => {
             (session.exercises || []).forEach((ex: any) => {
                 const category = ex.category || getExerciseCategory(ex.name || '');
                 const setsList = Array.isArray(ex.sets) ? ex.sets : [];
@@ -175,6 +215,9 @@ export default function ProgramWeeklyView({
     };
 
     const addExerciseToDay = useCallback((dayNum: number, exerciseOrName: any) => {
+        // Also highlight this day
+        onSelectDay(dayNum);
+
         const exerciseName = typeof exerciseOrName === 'string' ? exerciseOrName : exerciseOrName.name;
         const exerciseCategory = (typeof exerciseOrName === 'object' && exerciseOrName.category)
             ? exerciseOrName.category
@@ -197,7 +240,6 @@ export default function ProgramWeeklyView({
         setWeeks((prev: any[]) => {
             let wIdx = prev.findIndex(w => w.weekNumber === currentWeekNum);
             if (wIdx === -1) {
-                // Create the week
                 const newWeeks = [...prev, { id: generateId(), weekNumber: currentWeekNum, sessions: [] }];
                 newWeeks.sort((a, b) => a.weekNumber - b.weekNumber);
                 wIdx = newWeeks.findIndex(w => w.weekNumber === currentWeekNum);
@@ -239,7 +281,7 @@ export default function ProgramWeeklyView({
                 };
             });
         });
-    }, [currentWeekNum, setWeeks]);
+    }, [currentWeekNum, setWeeks, onSelectDay]);
 
     const updateSet = useCallback((dayNum: number, exerciseIdx: number, setIdx: number, field: string, value: string) => {
         setWeeks((prev: any[]) => prev.map(w => {
@@ -404,7 +446,6 @@ export default function ProgramWeeklyView({
         });
     }, [currentWeekNum, setWeeks]);
 
-    // Delete the current week and renumber remaining weeks
     const deleteCurrentWeek = useCallback(() => {
         if (!confirm(`Are you sure you want to delete Week ${currentWeekNum}? This will remove all its sessions.`)) {
             return;
@@ -419,7 +460,7 @@ export default function ProgramWeeklyView({
                 .map((w, idx) => ({ ...w, weekNumber: idx + 1 }));
         });
         setCurrentWeekNum(prev => Math.max(1, prev - 1));
-    }, [currentWeekNum, setWeeks]);
+    }, [currentWeekNum, setWeeks, setCurrentWeekNum]);
 
     // ──── Drag & Drop ────
 
@@ -444,13 +485,13 @@ export default function ProgramWeeklyView({
         e.stopPropagation();
         setDropTargetDay(null);
         setDropTargetExIdx(null);
+        onSelectDay(targetDayNum);
 
-        // Try to parse the drag data
         let data: any = null;
         try {
             const raw = e.dataTransfer.getData('text/plain');
             data = JSON.parse(raw);
-        } catch { /* fallback below */ }
+        } catch { /* fallback */ }
 
         if (!data) return;
 
@@ -478,13 +519,11 @@ export default function ProgramWeeklyView({
                 const [movedExercise] = srcSession.exercises.splice(srcE, 1);
                 if (!movedExercise) return prev;
 
-                // Find or create target session
                 const tgtWIdx = newWeeks.findIndex(w => w.weekNumber === currentWeekNum);
                 if (tgtWIdx === -1) return prev;
 
                 let tgtSIdx = newWeeks[tgtWIdx].sessions.findIndex((s: any) => Number(s.day) === Number(targetDayNum));
                 if (tgtSIdx === -1) {
-                    // Create session for this day
                     newWeeks[tgtWIdx].sessions.push({
                         id: generateId(),
                         day: targetDayNum,
@@ -528,16 +567,18 @@ export default function ProgramWeeklyView({
         setCurrentWeekNum(newNum);
     };
 
-    // ──── RENDER ────
+    // ──── Helpers for Delta Display ────
+    const grandDelta = totalTarget > 0 ? stressMetrics.grandTotal - totalTarget : null;
 
-    const METRIC_CATS = ['Knee', 'Horizontal Push', 'Hip', 'Vertical Push', 'Horizontal Pull', 'Vertical Pull'];
-    const METRIC_SHORT: Record<string, string> = {
-        'Knee': 'Knee',
-        'Horizontal Push': 'HPush',
-        'Hip': 'Hip',
-        'Vertical Push': 'VPush',
-        'Horizontal Pull': 'HPull',
-        'Vertical Pull': 'VPull',
+    const renderDeltaCell = (delta: number | null) => {
+        if (delta === null) return <span style={{ opacity: 0.3 }}>—</span>;
+        if (delta > 0.05) {
+            return <span style={{ color: '#ef4444', fontWeight: 800 }}>+{delta.toFixed(1)}</span>;
+        }
+        if (delta < -0.05) {
+            return <span style={{ color: '#06b6d4', fontWeight: 800 }}>{delta.toFixed(1)}</span>;
+        }
+        return <span style={{ color: '#22c55e', fontWeight: 800 }}>✓ 0.0</span>;
     };
 
     return (
@@ -618,7 +659,7 @@ export default function ProgramWeeklyView({
                 </div>
             </div>
 
-            {/* ── Stress Metrics Table ── */}
+            {/* ── Stress Metrics Table (With Target SI & Delta Over/Under) ── */}
             <div style={{
                 background: 'var(--card-bg)', border: '1px solid var(--card-border)',
                 borderRadius: 'var(--radius)', marginBottom: '1.25rem', overflow: 'hidden',
@@ -632,9 +673,17 @@ export default function ProgramWeeklyView({
                     <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--foreground)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                         Stress Metrics
                     </span>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)' }}>
-                        Calculate for: <strong style={{ color: 'var(--foreground)' }}>Entire week</strong>
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', fontSize: '0.75rem', color: 'var(--secondary-foreground)' }}>
+                        {totalTarget > 0 && (
+                            <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--primary)' }}></span>
+                                Targets Active ({totalTarget.toFixed(1)} total)
+                            </span>
+                        )}
+                        <span>
+                            Calculate for: <strong style={{ color: 'var(--foreground)' }}>Entire week</strong>
+                        </span>
+                    </div>
                 </div>
                 <div style={{ overflowX: 'auto' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
@@ -650,17 +699,67 @@ export default function ProgramWeeklyView({
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
-                                <td style={{ padding: '6px 14px', fontWeight: 800, color: 'var(--foreground)' }}>Total</td>
-                                <td style={{ textAlign: 'center', padding: '6px 14px', fontWeight: 800, color: 'var(--primary)', fontSize: '0.85rem' }}>
+                            {/* Actual Total SI */}
+                            <tr style={{ background: totalTarget > 0 ? 'rgba(255,255,255,0.01)' : 'transparent' }}>
+                                <td style={{ padding: '6px 14px', fontWeight: 800, color: 'var(--foreground)' }}>Total SI</td>
+                                <td style={{ textAlign: 'center', padding: '6px 14px', fontWeight: 800, color: 'var(--primary)', fontSize: '0.88rem' }}>
                                     {stressMetrics.grandTotal.toFixed(1)}
                                 </td>
-                                {METRIC_CATS.map(c => (
-                                    <td key={c} style={{ textAlign: 'center', padding: '6px 14px', color: 'var(--foreground)', fontWeight: 600 }}>
-                                        {stressMetrics.stats[c]?.total.toFixed(1) || '0.0'}
-                                    </td>
-                                ))}
+                                {METRIC_CATS.map(c => {
+                                    const val = stressMetrics.stats[c]?.total || 0;
+                                    const target = categoryTargets[c];
+                                    const isOver = target && val > target;
+                                    const isAt = target && Math.abs(val - target) <= 0.2;
+                                    return (
+                                        <td key={c} style={{
+                                            textAlign: 'center', padding: '6px 14px', fontWeight: 700,
+                                            color: isOver ? '#ef4444' : isAt ? '#22c55e' : 'var(--foreground)',
+                                        }}>
+                                            {val.toFixed(1)}
+                                        </td>
+                                    );
+                                })}
                             </tr>
+
+                            {/* Target SI Row (shown if targets configured) */}
+                            {totalTarget > 0 && (
+                                <tr style={{ background: 'rgba(6, 182, 212, 0.03)' }}>
+                                    <td style={{ padding: '5px 14px', color: 'var(--secondary-foreground)', fontWeight: 600 }}>
+                                        Target SI
+                                    </td>
+                                    <td style={{ textAlign: 'center', padding: '5px 14px', color: 'var(--secondary-foreground)', fontWeight: 700 }}>
+                                        {totalTarget.toFixed(1)}
+                                    </td>
+                                    {METRIC_CATS.map(c => (
+                                        <td key={c} style={{ textAlign: 'center', padding: '5px 14px', color: 'var(--secondary-foreground)', fontWeight: 600 }}>
+                                            {categoryTargets[c] !== undefined ? categoryTargets[c].toFixed(1) : <span style={{ opacity: 0.3 }}>—</span>}
+                                        </td>
+                                    ))}
+                                </tr>
+                            )}
+
+                            {/* Delta / Diff (Over / Under) Row */}
+                            {totalTarget > 0 && (
+                                <tr style={{ borderBottom: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.02)' }}>
+                                    <td style={{ padding: '5px 14px', fontWeight: 700, color: 'var(--foreground)' }}>
+                                        Delta (Diff)
+                                    </td>
+                                    <td style={{ textAlign: 'center', padding: '5px 14px' }}>
+                                        {renderDeltaCell(grandDelta)}
+                                    </td>
+                                    {METRIC_CATS.map(c => {
+                                        const actual = stressMetrics.stats[c]?.total || 0;
+                                        const target = categoryTargets[c];
+                                        const delta = target !== undefined ? actual - target : null;
+                                        return (
+                                            <td key={c} style={{ textAlign: 'center', padding: '5px 14px' }}>
+                                                {renderDeltaCell(delta)}
+                                            </td>
+                                        );
+                                    })}
+                                </tr>
+                            )}
+
                             <tr>
                                 <td style={{ padding: '5px 14px', color: 'var(--secondary-foreground)' }}>Peripheral</td>
                                 <td style={{ textAlign: 'center', padding: '5px 14px', color: 'var(--secondary-foreground)' }}>
@@ -714,7 +813,6 @@ export default function ProgramWeeklyView({
             </div>
 
             {/* ── 7-Day Column Grid ── */}
-            {/* Generous column width with horizontal scroll support */}
             <div style={{
                 display: 'grid',
                 gridTemplateColumns: 'repeat(7, minmax(190px, 1fr))',
@@ -727,45 +825,75 @@ export default function ProgramWeeklyView({
                     const session = sessionsByDay[dayNum];
                     const exercises = session?.exercises || [];
                     const isDragOverThis = dropTargetDay === dayNum;
+                    const isSelected = selectedDay === dayNum;
                     const dayLabel = DISPLAY_DAY_NAMES[colIdx];
                     const dateLabel = getDateForDay(dayNum);
 
                     return (
                         <div
                             key={dayNum}
+                            onClick={() => onSelectDay(dayNum)}
                             onDragOver={(e) => handleDayDragOver(e, dayNum)}
                             onDrop={(e) => handleDayDrop(e, dayNum)}
                             onDragLeave={() => { if (dropTargetDay === dayNum) { setDropTargetDay(null); setDropTargetExIdx(null); } }}
                             style={{
-                                background: isDragOverThis ? 'rgba(6,182,212,0.12)' : 'var(--card-bg)',
-                                border: isDragOverThis ? '2px solid var(--primary)' : '1px solid var(--card-border)',
+                                background: isDragOverThis
+                                    ? 'rgba(6,182,212,0.14)'
+                                    : isSelected
+                                        ? 'rgba(6,182,212,0.06)'
+                                        : 'var(--card-bg)',
+                                border: isDragOverThis
+                                    ? '2px solid var(--primary)'
+                                    : isSelected
+                                        ? '2px solid var(--primary)'
+                                        : '1px solid var(--card-border)',
                                 borderRadius: '10px',
                                 display: 'flex', flexDirection: 'column',
                                 overflow: 'hidden',
-                                transition: 'border 0.15s, background 0.15s',
+                                transition: 'all 0.15s ease',
                                 minHeight: '350px',
-                                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                                boxShadow: isSelected
+                                    ? '0 0 16px rgba(6, 182, 212, 0.22), 0 2px 8px rgba(0,0,0,0.3)'
+                                    : '0 2px 8px rgba(0,0,0,0.15)',
+                                cursor: 'pointer',
                             }}
                         >
                             {/* Day Column Header */}
                             <div style={{
                                 padding: '10px 12px',
-                                borderBottom: '1px solid var(--card-border)',
-                                background: 'rgba(255,255,255,0.03)',
+                                borderBottom: isSelected ? '1px solid rgba(6,182,212,0.3)' : '1px solid var(--card-border)',
+                                background: isSelected ? 'rgba(6, 182, 212, 0.12)' : 'rgba(255,255,255,0.03)',
                                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                             }}>
                                 <div>
-                                    <div style={{
-                                        fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.06em',
-                                        color: (dayNum === 6 || dayNum === 7) ? 'var(--secondary-foreground)' : 'var(--primary)',
-                                    }}>
-                                        {dayLabel}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        <span style={{
+                                            fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.06em',
+                                            color: isSelected
+                                                ? 'var(--primary)'
+                                                : (dayNum === 6 || dayNum === 7) ? 'var(--secondary-foreground)' : 'var(--primary)',
+                                        }}>
+                                            {dayLabel}
+                                        </span>
+                                        {isSelected && (
+                                            <span style={{
+                                                fontSize: '0.6rem',
+                                                fontWeight: 800,
+                                                background: 'var(--primary)',
+                                                color: '#000',
+                                                padding: '1px 5px',
+                                                borderRadius: '8px',
+                                                letterSpacing: '0.04em',
+                                            }}>
+                                                ACTIVE
+                                            </span>
+                                        )}
                                     </div>
                                     <div style={{ fontSize: '0.7rem', color: 'var(--secondary-foreground)', marginTop: 2, fontWeight: 500 }}>
                                         {dateLabel}
                                     </div>
                                 </div>
-                                <div style={{ display: 'flex', gap: '4px' }}>
+                                <div style={{ display: 'flex', gap: '4px' }} onClick={e => e.stopPropagation()}>
                                     {session && (
                                         <button
                                             onClick={() => clearDay(dayNum)}
@@ -784,10 +912,14 @@ export default function ProgramWeeklyView({
 
                             {/* Session Name (editable) */}
                             {session && (
-                                <div style={{ padding: '6px 12px', borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(0,0,0,0.1)' }}>
+                                <div
+                                    onClick={e => e.stopPropagation()}
+                                    style={{ padding: '6px 12px', borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(0,0,0,0.1)' }}
+                                >
                                     <input
                                         value={session.name}
                                         onChange={e => updateSessionName(dayNum, e.target.value)}
+                                        onFocus={() => onSelectDay(dayNum)}
                                         placeholder="Session Name"
                                         style={{
                                             background: 'transparent', border: 'none', color: 'var(--foreground)',
@@ -799,12 +931,14 @@ export default function ProgramWeeklyView({
                             )}
 
                             {/* + Add exercise button */}
-                            <div style={{ padding: '6px 8px' }}>
+                            <div style={{ padding: '6px 8px' }} onClick={e => e.stopPropagation()}>
                                 <button
                                     onClick={() => addExerciseToDay(dayNum, { name: 'New Exercise', category: 'Isolation/Accessory' })}
                                     style={{
-                                        width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.2)',
-                                        color: 'var(--secondary-foreground)', borderRadius: '6px', padding: '8px',
+                                        width: '100%', background: isSelected ? 'rgba(6,182,212,0.1)' : 'rgba(255,255,255,0.02)',
+                                        border: isSelected ? '1px dashed var(--primary)' : '1px dashed rgba(255,255,255,0.2)',
+                                        color: isSelected ? 'var(--primary)' : 'var(--secondary-foreground)',
+                                        borderRadius: '6px', padding: '8px',
                                         cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600,
                                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                                         transition: 'all 0.15s',
@@ -814,8 +948,8 @@ export default function ProgramWeeklyView({
                                         e.currentTarget.style.color = 'var(--primary)';
                                     }}
                                     onMouseOut={e => {
-                                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)';
-                                        e.currentTarget.style.color = 'var(--secondary-foreground)';
+                                        e.currentTarget.style.borderColor = isSelected ? 'var(--primary)' : 'rgba(255,255,255,0.2)';
+                                        e.currentTarget.style.color = isSelected ? 'var(--primary)' : 'var(--secondary-foreground)';
                                     }}
                                 >
                                     <Plus size={14} /> Add exercise
@@ -835,7 +969,7 @@ export default function ProgramWeeklyView({
                                             minHeight: '100px', margin: '4px 0', padding: '12px',
                                         }}
                                     >
-                                        Drop an exercise here or add a new one.
+                                        Drop an exercise here or click to select this session.
                                     </div>
                                 )}
 
@@ -848,6 +982,10 @@ export default function ProgramWeeklyView({
                                         <div
                                             key={ex.id}
                                             draggable
+                                            onClick={e => {
+                                                e.stopPropagation();
+                                                onSelectDay(dayNum);
+                                            }}
                                             onDragStart={(e) => handleExDragStart(e, dayNum, exIdx)}
                                             onDragEnd={handleDragEnd}
                                             onDragOver={(e) => handleDayDragOver(e, dayNum, exIdx)}
@@ -880,12 +1018,9 @@ export default function ProgramWeeklyView({
                                                 }}>
                                                     {ex.name}
                                                 </div>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
                                                     <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            duplicateExercise(dayNum, exIdx);
-                                                        }}
+                                                        onClick={() => duplicateExercise(dayNum, exIdx)}
                                                         title="Duplicate Exercise"
                                                         style={{
                                                             background: 'rgba(0,0,0,0.25)', border: 'none', color: '#fff',
@@ -899,10 +1034,7 @@ export default function ProgramWeeklyView({
                                                         <Copy size={12} />
                                                     </button>
                                                     <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            removeExercise(dayNum, ex.id || exIdx);
-                                                        }}
+                                                        onClick={() => removeExercise(dayNum, ex.id || exIdx)}
                                                         title="Delete Exercise"
                                                         style={{
                                                             background: 'rgba(0,0,0,0.25)', border: 'none', color: '#fff',
@@ -987,7 +1119,10 @@ export default function ProgramWeeklyView({
                                                                 }}
                                                             />
                                                             <button
-                                                                onClick={() => removeSet(dayNum, exIdx, si)}
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    removeSet(dayNum, exIdx, si);
+                                                                }}
                                                                 title="Remove set"
                                                                 style={{
                                                                     background: 'transparent', border: 'none', color: 'rgba(239,68,68,0.7)',
@@ -1005,7 +1140,7 @@ export default function ProgramWeeklyView({
                                                 <div style={{
                                                     display: 'flex', alignItems: 'center',
                                                     padding: '4px 0 2px', marginTop: '2px',
-                                                }}>
+                                                }} onClick={e => e.stopPropagation()}>
                                                     <button
                                                         onClick={() => addSet(dayNum, exIdx)}
                                                         style={{

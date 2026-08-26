@@ -324,6 +324,8 @@ export default function ProgramBuilder({
     // Monthly / Weekly calendar toggle
     const [calendarViewMode, setCalendarViewMode] = useState<'monthly' | 'weekly'>('monthly');
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+    const [weeklyActiveWeekNum, setWeeklyActiveWeekNum] = useState(1);
+    const [selectedWeeklyDay, setSelectedWeeklyDay] = useState(1);
 
     // Lift targets state (only used when building from athlete dashboard)
     const DEFAULT_LIFTS = ['Squat', 'Bench', 'Deadlift'];
@@ -1043,32 +1045,67 @@ export default function ProgramBuilder({
         showToast(`Duplicated Week ${originalWeek.weekNumber} → Week ${targetWeekNum}`);
     };
 
-    const addExerciseToActiveSession = (exerciseOrName) => {
-        const loc = editingSession ?? activeLocation;
-        const { w, s } = loc;
-        if (w >= weeks.length || s >= weeks[w].sessions.length) return;
-
+    const addExerciseToActiveSession = (exerciseOrName: any) => {
         // Accept either an object { name, category, ... } or a plain string
         const exerciseName = typeof exerciseOrName === 'string' ? exerciseOrName : exerciseOrName.name;
         const exerciseCategory = (typeof exerciseOrName === 'object' && exerciseOrName.category)
             ? exerciseOrName.category
             : getExerciseCategory(exerciseName);
 
-        const newWeeks = [...weeks];
-        // Default: 3 sets
-        const sets = [
-            { id: generateId(), reps: '5', rpe: '6', weight: '' },
-            { id: generateId(), reps: '5', rpe: '7', weight: '' },
-            { id: generateId(), reps: '5', rpe: '8', weight: '' }
-        ];
-
-        newWeeks[w].sessions[s].exercises.unshift({
+        const newExercise = {
             id: generateId(),
             name: exerciseName,
             category: exerciseCategory,
-            sets: sets,
+            sets: [
+                { id: generateId(), reps: '5', rpe: '6', weight: '' },
+                { id: generateId(), reps: '5', rpe: '7', weight: '' },
+                { id: generateId(), reps: '5', rpe: '8', weight: '' }
+            ],
             notes: ''
-        });
+        };
+
+        if (calendarViewMode === 'weekly') {
+            const targetWeekNum = weeklyActiveWeekNum || 1;
+            const targetDay = selectedWeeklyDay || 1;
+            setWeeks(prev => {
+                let wIdx = prev.findIndex(w => w.weekNumber === targetWeekNum);
+                if (wIdx === -1) {
+                    const newWeeks = [...prev, { id: generateId(), weekNumber: targetWeekNum, sessions: [] }];
+                    newWeeks.sort((a, b) => a.weekNumber - b.weekNumber);
+                    wIdx = newWeeks.findIndex(w => w.weekNumber === targetWeekNum);
+                }
+                return prev.map((w, wi) => {
+                    if (w.weekNumber !== targetWeekNum) return w;
+                    const sIdx = w.sessions.findIndex((s: any) => Number(s.day) === Number(targetDay));
+                    if (sIdx === -1) {
+                        return {
+                            ...w,
+                            sessions: [...w.sessions, {
+                                id: generateId(),
+                                day: targetDay,
+                                name: 'Session',
+                                exercises: [newExercise],
+                                scheduledDate: '',
+                            }],
+                        };
+                    }
+                    return {
+                        ...w,
+                        sessions: w.sessions.map((s: any, si: number) =>
+                            si !== sIdx ? s : { ...s, exercises: [...(s.exercises || []), newExercise] }
+                        ),
+                    };
+                });
+            });
+            return;
+        }
+
+        const loc = editingSession ?? activeLocation;
+        const { w, s } = loc;
+        if (w >= weeks.length || s >= weeks[w].sessions.length) return;
+
+        const newWeeks = [...weeks];
+        newWeeks[w].sessions[s].exercises.unshift(newExercise);
         setWeeks(newWeeks);
     };
 
@@ -2120,6 +2157,10 @@ export default function ProgramBuilder({
                                     startDate={startDate}
                                     initialExercises={initialExercises}
                                     liftTargets={liftTargets}
+                                    selectedDay={selectedWeeklyDay}
+                                    onSelectDay={setSelectedWeeklyDay}
+                                    currentWeekNum={weeklyActiveWeekNum}
+                                    setCurrentWeekNum={setWeeklyActiveWeekNum}
                                 />
                             )}
                         </div>
