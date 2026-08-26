@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { calculateStress } from '@/lib/stress-index';
 import { getExerciseCategory } from '@/lib/exercise-db';
-import { Plus, Trash2, Copy, ChevronLeft, ChevronRight, CopyPlus, CheckCircle2, StickyNote } from 'lucide-react';
+import { Plus, Trash2, Copy, ChevronLeft, ChevronRight, CopyPlus, CheckCircle2, StickyNote, Activity } from 'lucide-react';
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
@@ -427,6 +427,42 @@ export default function ProgramWeeklyView({
             };
         }));
     }, [currentWeekNum, setWeeks]);
+
+    const setDayWarmupDrills = useCallback((dayNum: number, warmupDrills: string) => {
+        setWeeks((prev: any[]) => prev.map(w => {
+            if (w.weekNumber !== currentWeekNum) return w;
+            const exists = w.sessions.some((s: any) => Number(s.day) === Number(dayNum));
+            if (exists) {
+                return {
+                    ...w,
+                    sessions: w.sessions.map((s: any) =>
+                        Number(s.day) !== Number(dayNum) ? s : { ...s, warmupDrills }
+                    ),
+                };
+            } else {
+                return {
+                    ...w,
+                    sessions: [...w.sessions, {
+                        id: generateId(),
+                        name: `Session ${w.sessions.length + 1}`,
+                        day: dayNum,
+                        warmupDrills,
+                        exercises: [],
+                    }],
+                };
+            }
+        }));
+    }, [currentWeekNum, setWeeks]);
+
+    const applyWarmupToAllSessions = useCallback((warmupDrills: string) => {
+        if (!warmupDrills?.trim()) return;
+        if (confirm('Apply these warm-up drills to EVERY session in the entire block? This will overwrite existing warm-ups elsewhere.')) {
+            setWeeks((prev: any[]) => prev.map(w => ({
+                ...w,
+                sessions: (w.sessions || []).map((s: any) => ({ ...s, warmupDrills })),
+            })));
+        }
+    }, [setWeeks]);
 
     const clearDay = useCallback((dayNum: number) => {
         if (!confirm('Clear all exercises from this day?')) return;
@@ -948,6 +984,82 @@ export default function ProgramWeeklyView({
                                     />
                                 </div>
                             )}
+
+                            {/* Warm-Up Drills Section */}
+                            <div
+                                onClick={e => e.stopPropagation()}
+                                style={{
+                                    padding: '6px 10px 8px',
+                                    background: 'rgba(255, 255, 255, 0.015)',
+                                    borderBottom: '1px solid rgba(255,255,255,0.05)',
+                                }}
+                            >
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 3 }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                        <Activity size={11} style={{ color: 'var(--primary)', opacity: 0.85 }} />
+                                        <span style={{
+                                            fontSize: '0.62rem',
+                                            fontWeight: 700,
+                                            color: 'var(--secondary-foreground)',
+                                            textTransform: 'uppercase',
+                                            letterSpacing: '0.04em',
+                                        }}>
+                                            Warm-Up Drills
+                                        </span>
+                                    </div>
+                                    {session?.warmupDrills?.trim() && (
+                                        <button
+                                            type="button"
+                                            onClick={() => applyWarmupToAllSessions(session.warmupDrills)}
+                                            title="Apply these drills to all sessions in the program"
+                                            style={{
+                                                background: 'transparent',
+                                                border: 'none',
+                                                color: 'var(--primary)',
+                                                fontSize: '0.62rem',
+                                                fontWeight: 600,
+                                                cursor: 'pointer',
+                                                padding: '0 2px',
+                                                opacity: 0.85,
+                                            }}
+                                            onMouseOver={e => e.currentTarget.style.opacity = '1'}
+                                            onMouseOut={e => e.currentTarget.style.opacity = '0.85'}
+                                        >
+                                            Apply All
+                                        </button>
+                                    )}
+                                </div>
+                                <textarea
+                                    value={session?.warmupDrills || ''}
+                                    onChange={e => setDayWarmupDrills(dayNum, e.target.value)}
+                                    onFocus={() => onSelectDay(dayNum)}
+                                    placeholder="Warm-up drills & prep notes..."
+                                    rows={session?.warmupDrills ? 2 : 1}
+                                    style={{
+                                        width: '100%',
+                                        minHeight: session?.warmupDrills ? '40px' : '26px',
+                                        background: 'rgba(0,0,0,0.25)',
+                                        border: '1px dashed rgba(255,255,255,0.12)',
+                                        borderRadius: '4px',
+                                        padding: '4px 6px',
+                                        fontSize: '0.74rem',
+                                        color: 'var(--foreground)',
+                                        resize: 'vertical',
+                                        outline: 'none',
+                                        fontFamily: 'inherit',
+                                        lineHeight: 1.3,
+                                        transition: 'border-color 0.15s, min-height 0.15s',
+                                    }}
+                                    onFocus={e => {
+                                        e.currentTarget.style.borderColor = 'var(--primary)';
+                                        if (!session?.warmupDrills) e.currentTarget.style.minHeight = '46px';
+                                    }}
+                                    onBlur={e => {
+                                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)';
+                                        if (!session?.warmupDrills) e.currentTarget.style.minHeight = '26px';
+                                    }}
+                                />
+                            </div>
 
                             {/* + Add exercise button */}
                             <div style={{ padding: '6px 8px' }} onClick={e => e.stopPropagation()}>
