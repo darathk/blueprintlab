@@ -250,8 +250,17 @@ export default function ExercisePicker({ onDragStart, onAdd, initialExercises = 
                                                 }}
                                                 className="exercise-item"
                                             >
-                                                <span style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', minWidth: 0, flex: 1 }}>
-                                                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{exName}</span>
+                                                <span style={{ display: 'flex', alignItems: 'flex-start', gap: '0.4rem', minWidth: 0, flex: 1, flexWrap: 'wrap' }}>
+                                                    <span style={{
+                                                        whiteSpace: 'normal',
+                                                        wordBreak: 'break-word',
+                                                        lineHeight: 1.3,
+                                                        fontWeight: 500,
+                                                        fontSize: '0.84rem',
+                                                        color: 'var(--foreground)',
+                                                    }} title={exName}>
+                                                        {exName}
+                                                    </span>
                                                     {isCustom && (
                                                         <span style={{
                                                             fontSize: '0.65rem',
@@ -263,6 +272,7 @@ export default function ExercisePicker({ onDragStart, onAdd, initialExercises = 
                                                             textTransform: 'uppercase',
                                                             letterSpacing: '0.04em',
                                                             flexShrink: 0,
+                                                            alignSelf: 'center',
                                                         }}>Custom</span>
                                                     )}
                                                 </span>

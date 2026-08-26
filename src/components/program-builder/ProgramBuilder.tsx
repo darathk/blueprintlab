@@ -1683,8 +1683,8 @@ export default function ProgramBuilder({
         <div className="program-builder-layout" style={{
             display: 'grid',
             gridTemplateColumns: calendarViewMode === 'weekly'
-                ? (isSidebarOpen ? '1fr 270px' : '1fr')
-                : (isSidebarOpen ? '280px 1fr' : '1fr'),
+                ? (isSidebarOpen ? '1fr 320px' : '1fr')
+                : (isSidebarOpen ? '300px 1fr' : '1fr'),
             gap: '1rem',
             height: 'calc(100vh - 100px)',
             paddingTop: '1rem',
