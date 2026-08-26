@@ -7,6 +7,7 @@ import dynamic from 'next/dynamic';
 import ExercisePicker from '@/components/program-builder/ExercisePicker';
 import ImportProgram from '@/components/programs/ImportProgram';
 import ProgramCalendarGrid from './ProgramCalendarGrid';
+import ProgramWeeklyView from './ProgramWeeklyView';
 import { calculateStress } from '@/lib/stress-index';
 import { getExerciseCategory } from '@/lib/exercise-db';
 import { Trash2, Plus, ArrowRight, ArrowDown, GripVertical, Check, MessageSquare, FileText, Activity, Save, RefreshCw, Layers, Copy, CopyPlus, Scissors, ClipboardPaste, ArrowUp, Zap, ExternalLink, Menu, X, Trophy, Calendar as CalendarIcon, CalendarPlus, LayoutGrid, BookOpen, StickyNote, Pin, LayoutDashboard } from 'lucide-react';
@@ -315,6 +316,8 @@ export default function ProgramBuilder({
     // Tab Navigation State
     const [activeView, setActiveView] = useState<'builder' | 'history'>('builder');
     const [selectedHistoryProgram, setSelectedHistoryProgram] = useState<any | null>(null);
+    // Monthly / Weekly calendar toggle
+    const [calendarViewMode, setCalendarViewMode] = useState<'monthly' | 'weekly'>('monthly');
 
     // Lift targets state (only used when building from athlete dashboard)
     const DEFAULT_LIFTS = ['Squat', 'Bench', 'Deadlift'];
@@ -1986,38 +1989,82 @@ export default function ProgramBuilder({
                     </div>
 
                     {activeView === 'builder' ? (
-                        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-                            <ProgramCalendarGrid
-                                weeks={weeks}
-                                startDate={startDate}
-                                onSelectDate={handleSelectDate}
-                                onSessionMove={handleSessionMove}
-                                onDuplicateSession={(weekNum, dayNum) => {
-                                    const wIdx = weeks.findIndex(w => w.weekNumber === weekNum);
-                                    if (wIdx === -1) return;
-                                    const sIdx = weeks[wIdx].sessions.findIndex(s => s.day === dayNum);
-                                    if (sIdx === -1) return;
-                                    setDuplicateSource({ weekIndex: wIdx, sessionIndex: sIdx });
-                                    setDuplicateTargetDate('');
-                                }}
-                                onDuplicateSessionToNextWeek={duplicateSessionToNextWeek}
-                                onDuplicateWeekToNextWeek={duplicateWeekToNextWeek}
-                                onClearWeek={(weekNum: number) => {
-                                    const wIdx = weeks.findIndex(w => w.weekNumber === weekNum);
-                                    if (wIdx === -1) return;
-                                    if (!confirm(`Delete all sessions in Week ${weekNum}?`)) return;
-                                    const newWeeks = [...weeks];
-                                    // Clear sessions but keep weekNumber intact so other weeks
-                                    // don't shift their calendar positions.
-                                    newWeeks[wIdx] = { ...newWeeks[wIdx], sessions: [] };
-                                    setWeeks(newWeeks);
-                                    setEditingSession(null);
-                                    setActiveLocation({ w: 0, s: 0 });
-                                    showToast(`Cleared Week ${weekNum}`);
-                                }}
-                                existingPrograms={existingPrograms}
-                                onGhostSessionClick={(ghost: any) => setReferenceSession(ghost)}
-                            />
+                        <div style={{ maxWidth: calendarViewMode === 'weekly' ? '100%' : '1200px', margin: '0 auto' }}>
+                            {/* Monthly / Weekly toggle */}
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.75rem' }}>
+                                <div style={{
+                                    display: 'inline-flex', background: 'var(--card-bg)',
+                                    border: '1px solid var(--card-border)', borderRadius: '8px',
+                                    overflow: 'hidden',
+                                }}>
+                                    <button
+                                        onClick={() => setCalendarViewMode('monthly')}
+                                        style={{
+                                            background: calendarViewMode === 'monthly' ? 'var(--primary)' : 'transparent',
+                                            color: calendarViewMode === 'monthly' ? '#000' : 'var(--secondary-foreground)',
+                                            border: 'none', padding: '6px 16px', cursor: 'pointer',
+                                            fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5,
+                                            transition: 'all 0.2s',
+                                        }}
+                                    >
+                                        📅 Monthly
+                                    </button>
+                                    <button
+                                        onClick={() => setCalendarViewMode('weekly')}
+                                        style={{
+                                            background: calendarViewMode === 'weekly' ? 'var(--primary)' : 'transparent',
+                                            color: calendarViewMode === 'weekly' ? '#000' : 'var(--secondary-foreground)',
+                                            border: 'none', padding: '6px 16px', cursor: 'pointer',
+                                            fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5,
+                                            transition: 'all 0.2s',
+                                        }}
+                                    >
+                                        📊 Weekly
+                                    </button>
+                                </div>
+                            </div>
+
+                            {calendarViewMode === 'monthly' ? (
+                                <ProgramCalendarGrid
+                                    weeks={weeks}
+                                    startDate={startDate}
+                                    onSelectDate={handleSelectDate}
+                                    onSessionMove={handleSessionMove}
+                                    onDuplicateSession={(weekNum, dayNum) => {
+                                        const wIdx = weeks.findIndex(w => w.weekNumber === weekNum);
+                                        if (wIdx === -1) return;
+                                        const sIdx = weeks[wIdx].sessions.findIndex(s => s.day === dayNum);
+                                        if (sIdx === -1) return;
+                                        setDuplicateSource({ weekIndex: wIdx, sessionIndex: sIdx });
+                                        setDuplicateTargetDate('');
+                                    }}
+                                    onDuplicateSessionToNextWeek={duplicateSessionToNextWeek}
+                                    onDuplicateWeekToNextWeek={duplicateWeekToNextWeek}
+                                    onClearWeek={(weekNum: number) => {
+                                        const wIdx = weeks.findIndex(w => w.weekNumber === weekNum);
+                                        if (wIdx === -1) return;
+                                        if (!confirm(`Delete all sessions in Week ${weekNum}?`)) return;
+                                        const newWeeks = [...weeks];
+                                        // Clear sessions but keep weekNumber intact so other weeks
+                                        // don't shift their calendar positions.
+                                        newWeeks[wIdx] = { ...newWeeks[wIdx], sessions: [] };
+                                        setWeeks(newWeeks);
+                                        setEditingSession(null);
+                                        setActiveLocation({ w: 0, s: 0 });
+                                        showToast(`Cleared Week ${weekNum}`);
+                                    }}
+                                    existingPrograms={existingPrograms}
+                                    onGhostSessionClick={(ghost: any) => setReferenceSession(ghost)}
+                                />
+                            ) : (
+                                <ProgramWeeklyView
+                                    weeks={weeks}
+                                    setWeeks={setWeeks}
+                                    startDate={startDate}
+                                    initialExercises={initialExercises}
+                                    liftTargets={liftTargets}
+                                />
+                            )}
                         </div>
                     ) : (
                         <div style={{ maxWidth: '1200px', margin: '0 auto', paddingBottom: '2rem' }}>

@@ -136,6 +136,11 @@ export default function ExercisePicker({ onDragStart, onAdd, initialExercises = 
     const handleDragStartInternal = (e, name) => {
         // Find full exercise data
         const exerciseData = exerciseDB[name] || { name };
+        // Set structured payload so weekly view can identify library drags
+        const payload = JSON.stringify({ type: 'exercise-library', name: exerciseData.name, category: exerciseData.category || '' });
+        e.dataTransfer.setData('text/plain', payload);
+        e.dataTransfer.setData('application/json', payload);
+        e.dataTransfer.effectAllowed = 'copy';
         onDragStart(e, exerciseData);
     };
 
