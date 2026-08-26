@@ -323,6 +323,7 @@ export default function ProgramBuilder({
     const [selectedHistoryProgram, setSelectedHistoryProgram] = useState<any | null>(null);
     // Monthly / Weekly calendar toggle
     const [calendarViewMode, setCalendarViewMode] = useState<'monthly' | 'weekly'>('monthly');
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
     // Lift targets state (only used when building from athlete dashboard)
     const DEFAULT_LIFTS = ['Squat', 'Bench', 'Deadlift'];
@@ -1642,202 +1643,231 @@ export default function ProgramBuilder({
     };
 
     return (
-        <div className="program-builder-layout" style={{ display: 'grid', gridTemplateColumns: 'minmax(300px, 1fr) 3fr', gap: '1.5rem', height: 'calc(100vh - 100px)', paddingTop: '1.5rem', paddingLeft: (notesOpen || chatOpen || reviewOpen) && athleteId ? (reviewOpen ? 'calc(100vw - 380px)' : 360) : 0, transition: 'padding-left 0.25s ease' }}>
+        <div className="program-builder-layout" style={{
+            display: 'grid',
+            gridTemplateColumns: calendarViewMode === 'weekly'
+                ? (isSidebarOpen ? '1fr 270px' : '1fr')
+                : (isSidebarOpen ? '280px 1fr' : '1fr'),
+            gap: '1rem',
+            height: 'calc(100vh - 100px)',
+            paddingTop: '1rem',
+            paddingLeft: (notesOpen || chatOpen || reviewOpen) && athleteId ? (reviewOpen ? 'calc(100vw - 380px)' : 360) : 0,
+            transition: 'padding-left 0.25s ease'
+        }}>
 
-            {/* LEFTSIDE BAR: Exercise Picker + Stress Index */}
-            <div className="program-builder-sidebar" style={{ display: 'flex', flexDirection: 'column', gap: '0', height: '100%', overflow: 'hidden' }}>
-                <div style={{ flex: 1, overflow: 'hidden', minHeight: 0 }}>
-                    <ExercisePicker initialExercises={initialExercises} onAdd={addExerciseToActiveSession} onDragStart={() => { }} />
-                </div>
-                {/* Lift Targets Panel - only in athlete-specific program builder */}
-                {athleteId && (
-                    <div style={{
-                        overflow: 'auto',
-                        margin: '0.5rem',
-                        background: 'var(--card-bg)',
-                        border: '1px solid var(--card-border)',
-                        borderRadius: 'var(--radius)',
-                        flexShrink: 0,
-                    }}>
-                        <div
-                            onClick={() => setLiftTargetsExpanded(!liftTargetsExpanded)}
-                            style={{
+            {/* EXERCISE LIBRARY SIDEBAR */}
+            {isSidebarOpen && (
+                <div className="program-builder-sidebar" style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0',
+                    height: '100%',
+                    overflow: 'hidden',
+                    order: calendarViewMode === 'weekly' ? 2 : 1, // On the right for weekly view!
+                }}>
+                    <div style={{ flex: 1, overflow: 'hidden', minHeight: 0 }}>
+                        <ExercisePicker initialExercises={initialExercises} onAdd={addExerciseToActiveSession} onDragStart={() => { }} />
+                    </div>
+                    {/* Lift Targets Panel - only in athlete-specific program builder */}
+                    {athleteId && (
+                        <div style={{
+                            overflow: 'auto',
+                            margin: '0.5rem',
+                            background: 'var(--card-bg)',
+                            border: '1px solid var(--card-border)',
+                            borderRadius: 'var(--radius)',
+                            flexShrink: 0,
+                        }}>
+                            <div
+                                onClick={() => setLiftTargetsExpanded(!liftTargetsExpanded)}
+                                style={{
+                                    padding: '0.5rem 0.65rem',
+                                    fontSize: '0.7rem',
+                                    fontWeight: 700,
+                                    textTransform: 'uppercase',
+                                    letterSpacing: '0.08em',
+                                    color: 'var(--primary)',
+                                    borderBottom: liftTargetsExpanded ? '1px solid var(--card-border)' : 'none',
+                                    background: 'rgba(6, 182, 212, 0.05)',
+                                    borderRadius: liftTargetsExpanded ? 'var(--radius) var(--radius) 0 0' : 'var(--radius)',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    justifyContent: 'space-between',
+                                    alignItems: 'center',
+                                }}
+                            >
+                                <span>Lift Targets{athleteName ? ` — ${athleteName}` : ''}</span>
+                                <span style={{ fontSize: '0.65rem', opacity: 0.7 }}>{liftTargetsExpanded ? '▼' : '▶'}</span>
+                            </div>
+                            {liftTargetsExpanded && (
+                                <div style={{ padding: '0.5rem' }}>
+                                    <div style={{ marginBottom: '12px' }}>
+                                        <div style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>Preferred Schedule</div>
+                                        <input
+                                            type="text"
+                                            placeholder="e.g., M/W/F Evenings"
+                                            value={trainingSchedule}
+                                            onChange={e => { setTrainingSchedule(e.target.value); setTargetsSaved(false); }}
+                                            style={{
+                                                background: 'rgba(18, 18, 18, 0.6)',
+                                                border: '1px solid var(--card-border)',
+                                                borderRadius: '4px',
+                                                color: 'var(--foreground)',
+                                                fontSize: '0.75rem',
+                                                padding: '6px 8px',
+                                                width: '100%',
+                                            }}
+                                        />
+                                    </div>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 65px 20px', gap: '4px', alignItems: 'center', marginBottom: '4px' }}>
+                                        <div style={{ fontSize: '0.6rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Lift</div>
+                                        <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', textAlign: 'center', whiteSpace: 'nowrap' }}>Peak (wks)</div>
+                                        <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', textAlign: 'center' }}>Stress</div>
+                                        <div></div>
+                                    </div>
+                                    {Object.entries(liftTargets).map(([lift, targets]) => (
+                                        <div key={lift} style={{ display: 'grid', gridTemplateColumns: '1fr 80px 65px 20px', gap: '4px', alignItems: 'center', marginBottom: '3px' }}>
+                                            <div style={{
+                                                fontSize: '0.75rem',
+                                                fontWeight: 600,
+                                                color: 'var(--foreground)',
+                                                padding: '4px 6px',
+                                                background: 'rgba(255,255,255,0.03)',
+                                                borderRadius: '4px',
+                                                whiteSpace: 'nowrap',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                            }}>{lift}</div>
+                                            <input
+                                                type="number"
+                                                min="1"
+                                                max="52"
+                                                placeholder="—"
+                                                value={targets.timeToPeak}
+                                                onChange={e => updateLiftTarget(lift, 'timeToPeak', e.target.value)}
+                                                style={{
+                                                    background: 'rgba(18, 18, 18, 0.6)',
+                                                    border: '1px solid var(--card-border)',
+                                                    borderRadius: '4px',
+                                                    color: 'var(--foreground)',
+                                                    fontSize: '0.75rem',
+                                                    padding: '4px 6px',
+                                                    textAlign: 'center',
+                                                    width: '100%',
+                                                }}
+                                            />
+                                            <input
+                                                type="number"
+                                                min="0"
+                                                step="0.1"
+                                                placeholder="—"
+                                                value={targets.stressTarget}
+                                                onChange={e => updateLiftTarget(lift, 'stressTarget', e.target.value)}
+                                                style={{
+                                                    background: 'rgba(18, 18, 18, 0.6)',
+                                                    border: '1px solid var(--card-border)',
+                                                    borderRadius: '4px',
+                                                    color: 'var(--foreground)',
+                                                    fontSize: '0.75rem',
+                                                    padding: '4px 6px',
+                                                    textAlign: 'center',
+                                                    width: '100%',
+                                                }}
+                                            />
+                                            <button
+                                                onClick={() => removeCustomLift(lift)}
+                                                style={{
+                                                    background: 'none',
+                                                    border: 'none',
+                                                    color: DEFAULT_LIFTS.includes(lift) ? 'transparent' : 'var(--secondary-foreground)',
+                                                    cursor: DEFAULT_LIFTS.includes(lift) ? 'default' : 'pointer',
+                                                    fontSize: '0.7rem',
+                                                    padding: 0,
+                                                    pointerEvents: DEFAULT_LIFTS.includes(lift) ? 'none' : 'auto',
+                                                }}
+                                            >
+                                                ×
+                                            </button>
+                                        </div>
+                                    ))}
+                                    <div style={{ display: 'flex', gap: '4px', marginTop: '6px' }}>
+                                        <button
+                                            onClick={addCustomLift}
+                                            style={{
+                                                flex: 1,
+                                                background: 'rgba(255,255,255,0.05)',
+                                                border: '1px dashed var(--card-border)',
+                                                borderRadius: '4px',
+                                                color: 'var(--secondary-foreground)',
+                                                cursor: 'pointer',
+                                                fontSize: '0.65rem',
+                                                padding: '4px 8px',
+                                                fontWeight: 600,
+                                            }}
+                                        >
+                                            + Add Lift
+                                        </button>
+                                        <button
+                                            onClick={saveLiftTargets}
+                                            disabled={savingTargets}
+                                            style={{
+                                                flex: 1,
+                                                background: targetsSaved ? 'rgba(34, 197, 94, 0.2)' : 'rgba(6, 182, 212, 0.15)',
+                                                border: `1px solid ${targetsSaved ? 'rgba(34, 197, 94, 0.4)' : 'rgba(6, 182, 212, 0.3)'}`,
+                                                borderRadius: '4px',
+                                                color: targetsSaved ? '#22c55e' : 'var(--primary)',
+                                                cursor: 'pointer',
+                                                fontSize: '0.65rem',
+                                                padding: '4px 8px',
+                                                fontWeight: 600,
+                                            }}
+                                        >
+                                            {savingTargets ? 'Saving...' : targetsSaved ? 'Saved!' : 'Save Targets'}
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Stress Index widget in sidebar - only show in monthly view since weekly view has stress table at top */}
+                    {calendarViewMode !== 'weekly' && (
+                        <div style={{
+                            maxHeight: athleteId ? '35%' : '45%',
+                            overflow: 'auto',
+                            margin: '0.5rem',
+                            background: 'var(--card-bg)',
+                            border: '1px solid var(--card-border)',
+                            borderRadius: 'var(--radius)',
+                        }}>
+                            <div style={{
                                 padding: '0.5rem 0.65rem',
                                 fontSize: '0.7rem',
                                 fontWeight: 700,
                                 textTransform: 'uppercase',
                                 letterSpacing: '0.08em',
-                                color: 'var(--primary)',
-                                borderBottom: liftTargetsExpanded ? '1px solid var(--card-border)' : 'none',
-                                background: 'rgba(6, 182, 212, 0.05)',
-                                borderRadius: liftTargetsExpanded ? 'var(--radius) var(--radius) 0 0' : 'var(--radius)',
-                                cursor: 'pointer',
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                            }}
-                        >
-                            <span>Lift Targets{athleteName ? ` — ${athleteName}` : ''}</span>
-                            <span style={{ fontSize: '0.65rem', opacity: 0.7 }}>{liftTargetsExpanded ? '▼' : '▶'}</span>
-                        </div>
-                        {liftTargetsExpanded && (
-                            <div style={{ padding: '0.5rem' }}>
-                                <div style={{ marginBottom: '12px' }}>
-                                    <div style={{ fontSize: '0.65rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '4px' }}>Preferred Schedule</div>
-                                    <input
-                                        type="text"
-                                        placeholder="e.g., M/W/F Evenings"
-                                        value={trainingSchedule}
-                                        onChange={e => { setTrainingSchedule(e.target.value); setTargetsSaved(false); }}
-                                        style={{
-                                            background: 'rgba(18, 18, 18, 0.6)',
-                                            border: '1px solid var(--card-border)',
-                                            borderRadius: '4px',
-                                            color: 'var(--foreground)',
-                                            fontSize: '0.75rem',
-                                            padding: '6px 8px',
-                                            width: '100%',
-                                        }}
-                                    />
-                                </div>
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 80px 65px 20px', gap: '4px', alignItems: 'center', marginBottom: '4px' }}>
-                                    <div style={{ fontSize: '0.6rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Lift</div>
-                                    <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', textAlign: 'center', whiteSpace: 'nowrap' }}>Peak (wks)</div>
-                                    <div style={{ fontSize: '0.6rem', fontWeight: 700, color: 'var(--primary)', textTransform: 'uppercase', textAlign: 'center' }}>Stress</div>
-                                    <div></div>
-                                </div>
-                                {Object.entries(liftTargets).map(([lift, targets]) => (
-                                    <div key={lift} style={{ display: 'grid', gridTemplateColumns: '1fr 80px 65px 20px', gap: '4px', alignItems: 'center', marginBottom: '3px' }}>
-                                        <div style={{
-                                            fontSize: '0.75rem',
-                                            fontWeight: 600,
-                                            color: 'var(--foreground)',
-                                            padding: '4px 6px',
-                                            background: 'rgba(255,255,255,0.03)',
-                                            borderRadius: '4px',
-                                            whiteSpace: 'nowrap',
-                                            overflow: 'hidden',
-                                            textOverflow: 'ellipsis',
-                                        }}>{lift}</div>
-                                        <input
-                                            type="number"
-                                            min="1"
-                                            max="52"
-                                            placeholder="—"
-                                            value={targets.timeToPeak}
-                                            onChange={e => updateLiftTarget(lift, 'timeToPeak', e.target.value)}
-                                            style={{
-                                                background: 'rgba(18, 18, 18, 0.6)',
-                                                border: '1px solid var(--card-border)',
-                                                borderRadius: '4px',
-                                                color: 'var(--foreground)',
-                                                fontSize: '0.75rem',
-                                                padding: '4px 6px',
-                                                textAlign: 'center',
-                                                width: '100%',
-                                            }}
-                                        />
-                                        <input
-                                            type="number"
-                                            min="0"
-                                            step="0.1"
-                                            placeholder="—"
-                                            value={targets.stressTarget}
-                                            onChange={e => updateLiftTarget(lift, 'stressTarget', e.target.value)}
-                                            style={{
-                                                background: 'rgba(18, 18, 18, 0.6)',
-                                                border: '1px solid var(--card-border)',
-                                                borderRadius: '4px',
-                                                color: 'var(--foreground)',
-                                                fontSize: '0.75rem',
-                                                padding: '4px 6px',
-                                                textAlign: 'center',
-                                                width: '100%',
-                                            }}
-                                        />
-                                        <button
-                                            onClick={() => removeCustomLift(lift)}
-                                            style={{
-                                                background: 'none',
-                                                border: 'none',
-                                                color: DEFAULT_LIFTS.includes(lift) ? 'transparent' : 'var(--secondary-foreground)',
-                                                cursor: DEFAULT_LIFTS.includes(lift) ? 'default' : 'pointer',
-                                                fontSize: '0.7rem',
-                                                padding: 0,
-                                                pointerEvents: DEFAULT_LIFTS.includes(lift) ? 'none' : 'auto',
-                                            }}
-                                        >
-                                            ×
-                                        </button>
-                                    </div>
-                                ))}
-                                <div style={{ display: 'flex', gap: '4px', marginTop: '6px' }}>
-                                    <button
-                                        onClick={addCustomLift}
-                                        style={{
-                                            flex: 1,
-                                            background: 'rgba(255,255,255,0.05)',
-                                            border: '1px dashed var(--card-border)',
-                                            borderRadius: '4px',
-                                            color: 'var(--secondary-foreground)',
-                                            cursor: 'pointer',
-                                            fontSize: '0.65rem',
-                                            padding: '4px 8px',
-                                            fontWeight: 600,
-                                        }}
-                                    >
-                                        + Add Lift
-                                    </button>
-                                    <button
-                                        onClick={saveLiftTargets}
-                                        disabled={savingTargets}
-                                        style={{
-                                            flex: 1,
-                                            background: targetsSaved ? 'rgba(34, 197, 94, 0.2)' : 'rgba(6, 182, 212, 0.15)',
-                                            border: `1px solid ${targetsSaved ? 'rgba(34, 197, 94, 0.4)' : 'rgba(6, 182, 212, 0.3)'}`,
-                                            borderRadius: '4px',
-                                            color: targetsSaved ? '#22c55e' : 'var(--primary)',
-                                            cursor: 'pointer',
-                                            fontSize: '0.65rem',
-                                            padding: '4px 8px',
-                                            fontWeight: 600,
-                                        }}
-                                    >
-                                        {savingTargets ? 'Saving...' : targetsSaved ? 'Saved!' : 'Save Targets'}
-                                    </button>
-                                </div>
+                                color: 'var(--accent)',
+                                borderBottom: '1px solid var(--card-border)',
+                                background: 'rgba(255,255,255,0.03)',
+                                borderRadius: 'var(--radius) var(--radius) 0 0',
+                            }}>
+                                Stress Index
                             </div>
-                        )}
-                    </div>
-                )}
-
-                <div style={{
-                    maxHeight: athleteId ? '35%' : '45%',
-                    overflow: 'auto',
-                    margin: '0.5rem',
-                    background: 'var(--card-bg)',
-                    border: '1px solid var(--card-border)',
-                    borderRadius: 'var(--radius)',
-                }}>
-                    <div style={{
-                        padding: '0.5rem 0.65rem',
-                        fontSize: '0.7rem',
-                        fontWeight: 700,
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.08em',
-                        color: 'var(--accent)',
-                        borderBottom: '1px solid var(--card-border)',
-                        background: 'rgba(255,255,255,0.03)',
-                        borderRadius: 'var(--radius) var(--radius) 0 0',
-                    }}>
-                        Stress Index
-                    </div>
-                    <StressMatrix weeks={weeks} startDate={startDate} liftTargets={liftTargets} exerciseDB={initialExercises} />
+                            <StressMatrix weeks={weeks} startDate={startDate} liftTargets={liftTargets} exerciseDB={initialExercises} />
+                        </div>
+                    )}
                 </div>
-            </div>
+            )}
 
             {/* MAIN CONTENT AREA */}
-            <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+            <div style={{
+                height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
+                order: calendarViewMode === 'weekly' ? 1 : 2, // Takes main area on left in weekly view!
+                minWidth: 0,
+            }}>
 
                 {/* Header (Program Info + View Toggle + Actions) */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexShrink: 0 }}>
@@ -1995,8 +2025,30 @@ export default function ProgramBuilder({
 
                     {activeView === 'builder' ? (
                         <div style={{ maxWidth: calendarViewMode === 'weekly' ? '100%' : '1200px', margin: '0 auto' }}>
-                            {/* Monthly / Weekly toggle */}
-                            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.75rem' }}>
+                            {/* Monthly / Weekly toggle + Library Toggle */}
+                            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                                <button
+                                    onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                                    style={{
+                                        background: isSidebarOpen ? 'rgba(6, 182, 212, 0.15)' : 'var(--card-bg)',
+                                        color: isSidebarOpen ? 'var(--primary)' : 'var(--secondary-foreground)',
+                                        border: '1px solid var(--card-border)',
+                                        borderRadius: '8px',
+                                        padding: '6px 14px',
+                                        cursor: 'pointer',
+                                        fontSize: '0.8rem',
+                                        fontWeight: 600,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        transition: 'all 0.2s',
+                                    }}
+                                    title={isSidebarOpen ? 'Hide Exercise Library' : 'Show Exercise Library'}
+                                >
+                                    <span>📚 Library</span>
+                                    <span style={{ fontSize: '0.7rem' }}>{isSidebarOpen ? '✕' : '＋'}</span>
+                                </button>
+
                                 <div style={{
                                     display: 'inline-flex', background: 'var(--card-bg)',
                                     border: '1px solid var(--card-border)', borderRadius: '8px',

@@ -80,8 +80,7 @@ export default function ProgramWeeklyView({
 
     const maxWeekNum = useMemo(() => weeks.reduce((m, w) => Math.max(m, w.weekNumber || 0), 0), [weeks]);
 
-    // Build sessions by day (1=Mon, 2=Tue, ... 7=Sun in the new Monday-start data model)
-    // Display columns: Mon(1), Tue(2), Wed(3), Thu(4), Fri(5), Sat(6), Sun(7)
+    // Build sessions by day (1=Mon, 2=Tue, ... 7=Sun in the Monday-start data model)
     const DISPLAY_ORDER = [1, 2, 3, 4, 5, 6, 7]; // dayNum values in Mon-Sun order
     const DISPLAY_DAY_NAMES = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
 
@@ -178,31 +177,6 @@ export default function ProgramWeeklyView({
         });
     };
 
-    const ensureSessionForDay = (dayNum: number): { weekIdx: number; sessionIdx: number } => {
-        const wIdx = weeks.findIndex(w => w.weekNumber === currentWeekNum);
-        if (wIdx === -1) return { weekIdx: -1, sessionIdx: -1 };
-        const sIdx = weeks[wIdx].sessions.findIndex((s: any) => s.day === dayNum);
-        if (sIdx !== -1) return { weekIdx: wIdx, sessionIdx: sIdx };
-
-        // Create session for this day
-        const totalSessions = weeks.reduce((sum, w) => sum + w.sessions.length, 0);
-        const dayName = DAY_NAMES[dayNum - 1] || `Day ${dayNum}`;
-        setWeeks((prev: any[]) => prev.map((w, wi) =>
-            wi !== wIdx ? w : {
-                ...w,
-                sessions: [...w.sessions, {
-                    id: generateId(),
-                    day: dayNum,
-                    name: `Session ${totalSessions + 1}`,
-                    exercises: [],
-                    scheduledDate: '',
-                }],
-            }
-        ));
-        // Return the index after the upcoming render (we'll use the callback pattern)
-        return { weekIdx: wIdx, sessionIdx: weeks[wIdx].sessions.length };
-    };
-
     const addExerciseToDay = useCallback((dayNum: number, exerciseOrName: any) => {
         const exerciseName = typeof exerciseOrName === 'string' ? exerciseOrName : exerciseOrName.name;
         const exerciseCategory = (typeof exerciseOrName === 'object' && exerciseOrName.category)
@@ -268,24 +242,6 @@ export default function ProgramWeeklyView({
                 };
             });
         });
-    }, [currentWeekNum, setWeeks]);
-
-    const updateExerciseField = useCallback((dayNum: number, exerciseIdx: number, field: string, value: any) => {
-        setWeeks((prev: any[]) => prev.map(w => {
-            if (w.weekNumber !== currentWeekNum) return w;
-            return {
-                ...w,
-                sessions: w.sessions.map((s: any) => {
-                    if (s.day !== dayNum) return s;
-                    return {
-                        ...s,
-                        exercises: s.exercises.map((ex: any, ei: number) =>
-                            ei !== exerciseIdx ? ex : { ...ex, [field]: value }
-                        ),
-                    };
-                }),
-            };
-        }));
     }, [currentWeekNum, setWeeks]);
 
     const updateSet = useCallback((dayNum: number, exerciseIdx: number, setIdx: number, field: string, value: string) => {
@@ -564,37 +520,37 @@ export default function ProgramWeeklyView({
     };
 
     return (
-        <div style={{ width: '100%' }}>
+        <div style={{ width: '100%', overflowX: 'auto' }}>
             {/* ── Week Navigation Bar ── */}
             <div style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                marginBottom: '1rem', padding: '0.5rem 0',
+                marginBottom: '1rem', padding: '0.25rem 0', gap: '1rem', flexWrap: 'wrap',
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <button onClick={prevWeek} disabled={currentWeekNum <= 1} style={{
                         background: 'var(--card-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)',
-                        borderRadius: '6px', padding: '6px 10px', cursor: currentWeekNum <= 1 ? 'not-allowed' : 'pointer',
+                        borderRadius: '6px', padding: '6px 12px', cursor: currentWeekNum <= 1 ? 'not-allowed' : 'pointer',
                         opacity: currentWeekNum <= 1 ? 0.4 : 1, display: 'flex', alignItems: 'center',
                     }}>
                         <ChevronLeft size={16} />
                     </button>
                     <div>
-                        <span style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--foreground)' }}>
+                        <span style={{ fontWeight: 800, fontSize: '1.2rem', color: 'var(--foreground)' }}>
                             Week {currentWeekNum}
                         </span>
-                        <span style={{ marginLeft: '0.5rem', fontSize: '0.8rem', color: 'var(--secondary-foreground)' }}>
+                        <span style={{ marginLeft: '0.6rem', fontSize: '0.85rem', color: 'var(--secondary-foreground)', fontWeight: 500 }}>
                             ({weekDateRange})
                         </span>
                     </div>
                     <button onClick={nextWeek} style={{
                         background: 'var(--card-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)',
-                        borderRadius: '6px', padding: '6px 10px', cursor: 'pointer', display: 'flex', alignItems: 'center',
+                        borderRadius: '6px', padding: '6px 12px', cursor: 'pointer', display: 'flex', alignItems: 'center',
                     }}>
                         <ChevronRight size={16} />
                     </button>
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
                     {/* Quick week tabs */}
                     {weeks.filter(w => w.sessions && w.sessions.length > 0).slice(0, 8).map(w => (
                         <button
@@ -604,8 +560,9 @@ export default function ProgramWeeklyView({
                                 background: w.weekNumber === currentWeekNum ? 'var(--primary)' : 'var(--card-bg)',
                                 color: w.weekNumber === currentWeekNum ? '#000' : 'var(--secondary-foreground)',
                                 border: '1px solid var(--card-border)',
-                                borderRadius: '4px', padding: '4px 10px', cursor: 'pointer',
-                                fontSize: '0.75rem', fontWeight: 600,
+                                borderRadius: '6px', padding: '5px 12px', cursor: 'pointer',
+                                fontSize: '0.8rem', fontWeight: 700,
+                                transition: 'all 0.15s',
                             }}
                         >
                             W{w.weekNumber}
@@ -613,8 +570,8 @@ export default function ProgramWeeklyView({
                     ))}
                     <button onClick={addWeek} style={{
                         background: 'transparent', border: '1px dashed var(--card-border)',
-                        color: 'var(--primary)', borderRadius: '4px', padding: '4px 10px',
-                        cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600,
+                        color: 'var(--primary)', borderRadius: '6px', padding: '5px 12px',
+                        cursor: 'pointer', fontSize: '0.8rem', fontWeight: 700,
                     }}>
                         +
                     </button>
@@ -623,10 +580,10 @@ export default function ProgramWeeklyView({
                 <div style={{ display: 'flex', gap: '0.5rem' }}>
                     <button onClick={duplicateWeekToNext} title="Duplicate this week to next" style={{
                         background: 'var(--card-bg)', border: '1px solid var(--card-border)',
-                        color: 'var(--secondary-foreground)', borderRadius: '6px', padding: '6px 12px',
-                        cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4,
+                        color: 'var(--secondary-foreground)', borderRadius: '6px', padding: '6px 14px',
+                        cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6,
                     }}>
-                        <CopyPlus size={14} /> Duplicate Week
+                        <CopyPlus size={15} /> Duplicate Week
                     </button>
                 </div>
             </div>
@@ -634,28 +591,29 @@ export default function ProgramWeeklyView({
             {/* ── Stress Metrics Table ── */}
             <div style={{
                 background: 'var(--card-bg)', border: '1px solid var(--card-border)',
-                borderRadius: 'var(--radius)', marginBottom: '1rem', overflow: 'hidden',
+                borderRadius: 'var(--radius)', marginBottom: '1.25rem', overflow: 'hidden',
+                boxShadow: '0 2px 10px rgba(0,0,0,0.2)',
             }}>
                 <div style={{
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                    padding: '0.5rem 0.75rem', borderBottom: '1px solid var(--card-border)',
+                    padding: '0.6rem 1rem', borderBottom: '1px solid var(--card-border)',
                     background: 'rgba(255,255,255,0.02)',
                 }}>
-                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--foreground)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 800, color: 'var(--foreground)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                         Stress Metrics
                     </span>
-                    <span style={{ fontSize: '0.7rem', color: 'var(--secondary-foreground)' }}>
-                        Calculate for: Entire week
+                    <span style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)' }}>
+                        Calculate for: <strong style={{ color: 'var(--foreground)' }}>Entire week</strong>
                     </span>
                 </div>
                 <div style={{ overflowX: 'auto' }}>
-                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.75rem' }}>
+                    <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
                         <thead>
                             <tr style={{ borderBottom: '1px solid var(--card-border)' }}>
-                                <th style={{ textAlign: 'left', padding: '6px 10px', color: 'var(--secondary-foreground)', fontWeight: 600 }}>Metric</th>
-                                <th style={{ textAlign: 'center', padding: '6px 10px', color: 'var(--foreground)', fontWeight: 700 }}>Total</th>
+                                <th style={{ textAlign: 'left', padding: '8px 14px', color: 'var(--secondary-foreground)', fontWeight: 600 }}>Metric</th>
+                                <th style={{ textAlign: 'center', padding: '8px 14px', color: 'var(--foreground)', fontWeight: 800 }}>Total</th>
                                 {METRIC_CATS.map(c => (
-                                    <th key={c} style={{ textAlign: 'center', padding: '6px 10px', color: 'var(--secondary-foreground)', fontWeight: 600 }}>
+                                    <th key={c} style={{ textAlign: 'center', padding: '8px 14px', color: 'var(--secondary-foreground)', fontWeight: 600 }}>
                                         {METRIC_SHORT[c]}
                                     </th>
                                 ))}
@@ -663,59 +621,59 @@ export default function ProgramWeeklyView({
                         </thead>
                         <tbody>
                             <tr>
-                                <td style={{ padding: '4px 10px', fontWeight: 700, color: 'var(--foreground)' }}>Total</td>
-                                <td style={{ textAlign: 'center', padding: '4px 10px', fontWeight: 700, color: 'var(--primary)' }}>
+                                <td style={{ padding: '6px 14px', fontWeight: 800, color: 'var(--foreground)' }}>Total</td>
+                                <td style={{ textAlign: 'center', padding: '6px 14px', fontWeight: 800, color: 'var(--primary)', fontSize: '0.85rem' }}>
                                     {stressMetrics.grandTotal.toFixed(1)}
                                 </td>
                                 {METRIC_CATS.map(c => (
-                                    <td key={c} style={{ textAlign: 'center', padding: '4px 10px', color: 'var(--foreground)' }}>
+                                    <td key={c} style={{ textAlign: 'center', padding: '6px 14px', color: 'var(--foreground)', fontWeight: 600 }}>
                                         {stressMetrics.stats[c]?.total.toFixed(1) || '0.0'}
                                     </td>
                                 ))}
                             </tr>
                             <tr>
-                                <td style={{ padding: '4px 10px', color: 'var(--secondary-foreground)' }}>Peripheral</td>
-                                <td style={{ textAlign: 'center', padding: '4px 10px', color: 'var(--secondary-foreground)' }}>
+                                <td style={{ padding: '5px 14px', color: 'var(--secondary-foreground)' }}>Peripheral</td>
+                                <td style={{ textAlign: 'center', padding: '5px 14px', color: 'var(--secondary-foreground)' }}>
                                     {stressMetrics.grandPeripheral.toFixed(1)}
                                 </td>
                                 {METRIC_CATS.map(c => (
-                                    <td key={c} style={{ textAlign: 'center', padding: '4px 10px', color: 'var(--secondary-foreground)' }}>
+                                    <td key={c} style={{ textAlign: 'center', padding: '5px 14px', color: 'var(--secondary-foreground)' }}>
                                         {stressMetrics.stats[c]?.peripheral.toFixed(1) || '0.0'}
                                     </td>
                                 ))}
                             </tr>
                             <tr>
-                                <td style={{ padding: '4px 10px', color: 'var(--secondary-foreground)' }}>Central</td>
-                                <td style={{ textAlign: 'center', padding: '4px 10px', color: 'var(--secondary-foreground)' }}>
+                                <td style={{ padding: '5px 14px', color: 'var(--secondary-foreground)' }}>Central</td>
+                                <td style={{ textAlign: 'center', padding: '5px 14px', color: 'var(--secondary-foreground)' }}>
                                     {stressMetrics.grandCentral.toFixed(1)}
                                 </td>
                                 {METRIC_CATS.map(c => (
-                                    <td key={c} style={{ textAlign: 'center', padding: '4px 10px', color: 'var(--secondary-foreground)' }}>
+                                    <td key={c} style={{ textAlign: 'center', padding: '5px 14px', color: 'var(--secondary-foreground)' }}>
                                         {stressMetrics.stats[c]?.central.toFixed(1) || '0.0'}
                                     </td>
                                 ))}
                             </tr>
                             <tr>
-                                <td style={{ padding: '4px 10px', color: 'var(--secondary-foreground)' }}>CS Balance</td>
-                                <td style={{ textAlign: 'center', padding: '4px 10px', color: 'var(--secondary-foreground)' }}>
+                                <td style={{ padding: '5px 14px', color: 'var(--secondary-foreground)' }}>CS Balance</td>
+                                <td style={{ textAlign: 'center', padding: '5px 14px', color: 'var(--secondary-foreground)' }}>
                                     {stressMetrics.grandTotal > 0 ? `${Math.round((stressMetrics.grandCentral / stressMetrics.grandTotal) * 100)}%` : '—'}
                                 </td>
                                 {METRIC_CATS.map(c => {
                                     const s = stressMetrics.stats[c];
                                     return (
-                                        <td key={c} style={{ textAlign: 'center', padding: '4px 10px', color: 'var(--secondary-foreground)' }}>
+                                        <td key={c} style={{ textAlign: 'center', padding: '5px 14px', color: 'var(--secondary-foreground)' }}>
                                             {s && s.total > 0 ? `${Math.round((s.central / s.total) * 100)}%` : '—'}
                                         </td>
                                     );
                                 })}
                             </tr>
                             <tr style={{ borderTop: '1px solid var(--card-border)' }}>
-                                <td style={{ padding: '4px 10px', color: 'var(--secondary-foreground)' }}>Reps</td>
-                                <td style={{ textAlign: 'center', padding: '4px 10px', color: 'var(--secondary-foreground)' }}>
+                                <td style={{ padding: '6px 14px', color: 'var(--secondary-foreground)' }}>Reps</td>
+                                <td style={{ textAlign: 'center', padding: '6px 14px', color: 'var(--secondary-foreground)', fontWeight: 600 }}>
                                     {Math.round(stressMetrics.grandReps)}
                                 </td>
                                 {METRIC_CATS.map(c => (
-                                    <td key={c} style={{ textAlign: 'center', padding: '4px 10px', color: 'var(--secondary-foreground)' }}>
+                                    <td key={c} style={{ textAlign: 'center', padding: '6px 14px', color: 'var(--secondary-foreground)' }}>
                                         {Math.round(stressMetrics.stats[c]?.reps || 0)}
                                     </td>
                                 ))}
@@ -726,11 +684,13 @@ export default function ProgramWeeklyView({
             </div>
 
             {/* ── 7-Day Column Grid ── */}
+            {/* Using minmax(180px, 1fr) so each day has generous breathing room and numbers are crystal clear */}
             <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(7, 1fr)',
-                gap: '6px',
-                minHeight: '60vh',
+                gridTemplateColumns: 'repeat(7, minmax(180px, 1fr))',
+                gap: '10px',
+                minHeight: '65vh',
+                paddingBottom: '2rem',
             }}>
                 {DISPLAY_ORDER.map((dayNum, colIdx) => {
                     const session = sessionsByDay[dayNum];
@@ -746,30 +706,31 @@ export default function ProgramWeeklyView({
                             onDrop={(e) => handleDayDrop(e, dayNum)}
                             onDragLeave={() => { if (dropTargetDay === dayNum) { setDropTargetDay(null); setDropTargetExIdx(null); } }}
                             style={{
-                                background: isDragOverThis ? 'rgba(6,182,212,0.08)' : 'var(--card-bg)',
+                                background: isDragOverThis ? 'rgba(6,182,212,0.12)' : 'var(--card-bg)',
                                 border: isDragOverThis ? '2px solid var(--primary)' : '1px solid var(--card-border)',
-                                borderRadius: 'var(--radius)',
+                                borderRadius: '10px',
                                 display: 'flex', flexDirection: 'column',
                                 overflow: 'hidden',
                                 transition: 'border 0.15s, background 0.15s',
-                                minHeight: '300px',
+                                minHeight: '350px',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
                             }}
                         >
                             {/* Day Column Header */}
                             <div style={{
-                                padding: '8px 10px',
+                                padding: '10px 12px',
                                 borderBottom: '1px solid var(--card-border)',
                                 background: 'rgba(255,255,255,0.03)',
                                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                             }}>
                                 <div>
                                     <div style={{
-                                        fontSize: '0.7rem', fontWeight: 800, letterSpacing: '0.08em',
-                                        color: (dayNum === 7 || dayNum === 1) ? 'var(--secondary-foreground)' : 'var(--primary)',
+                                        fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.06em',
+                                        color: (dayNum === 6 || dayNum === 7) ? 'var(--secondary-foreground)' : 'var(--primary)',
                                     }}>
                                         {dayLabel}
                                     </div>
-                                    <div style={{ fontSize: '0.65rem', color: 'var(--secondary-foreground)', marginTop: 1 }}>
+                                    <div style={{ fontSize: '0.7rem', color: 'var(--secondary-foreground)', marginTop: 2, fontWeight: 500 }}>
                                         {dateLabel}
                                     </div>
                                 </div>
@@ -781,10 +742,10 @@ export default function ProgramWeeklyView({
                                             style={{
                                                 background: 'transparent', border: 'none',
                                                 color: 'var(--secondary-foreground)', cursor: 'pointer',
-                                                padding: '2px', fontSize: '0.7rem', opacity: 0.6,
+                                                padding: '4px', fontSize: '0.7rem', opacity: 0.6,
                                             }}
                                         >
-                                            <Trash2 size={12} />
+                                            <Trash2 size={14} />
                                         </button>
                                     )}
                                 </div>
@@ -792,45 +753,55 @@ export default function ProgramWeeklyView({
 
                             {/* Session Name (editable) */}
                             {session && (
-                                <div style={{ padding: '4px 10px', borderBottom: '1px solid rgba(255,255,255,0.04)' }}>
+                                <div style={{ padding: '6px 12px', borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(0,0,0,0.1)' }}>
                                     <input
                                         value={session.name}
                                         onChange={e => updateSessionName(dayNum, e.target.value)}
+                                        placeholder="Session Name"
                                         style={{
                                             background: 'transparent', border: 'none', color: 'var(--foreground)',
-                                            fontWeight: 600, fontSize: '0.8rem', width: '100%', outline: 'none',
+                                            fontWeight: 700, fontSize: '0.85rem', width: '100%', outline: 'none',
                                             padding: '2px 0',
                                         }}
                                     />
                                 </div>
                             )}
 
-                            {/* + Add exercise */}
-                            <div style={{ padding: '4px 8px' }}>
+                            {/* + Add exercise button */}
+                            <div style={{ padding: '6px 8px' }}>
                                 <button
                                     onClick={() => addExerciseToDay(dayNum, { name: 'New Exercise', category: 'Isolation/Accessory' })}
                                     style={{
-                                        width: '100%', background: 'transparent', border: '1px dashed rgba(255,255,255,0.15)',
-                                        color: 'var(--secondary-foreground)', borderRadius: '4px', padding: '6px',
-                                        cursor: 'pointer', fontSize: '0.7rem', fontWeight: 600,
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+                                        width: '100%', background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.2)',
+                                        color: 'var(--secondary-foreground)', borderRadius: '6px', padding: '8px',
+                                        cursor: 'pointer', fontSize: '0.78rem', fontWeight: 600,
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                                        transition: 'all 0.15s',
+                                    }}
+                                    onMouseOver={e => {
+                                        e.currentTarget.style.borderColor = 'var(--primary)';
+                                        e.currentTarget.style.color = 'var(--primary)';
+                                    }}
+                                    onMouseOut={e => {
+                                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.2)';
+                                        e.currentTarget.style.color = 'var(--secondary-foreground)';
                                     }}
                                 >
-                                    <Plus size={12} /> Add exercise
+                                    <Plus size={14} /> Add exercise
                                 </button>
                             </div>
 
                             {/* Exercise Cards */}
-                            <div style={{ flex: 1, overflowY: 'auto', padding: '4px 6px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <div style={{ flex: 1, overflowY: 'auto', padding: '4px 8px', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                                 {exercises.length === 0 && (
                                     <div
                                         onDragOver={(e) => handleDayDragOver(e, dayNum)}
                                         onDrop={(e) => handleDayDrop(e, dayNum)}
                                         style={{
                                             flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                            color: 'rgba(255,255,255,0.2)', fontSize: '0.7rem',
-                                            border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '6px',
-                                            minHeight: '80px', margin: '4px 0',
+                                            color: 'rgba(255,255,255,0.25)', fontSize: '0.72rem', textAlign: 'center',
+                                            border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '8px',
+                                            minHeight: '100px', margin: '4px 0', padding: '12px',
                                         }}
                                     >
                                         Drop an exercise here or add a new one.
@@ -851,27 +822,33 @@ export default function ProgramWeeklyView({
                                             onDragOver={(e) => handleDayDragOver(e, dayNum, exIdx)}
                                             onDrop={(e) => handleDayDrop(e, dayNum, exIdx)}
                                             style={{
-                                                borderRadius: '6px',
+                                                borderRadius: '8px',
                                                 overflow: 'hidden',
-                                                border: isDragOverExercise ? '2px solid var(--primary)' : '1px solid rgba(255,255,255,0.08)',
-                                                background: 'rgba(0,0,0,0.2)',
-                                                transition: 'border 0.1s',
+                                                border: isDragOverExercise ? '2px solid var(--primary)' : '1px solid rgba(255,255,255,0.1)',
+                                                background: 'rgba(20, 20, 26, 0.95)',
+                                                boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
+                                                transition: 'border 0.1s, transform 0.1s',
                                             }}
                                         >
-                                            {/* Exercise Name Banner */}
+                                            {/* Exercise Name Banner - Full text with word wrap (NO CUTOFF!) */}
                                             <div style={{
                                                 background: catColor,
-                                                padding: '5px 8px',
-                                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                                cursor: 'grab',
+                                                padding: '8px 10px',
+                                                display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+                                                cursor: 'grab', gap: '6px',
                                             }}>
-                                                <span style={{
-                                                    fontWeight: 700, fontSize: '0.7rem', color: '#fff',
-                                                    textShadow: '0 1px 2px rgba(0,0,0,0.3)',
-                                                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                                                <div style={{
+                                                    fontWeight: 700,
+                                                    fontSize: '0.82rem',
+                                                    color: '#ffffff',
+                                                    textShadow: '0 1px 2px rgba(0,0,0,0.4)',
+                                                    lineHeight: 1.25,
+                                                    wordBreak: 'break-word',
+                                                    whiteSpace: 'normal',
+                                                    flex: 1,
                                                 }}>
                                                     {ex.name}
-                                                </span>
+                                                </div>
                                                 <button
                                                     onClick={(e) => {
                                                         e.stopPropagation();
@@ -879,12 +856,12 @@ export default function ProgramWeeklyView({
                                                             ? null : { exerciseIdx: exIdx, dayNum, x: e.clientX, y: e.clientY });
                                                     }}
                                                     style={{
-                                                        background: 'rgba(0,0,0,0.2)', border: 'none', color: '#fff',
-                                                        cursor: 'pointer', padding: '2px 4px', borderRadius: '3px',
-                                                        display: 'flex', alignItems: 'center',
+                                                        background: 'rgba(0,0,0,0.25)', border: 'none', color: '#fff',
+                                                        cursor: 'pointer', padding: '3px 5px', borderRadius: '4px',
+                                                        display: 'flex', alignItems: 'center', flexShrink: 0,
                                                     }}
                                                 >
-                                                    <MoreHorizontal size={12} />
+                                                    <MoreHorizontal size={13} />
                                                 </button>
                                             </div>
 
@@ -892,67 +869,87 @@ export default function ProgramWeeklyView({
                                             {contextMenu && contextMenu.exerciseIdx === exIdx && contextMenu.dayNum === dayNum && (
                                                 <div style={{
                                                     background: 'var(--card-bg)', border: '1px solid var(--card-border)',
-                                                    borderRadius: '6px', padding: '4px', fontSize: '0.7rem',
-                                                    display: 'flex', gap: '4px',
+                                                    borderRadius: '6px', padding: '4px', fontSize: '0.75rem',
+                                                    display: 'flex', gap: '4px', margin: '4px',
                                                 }}>
                                                     <button
                                                         onClick={() => { duplicateExercise(dayNum, exIdx); setContextMenu(null); }}
                                                         style={{
                                                             background: 'rgba(255,255,255,0.05)', border: 'none', color: 'var(--primary)',
                                                             cursor: 'pointer', padding: '4px 8px', borderRadius: '4px',
-                                                            fontSize: '0.65rem', fontWeight: 600,
+                                                            fontSize: '0.7rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4,
                                                         }}
                                                     >
-                                                        <Copy size={10} /> Copy
+                                                        <Copy size={11} /> Copy
                                                     </button>
                                                     <button
                                                         onClick={() => { removeExercise(dayNum, exIdx); setContextMenu(null); }}
                                                         style={{
                                                             background: 'rgba(239,68,68,0.1)', border: 'none',
                                                             color: '#ef4444', cursor: 'pointer', padding: '4px 8px',
-                                                            borderRadius: '4px', fontSize: '0.65rem', fontWeight: 600,
+                                                            borderRadius: '4px', fontSize: '0.7rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4,
                                                         }}
                                                     >
-                                                        <Trash2 size={10} /> Delete
+                                                        <Trash2 size={11} /> Delete
                                                     </button>
                                                 </div>
                                             )}
 
                                             {/* Set Rows */}
-                                            <div style={{ padding: '4px 6px' }}>
+                                            <div style={{ padding: '6px 8px' }}>
+                                                {/* Header labels for sets */}
+                                                {(ex.sets || []).length > 0 && (
+                                                    <div style={{
+                                                        display: 'grid',
+                                                        gridTemplateColumns: '20px 1fr 1fr 1.2fr 20px',
+                                                        gap: '5px',
+                                                        fontSize: '0.65rem',
+                                                        fontWeight: 700,
+                                                        color: 'var(--secondary-foreground)',
+                                                        textAlign: 'center',
+                                                        paddingBottom: '4px',
+                                                        textTransform: 'uppercase',
+                                                        letterSpacing: '0.04em',
+                                                    }}>
+                                                        <div>#</div>
+                                                        <div>Reps</div>
+                                                        <div>RPE</div>
+                                                        <div>% / Wt</div>
+                                                        <div></div>
+                                                    </div>
+                                                )}
+
                                                 {(ex.sets || []).map((set: any, si: number) => {
-                                                    const { total, central } = calculateStress(set.reps, set.rpe);
                                                     return (
                                                         <div key={set.id || si} style={{
                                                             display: 'grid',
-                                                            gridTemplateColumns: '20px 1fr 1fr 1fr auto',
-                                                            gap: '3px', alignItems: 'center',
-                                                            padding: '2px 0',
-                                                            borderBottom: si < ex.sets.length - 1 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                                                            gridTemplateColumns: '20px 1fr 1fr 1.2fr 20px',
+                                                            gap: '5px', alignItems: 'center',
+                                                            padding: '3px 0',
                                                         }}>
-                                                            <span style={{ fontSize: '0.6rem', color: 'var(--secondary-foreground)', textAlign: 'center' }}>
+                                                            <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--secondary-foreground)', textAlign: 'center' }}>
                                                                 {si + 1}
                                                             </span>
                                                             <input
                                                                 value={set.reps || ''}
                                                                 onChange={e => updateSet(dayNum, exIdx, si, 'reps', e.target.value)}
-                                                                placeholder="Reps"
+                                                                placeholder="5"
                                                                 style={{
-                                                                    background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
-                                                                    borderRadius: '3px', color: 'var(--foreground)',
-                                                                    textAlign: 'center', fontSize: '0.7rem', padding: '3px 2px',
-                                                                    width: '100%', outline: 'none',
+                                                                    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
+                                                                    borderRadius: '5px', color: 'var(--foreground)',
+                                                                    textAlign: 'center', fontSize: '0.82rem', fontWeight: 600,
+                                                                    height: '30px', width: '100%', outline: 'none', padding: '0 4px',
                                                                 }}
                                                             />
                                                             <input
                                                                 value={set.rpe || ''}
                                                                 onChange={e => updateSet(dayNum, exIdx, si, 'rpe', e.target.value)}
-                                                                placeholder="RPE"
+                                                                placeholder="7"
                                                                 style={{
-                                                                    background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
-                                                                    borderRadius: '3px', color: 'var(--foreground)',
-                                                                    textAlign: 'center', fontSize: '0.7rem', padding: '3px 2px',
-                                                                    width: '100%', outline: 'none',
+                                                                    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
+                                                                    borderRadius: '5px', color: 'var(--foreground)',
+                                                                    textAlign: 'center', fontSize: '0.82rem', fontWeight: 600,
+                                                                    height: '30px', width: '100%', outline: 'none', padding: '0 4px',
                                                                 }}
                                                             />
                                                             <input
@@ -960,17 +957,19 @@ export default function ProgramWeeklyView({
                                                                 onChange={e => updateSet(dayNum, exIdx, si, 'weight', e.target.value)}
                                                                 placeholder="%"
                                                                 style={{
-                                                                    background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)',
-                                                                    borderRadius: '3px', color: 'var(--foreground)',
-                                                                    textAlign: 'center', fontSize: '0.7rem', padding: '3px 2px',
-                                                                    width: '100%', outline: 'none',
+                                                                    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)',
+                                                                    borderRadius: '5px', color: 'var(--foreground)',
+                                                                    textAlign: 'center', fontSize: '0.82rem', fontWeight: 600,
+                                                                    height: '30px', width: '100%', outline: 'none', padding: '0 4px',
                                                                 }}
                                                             />
                                                             <button
                                                                 onClick={() => removeSet(dayNum, exIdx, si)}
+                                                                title="Remove set"
                                                                 style={{
-                                                                    background: 'transparent', border: 'none', color: 'rgba(239,68,68,0.6)',
-                                                                    cursor: 'pointer', padding: '0 2px', fontSize: '0.8rem', lineHeight: 1,
+                                                                    background: 'transparent', border: 'none', color: 'rgba(239,68,68,0.7)',
+                                                                    cursor: 'pointer', padding: '0 2px', fontSize: '1rem', lineHeight: 1,
+                                                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
                                                                 }}
                                                             >
                                                                 ×
@@ -981,19 +980,19 @@ export default function ProgramWeeklyView({
 
                                                 {/* Add Set Row */}
                                                 <div style={{
-                                                    display: 'flex', alignItems: 'center', gap: '4px',
-                                                    padding: '3px 0', marginTop: '2px',
+                                                    display: 'flex', alignItems: 'center',
+                                                    padding: '4px 0 2px', marginTop: '2px',
                                                 }}>
                                                     <button
                                                         onClick={() => addSet(dayNum, exIdx)}
                                                         style={{
-                                                            background: 'transparent', border: 'none',
+                                                            background: 'rgba(6,182,212,0.08)', border: '1px solid rgba(6,182,212,0.2)',
                                                             color: 'var(--primary)', cursor: 'pointer',
-                                                            fontSize: '0.65rem', fontWeight: 700, padding: '2px 4px',
-                                                            display: 'flex', alignItems: 'center', gap: 2,
+                                                            fontSize: '0.72rem', fontWeight: 700, padding: '4px 8px', borderRadius: '4px',
+                                                            display: 'flex', alignItems: 'center', gap: 4, width: '100%', justifyContent: 'center',
                                                         }}
                                                     >
-                                                        <Plus size={10} />
+                                                        <Plus size={11} /> Add Set
                                                     </button>
                                                 </div>
                                             </div>
@@ -1001,9 +1000,9 @@ export default function ProgramWeeklyView({
                                             {/* Protocol Summary */}
                                             {protocol && (
                                                 <div style={{
-                                                    padding: '3px 8px 5px', fontSize: '0.6rem',
+                                                    padding: '5px 10px 7px', fontSize: '0.7rem',
                                                     color: 'var(--secondary-foreground)', fontStyle: 'italic',
-                                                    borderTop: '1px solid rgba(255,255,255,0.04)',
+                                                    borderTop: '1px solid rgba(255,255,255,0.05)',
                                                 }}>
                                                     Protocol: {protocol}
                                                 </div>
