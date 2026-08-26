@@ -76,6 +76,53 @@ const snapToMonday = (dateStr: string): string => {
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 };
 
+// Calculate default start date for a new program so it seamlessly follows existing active programs
+const calculateDefaultStartDate = (existingPrograms: any[], initialData: any): string => {
+    if (initialData?.startDate) {
+        return snapToMonday(String(initialData.startDate).split('T')[0]);
+    }
+
+    if (Array.isArray(existingPrograms) && existingPrograms.length > 0) {
+        let maxEndDate: Date | null = null;
+
+        existingPrograms.forEach((prog: any) => {
+            if (!prog.startDate || prog.status === 'completed' || prog.status === 'archived') return;
+            const startStr = String(prog.startDate).split('T')[0];
+            const [sy, sm, sd] = startStr.split('-').map(Number);
+            const pStart = new Date(sy, sm - 1, sd);
+            pStart.setHours(0, 0, 0, 0);
+
+            let parsedWeeks = prog.weeks;
+            if (typeof parsedWeeks === 'string') {
+                try { parsedWeeks = JSON.parse(parsedWeeks); } catch { parsedWeeks = []; }
+            }
+            const weeksList: any[] = Array.isArray(parsedWeeks) ? parsedWeeks : [];
+            const numWeeks = weeksList.length > 0
+                ? Math.max(...weeksList.map((w: any) => w.weekNumber || 1))
+                : 1;
+
+            const pEnd = new Date(pStart);
+            pEnd.setDate(pEnd.getDate() + numWeeks * 7);
+
+            if (!maxEndDate || pEnd > maxEndDate) {
+                maxEndDate = pEnd;
+            }
+        });
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (maxEndDate && maxEndDate > today) {
+            const y = maxEndDate.getFullYear();
+            const m = String(maxEndDate.getMonth() + 1).padStart(2, '0');
+            const d = String(maxEndDate.getDate()).padStart(2, '0');
+            return snapToMonday(`${y}-${m}-${d}`);
+        }
+    }
+
+    return snapToMonday(new Date().toISOString().split('T')[0]);
+};
+
 // Exercise Component
 const BuilderExerciseCard = ({ exercise, onUpdate, onRemove, onDragStart, onDragOver, onDrop, onDragEnd, isDragOver }) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
@@ -316,7 +363,7 @@ export default function ProgramBuilder({
 }) {
     const router = useRouter();
     const [programName, setProgramName] = useState('');
-    const [startDate, setStartDate] = useState(() => snapToMonday(new Date().toISOString().split('T')[0]));
+    const [startDate, setStartDate] = useState(() => calculateDefaultStartDate(existingPrograms, initialData));
     // State for selected athlete in assigning mode
     const [selectedAthleteId, setSelectedAthleteId] = useState(athleteId || '');
     
@@ -1417,6 +1464,66 @@ export default function ProgramBuilder({
         setIsSaving(true);
         try {
             const payload = { ...buildPayload(), status: 'active' };
+
+            // Overlap check with existing active programs
+            if (existingPrograms && existingPrograms.length > 0 && payload.startDate) {
+                const [sy, sm, sd] = payload.startDate.split('-').map(Number);
+                const pStart = new Date(sy, sm - 1, sd);
+                pStart.setHours(0, 0, 0, 0);
+
+                const currentSessionDates = new Set<string>();
+                (payload.weeks || []).forEach((w: any) => {
+                    const wn = w.weekNumber || 1;
+                    (w.sessions || []).forEach((s: any) => {
+                        const day = s.day || 1;
+                        const d = new Date(pStart);
+                        d.setDate(d.getDate() + (wn - 1) * 7 + (day - 1));
+                        currentSessionDates.add(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
+                    });
+                });
+
+                let overlappingProgName: string | null = null;
+                for (const existing of existingPrograms) {
+                    if (existing.id === savedProgramIdRef.current || existing.status === 'completed' || existing.status === 'archived' || !existing.startDate) continue;
+                    const eStartStr = String(existing.startDate).split('T')[0];
+                    const [ey, em, ed] = eStartStr.split('-').map(Number);
+                    const eStart = new Date(ey, em - 1, ed);
+                    eStart.setHours(0, 0, 0, 0);
+
+                    let eWeeks = existing.weeks;
+                    if (typeof eWeeks === 'string') {
+                        try { eWeeks = JSON.parse(eWeeks); } catch { eWeeks = []; }
+                    }
+                    if (Array.isArray(eWeeks)) {
+                        for (const ew of eWeeks) {
+                            const eWn = ew.weekNumber || 1;
+                            for (const es of (ew.sessions || [])) {
+                                const eDay = es.day || 1;
+                                const edDate = new Date(eStart);
+                                edDate.setDate(edDate.getDate() + (eWn - 1) * 7 + (eDay - 1));
+                                const eDs = `${edDate.getFullYear()}-${String(edDate.getMonth() + 1).padStart(2, '0')}-${String(edDate.getDate()).padStart(2, '0')}`;
+                                if (currentSessionDates.has(eDs)) {
+                                    overlappingProgName = existing.name || 'Existing Program';
+                                    break;
+                                }
+                            }
+                            if (overlappingProgName) break;
+                        }
+                    }
+                    if (overlappingProgName) break;
+                }
+
+                if (overlappingProgName) {
+                    const proceed = confirm(
+                        `⚠️ Overlap Notice:\n\nThis program has scheduled sessions that overlap with "${overlappingProgName}".\n\nSaving will replace/deactivate overlapping sessions. Do you want to proceed?`
+                    );
+                    if (!proceed) {
+                        setIsSaving(false);
+                        return;
+                    }
+                }
+            }
+
             const method = savedProgramIdRef.current ? 'PUT' : 'POST';
 
             const res = await fetch('/api/programs', {
@@ -2160,6 +2267,8 @@ export default function ProgramBuilder({
                                     weeks={weeks}
                                     setWeeks={setWeeks}
                                     startDate={startDate}
+                                    setStartDate={setStartDate}
+                                    existingPrograms={existingPrograms}
                                     initialExercises={initialExercises}
                                     liftTargets={liftTargets}
                                     selectedDay={selectedWeeklyDay}

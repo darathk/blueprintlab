@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { calculateStress } from '@/lib/stress-index';
 import { getExerciseCategory } from '@/lib/exercise-db';
-import { Plus, Trash2, Copy, ChevronLeft, ChevronRight, CopyPlus, CheckCircle2, StickyNote, Activity } from 'lucide-react';
+import { Plus, Trash2, Copy, ChevronLeft, ChevronRight, CopyPlus, CheckCircle2, StickyNote, Activity, Calendar } from 'lucide-react';
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
@@ -48,6 +48,8 @@ interface WeeklyViewProps {
     weeks: any[];
     setWeeks: (fn: any) => void;
     startDate: string;
+    setStartDate?: (dateStr: string) => void;
+    existingPrograms?: any[];
     initialExercises?: any;
     liftTargets?: Record<string, { timeToPeak: string; stressTarget: string }>;
     selectedDay?: number;
@@ -60,6 +62,8 @@ export default function ProgramWeeklyView({
     weeks,
     setWeeks,
     startDate,
+    setStartDate,
+    existingPrograms = [],
     initialExercises,
     liftTargets,
     selectedDay: controlledSelectedDay,
@@ -116,7 +120,45 @@ export default function ProgramWeeklyView({
         return `${fmt(weekStart)} – ${fmt(weekEnd)}`;
     }, [startDate, currentWeekNum]);
 
-    // Get date string for a given day number in the current week
+    // Build a lookup of existing program sessions by date string to detect overlaps
+    const existingSessionsByDate = useMemo(() => {
+        const map: Record<string, { programName: string; sessionName: string; exerciseCount: number; status: string }[]> = {};
+        if (!Array.isArray(existingPrograms)) return map;
+
+        existingPrograms.forEach((prog: any) => {
+            if (!prog.startDate) return;
+            const startStr = String(prog.startDate).split('T')[0];
+            const [sy, sm, sd] = startStr.split('-').map(Number);
+            const progStart = new Date(sy, sm - 1, sd);
+            progStart.setHours(0, 0, 0, 0);
+
+            let parsedWeeks = prog.weeks;
+            if (typeof parsedWeeks === 'string') {
+                try { parsedWeeks = JSON.parse(parsedWeeks); } catch { parsedWeeks = []; }
+            }
+            const programWeeks: any[] = Array.isArray(parsedWeeks) ? parsedWeeks : [];
+            programWeeks.forEach((week: any) => {
+                const wn = week.weekNumber || 1;
+                const sessions: any[] = Array.isArray(week.sessions) ? week.sessions : [];
+                sessions.forEach((session: any) => {
+                    const day = session.day || 1;
+                    const d = new Date(progStart);
+                    d.setDate(d.getDate() + (wn - 1) * 7 + (day - 1));
+                    const ds = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                    if (!map[ds]) map[ds] = [];
+                    map[ds].push({
+                        programName: prog.name || 'Untitled',
+                        sessionName: session.name || `Session ${day}`,
+                        exerciseCount: Array.isArray(session.exercises) ? session.exercises.length : 0,
+                        status: prog.status || 'active'
+                    });
+                });
+            });
+        });
+        return map;
+    }, [existingPrograms]);
+
+    // Get formatted date string for a given day number in the current week (e.g. "Aug 25")
     const getDateForDay = useCallback((dayNum: number) => {
         if (!startDate) return '';
         const [sy, sm, sd] = startDate.split('-').map(Number);
@@ -125,6 +167,17 @@ export default function ProgramWeeklyView({
         const d = new Date(start);
         d.setDate(d.getDate() + (currentWeekNum - 1) * 7 + (dayNum - 1));
         return `${SHORT_MONTHS[d.getMonth()]} ${d.getDate()}`;
+    }, [startDate, currentWeekNum]);
+
+    // Get YYYY-MM-DD date string for a given day number in current week
+    const getDateStringForDay = useCallback((dayNum: number) => {
+        if (!startDate) return '';
+        const [sy, sm, sd] = startDate.split('-').map(Number);
+        const start = new Date(sy, sm - 1, sd);
+        start.setHours(0, 0, 0, 0);
+        const d = new Date(start);
+        d.setDate(d.getDate() + (currentWeekNum - 1) * 7 + (dayNum - 1));
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
     }, [startDate, currentWeekNum]);
 
     // ──── Category Targets from Athlete Lift Targets ────
@@ -694,7 +747,46 @@ export default function ProgramWeeklyView({
                     </button>
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                    {setStartDate && (
+                        <div style={{
+                            display: 'flex', alignItems: 'center', gap: '6px',
+                            background: 'var(--card-bg)', border: '1px solid var(--card-border)',
+                            borderRadius: '6px', padding: '4px 10px',
+                        }}>
+                            <Calendar size={13} style={{ color: 'var(--primary)' }} />
+                            <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                Start
+                            </span>
+                            <input
+                                type="date"
+                                value={startDate || ''}
+                                onChange={e => {
+                                    if (e.target.value && setStartDate) {
+                                        const [y, m, d] = e.target.value.split('-').map(Number);
+                                        const dt = new Date(y, m - 1, d);
+                                        const dayOfWeek = dt.getDay();
+                                        const offset = (dayOfWeek + 6) % 7;
+                                        dt.setDate(dt.getDate() - offset);
+                                        const snapped = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+                                        setStartDate(snapped);
+                                    }
+                                }}
+                                style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: 'var(--foreground)',
+                                    fontSize: '0.78rem',
+                                    fontWeight: 600,
+                                    outline: 'none',
+                                    cursor: 'pointer',
+                                    fontFamily: 'inherit',
+                                }}
+                                title="Program Start Date (Snapped to Monday)"
+                            />
+                        </div>
+                    )}
+
                     <button onClick={duplicateWeekToNext} title="Duplicate this week to next" style={{
                         background: 'var(--card-bg)', border: '1px solid var(--card-border)',
                         color: 'var(--secondary-foreground)', borderRadius: '6px', padding: '6px 14px',
@@ -883,6 +975,8 @@ export default function ProgramWeeklyView({
                     const isSelected = selectedDay === dayNum;
                     const dayLabel = DISPLAY_DAY_NAMES[colIdx];
                     const dateLabel = getDateForDay(dayNum);
+                    const dayDateStr = getDateStringForDay(dayNum);
+                    const existingGhostSessions = dayDateStr ? (existingSessionsByDate[dayDateStr] || []) : [];
 
                     return (
                         <div
@@ -964,6 +1058,28 @@ export default function ProgramWeeklyView({
                                     )}
                                 </div>
                             </div>
+
+                            {/* Existing Session Overlap Indicator */}
+                            {existingGhostSessions.length > 0 && (
+                                <div style={{
+                                    margin: '6px 8px 2px',
+                                    padding: '5px 8px',
+                                    background: 'rgba(239, 68, 68, 0.1)',
+                                    border: '1px solid rgba(239, 68, 68, 0.3)',
+                                    borderRadius: '6px',
+                                    fontSize: '0.68rem',
+                                    color: '#ef4444',
+                                }} onClick={e => e.stopPropagation()}>
+                                    <div style={{ fontWeight: 800, fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: '0.04em', marginBottom: 2 }}>
+                                        Existing Program:
+                                    </div>
+                                    {existingGhostSessions.map((ghost, gi) => (
+                                        <div key={gi} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }}>
+                                            {ghost.programName} ({ghost.sessionName})
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
 
                             {/* Session Name (editable) */}
                             {session && (
