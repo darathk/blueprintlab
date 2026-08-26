@@ -10,7 +10,7 @@ import ProgramCalendarGrid from './ProgramCalendarGrid';
 import ProgramWeeklyView from './ProgramWeeklyView';
 import { calculateStress } from '@/lib/stress-index';
 import { getExerciseCategory } from '@/lib/exercise-db';
-import { Trash2, Plus, ArrowRight, ArrowDown, GripVertical, Check, MessageSquare, FileText, Activity, Save, RefreshCw, Layers, Copy, CopyPlus, Scissors, ClipboardPaste, ArrowUp, Zap, ExternalLink, Menu, X, Trophy, Calendar as CalendarIcon, CalendarPlus, LayoutGrid, BookOpen, StickyNote, Pin, LayoutDashboard } from 'lucide-react';
+import { Trash2, Plus, ArrowRight, ArrowDown, GripVertical, Check, MessageSquare, FileText, Activity, Save, RefreshCw, Layers, Copy, CopyPlus, Scissors, ClipboardPaste, ArrowUp, Zap, ExternalLink, Menu, X, Trophy, Calendar as CalendarIcon, CalendarPlus, LayoutGrid, BookOpen, StickyNote, Pin, LayoutDashboard, ChevronDown, ChevronRight } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 import ChatInterface from '@/components/chat/ChatInterface';
 import BlockReviewPanel from '@/components/program-builder/BlockReviewPanel';
@@ -244,9 +244,9 @@ const BuilderExerciseCard = ({ exercise, onUpdate, onRemove, onDragStart, onDrag
                                             <button
                                                 title="Copy Previous"
                                                 onClick={() => copyPreviousSet(i)}
-                                                style={{ background: 'transparent', border: 'none', color: 'var(--accent)', cursor: 'pointer', padding: 0 }}
+                                                style={{ background: 'transparent', border: 'none', color: 'var(--accent)', cursor: 'pointer', padding: 0, display: 'inline-flex', alignItems: 'center' }}
                                             >
-                                                📄
+                                                <Copy size={12} />
                                             </button>
                                         )}
                                         <button
@@ -321,8 +321,8 @@ export default function ProgramBuilder({
     // Tab Navigation State
     const [activeView, setActiveView] = useState<'builder' | 'history'>('builder');
     const [selectedHistoryProgram, setSelectedHistoryProgram] = useState<any | null>(null);
-    // Monthly / Weekly calendar toggle
-    const [calendarViewMode, setCalendarViewMode] = useState<'monthly' | 'weekly'>('monthly');
+    // Monthly / Weekly calendar toggle (defaults to weekly)
+    const [calendarViewMode, setCalendarViewMode] = useState<'monthly' | 'weekly'>('weekly');
     const [isSidebarOpen, setIsSidebarOpen] = useState(true);
     const [weeklyActiveWeekNum, setWeeklyActiveWeekNum] = useState(1);
     const [selectedWeeklyDay, setSelectedWeeklyDay] = useState(1);
@@ -1734,7 +1734,9 @@ export default function ProgramBuilder({
                                 }}
                             >
                                 <span>Lift Targets{athleteName ? ` — ${athleteName}` : ''}</span>
-                                <span style={{ fontSize: '0.65rem', opacity: 0.7 }}>{liftTargetsExpanded ? '▼' : '▶'}</span>
+                                <span style={{ opacity: 0.7, display: 'flex', alignItems: 'center' }}>
+                                    {liftTargetsExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+                                </span>
                             </div>
                             {liftTargetsExpanded && (
                                 <div style={{ padding: '0.5rem' }}>
@@ -2082,7 +2084,8 @@ export default function ProgramBuilder({
                                     }}
                                     title={isSidebarOpen ? 'Hide Exercise Library' : 'Show Exercise Library'}
                                 >
-                                    <span>📚 Library</span>
+                                    <BookOpen size={14} />
+                                    <span>Library</span>
                                     <span style={{ fontSize: '0.7rem' }}>{isSidebarOpen ? '✕' : '＋'}</span>
                                 </button>
 
@@ -2097,11 +2100,11 @@ export default function ProgramBuilder({
                                             background: calendarViewMode === 'monthly' ? 'var(--primary)' : 'transparent',
                                             color: calendarViewMode === 'monthly' ? '#000' : 'var(--secondary-foreground)',
                                             border: 'none', padding: '6px 16px', cursor: 'pointer',
-                                            fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5,
+                                            fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6,
                                             transition: 'all 0.2s',
                                         }}
                                     >
-                                        📅 Monthly
+                                        <CalendarIcon size={14} /> Monthly
                                     </button>
                                     <button
                                         onClick={() => setCalendarViewMode('weekly')}
@@ -2109,11 +2112,11 @@ export default function ProgramBuilder({
                                             background: calendarViewMode === 'weekly' ? 'var(--primary)' : 'transparent',
                                             color: calendarViewMode === 'weekly' ? '#000' : 'var(--secondary-foreground)',
                                             border: 'none', padding: '6px 16px', cursor: 'pointer',
-                                            fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 5,
+                                            fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6,
                                             transition: 'all 0.2s',
                                         }}
                                     >
-                                        📊 Weekly
+                                        <LayoutGrid size={14} /> Weekly
                                     </button>
                                 </div>
                             </div>

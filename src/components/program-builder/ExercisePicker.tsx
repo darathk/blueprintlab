@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { EXERCISE_DB, EXERCISE_CATEGORIES } from '@/lib/exercise-db';
+import { Trash2 } from 'lucide-react';
 
 export default function ExercisePicker({ onDragStart, onAdd, initialExercises = null }: { onDragStart?: any, onAdd?: any, initialExercises?: any }) {
     // Combined DB state
@@ -303,7 +304,7 @@ export default function ExercisePicker({ onDragStart, onAdd, initialExercises = 
                                                             onMouseOver={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.15)'; }}
                                                             onMouseOut={e => { e.currentTarget.style.background = 'transparent'; }}
                                                         >
-                                                            🗑
+                                                            <Trash2 size={13} />
                                                         </button>
                                                     )}
                                                     <span style={{ fontSize: '1.2rem', lineHeight: 0, color: 'var(--accent)' }}>+</span>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState, useRef } from 'react';
+import { ClipboardList } from 'lucide-react';
 
 export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, onSessionMove, onDuplicateSession, onDuplicateSessionToNextWeek, onDuplicateWeekToNextWeek, onClearWeek = null, existingPrograms = [], onGhostSessionClick = null }) {
     const [currentMonth, setCurrentMonth] = useState(() => {
@@ -256,8 +257,8 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
                                     </div>
                                 </div>
                                 <div className="session-icon">
-                                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'linear-gradient(135deg, #06b6d4, #10b981)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', fontSize: 12 }}>
-                                        📋
+                                    <div style={{ width: 24, height: 24, borderRadius: '50%', background: 'linear-gradient(135deg, #06b6d4, #10b981)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000' }}>
+                                        <ClipboardList size={13} />
                                     </div>
                                 </div>
                                 <div className="duplicate-actions">
