@@ -1964,10 +1964,10 @@ export default function ProgramBuilder({
                 </div>
 
                 {/* SCROLLABLE CONTENT */}
-                <div style={{ overflowY: 'auto', paddingRight: '1rem', flex: 1 }}>
+                <div style={{ overflowY: 'auto', paddingRight: '0.5rem', flex: 1, width: '100%' }}>
                     
                     {/* Tab Navigation */}
-                    <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '0.5rem', maxWidth: '1200px', margin: '0 auto 1.5rem auto' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '0.5rem', width: '100%', marginBottom: '1.25rem' }}>
                         {athleteId && (
                             <button
                                 onClick={() => router.push(`/dashboard/athletes/${athleteId}`)}
@@ -2024,7 +2024,7 @@ export default function ProgramBuilder({
                     </div>
 
                     {activeView === 'builder' ? (
-                        <div style={{ maxWidth: calendarViewMode === 'weekly' ? '100%' : '1200px', margin: '0 auto' }}>
+                        <div style={{ width: '100%' }}>
                             {/* Monthly / Weekly toggle + Library Toggle */}
                             <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
                                 <button

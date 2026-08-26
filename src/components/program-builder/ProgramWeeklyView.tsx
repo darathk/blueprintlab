@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useMemo, useRef, useCallback } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { calculateStress } from '@/lib/stress-index';
 import { getExerciseCategory } from '@/lib/exercise-db';
-import { Plus, Trash2, GripVertical, Copy, ChevronLeft, ChevronRight, MoreHorizontal, CopyPlus, X } from 'lucide-react';
+import { Plus, Trash2, Copy, ChevronLeft, ChevronRight, CopyPlus } from 'lucide-react';
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
@@ -71,12 +71,9 @@ export default function ProgramWeeklyView({
     const [dragSource, setDragSource] = useState<{ weekIdx: number; sessionIdx: number; exerciseIdx: number } | null>(null);
     const [dropTargetDay, setDropTargetDay] = useState<number | null>(null);
     const [dropTargetExIdx, setDropTargetExIdx] = useState<number | null>(null);
-    // Context menu
-    const [contextMenu, setContextMenu] = useState<{ exerciseIdx: number; dayNum: number; x: number; y: number } | null>(null);
 
     // Current week object
     const currentWeek = useMemo(() => weeks.find(w => w.weekNumber === currentWeekNum), [weeks, currentWeekNum]);
-    const currentWeekIdx = useMemo(() => weeks.findIndex(w => w.weekNumber === currentWeekNum), [weeks, currentWeekNum]);
 
     const maxWeekNum = useMemo(() => weeks.reduce((m, w) => Math.max(m, w.weekNumber || 0), 0), [weeks]);
 
@@ -221,7 +218,7 @@ export default function ProgramWeeklyView({
 
             return prev.map((w, wi) => {
                 if (wi !== wIdx) return w;
-                const sIdx = w.sessions.findIndex((s: any) => s.day === dayNum);
+                const sIdx = w.sessions.findIndex((s: any) => Number(s.day) === Number(dayNum));
                 if (sIdx === -1) {
                     return {
                         ...w,
@@ -237,7 +234,7 @@ export default function ProgramWeeklyView({
                 return {
                     ...w,
                     sessions: w.sessions.map((s: any, si: number) =>
-                        si !== sIdx ? s : { ...s, exercises: [...s.exercises, newExercise] }
+                        si !== sIdx ? s : { ...s, exercises: [...(s.exercises || []), newExercise] }
                     ),
                 };
             });
@@ -250,14 +247,14 @@ export default function ProgramWeeklyView({
             return {
                 ...w,
                 sessions: w.sessions.map((s: any) => {
-                    if (s.day !== dayNum) return s;
+                    if (Number(s.day) !== Number(dayNum)) return s;
                     return {
                         ...s,
-                        exercises: s.exercises.map((ex: any, ei: number) => {
+                        exercises: (s.exercises || []).map((ex: any, ei: number) => {
                             if (ei !== exerciseIdx) return ex;
                             return {
                                 ...ex,
-                                sets: ex.sets.map((set: any, si: number) =>
+                                sets: (ex.sets || []).map((set: any, si: number) =>
                                     si !== setIdx ? set : { ...set, [field]: value }
                                 ),
                             };
@@ -274,15 +271,15 @@ export default function ProgramWeeklyView({
             return {
                 ...w,
                 sessions: w.sessions.map((s: any) => {
-                    if (s.day !== dayNum) return s;
+                    if (Number(s.day) !== Number(dayNum)) return s;
                     return {
                         ...s,
-                        exercises: s.exercises.map((ex: any, ei: number) => {
+                        exercises: (s.exercises || []).map((ex: any, ei: number) => {
                             if (ei !== exerciseIdx) return ex;
-                            const lastSet = ex.sets[ex.sets.length - 1];
+                            const lastSet = ex.sets?.[ex.sets.length - 1];
                             return {
                                 ...ex,
-                                sets: [...ex.sets, {
+                                sets: [...(ex.sets || []), {
                                     id: generateId(),
                                     reps: lastSet?.reps || '5',
                                     rpe: lastSet?.rpe || '7',
@@ -302,12 +299,12 @@ export default function ProgramWeeklyView({
             return {
                 ...w,
                 sessions: w.sessions.map((s: any) => {
-                    if (s.day !== dayNum) return s;
+                    if (Number(s.day) !== Number(dayNum)) return s;
                     return {
                         ...s,
-                        exercises: s.exercises.map((ex: any, ei: number) => {
+                        exercises: (s.exercises || []).map((ex: any, ei: number) => {
                             if (ei !== exerciseIdx) return ex;
-                            return { ...ex, sets: ex.sets.filter((_: any, si: number) => si !== setIdx) };
+                            return { ...ex, sets: (ex.sets || []).filter((_: any, si: number) => si !== setIdx) };
                         }),
                     };
                 }),
@@ -315,14 +312,21 @@ export default function ProgramWeeklyView({
         }));
     }, [currentWeekNum, setWeeks]);
 
-    const removeExercise = useCallback((dayNum: number, exerciseIdx: number) => {
+    // Robust exercise removal by exercise ID or index
+    const removeExercise = useCallback((dayNum: number, exerciseIdOrIdx: string | number) => {
         setWeeks((prev: any[]) => prev.map(w => {
             if (w.weekNumber !== currentWeekNum) return w;
             return {
                 ...w,
                 sessions: w.sessions.map((s: any) => {
-                    if (s.day !== dayNum) return s;
-                    const newExercises = s.exercises.filter((_: any, ei: number) => ei !== exerciseIdx);
+                    if (Number(s.day) !== Number(dayNum)) return s;
+                    const exercises = s.exercises || [];
+                    let newExercises;
+                    if (typeof exerciseIdOrIdx === 'string') {
+                        newExercises = exercises.filter((ex: any) => ex.id !== exerciseIdOrIdx);
+                    } else {
+                        newExercises = exercises.filter((_: any, ei: number) => ei !== exerciseIdOrIdx);
+                    }
                     return { ...s, exercises: newExercises };
                 }),
             };
@@ -335,15 +339,15 @@ export default function ProgramWeeklyView({
             return {
                 ...w,
                 sessions: w.sessions.map((s: any) => {
-                    if (s.day !== dayNum) return s;
-                    const original = s.exercises[exerciseIdx];
+                    if (Number(s.day) !== Number(dayNum)) return s;
+                    const original = s.exercises?.[exerciseIdx];
                     if (!original) return s;
                     const clone = {
                         ...original,
                         id: generateId(),
-                        sets: original.sets.map((set: any) => ({ ...set, id: generateId() })),
+                        sets: (original.sets || []).map((set: any) => ({ ...set, id: generateId() })),
                     };
-                    const newExercises = [...s.exercises];
+                    const newExercises = [...(s.exercises || [])];
                     newExercises.splice(exerciseIdx + 1, 0, clone);
                     return { ...s, exercises: newExercises };
                 }),
@@ -357,7 +361,7 @@ export default function ProgramWeeklyView({
             return {
                 ...w,
                 sessions: w.sessions.map((s: any) =>
-                    s.day !== dayNum ? s : { ...s, name }
+                    Number(s.day) !== Number(dayNum) ? s : { ...s, name }
                 ),
             };
         }));
@@ -369,7 +373,7 @@ export default function ProgramWeeklyView({
             if (w.weekNumber !== currentWeekNum) return w;
             return {
                 ...w,
-                sessions: w.sessions.filter((s: any) => s.day !== dayNum),
+                sessions: w.sessions.filter((s: any) => Number(s.day) !== Number(dayNum)),
             };
         }));
     }, [currentWeekNum, setWeeks]);
@@ -377,16 +381,16 @@ export default function ProgramWeeklyView({
     const duplicateWeekToNext = useCallback(() => {
         setWeeks((prev: any[]) => {
             const srcWeek = prev.find(w => w.weekNumber === currentWeekNum);
-            if (!srcWeek || srcWeek.sessions.length === 0) return prev;
+            if (!srcWeek || (srcWeek.sessions || []).length === 0) return prev;
             const targetNum = currentWeekNum + 1;
             const existing = prev.find(w => w.weekNumber === targetNum);
-            if (existing && existing.sessions.length > 0) {
+            if (existing && (existing.sessions || []).length > 0) {
                 if (!confirm(`Week ${targetNum} already has sessions. Replace?`)) return prev;
             }
-            const clonedSessions = srcWeek.sessions.map((s: any) => ({
+            const clonedSessions = (srcWeek.sessions || []).map((s: any) => ({
                 ...s,
                 id: generateId(),
-                exercises: s.exercises.map((e: any) => ({
+                exercises: (s.exercises || []).map((e: any) => ({
                     ...e,
                     id: generateId(),
                     sets: (e.sets || []).map((set: any) => ({ ...set, id: generateId() })),
@@ -400,11 +404,28 @@ export default function ProgramWeeklyView({
         });
     }, [currentWeekNum, setWeeks]);
 
+    // Delete the current week and renumber remaining weeks
+    const deleteCurrentWeek = useCallback(() => {
+        if (!confirm(`Are you sure you want to delete Week ${currentWeekNum}? This will remove all its sessions.`)) {
+            return;
+        }
+        setWeeks((prev: any[]) => {
+            const remaining = prev.filter(w => w.weekNumber !== currentWeekNum);
+            if (remaining.length === 0) {
+                return [{ id: generateId(), weekNumber: 1, sessions: [] }];
+            }
+            return remaining
+                .sort((a, b) => a.weekNumber - b.weekNumber)
+                .map((w, idx) => ({ ...w, weekNumber: idx + 1 }));
+        });
+        setCurrentWeekNum(prev => Math.max(1, prev - 1));
+    }, [currentWeekNum, setWeeks]);
+
     // ──── Drag & Drop ────
 
     const handleExDragStart = (e: React.DragEvent, dayNum: number, exerciseIdx: number) => {
         const wIdx = weeks.findIndex(w => w.weekNumber === currentWeekNum);
-        const sIdx = weeks[wIdx]?.sessions.findIndex((s: any) => s.day === dayNum);
+        const sIdx = weeks[wIdx]?.sessions.findIndex((s: any) => Number(s.day) === Number(dayNum));
         if (wIdx === -1 || sIdx === -1) return;
         setDragSource({ weekIdx: wIdx, sessionIdx: sIdx, exerciseIdx });
         e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'weekly-exercise', dayNum, exerciseIdx }));
@@ -446,9 +467,9 @@ export default function ProgramWeeklyView({
             setWeeks((prev: any[]) => {
                 const newWeeks = prev.map(w => ({
                     ...w,
-                    sessions: w.sessions.map((s: any) => ({
+                    sessions: (w.sessions || []).map((s: any) => ({
                         ...s,
-                        exercises: [...s.exercises],
+                        exercises: [...(s.exercises || [])],
                     })),
                 }));
 
@@ -461,7 +482,7 @@ export default function ProgramWeeklyView({
                 const tgtWIdx = newWeeks.findIndex(w => w.weekNumber === currentWeekNum);
                 if (tgtWIdx === -1) return prev;
 
-                let tgtSIdx = newWeeks[tgtWIdx].sessions.findIndex((s: any) => s.day === targetDayNum);
+                let tgtSIdx = newWeeks[tgtWIdx].sessions.findIndex((s: any) => Number(s.day) === Number(targetDayNum));
                 if (tgtSIdx === -1) {
                     // Create session for this day
                     newWeeks[tgtWIdx].sessions.push({
@@ -577,13 +598,22 @@ export default function ProgramWeeklyView({
                     </button>
                 </div>
 
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
                     <button onClick={duplicateWeekToNext} title="Duplicate this week to next" style={{
                         background: 'var(--card-bg)', border: '1px solid var(--card-border)',
                         color: 'var(--secondary-foreground)', borderRadius: '6px', padding: '6px 14px',
                         cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6,
                     }}>
                         <CopyPlus size={15} /> Duplicate Week
+                    </button>
+
+                    <button onClick={deleteCurrentWeek} title="Delete this week" style={{
+                        background: 'rgba(239, 68, 68, 0.1)', border: '1px solid rgba(239, 68, 68, 0.3)',
+                        color: '#ef4444', borderRadius: '6px', padding: '6px 14px',
+                        cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6,
+                        transition: 'all 0.15s',
+                    }}>
+                        <Trash2 size={15} /> Delete Week
                     </button>
                 </div>
             </div>
@@ -684,13 +714,14 @@ export default function ProgramWeeklyView({
             </div>
 
             {/* ── 7-Day Column Grid ── */}
-            {/* Using minmax(180px, 1fr) so each day has generous breathing room and numbers are crystal clear */}
+            {/* Generous column width with horizontal scroll support */}
             <div style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(7, minmax(180px, 1fr))',
+                gridTemplateColumns: 'repeat(7, minmax(190px, 1fr))',
                 gap: '10px',
                 minHeight: '65vh',
                 paddingBottom: '2rem',
+                width: '100%',
             }}>
                 {DISPLAY_ORDER.map((dayNum, colIdx) => {
                     const session = sessionsByDay[dayNum];
@@ -830,7 +861,7 @@ export default function ProgramWeeklyView({
                                                 transition: 'border 0.1s, transform 0.1s',
                                             }}
                                         >
-                                            {/* Exercise Name Banner - Full text with word wrap (NO CUTOFF!) */}
+                                            {/* Exercise Name Banner - Full text with word wrap & direct action buttons */}
                                             <div style={{
                                                 background: catColor,
                                                 padding: '8px 10px',
@@ -849,51 +880,43 @@ export default function ProgramWeeklyView({
                                                 }}>
                                                     {ex.name}
                                                 </div>
-                                                <button
-                                                    onClick={(e) => {
-                                                        e.stopPropagation();
-                                                        setContextMenu(contextMenu?.exerciseIdx === exIdx && contextMenu?.dayNum === dayNum
-                                                            ? null : { exerciseIdx: exIdx, dayNum, x: e.clientX, y: e.clientY });
-                                                    }}
-                                                    style={{
-                                                        background: 'rgba(0,0,0,0.25)', border: 'none', color: '#fff',
-                                                        cursor: 'pointer', padding: '3px 5px', borderRadius: '4px',
-                                                        display: 'flex', alignItems: 'center', flexShrink: 0,
-                                                    }}
-                                                >
-                                                    <MoreHorizontal size={13} />
-                                                </button>
-                                            </div>
-
-                                            {/* Context Menu */}
-                                            {contextMenu && contextMenu.exerciseIdx === exIdx && contextMenu.dayNum === dayNum && (
-                                                <div style={{
-                                                    background: 'var(--card-bg)', border: '1px solid var(--card-border)',
-                                                    borderRadius: '6px', padding: '4px', fontSize: '0.75rem',
-                                                    display: 'flex', gap: '4px', margin: '4px',
-                                                }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }}>
                                                     <button
-                                                        onClick={() => { duplicateExercise(dayNum, exIdx); setContextMenu(null); }}
-                                                        style={{
-                                                            background: 'rgba(255,255,255,0.05)', border: 'none', color: 'var(--primary)',
-                                                            cursor: 'pointer', padding: '4px 8px', borderRadius: '4px',
-                                                            fontSize: '0.7rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4,
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            duplicateExercise(dayNum, exIdx);
                                                         }}
+                                                        title="Duplicate Exercise"
+                                                        style={{
+                                                            background: 'rgba(0,0,0,0.25)', border: 'none', color: '#fff',
+                                                            cursor: 'pointer', padding: '4px 6px', borderRadius: '4px',
+                                                            display: 'flex', alignItems: 'center',
+                                                            transition: 'background 0.15s',
+                                                        }}
+                                                        onMouseOver={e => e.currentTarget.style.background = 'rgba(0,0,0,0.5)'}
+                                                        onMouseOut={e => e.currentTarget.style.background = 'rgba(0,0,0,0.25)'}
                                                     >
-                                                        <Copy size={11} /> Copy
+                                                        <Copy size={12} />
                                                     </button>
                                                     <button
-                                                        onClick={() => { removeExercise(dayNum, exIdx); setContextMenu(null); }}
-                                                        style={{
-                                                            background: 'rgba(239,68,68,0.1)', border: 'none',
-                                                            color: '#ef4444', cursor: 'pointer', padding: '4px 8px',
-                                                            borderRadius: '4px', fontSize: '0.7rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4,
+                                                        onClick={(e) => {
+                                                            e.stopPropagation();
+                                                            removeExercise(dayNum, ex.id || exIdx);
                                                         }}
+                                                        title="Delete Exercise"
+                                                        style={{
+                                                            background: 'rgba(0,0,0,0.25)', border: 'none', color: '#fff',
+                                                            cursor: 'pointer', padding: '4px 6px', borderRadius: '4px',
+                                                            display: 'flex', alignItems: 'center',
+                                                            transition: 'background 0.15s',
+                                                        }}
+                                                        onMouseOver={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.85)'}
+                                                        onMouseOut={e => e.currentTarget.style.background = 'rgba(0,0,0,0.25)'}
                                                     >
-                                                        <Trash2 size={11} /> Delete
+                                                        <Trash2 size={12} />
                                                     </button>
                                                 </div>
-                                            )}
+                                            </div>
 
                                             {/* Set Rows */}
                                             <div style={{ padding: '6px 8px' }}>
@@ -1015,14 +1038,6 @@ export default function ProgramWeeklyView({
                     );
                 })}
             </div>
-
-            {/* Close context menu on click outside */}
-            {contextMenu && (
-                <div
-                    style={{ position: 'fixed', inset: 0, zIndex: 100 }}
-                    onClick={() => setContextMenu(null)}
-                />
-            )}
         </div>
     );
 }

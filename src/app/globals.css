@@ -64,6 +64,13 @@ a {
   padding: 0 1.5rem;
 }
 
+.container:has(.program-builder-layout) {
+  max-width: 100% !important;
+  width: 100% !important;
+  padding-left: 1.25rem !important;
+  padding-right: 1.25rem !important;
+}
+
 .glass-panel {
   background: var(--card-bg);
   backdrop-filter: blur(12px);
