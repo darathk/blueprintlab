@@ -129,7 +129,7 @@ export default function MasterProgramCalendar({
         const month = currentMonth.getMonth();
         const firstDayOfMonth = new Date(year, month, 1);
         const startDayOfWeek = firstDayOfMonth.getDay();
-        const offset = startDayOfWeek;
+        const offset = (startDayOfWeek + 6) % 7; // Monday = 0 offset
         const gridStart = new Date(firstDayOfMonth);
         gridStart.setDate(gridStart.getDate() - offset);
 
@@ -163,7 +163,7 @@ export default function MasterProgramCalendar({
         return days;
     }, [currentMonth, athletePrograms, travelDates, nextMeetDate, loggedSessionIds]);
 
-    const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
     return (
         <div className="glass-panel" style={{ padding: '0', overflow: 'hidden', border: '1px solid var(--card-border)' }}>

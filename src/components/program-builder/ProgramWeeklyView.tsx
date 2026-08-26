@@ -19,7 +19,7 @@ const CATEGORY_COLORS: Record<string, string> = {
     'Isolation/Accessory': '#64748B',
 };
 
-const DAY_NAMES = ['SUNDAY', 'MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY'];
+const DAY_NAMES = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
 const SHORT_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 function formatSetsSummary(sets: any[]) {
@@ -80,9 +80,9 @@ export default function ProgramWeeklyView({
 
     const maxWeekNum = useMemo(() => weeks.reduce((m, w) => Math.max(m, w.weekNumber || 0), 0), [weeks]);
 
-    // Build sessions by day (1=Sun, 2=Mon, ... 7=Sat in the data model)
-    // The user wants Mon-Sun display, so we reorder: display cols = Mon(2), Tue(3), Wed(4), Thu(5), Fri(6), Sat(7), Sun(1)
-    const DISPLAY_ORDER = [2, 3, 4, 5, 6, 7, 1]; // dayNum values in Mon-Sun order
+    // Build sessions by day (1=Mon, 2=Tue, ... 7=Sun in the new Monday-start data model)
+    // Display columns: Mon(1), Tue(2), Wed(3), Thu(4), Fri(5), Sat(6), Sun(7)
+    const DISPLAY_ORDER = [1, 2, 3, 4, 5, 6, 7]; // dayNum values in Mon-Sun order
     const DISPLAY_DAY_NAMES = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
 
     const sessionsByDay = useMemo(() => {

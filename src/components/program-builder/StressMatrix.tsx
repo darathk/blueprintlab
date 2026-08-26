@@ -210,18 +210,20 @@ function WeekStressTable({ label, stats, totalStress, totalCentral, isCollapsed,
 }
 
 /**
- * Get the Sunday that starts the calendar week containing the given date.
- * The calendar grid uses Sun-Sat rows, so stress buckets must align.
+ * Get the Monday that starts the calendar week containing the given date.
+ * The calendar grid uses Mon-Sun rows, so stress buckets must align.
  */
-function getSunday(date: Date): Date {
+function getMonday(date: Date): Date {
     const d = new Date(date);
     d.setHours(0, 0, 0, 0);
-    d.setDate(d.getDate() - d.getDay()); // getDay() 0=Sun, so subtract to reach Sunday
+    const dayOfWeek = d.getDay();
+    const offset = (dayOfWeek + 6) % 7; // Mon=0, Tue=1, ..., Sun=6
+    d.setDate(d.getDate() - offset);
     return d;
 }
 
 /**
- * Group sessions by actual calendar week (Sun-Sat) so that sessions
+ * Group sessions by actual calendar week (Mon-Sun) so that sessions
  * appearing in the same visual calendar row share the same stress bucket,
  * even if they belong to different structural program weeks.
  */
@@ -231,8 +233,8 @@ function groupByCalendarWeek(weeks: any[], startDate: string) {
     const start = new Date(sy, sm - 1, sd);
     start.setHours(0, 0, 0, 0);
 
-    // Anchor to the Sunday of the week containing startDate
-    const anchor = getSunday(start);
+    // Anchor to the Monday of the week containing startDate
+    const anchor = getMonday(start);
 
     const buckets: Record<number, any[]> = {};
 
@@ -243,7 +245,7 @@ function groupByCalendarWeek(weeks: any[], startDate: string) {
             const sessionDate = new Date(start);
             sessionDate.setDate(sessionDate.getDate() + absDay);
 
-            // Calendar week = how many 7-day intervals from the anchor Sunday
+            // Calendar week = how many 7-day intervals from the anchor Monday
             const diffMs = sessionDate.getTime() - anchor.getTime();
             const calWeek = Math.floor(diffMs / (7 * 24 * 60 * 60 * 1000)) + 1;
 
@@ -268,8 +270,8 @@ function weekDateRange(weekNumber: number, startDate?: string): string {
     const [sy, sm, sd] = startDate.split('-').map(Number);
     const start = new Date(sy, sm - 1, sd);
     start.setHours(0, 0, 0, 0);
-    // Anchor to the Sunday of the week containing startDate
-    const anchor = getSunday(start);
+    // Anchor to the Monday of the week containing startDate
+    const anchor = getMonday(start);
     const weekStart = new Date(anchor);
     weekStart.setDate(weekStart.getDate() + (weekNumber - 1) * 7);
     const weekEnd = new Date(weekStart);

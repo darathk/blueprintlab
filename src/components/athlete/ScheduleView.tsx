@@ -103,13 +103,14 @@ function weekDateRangeFromDate(programStartDate: any, weekNumber: number): strin
     // Compute the actual session date anchor: start + (weekNumber-1)*7
     const anchor = new Date(start);
     anchor.setDate(anchor.getDate() + (weekNumber - 1) * 7);
-    // Snap to the Sunday of that week
-    const sunday = new Date(anchor);
-    sunday.setDate(sunday.getDate() - sunday.getDay());
-    const saturday = new Date(sunday);
-    saturday.setDate(saturday.getDate() + 6);
+    // Snap to the Monday of that week
+    const monday = new Date(anchor);
+    const offset = (monday.getDay() + 6) % 7;
+    monday.setDate(monday.getDate() - offset);
+    const sunday = new Date(monday);
+    sunday.setDate(sunday.getDate() + 6);
     const fmt = (d: Date) => `${SHORT_MONTHS[d.getMonth()]} ${d.getDate()}`;
-    return `${fmt(sunday)} – ${fmt(saturday)}`;
+    return `${fmt(monday)} – ${fmt(sunday)}`;
 }
 
 function sessionProgress(exercises: any[], log: any, editStateData?: any[]): number {
@@ -526,9 +527,10 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
             if (!program.startDate) return;
             // Use RAW startDate for date computation — weekNum/dayNum are stored relative to this
             const start = parseLocalDate(program.startDate);
-            // Snap to Sunday only for computing calendar-week display numbers
-            const startSunday = new Date(start);
-            startSunday.setDate(startSunday.getDate() - startSunday.getDay());
+            // Snap to Monday only for computing calendar-week display numbers
+            const startMonday = new Date(start);
+            const startOffset = (startMonday.getDay() + 6) % 7;
+            startMonday.setDate(startMonday.getDate() - startOffset);
             const isActive = program.status === 'active';
 
             // Date-based check: a program whose date range hasn't fully passed
@@ -553,11 +555,12 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                     allSessionDates.push({ wn, date: d });
                 });
             });
-            // Get unique calendar weeks (Sun-Sat) that have sessions, sorted chronologically
-            const calendarWeekSundays = [...new Set(allSessionDates.map(s => {
-                const sun = new Date(s.date);
-                sun.setDate(sun.getDate() - sun.getDay());
-                return sun.getTime();
+            // Get unique calendar weeks (Mon-Sun) that have sessions, sorted chronologically
+            const calendarWeekMondays = [...new Set(allSessionDates.map(s => {
+                const mon = new Date(s.date);
+                const off = (mon.getDay() + 6) % 7;
+                mon.setDate(mon.getDate() - off);
+                return mon.getTime();
             }))].sort((a, b) => a - b);
 
             weeks.forEach((week: any) => {
@@ -574,9 +577,10 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                     const legacyKey = sessionKey(program.id, wn, day);
                     const sKey = session.id || legacyKey;
                     // Compute calendar-week display number (1-based, only counting weeks with sessions)
-                    const sessionSunday = new Date(d);
-                    sessionSunday.setDate(sessionSunday.getDate() - sessionSunday.getDay());
-                    const weekDisplayNum = calendarWeekSundays.indexOf(sessionSunday.getTime()) + 1;
+                    const sessionMonday = new Date(d);
+                    const off = (sessionMonday.getDay() + 6) % 7;
+                    sessionMonday.setDate(sessionMonday.getDate() - off);
+                    const weekDisplayNum = calendarWeekMondays.indexOf(sessionMonday.getTime()) + 1;
                     // sessionNum is the 1-based position of this session in the week (sorted by day)
                     const sessionNum = sortedSessions.findIndex((s: any) => (s?.day || 1) === day) + 1;
                     if (!map[ds]) map[ds] = [];

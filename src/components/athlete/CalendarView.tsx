@@ -33,7 +33,8 @@ export default function CalendarView({ program, athleteId }) {
         const year = date.getFullYear();
         const month = date.getMonth();
         const days = new Date(year, month + 1, 0).getDate();
-        const firstDay = new Date(year, month, 1).getDay(); // 0 = Sunday
+        const rawFirstDay = new Date(year, month, 1).getDay(); // 0 = Sunday
+        const firstDay = (rawFirstDay + 6) % 7; // 0 = Monday, ..., 6 = Sunday
         return { days, firstDay };
     };
 
@@ -197,7 +198,7 @@ export default function CalendarView({ program, athleteId }) {
 
             {/* Grid Header */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', textAlign: 'center', background: 'var(--accent)', color: 'black', fontWeight: 'bold', fontSize: '0.8rem', padding: '0.5rem 0' }}>
-                <div style={{ minWidth: 0 }}>Sun</div><div style={{ minWidth: 0 }}>Mon</div><div style={{ minWidth: 0 }}>Tue</div><div style={{ minWidth: 0 }}>Wed</div><div style={{ minWidth: 0 }}>Thu</div><div style={{ minWidth: 0 }}>Fri</div><div style={{ minWidth: 0 }}>Sat</div>
+                <div style={{ minWidth: 0 }}>Mon</div><div style={{ minWidth: 0 }}>Tue</div><div style={{ minWidth: 0 }}>Wed</div><div style={{ minWidth: 0 }}>Thu</div><div style={{ minWidth: 0 }}>Fri</div><div style={{ minWidth: 0 }}>Sat</div><div style={{ minWidth: 0 }}>Sun</div>
             </div>
 
             {/* Grid Body */}

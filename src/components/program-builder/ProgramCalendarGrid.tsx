@@ -69,9 +69,9 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
         // Last day of the month
         const lastDayOfMonth = new Date(year, month + 1, 0);
 
-        // Grid start (Sunday based)
+        // Grid start (Monday based)
         const startDayOfWeek = firstDayOfMonth.getDay(); // 0Sun - 6Sat
-        const offset = startDayOfWeek; // Sunday = 0 offset
+        const offset = (startDayOfWeek + 6) % 7; // Monday = 0 offset, Tue = 1, ..., Sun = 6
 
         const gridStart = new Date(firstDayOfMonth);
         gridStart.setDate(gridStart.getDate() - offset);
@@ -88,7 +88,7 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
             const dateStr = `${y}-${m}-${dStr}`;
 
             // Calculate Program Week/Day relative to Program Start Date
-            // Day 1 = startDate, Day 2 = startDate+1, etc. Same logic as MasterProgramCalendar.
+            // Day 1 = startDate (Monday), Day 2 = startDate+1 (Tuesday), etc.
             const [startY, startM, startD] = startDate.split('-').map(Number);
             const progStart = new Date(startY, startM - 1, startD);
 
@@ -100,7 +100,7 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
             const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
             const weekNum = Math.floor(diffDays / 7) + 1;
-            const dayNum = (diffDays % 7) + 1; // 1=startDate weekday, 7=day before next week
+            const dayNum = (diffDays % 7) + 1; // 1=Monday (startDate weekday), 7=Sunday
 
             const isBeforeProgram = date.getTime() < progStart.getTime();
 
@@ -125,7 +125,7 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
         return days;
     }, [weeks, startDate, currentMonth, existingSessionsByDate]);
 
-    const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const monthName = currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' });
 
     // DnD State

@@ -43,9 +43,10 @@ export default function PeriodizationPlanner({ athlete }) {
         if (!meetDate || blocks.length === 0) return [];
 
         const meet = new Date(meetDate);
-        // Find the Sunday of the Meet Week (Start of the "Last Week")
+        // Find the Monday of the Meet Week (Start of the "Last Week")
         const meetWeekStart = new Date(meet);
-        meetWeekStart.setDate(meet.getDate() - meet.getDay()); // 0 is Sunday
+        const offset = (meet.getDay() + 6) % 7;
+        meetWeekStart.setDate(meet.getDate() - offset); // Monday is start of week
 
         // We work backwards from this anchor
         let currentAnchor = new Date(meetWeekStart);

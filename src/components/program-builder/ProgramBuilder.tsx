@@ -60,12 +60,17 @@ function formatSetsSummary(sets: any[]) {
     return parts.join(', ');
 }
 
-// Snap a date string to the preceding Sunday (or same day if already Sunday)
-// This ensures program weeks align with the calendar's Sun-Sat grid.
-const snapToSunday = (dateStr: string): string => {
+// Snap a date string to the preceding Monday (or same day if already Monday)
+// This ensures program weeks align with the calendar's Mon-Sun grid.
+const snapToMonday = (dateStr: string): string => {
     const [y, m, d] = dateStr.split('-').map(Number);
     const date = new Date(y, m - 1, d);
-    date.setDate(date.getDate() - date.getDay());
+    // getDay(): 0=Sun, 1=Mon, ..., 6=Sat
+    // We want to go back to the most recent Monday:
+    // Mon(1)->0, Tue(2)->1, Wed(3)->2, Thu(4)->3, Fri(5)->4, Sat(6)->5, Sun(0)->6
+    const dayOfWeek = date.getDay();
+    const offset = (dayOfWeek + 6) % 7; // Mon=0, Tue=1, ..., Sun=6
+    date.setDate(date.getDate() - offset);
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 };
 
@@ -309,7 +314,7 @@ export default function ProgramBuilder({
 }) {
     const router = useRouter();
     const [programName, setProgramName] = useState('');
-    const [startDate, setStartDate] = useState(() => snapToSunday(new Date().toISOString().split('T')[0]));
+    const [startDate, setStartDate] = useState(() => snapToMonday(new Date().toISOString().split('T')[0]));
     // State for selected athlete in assigning mode
     const [selectedAthleteId, setSelectedAthleteId] = useState(athleteId || '');
     
@@ -484,7 +489,7 @@ export default function ProgramBuilder({
             } else {
                 rawStartDate = new Date().toISOString().split('T')[0];
             }
-            const snappedStartDate = snapToSunday(rawStartDate);
+            const snappedStartDate = snapToMonday(rawStartDate);
             setStartDate(snappedStartDate);
             let parsedWeeks = initialData.weeks;
             if (typeof parsedWeeks === 'string') {
@@ -1211,8 +1216,8 @@ export default function ProgramBuilder({
     };
 
     const buildPayload = useCallback(() => {
-        // Always snap startDate to Sunday to ensure week alignment
-        const snappedStart = snapToSunday(startDate);
+        // Always snap startDate to Monday to ensure week alignment
+        const snappedStart = snapToMonday(startDate);
 
         // ── Compact weeks: trim empty leading/trailing weeks and renumber from 1 ──
         // This ensures Week 1 is always the first week with actual content,
@@ -1431,7 +1436,7 @@ export default function ProgramBuilder({
         const oldStart = new Date(oldY, oldM - 1, oldD);
         oldStart.setHours(0, 0, 0, 0);
 
-        const snappedNewStart = snapToSunday(newStartDateStr);
+        const snappedNewStart = snapToMonday(newStartDateStr);
         const [newY, newM, newD] = snappedNewStart.split('-').map(Number);
         const newStart = new Date(newY, newM - 1, newD);
         newStart.setHours(0, 0, 0, 0);
@@ -1489,7 +1494,7 @@ export default function ProgramBuilder({
         let currentWeeks = weeks;
 
         if (new Date(dateStr) < new Date(startDate)) {
-            const snapped = snapToSunday(dateStr);
+            const snapped = snapToMonday(dateStr);
             currentWeeks = getShiftedWeeks(dateStr, weeks);
             setStartDate(snapped);
             setWeeks(currentWeeks);
@@ -1545,7 +1550,7 @@ export default function ProgramBuilder({
         let pendingStartDate = null;
 
         if (toDateStr && new Date(toDateStr) < new Date(startDate)) {
-            const snapped = snapToSunday(toDateStr);
+            const snapped = snapToMonday(toDateStr);
             currentWeeks = getShiftedWeeks(toDateStr, weeks);
             pendingStartDate = snapped;
             showToast(`Moved program start to ${snapped}`);
