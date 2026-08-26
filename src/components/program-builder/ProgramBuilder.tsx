@@ -23,6 +23,8 @@ const StressMatrix = dynamic(() => import('@/components/program-builder/StressMa
 // Helper to generate IDs
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
+const DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
 const CATEGORY_COLORS: Record<string, string> = {
     'Knee': '#EAB308',
     'Hip': '#EF4444',
@@ -3083,6 +3085,8 @@ export default function ProgramBuilder({
                                 .sort((a, b) => a.day - b.day)
                                 .map((sess) => {
                                     const sessIndex = weeks[weekOverviewIndex!].sessions.indexOf(sess);
+                                    const dayName = DAY_NAMES[((sess.day || 1) - 1) % 7] || `Day ${sess.day}`;
+                                    const sessionLabel = sess.name ? `${dayName} — ${sess.name}` : dayName;
                                     return (
                                         <div key={sess.id} style={{ marginBottom: '1.25rem' }}>
                                             {/* Session label */}
@@ -3097,7 +3101,7 @@ export default function ProgramBuilder({
                                                     display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer',
                                                 }}
                                             >
-                                                Day {sess.day} — {sess.name}
+                                                {sessionLabel}
                                                 <span style={{
                                                     fontSize: '0.65rem', background: 'rgba(6,182,212,0.15)', color: 'var(--primary)',
                                                     padding: '2px 8px', borderRadius: 9999, fontWeight: 600, textTransform: 'none',

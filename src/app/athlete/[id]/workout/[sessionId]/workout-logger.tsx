@@ -767,7 +767,8 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                     {weekSessions
                         .sort((a, b) => a.day - b.day)
                         .map((sess) => {
-                            const dayName = sess.name || DAY_NAMES[(sess.day - 1) % 7] || `Day ${sess.day}`;
+                            const dayName = DAY_NAMES[((sess.day || 1) - 1) % 7] || `Day ${sess.day}`;
+                            const fullLabel = sess.name ? `${dayName} — ${sess.name}` : dayName;
                             const isCurrentSession = sess.day === dayNum;
 
                             return (
@@ -784,7 +785,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                         alignItems: 'center',
                                         gap: '0.5rem'
                                     }}>
-                                        {dayName}
+                                        {fullLabel}
                                         {isCurrentSession && (
                                             <span style={{
                                                 fontSize: '0.65rem',

@@ -2055,7 +2055,8 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                             {weekDrawer.sessions
                                 .sort((a: any, b: any) => (a.day || 1) - (b.day || 1))
                                 .map((sess: any) => {
-                                    const dayName = sess.name || DAY_NAMES[((sess.day || 1) - 1) % 7] || `Day ${sess.day}`;
+                                    const dayName = DAY_NAMES[((sess.day || 1) - 1) % 7] || `Day ${sess.day}`;
+                                    const fullLabel = sess.name ? `${dayName} — ${sess.name}` : dayName;
                                     return (
                                         <div key={sess.day} style={{ marginBottom: '1.25rem' }}>
                                             {/* Day Label */}
@@ -2067,7 +2068,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                 color: 'var(--secondary-foreground)',
                                                 marginBottom: '0.5rem'
                                             }}>
-                                                {dayName}
+                                                {fullLabel}
                                             </div>
 
                                             {/* Exercise Cards */}
