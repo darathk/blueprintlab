@@ -77,17 +77,18 @@ export default function ExerciseFeedback({
     }, [athleteId, resolvedCoachId]);
 
     const buildAutoMessage = () => {
-        const setLines = sets
-            .filter(s => s.actual.weight || s.actual.reps || s.actual.rpe)
-            .map(s => {
+        const setLines = (sets || [])
+            .filter(s => s && s.actual && (s.actual.weight || s.actual.reps || s.actual.rpe))
+            .map((s, idx) => {
                 const displayWeight = s.actual.weight;
-                return `  Set ${s.setNumber}: ${displayWeight || '—'} ${unit} × ${s.actual.reps || '—'} reps @ RPE ${s.actual.rpe || '—'}`;
+                const setNum = s.setNumber !== undefined ? s.setNumber : (idx + 1);
+                return `  Set ${setNum}: ${displayWeight || '—'} ${unit} × ${s.actual.reps || '—'} reps @ RPE ${s.actual.rpe || '—'}`;
             })
             .join('\n');
 
         return [
             `Feedback`,
-            `Block: ${blockName}`,
+            `Block: ${blockName || 'Current Block'}`,
             `Week: ${weekNum} | Session: ${dayNum}`,
             `Exercise: ${exerciseName}`,
             setLines ? `\nSets Logged:\n${setLines}` : '',
@@ -248,7 +249,10 @@ export default function ExerciseFeedback({
     // --- Upload & Send ---
 
     const handleSend = async () => {
-        if (!message.trim() && stagedFiles.length === 0) return;
+        const textContent = message.trim();
+        const filesToSend = stagedFiles.length > 0 ? [...stagedFiles] : [];
+
+        if (!textContent && filesToSend.length === 0) return;
         if (!resolvedCoachId) {
             setError('Could not find coach — please contact support.');
             return;
@@ -256,14 +260,11 @@ export default function ExerciseFeedback({
 
         setSending(true);
         setError('');
-        const hadFiles = stagedFiles.length > 0;
+        const hadFiles = filesToSend.length > 0;
 
         try {
-            const filesToSend = stagedFiles.length > 0 ? [...stagedFiles] : [];
-            const textContent = message.trim();
-
-            // 1. Always send the text message first (instant delivery)
-            if (textContent) {
+            if (filesToSend.length === 0) {
+                // 1. Text-only feedback message
                 const res = await fetch('/api/messages', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -277,16 +278,18 @@ export default function ExerciseFeedback({
                     }),
                 });
                 if (!res.ok) throw new Error('Failed to send text');
-            }
-
-            // 2. Then upload files in the background (separate messages)
-            if (filesToSend.length > 0) {
+            } else {
+                // 2. Upload files in background — the first file carries the entire feedback block!
+                // This guarantees the video and the feedback text arrive together as one unified message bubble.
                 for (let i = 0; i < filesToSend.length; i++) {
                     const safeMime = getSafeMimeType(filesToSend[i]);
                     const isVid = safeMime.startsWith('video/');
                     const isAudio = safeMime.startsWith('audio/');
-                    const msgContent = isAudio ? 'Voice Message' : isVid ? 'Video' : 'Photo';
-                    const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+                    
+                    const msgContent = i === 0 && textContent
+                        ? textContent
+                        : isAudio ? 'Voice Message' : isVid ? 'Video' : 'Photo';
+                    const tempId = `temp-${Date.now()}-${i}-${Math.random().toString(36).slice(2, 8)}`;
                     
                     chatUploadManager.startUpload({
                         file: filesToSend[i],
@@ -304,6 +307,7 @@ export default function ExerciseFeedback({
 
             setSent(hadFiles ? 'uploading' : 'done');
             clearStagedMedia();
+            setShowStaging(false);
             setMessage('');
             setTimeout(() => {
                 setOpen(false);
@@ -646,26 +650,39 @@ export default function ExerciseFeedback({
                             </div>
                         )}
 
-                        {/* Done / confirm button */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                        {/* Caption / Feedback message input and direct send button */}
+                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10 }}>
                             <div style={{
-                                flex: 1, background: '#2a3942', borderRadius: 24, padding: '4px 16px',
-                                display: 'flex', alignItems: 'center', minHeight: 48,
+                                flex: 1, background: '#2a3942', borderRadius: 16, padding: '8px 14px',
+                                display: 'flex', flexDirection: 'column', minHeight: 48,
                                 boxShadow: '0 1px 1px rgba(0,0,0,0.2)',
                             }}>
-                                <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14 }}>
-                                    {stagedFiles.length} file{stagedFiles.length !== 1 ? 's' : ''} selected
-                                </span>
+                                <div style={{ fontSize: 11, fontWeight: 700, color: '#818cf8', marginBottom: 2 }}>
+                                    Feedback attached ({stagedFiles.length} file{stagedFiles.length !== 1 ? 's' : ''})
+                                </div>
+                                <textarea
+                                    value={message}
+                                    onChange={e => setMessage(e.target.value)}
+                                    placeholder="Add feedback or notes for coach..."
+                                    rows={2}
+                                    style={{
+                                        width: '100%', background: 'transparent', border: 'none',
+                                        color: '#fff', fontSize: 13, resize: 'none',
+                                        outline: 'none', fontFamily: 'inherit', lineHeight: 1.4,
+                                    }}
+                                />
                             </div>
                             <button
-                                onClick={confirmStaging}
+                                onClick={handleSend}
+                                disabled={sending}
+                                title="Send feedback and video to coach"
                                 style={{
-                                    width: 52, height: 52, borderRadius: '50%', background: '#00a884',
+                                    width: 52, height: 52, borderRadius: '50%', background: '#6366f1',
                                     border: 'none', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    cursor: 'pointer', boxShadow: '0 2px 4px rgba(0,0,0,0.3)', flexShrink: 0,
+                                    cursor: 'pointer', boxShadow: '0 2px 6px rgba(99,102,241,0.4)', flexShrink: 0,
                                 }}
                             >
-                                <CheckCircle size={24} />
+                                <Send size={22} />
                             </button>
                         </div>
                     </div>
