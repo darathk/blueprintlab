@@ -117,7 +117,7 @@ export default function ProgramWeeklyView({
 
     // ──── Stress Metrics Computation ────
     const stressMetrics = useMemo(() => {
-        const categories = ['Horizontal Push', 'Vertical Push', 'Horizontal Pull', 'Vertical Pull', 'Knee', 'Hip'];
+        const categories = ['Knee', 'Horizontal Push', 'Hip', 'Vertical Push', 'Horizontal Pull', 'Vertical Pull'];
         const stats: Record<string, { total: number; central: number; peripheral: number; reps: number }> = {};
         categories.forEach(c => stats[c] = { total: 0, central: 0, peripheral: 0, reps: 0 });
 
@@ -530,14 +530,14 @@ export default function ProgramWeeklyView({
 
     // ──── RENDER ────
 
-    const METRIC_CATS = ['Horizontal Push', 'Vertical Push', 'Horizontal Pull', 'Vertical Pull', 'Knee', 'Hip'];
+    const METRIC_CATS = ['Knee', 'Horizontal Push', 'Hip', 'Vertical Push', 'Horizontal Pull', 'Vertical Pull'];
     const METRIC_SHORT: Record<string, string> = {
+        'Knee': 'Knee',
         'Horizontal Push': 'HPush',
+        'Hip': 'Hip',
         'Vertical Push': 'VPush',
         'Horizontal Pull': 'HPull',
         'Vertical Pull': 'VPull',
-        'Knee': 'Knee',
-        'Hip': 'Hip',
     };
 
     return (
