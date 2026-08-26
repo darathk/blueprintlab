@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { calculateStress } from '@/lib/stress-index';
 import { getExerciseCategory } from '@/lib/exercise-db';
-import { Plus, Trash2, Copy, ChevronLeft, ChevronRight, CopyPlus, CheckCircle2 } from 'lucide-react';
+import { Plus, Trash2, Copy, ChevronLeft, ChevronRight, CopyPlus, CheckCircle2, StickyNote } from 'lucide-react';
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
@@ -370,6 +370,25 @@ export default function ProgramWeeklyView({
                         newExercises = exercises.filter((_: any, ei: number) => ei !== exerciseIdOrIdx);
                     }
                     return { ...s, exercises: newExercises };
+                }),
+            };
+        }));
+    }, [currentWeekNum, setWeeks]);
+
+    const updateExerciseNotes = useCallback((dayNum: number, exerciseIdx: number, notes: string) => {
+        setWeeks((prev: any[]) => prev.map(w => {
+            if (w.weekNumber !== currentWeekNum) return w;
+            return {
+                ...w,
+                sessions: w.sessions.map((s: any) => {
+                    if (Number(s.day) !== Number(dayNum)) return s;
+                    return {
+                        ...s,
+                        exercises: (s.exercises || []).map((ex: any, ei: number) => {
+                            if (ei !== exerciseIdx) return ex;
+                            return { ...ex, notes };
+                        }),
+                    };
                 }),
             };
         }));
@@ -1152,6 +1171,48 @@ export default function ProgramWeeklyView({
                                                     >
                                                         <Plus size={11} /> Add Set
                                                     </button>
+                                                </div>
+
+                                                {/* Exercise Note / Instructions */}
+                                                <div style={{
+                                                    padding: '6px 0 2px',
+                                                    borderTop: '1px solid rgba(255,255,255,0.06)',
+                                                    marginTop: '4px',
+                                                }} onClick={e => e.stopPropagation()}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 3 }}>
+                                                        <StickyNote size={10} style={{ color: 'var(--primary)', opacity: 0.8 }} />
+                                                        <span style={{ fontSize: '0.62rem', fontWeight: 700, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                                                            Note / Cue
+                                                        </span>
+                                                    </div>
+                                                    <textarea
+                                                        value={ex.notes || ''}
+                                                        onChange={e => updateExerciseNotes(dayNum, exIdx, e.target.value)}
+                                                        placeholder="Add exercise cues or notes for athlete..."
+                                                        rows={ex.notes ? 2 : 1}
+                                                        style={{
+                                                            width: '100%',
+                                                            minHeight: ex.notes ? '38px' : '26px',
+                                                            background: 'rgba(0,0,0,0.3)',
+                                                            border: '1px solid rgba(255,255,255,0.08)',
+                                                            borderRadius: '4px',
+                                                            padding: '4px 6px',
+                                                            fontSize: '0.74rem',
+                                                            color: 'var(--foreground)',
+                                                            resize: 'vertical',
+                                                            outline: 'none',
+                                                            fontFamily: 'inherit',
+                                                            lineHeight: 1.3,
+                                                        }}
+                                                        onFocus={e => {
+                                                            e.currentTarget.style.borderColor = 'var(--primary)';
+                                                            if (!ex.notes) e.currentTarget.style.minHeight = '42px';
+                                                        }}
+                                                        onBlur={e => {
+                                                            e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+                                                            if (!ex.notes) e.currentTarget.style.minHeight = '26px';
+                                                        }}
+                                                    />
                                                 </div>
                                             </div>
 

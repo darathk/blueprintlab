@@ -129,8 +129,9 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                 exerciseId: ex.id,
                 name: ex.name,
                 category: ex.category || getExerciseCategory(ex.name),
+                coachNotes: ex.notes || '',
                 sets: mappedSets,
-                notes: savedEx?.notes || ex.notes || '',
+                notes: savedEx?.notes ?? ex.notes ?? '',
                 isCollapsed: false
             };
         });
@@ -504,7 +505,41 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
 
                                 {!ex.isCollapsed && (
                                     <div style={{ padding: '0 8px 16px 8px' }}>
-                                                                        {/* TAB BAR */}
+                                        {/* Coach Note / Cue Callout */}
+                                        {(ex.coachNotes || session?.exercises?.[exIndex]?.notes) && (
+                                            <div style={{
+                                                background: 'rgba(6, 182, 212, 0.08)',
+                                                border: '1px solid rgba(6, 182, 212, 0.25)',
+                                                borderLeft: '4px solid var(--primary)',
+                                                borderRadius: '8px',
+                                                padding: '10px 14px',
+                                                marginBottom: '12px',
+                                                marginTop: '8px',
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                gap: '4px',
+                                            }}>
+                                                <div style={{
+                                                    fontSize: '0.68rem',
+                                                    fontWeight: 700,
+                                                    color: 'var(--primary)',
+                                                    textTransform: 'uppercase',
+                                                    letterSpacing: '0.06em',
+                                                }}>
+                                                    Coach Note / Instructions
+                                                </div>
+                                                <div style={{
+                                                    fontSize: '0.88rem',
+                                                    color: 'var(--foreground)',
+                                                    lineHeight: 1.4,
+                                                    whiteSpace: 'pre-wrap',
+                                                }}>
+                                                    {ex.coachNotes || session?.exercises?.[exIndex]?.notes}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* TAB BAR */}
                                                                         {(() => {
                                                                             const currentTab = activeTabs[exIndex] || 'actual';
                                                                             
