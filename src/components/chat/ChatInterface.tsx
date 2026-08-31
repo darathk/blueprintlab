@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { chatUploadManager, useChatUploadJobsForConversation, usePreUploadJobs, type UploadCompleteDetail } from '@/lib/chat-upload-manager';
 
@@ -242,7 +242,7 @@ interface MessageListProps {
     confirmDeleteId: string | null;
 }
 
-const MemoizedMessageList = React.memo(function MemoizedMessageList({
+const MemoizedMessageList = memo(function MemoizedMessageList({
     scrollContainerRef,
     messagesEndRef,
     handleScroll,
