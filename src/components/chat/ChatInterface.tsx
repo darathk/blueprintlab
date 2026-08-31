@@ -163,6 +163,496 @@ const fixFileMimeType = (f: File): File => {
     return f;
 };
 
+const fmtTime = (s: string | Date) => {
+    const d = new Date(s), n = new Date();
+    return d.toDateString() === n.toDateString() ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+        : d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+};
+
+const fmtDate = (s: string | Date) => {
+    const d = new Date(s), n = new Date(), y = new Date(n); y.setDate(y.getDate() - 1);
+    return d.toDateString() === n.toDateString() ? 'Today' : d.toDateString() === y.toDateString() ? 'Yesterday'
+        : d.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
+};
+
+const isUrl = (text: string) => /^https?:\/\//.test(text);
+
+function highlightMatch(text: string, searchText?: string) {
+    if (!text) return null;
+    const parts = text.split(/(https?:\/\/[^\s<]+)/g);
+    if (!searchText?.trim()) {
+        return (
+            <>
+                {parts.map((part, i) =>
+                    isUrl(part)
+                        ? <a key={i} href={part} target="_blank" rel="noopener noreferrer" style={{ color: '#22d3ee', textDecoration: 'underline' }}>{part}</a>
+                        : part
+                )}
+            </>
+        );
+    }
+
+    const escapedSearch = searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    return (
+        <>
+            {parts.map((part, i) => {
+                if (isUrl(part)) {
+                    return <a key={i} href={part} target="_blank" rel="noopener noreferrer" style={{ color: '#22d3ee', textDecoration: 'underline' }}>{part}</a>;
+                }
+                const searchParts = part.split(new RegExp(`(${escapedSearch})`, 'gi'));
+                return searchParts.map((sp, j) =>
+                    sp.toLowerCase() === searchText.toLowerCase()
+                        ? <mark key={`${i}-${j}`} style={{ background: 'rgba(6, 182, 212, 0.4)', color: '#fff', borderRadius: 2, padding: '0 2px' }}>{sp}</mark>
+                        : sp
+                );
+            })}
+        </>
+    );
+}
+
+interface MessageListProps {
+    scrollContainerRef: React.RefObject<HTMLDivElement | null>;
+    messagesEndRef: React.RefObject<HTMLDivElement | null>;
+    handleScroll: () => void;
+    loaded: boolean;
+    searchText: string;
+    filteredMessages: Message[];
+    currentUserId: string;
+    otherUserName: string;
+    selectedMessageIds: Set<string>;
+    isMultiSelecting: boolean;
+    toggleSelection: (id: string) => void;
+    activeMenu: string | null;
+    setActiveMenu: (id: string | null) => void;
+    scrollToMessage: (id: string) => void;
+    scrollToBottom: (smooth?: boolean) => void;
+    setExpandedMedia: (media: { url: string; type: 'video' | 'image'; message?: Message } | null) => void;
+    uploadProgress: Record<string, number>;
+    setMessages: React.Dispatch<React.SetStateAction<Message[]>>;
+    handleToggleReaction: (msgId: string, emoji: string) => void;
+    emojiPickerMessageId: string | null;
+    setEmojiPickerMessageId: (id: string | null) => void;
+    setReplyingTo: (msg: Message | null) => void;
+    setEditingMessage: (msg: Message | null) => void;
+    setNewMessage: (text: string) => void;
+    inputRef: React.RefObject<HTMLTextAreaElement | null>;
+    saveMedia: (url: string, isImg?: boolean) => void;
+    handleDeleteMessage: (msgId: string) => void;
+    confirmDeleteId: string | null;
+}
+
+const MemoizedMessageList = React.memo(function MemoizedMessageList({
+    scrollContainerRef,
+    messagesEndRef,
+    handleScroll,
+    loaded,
+    searchText,
+    filteredMessages,
+    currentUserId,
+    otherUserName,
+    selectedMessageIds,
+    isMultiSelecting,
+    toggleSelection,
+    activeMenu,
+    setActiveMenu,
+    scrollToMessage,
+    scrollToBottom,
+    setExpandedMedia,
+    uploadProgress,
+    setMessages,
+    handleToggleReaction,
+    emojiPickerMessageId,
+    setEmojiPickerMessageId,
+    setReplyingTo,
+    setEditingMessage,
+    setNewMessage,
+    inputRef,
+    saveMedia,
+    handleDeleteMessage,
+    confirmDeleteId,
+}: MessageListProps) {
+    const longPressRef = useRef<NodeJS.Timeout | null>(null);
+
+    return (
+        <div ref={scrollContainerRef} onScroll={handleScroll} style={{
+            flex: 1,
+            overflowY: 'auto',
+            overflowX: 'hidden',
+            padding: '16px 20px',
+            minHeight: 0,
+            paddingBottom: 0,
+            willChange: 'scroll-position',
+            transform: 'translateZ(0)',
+            WebkitOverflowScrolling: 'touch' as any,
+            overscrollBehavior: 'contain',
+            background: 'var(--background)',
+        }}>
+            {!loaded && <div style={{ textAlign: 'center', padding: 40, color: 'var(--secondary-foreground)' }}>Loading…</div>}
+            {loaded && filteredMessages.length === 0 && !searchText && (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 12, padding: 40 }}>
+                    <div style={{ fontSize: 28, fontWeight: 300, color: 'var(--foreground)', letterSpacing: '-0.02em' }}>Start the conversation</div>
+                    <div style={{ fontSize: 14, color: 'var(--secondary-foreground)' }}>Send a message to {otherUserName}</div>
+                </div>
+            )}
+            {loaded && searchText && filteredMessages.length === 0 && (
+                <div style={{ textAlign: 'center', padding: 60, color: 'var(--secondary-foreground)', fontSize: 14 }}>
+                    No messages found matching &ldquo;{searchText}&rdquo;
+                </div>
+            )}
+
+            {filteredMessages.map((msg, i) => {
+                const mine = msg.senderId === currentUserId;
+                const isVid = msg.mediaType?.startsWith('video');
+                const isImg = msg.mediaType?.startsWith('image');
+                const isAudio = msg.mediaType?.startsWith('audio');
+                const dateSep = i === 0 || new Date(filteredMessages[i].createdAt).toDateString() !== new Date(filteredMessages[i - 1].createdAt).toDateString();
+                const timeSep = i === 0 || filteredMessages[i].senderId !== filteredMessages[i - 1].senderId ||
+                    new Date(filteredMessages[i].createdAt).getTime() - new Date(filteredMessages[i - 1].createdAt).getTime() > 300000;
+
+                const isSelected = selectedMessageIds.has(msg.id);
+
+                return (
+                    <div key={msg.id} id={`msg-${msg.id}`} style={{ position: 'relative' }}>
+                        {isSelected && <div style={{ position: 'absolute', inset: -4, background: 'rgba(6, 182, 212, 0.1)', zIndex: 0, borderRadius: 8, pointerEvents: 'none' }} />}
+                        <div style={{ position: 'relative', zIndex: 1 }} onClick={() => isMultiSelecting && toggleSelection(msg.id)}>
+                            {dateSep && (
+                                <div style={{ textAlign: 'center', margin: '20px 0 10px' }}>
+                                    <span style={{ fontSize: 11, color: 'var(--secondary-foreground)', fontWeight: 500, background: 'rgba(255,255,255,0.04)', padding: '4px 14px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.06)' }}>
+                                        {fmtDate(msg.createdAt)}
+                                    </span>
+                                </div>
+                            )}
+                            {timeSep && !dateSep && (
+                                <div style={{ textAlign: 'center', margin: '12px 0 6px', fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>
+                                    {fmtTime(msg.createdAt)}
+                                </div>
+                            )}
+
+                            <div style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start', alignItems: 'center', marginTop: timeSep && i > 0 ? 8 : 2, gap: 4, position: 'relative' }}>
+
+                                {/* Action button — left side for own messages */}
+                                {mine ? (
+                                    <button onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === msg.id ? null : msg.id); }}
+                                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.2)', padding: '2px 4px', flexShrink: 0, display: 'flex', alignItems: 'center', opacity: 0.6, transition: 'opacity 0.2s' }}
+                                        title="Actions"><MoreVertical size={14} color="rgba(255,255,255,0.3)" /></button>
+                                ) : (
+                                    <div style={{ width: 14, flexShrink: 0 }} />
+                                )}
+
+                                <div style={{ position: 'relative', maxWidth: '75%', cursor: isMultiSelecting ? 'pointer' : 'default' }}>
+                                    <div
+                                        onTouchStart={() => {
+                                            longPressRef.current = setTimeout(() => {
+                                                setActiveMenu(activeMenu === msg.id ? null : msg.id);
+                                            }, 500);
+                                        }}
+                                        onTouchEnd={() => { if (longPressRef.current) { clearTimeout(longPressRef.current); longPressRef.current = null; } }}
+                                        onTouchMove={() => { if (longPressRef.current) { clearTimeout(longPressRef.current); longPressRef.current = null; } }}
+                                        onClick={(e) => {
+                                            if (isMultiSelecting) { e.stopPropagation(); toggleSelection(msg.id); }
+                                        }}
+                                        style={{
+                                            padding: msg.mediaUrl ? '4px 4px 8px' : '10px 14px',
+                                            borderRadius: 16,
+                                            background: isSelected ? 'rgba(125,135,210,0.3)' : mine ? 'rgba(125,135,210,0.15)' : 'rgba(255,255,255,0.05)',
+                                            border: isSelected ? '1px solid rgba(125,135,210,0.4)' : '1px solid ' + (mine ? 'rgba(125,135,210,0.12)' : 'rgba(255,255,255,0.06)'),
+                                            wordBreak: 'break-word',
+                                            overflowWrap: 'break-word',
+                                            transition: 'background 0.15s ease',
+                                            position: 'relative'
+                                        }}>
+                                        {/* Reply */}
+                                        {msg.replyTo && (
+                                            <div
+                                                onClick={(e) => { e.stopPropagation(); scrollToMessage(msg.replyTo!.id); }}
+                                                style={{ margin: msg.mediaUrl ? '4px 8px 6px' : '0 0 6px', padding: '6px 10px', borderRadius: 10, background: 'rgba(255,255,255,0.04)', borderLeft: '2px solid var(--primary)', fontSize: 11, cursor: 'pointer' }}
+                                            >
+                                                <div style={{ fontWeight: 600, color: 'var(--primary)', marginBottom: 2 }}>{msg.replyTo.sender.name}</div>
+                                                <div style={{ color: 'rgba(255,255,255,0.4)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                    {msg.replyTo.mediaUrl ? (msg.replyTo.mediaType === 'image/gif' ? 'GIF' : msg.replyTo.mediaType?.startsWith('image') ? 'Photo' : msg.replyTo.mediaType?.startsWith('audio') ? 'Voice' : 'Video') : msg.replyTo.content}
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Video */}
+                                        {msg.mediaUrl && isVid && (
+                                            <div style={{ position: 'relative' }}>
+                                                <LazyVideo
+                                                    src={msg.mediaUrl}
+                                                    onLoadedData={() => scrollToBottom(false)}
+                                                    style={{ width: '100%', maxWidth: '100%', maxHeight: 300, display: 'block', objectFit: 'contain' }}
+                                                    onExpand={(videoSrc) => setExpandedMedia({ url: videoSrc, type: 'video', message: msg })}
+                                                />
+                                                {/* Upload/processing progress overlay */}
+                                                {uploadProgress[msg.id] !== undefined && uploadProgress[msg.id] < 100 && (
+                                                    <div style={{
+                                                        position: 'absolute', bottom: 0, left: 0, right: 0,
+                                                        background: 'linear-gradient(transparent, rgba(0,0,0,0.7))',
+                                                        padding: '16px 10px 8px',
+                                                        display: 'flex', flexDirection: 'column', gap: 4
+                                                    }}>
+                                                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)', fontWeight: 600 }}>
+                                                            {uploadProgress[msg.id] < 5 ? 'Processing…' : `Sending ${uploadProgress[msg.id]}%`}
+                                                        </div>
+                                                        <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.2)', overflow: 'hidden' }}>
+                                                            <div style={{
+                                                                height: '100%',
+                                                                background: 'var(--primary)',
+                                                                borderRadius: 2,
+                                                                transition: 'width 150ms ease',
+                                                                width: `${Math.max(uploadProgress[msg.id], 2)}%`
+                                                            }} />
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* Image */}
+                                        {msg.mediaUrl && isImg && (
+                                            <div style={{ position: 'relative' }}>
+                                                <img src={msg.mediaUrl} alt="" loading="lazy" onClick={() => setExpandedMedia({ url: msg.mediaUrl!, type: 'image', message: msg })} onLoad={() => scrollToBottom(false)}
+                                                    style={{ width: '100%', maxWidth: '100%', maxHeight: 200, borderRadius: 14, display: 'block', cursor: 'pointer', objectFit: 'cover' }} />
+                                                {uploadProgress[msg.id] !== undefined && uploadProgress[msg.id] < 100 && (
+                                                    <div style={{
+                                                        position: 'absolute', bottom: 0, left: 0, right: 0,
+                                                        background: 'linear-gradient(transparent, rgba(0,0,0,0.6))',
+                                                        padding: '12px 10px 6px',
+                                                        borderRadius: '0 0 14px 14px',
+                                                        display: 'flex', flexDirection: 'column', gap: 3
+                                                    }}>
+                                                        <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.8)', fontWeight: 600 }}>
+                                                            {uploadProgress[msg.id] < 5 ? 'Processing…' : `Sending ${uploadProgress[msg.id]}%`}
+                                                        </div>
+                                                        <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.2)', overflow: 'hidden' }}>
+                                                            <div style={{ height: '100%', background: 'var(--primary)', borderRadius: 2, transition: 'width 150ms ease', width: `${Math.max(uploadProgress[msg.id], 2)}%` }} />
+                                                        </div>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        )}
+
+                                        {/* Audio (WhatsApp Style) */}
+                                        {msg.mediaUrl && isAudio && (
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '4px 8px', minWidth: 240 }}>
+                                                <div style={{ width: 45, height: 45, borderRadius: '50%', background: mine ? 'rgba(125,135,210,0.2)' : 'rgba(125,135,210,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
+                                                    <span style={{ fontSize: 18, color: '#fff', fontWeight: 600 }}>{msg.sender.name[0]}</span>
+                                                </div>
+
+                                                <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                                                        <audio
+                                                            controls
+                                                            preload="metadata"
+                                                            style={{ height: 35, width: '100%', filter: 'brightness(0.8) contrast(1.1)', opacity: 0.8 }}
+                                                        >
+                                                            <source src={msg.mediaUrl} type={msg.mediaType || 'audio/mpeg'} />
+                                                        </audio>
+                                                    </div>
+                                                    <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 16, paddingLeft: 8 }}>
+                                                        {[3, 7, 5, 9, 4, 11, 6, 8, 5, 10, 4, 7, 3, 6, 9, 5].map((h, idx) => (
+                                                            <div key={idx} style={{ width: 2, height: `${(h / 12) * 100}%`, background: 'rgba(125,135,210,0.4)', borderRadius: 1 }} />
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        )}
+
+                                        {/* Text */}
+                                        {(!msg.mediaUrl || (msg.content && !['Video', 'Photo', 'GIF', 'Voice Message'].includes(msg.content.trim()))) ? (
+                                            <div style={{ fontSize: 14, lineHeight: 1.4, color: 'rgba(255,255,255,0.9)', padding: msg.mediaUrl ? '0 10px' : 0, whiteSpace: 'pre-wrap' }}>
+                                                {highlightMatch(msg.content, searchText)}
+                                            </div>
+                                        ) : null}
+
+                                        {/* Time + Status */}
+                                        <div style={{
+                                            fontSize: 10,
+                                            color: 'rgba(255,255,255,0.5)',
+                                            marginTop: 4,
+                                            textAlign: 'right',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'flex-end',
+                                            gap: 4,
+                                            padding: msg.mediaUrl ? '0 8px' : 0
+                                        }}>
+                                            {fmtTime(msg.createdAt)}
+                                            {mine && !msg._uploadError && <span style={{ color: msg.read ? 'var(--primary)' : 'inherit', fontSize: 12 }}>✓✓</span>}
+                                            {msg._uploadError && <span style={{ color: 'var(--error)', fontSize: 10, fontWeight: 600 }}>⚠ Failed</span>}
+                                        </div>
+
+                                        {/* Upload error banner */}
+                                        {msg._uploadError && (
+                                            <div style={{
+                                                display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+                                                padding: '6px 10px', marginTop: 4,
+                                                background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)',
+                                                borderRadius: 8, fontSize: 11, color: '#ef4444',
+                                            }}>
+                                                <span style={{ fontWeight: 600 }}>Failed to send</span>
+                                                <button
+                                                    onClick={(e) => {
+                                                        e.stopPropagation();
+                                                        setMessages(prev => prev.filter(m => {
+                                                            if (m.id !== msg.id) return true;
+                                                            if (m.mediaUrl && m.mediaUrl.startsWith('blob:')) {
+                                                                try { URL.revokeObjectURL(m.mediaUrl); } catch {}
+                                                            }
+                                                            return false;
+                                                        }));
+                                                    }}
+                                                    style={{
+                                                        background: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.3)',
+                                                        color: '#ef4444', fontSize: 10, fontWeight: 600, padding: '2px 8px',
+                                                        borderRadius: 6, cursor: 'pointer',
+                                                    }}
+                                                >
+                                                    Dismiss
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    {/* Reactions display */}
+                                    {msg.reactions && Object.keys(msg.reactions).length > 0 && (
+                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 4, justifyContent: mine ? 'flex-end' : 'flex-start' }}>
+                                            {Object.entries(msg.reactions as Record<string, string[]>).map(([emoji, userIds]) => {
+                                                const hasReacted = userIds.includes(currentUserId);
+                                                return (
+                                                    <button
+                                                        key={emoji}
+                                                        onClick={(e) => { e.stopPropagation(); handleToggleReaction(msg.id, emoji); }}
+                                                        style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: 4,
+                                                            padding: '2px 6px',
+                                                            borderRadius: 10,
+                                                            background: hasReacted ? 'rgba(6, 182, 212, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                                                            border: hasReacted ? '1px solid rgba(6, 182, 212, 0.5)' : '1px solid rgba(255, 255, 255, 0.1)',
+                                                            cursor: 'pointer',
+                                                            transition: 'all 0.2s ease',
+                                                        }}
+                                                    >
+                                                        <span style={{ fontSize: 12 }}>{emoji}</span>
+                                                        <span style={{ fontSize: 10, color: hasReacted ? 'var(--primary)' : 'rgba(255,255,255,0.6)', fontWeight: 600 }}>{userIds.length}</span>
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    )}
+
+                                    {/* Dropdown action menu */}
+                                    {activeMenu === msg.id && !isMultiSelecting && (
+                                        <>
+                                            <div
+                                                onTouchStart={(e) => { e.stopPropagation(); setActiveMenu(null); }}
+                                                onClick={(e) => { e.stopPropagation(); setActiveMenu(null); }}
+                                                style={{ position: 'fixed', inset: 0, zIndex: 998 }}
+                                            />
+                                            <div
+                                                onTouchStart={e => e.stopPropagation()}
+                                                onClick={e => e.stopPropagation()}
+                                                style={{
+                                                    position: 'absolute',
+                                                    bottom: 0,
+                                                    [mine ? 'right' : 'left']: 0,
+                                                    zIndex: 999,
+                                                    background: '#1a1a24',
+                                                    border: '1px solid rgba(255,255,255,0.1)',
+                                                    borderRadius: 16,
+                                                    boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+                                                    padding: '8px 0',
+                                                    width: 220,
+                                                    animation: 'scaleIn 0.15s ease-out'
+                                                }}
+                                            >
+                                                {/* Emoji reactions row */}
+                                                <div style={{
+                                                    display: 'flex',
+                                                    justifyContent: 'space-around',
+                                                    alignItems: 'center',
+                                                    padding: '4px 12px 8px',
+                                                    borderBottom: '1px solid rgba(255,255,255,0.08)',
+                                                    marginBottom: 4,
+                                                    position: 'relative',
+                                                }}>
+                                                    {['❤️', '🔥', '👍', '💪', '🙌', '💯'].map(emoji => (
+                                                        <button
+                                                            key={emoji}
+                                                            onClick={() => { handleToggleReaction(msg.id, emoji); setActiveMenu(null); setEmojiPickerMessageId(null); }}
+                                                            style={{ fontSize: 18, background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}
+                                                        >
+                                                            {emoji}
+                                                        </button>
+                                                    ))}
+                                                    <button
+                                                        onClick={() => setEmojiPickerMessageId(emojiPickerMessageId === msg.id ? null : msg.id)}
+                                                        style={{
+                                                            fontSize: 14,
+                                                            background: emojiPickerMessageId === msg.id ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.06)',
+                                                            border: '1px solid rgba(255,255,255,0.1)',
+                                                            borderRadius: '50%',
+                                                            width: 24,
+                                                            height: 24,
+                                                            cursor: 'pointer',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            color: 'var(--secondary-foreground)',
+                                                            flexShrink: 0,
+                                                        }}
+                                                        title="More emojis"
+                                                    >
+                                                        <Plus size={14} />
+                                                    </button>
+                                                    {emojiPickerMessageId === msg.id && (
+                                                        <EmojiPicker
+                                                            onSelect={(emoji) => { handleToggleReaction(msg.id, emoji); setActiveMenu(null); setEmojiPickerMessageId(null); }}
+                                                            onClose={() => setEmojiPickerMessageId(null)}
+                                                            position="above"
+                                                        />
+                                                    )}
+                                                </div>
+
+                                                <button onClick={() => { setReplyingTo(msg); setActiveMenu(null); setTimeout(() => inputRef.current?.focus(), 50); }}
+                                                    style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: 'var(--foreground)', cursor: 'pointer' }}><Reply size={16} color="var(--secondary-foreground)" /> Reply</button>
+                                                {mine && msg.content && !msg.mediaUrl && (
+                                                    <button onClick={() => { setEditingMessage(msg); setNewMessage(msg.content); setActiveMenu(null); setTimeout(() => inputRef.current?.focus(), 50); }}
+                                                        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: 'var(--foreground)', cursor: 'pointer' }}><Pencil size={16} color="var(--secondary-foreground)" /> Edit</button>
+                                                )}
+                                                <button onClick={() => { navigator.clipboard.writeText(msg.content); setActiveMenu(null); }}
+                                                    style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: 'var(--foreground)', cursor: 'pointer' }}><Copy size={16} color="var(--secondary-foreground)" /> Copy</button>
+                                                <button onClick={() => { toggleSelection(msg.id); setActiveMenu(null); }}
+                                                    style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: 'var(--foreground)', cursor: 'pointer' }}><MoreVertical size={16} color="var(--secondary-foreground)" /> Select</button>
+                                                {msg.mediaUrl && <button onClick={() => { saveMedia(msg.mediaUrl!, msg.mediaType?.startsWith('image')); setActiveMenu(null); }}
+                                                    style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: 'var(--foreground)', cursor: 'pointer' }}><Download size={16} color="var(--secondary-foreground)" /> Save</button>}
+                                                <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '4px 0' }} />
+                                                <button onClick={() => handleDeleteMessage(msg.id)}
+                                                    style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: confirmDeleteId === msg.id ? 'rgba(239,68,68,0.1)' : 'none', border: 'none', fontSize: 13, color: '#ef4444', cursor: 'pointer', fontWeight: 600 }}><X size={16} color="#ef4444" /> {confirmDeleteId === msg.id ? 'Tap again to delete' : 'Delete'}</button>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
+
+                                {/* Action button — right side for other's messages */}
+                                {!mine && (
+                                    <button onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === msg.id ? null : msg.id); }}
+                                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.2)', padding: '2px 4px', flexShrink: 0, display: 'flex', alignItems: 'center', opacity: 0.6, transition: 'opacity 0.2s' }}
+                                        title="Actions"><MoreVertical size={14} color="rgba(255,255,255,0.3)" /></button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                );
+            })}
+            <div ref={messagesEndRef} style={{ height: 8, flexShrink: 0, width: '100%' }} />
+        </div>
+    );
+});
+
 interface Props {
     currentUserId: string;
     otherUserId: string;
@@ -252,14 +742,14 @@ export default function ChatInterface({
     const [selectedMessageIds, setSelectedMessageIds] = useState<Set<string>>(new Set());
     const isMultiSelecting = selectedMessageIds.size > 0;
 
-    const toggleSelection = (msgId: string) => {
+    const toggleSelection = useCallback((msgId: string) => {
         setSelectedMessageIds(prev => {
             const next = new Set(prev);
             if (next.has(msgId)) next.delete(msgId);
             else next.add(msgId);
             return next;
         });
-    };
+    }, []);
 
     const scrollContainerRef = useRef<HTMLDivElement>(null);
     const fileRef = useRef<HTMLInputElement>(null);
@@ -734,7 +1224,7 @@ export default function ChatInterface({
     };
 
     // Toggle reaction
-    const handleToggleReaction = async (messageId: string, emoji: string) => {
+    const handleToggleReaction = useCallback(async (messageId: string, emoji: string) => {
         // Optimistic UI update
         const currentUser = currentUserId;
         setMessages(prev => prev.map(m => {
@@ -800,7 +1290,7 @@ export default function ChatInterface({
                 return { ...m, reactions: revertedReactions };
             }));
         }
-    };
+    }, [currentUserId]);
 
     // Send GIF as a message
     const handleSendGif = async (gifUrl: string) => {
@@ -1036,7 +1526,7 @@ export default function ChatInterface({
         if (fileRef.current) fileRef.current.value = '';
     };
 
-    const saveMedia = async (url: string, isImg?: boolean) => {
+    const saveMedia = useCallback(async (url: string, isImg?: boolean) => {
         try {
             const ext = isImg ? '.jpg' : url.includes('.webm') ? '.webm' : url.includes('.mov') ? '.mov' : '.mp4';
             const filename = `lift_${Date.now()}${ext}`;
@@ -1065,23 +1555,7 @@ export default function ChatInterface({
             a.click();
             document.body.removeChild(a);
         } catch { window.open(url, '_blank'); }
-    };
-
-    const fmtTime = (s: string | Date) => {
-        const d = new Date(s), n = new Date();
-        return d.toDateString() === n.toDateString() ? d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-            : d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-    };
-
-    const fmtDate = (s: string | Date) => {
-        const d = new Date(s), n = new Date(), y = new Date(n); y.setDate(y.getDate() - 1);
-        return d.toDateString() === n.toDateString() ? 'Today' : d.toDateString() === y.toDateString() ? 'Yesterday'
-            : d.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' });
-    };
-
-    const showDateSep = (i: number) => i === 0 || new Date(messages[i].createdAt).toDateString() !== new Date(messages[i - 1].createdAt).toDateString();
-    const showTime = (i: number) => i === 0 || messages[i].senderId !== messages[i - 1].senderId ||
-        new Date(messages[i].createdAt).getTime() - new Date(messages[i - 1].createdAt).getTime() > 300000;
+    }, []);
 
     // Filter messages for search
     const filteredMessages = useMemo(() => {
@@ -1092,44 +1566,6 @@ export default function ChatInterface({
             m.sender.name.toLowerCase().includes(low)
         );
     }, [messages, searchText]);
-
-    // Check if a string is a URL
-    const isUrl = (text: string) => /^https?:\/\//.test(text);
-
-    // Highlighting helper (also linkifies URLs)
-    const highlightMatch = (text: string) => {
-        const parts = text.split(/(https?:\/\/[^\s<]+)/g);
-        if (!searchText.trim()) {
-            return (
-                <>
-                    {parts.map((part, i) =>
-                        isUrl(part)
-                            ? <a key={i} href={part} target="_blank" rel="noopener noreferrer" style={{ color: '#22d3ee', textDecoration: 'underline' }}>{part}</a>
-                            : part
-                    )}
-                </>
-            );
-        }
-        
-        // Escape regex special characters to prevent injection/crashing
-        const escapedSearch = searchText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        
-        return (
-            <>
-                {parts.map((part, i) => {
-                    if (isUrl(part)) {
-                        return <a key={i} href={part} target="_blank" rel="noopener noreferrer" style={{ color: '#22d3ee', textDecoration: 'underline' }}>{part}</a>;
-                    }
-                    const searchParts = part.split(new RegExp(`(${escapedSearch})`, 'gi'));
-                    return searchParts.map((sp, j) =>
-                        sp.toLowerCase() === searchText.toLowerCase()
-                            ? <mark key={`${i}-${j}`} style={{ background: 'rgba(6, 182, 212, 0.4)', color: '#fff', borderRadius: 2, padding: '0 2px' }}>{sp}</mark>
-                            : sp
-                    );
-                })}
-            </>
-        );
-    };
 
     const handleCopyMultiple = () => {
         const selectedMsgs = messages.filter(m => selectedMessageIds.has(m.id)).sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
@@ -1152,7 +1588,7 @@ export default function ChatInterface({
         }, 1500);
     }, []);
 
-    const handleDeleteMessage = async (msgId: string) => {
+    const handleDeleteMessage = useCallback(async (msgId: string) => {
         // First tap shows confirm, second tap deletes
         if (confirmDeleteId !== msgId) {
             setConfirmDeleteId(msgId);
@@ -1175,7 +1611,7 @@ export default function ChatInterface({
             console.error('Delete error:', e);
             window.location.reload();
         }
-    };
+    }, [confirmDeleteId]);
 
     const handleEditMessage = async (msgId: string, newContent: string) => {
         const trimmed = newContent.trim();
@@ -1376,7 +1812,7 @@ export default function ChatInterface({
                                 disabled={uploading}
                                 style={{
                                     flex: 1, background: 'transparent', border: 'none',
-                                    color: 'var(--foreground)', fontSize: 15, outline: 'none',
+                                    color: 'var(--foreground)', fontSize: 16, outline: 'none',
                                     opacity: uploading ? 0.5 : 1
                                 }}
                             />
@@ -1518,372 +1954,37 @@ export default function ChatInterface({
                 />
             )}
 
-            {/* Messages */}
-            <div ref={scrollContainerRef} onScroll={handleScroll} style={{
-                flex: 1,
-                overflowY: 'auto',
-                overflowX: 'hidden',
-                padding: '16px 20px',
-                minHeight: 0,
-                paddingBottom: 0,
-                willChange: 'scroll-position',
-                transform: 'translateZ(0)',
-                WebkitOverflowScrolling: 'touch' as any,
-                overscrollBehavior: 'contain',
-                background: 'var(--background)',
-            }}>
-                {!loaded && <div style={{ textAlign: 'center', padding: 40, color: 'var(--secondary-foreground)' }}>Loading…</div>}
-                {loaded && messages.length === 0 && (
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: 12, padding: 40 }}>
-                        <div style={{ fontSize: 28, fontWeight: 300, color: 'var(--foreground)', letterSpacing: '-0.02em' }}>Start the conversation</div>
-                        <div style={{ fontSize: 14, color: 'var(--secondary-foreground)' }}>Send a message to {otherUserName}</div>
-                    </div>
-                )}
-                {loaded && searchText && filteredMessages.length === 0 && <div style={{ textAlign: 'center', padding: 60, color: 'var(--secondary-foreground)', fontSize: 14 }}>No messages found matching &ldquo;{searchText}&rdquo;</div>}
-
-                {filteredMessages.map((msg, i) => {
-                    const mine = msg.senderId === currentUserId;
-                    const isVid = msg.mediaType?.startsWith('video');
-                    const isImg = msg.mediaType?.startsWith('image');
-                    const isAudio = msg.mediaType?.startsWith('audio');
-                    const dateSep = showDateSep(i);
-                    const timeSep = showTime(i);
-
-                    const isSelected = selectedMessageIds.has(msg.id);
-
-                    return (
-                        <div key={msg.id} id={`msg-${msg.id}`} style={{ position: 'relative' }}>
-                            {isSelected && <div style={{ position: 'absolute', inset: -4, background: 'rgba(6, 182, 212, 0.1)', zIndex: 0, borderRadius: 8, pointerEvents: 'none' }} />}
-                            <div style={{ position: 'relative', zIndex: 1 }} onClick={() => isMultiSelecting && toggleSelection(msg.id)}>
-                                {dateSep && <div style={{ textAlign: 'center', margin: '20px 0 10px' }}><span style={{ fontSize: 11, color: 'var(--secondary-foreground)', fontWeight: 500, background: 'rgba(255,255,255,0.04)', padding: '4px 14px', borderRadius: 20, border: '1px solid rgba(255,255,255,0.06)' }}>{fmtDate(msg.createdAt)}</span></div>}
-                                {timeSep && !dateSep && <div style={{ textAlign: 'center', margin: '12px 0 6px', fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>{fmtTime(msg.createdAt)}</div>}
-
-                                <div style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start', alignItems: 'center', marginTop: timeSep && i > 0 ? 8 : 2, gap: 4, position: 'relative' }}>
-
-                                    {/* Action button — left side for own messages */}
-                                    {mine ? (
-                                        <button onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === msg.id ? null : msg.id); }}
-                                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.2)', padding: '2px 4px', flexShrink: 0, display: 'flex', alignItems: 'center', opacity: 0.6, transition: 'opacity 0.2s' }}
-                                            title="Actions"><MoreVertical size={14} color="rgba(255,255,255,0.3)" /></button>
-                                    ) : (
-                                        <div style={{ width: 14, flexShrink: 0 }} />
-                                    )}
-
-                                    <div style={{ position: 'relative', maxWidth: '75%', cursor: isMultiSelecting ? 'pointer' : 'default' }}>
-                                        <div
-                                            onTouchStart={() => {
-                                                longPressRef.current = setTimeout(() => {
-                                                    setActiveMenu(activeMenu === msg.id ? null : msg.id);
-                                                }, 500);
-                                            }}
-                                            onTouchEnd={() => { if (longPressRef.current) { clearTimeout(longPressRef.current); longPressRef.current = null; } }}
-                                            onTouchMove={() => { if (longPressRef.current) { clearTimeout(longPressRef.current); longPressRef.current = null; } }}
-                                            onClick={(e) => {
-                                                if (isMultiSelecting) { e.stopPropagation(); toggleSelection(msg.id); }
-                                            }}
-                                            style={{
-                                                padding: msg.mediaUrl ? '4px 4px 8px' : '10px 14px',
-                                                borderRadius: 16,
-                                                background: isSelected ? 'rgba(125,135,210,0.3)' : mine ? 'rgba(125,135,210,0.15)' : 'rgba(255,255,255,0.05)',
-                                                border: isSelected ? '1px solid rgba(125,135,210,0.4)' : '1px solid ' + (mine ? 'rgba(125,135,210,0.12)' : 'rgba(255,255,255,0.06)'),
-                                                wordBreak: 'break-word',
-                                                overflowWrap: 'break-word',
-                                                transition: 'background 0.15s ease',
-                                                position: 'relative'
-                                            }}>
-                                            {/* Reply */}
-                                            {msg.replyTo && (
-                                                <div
-                                                    onClick={(e) => { e.stopPropagation(); scrollToMessage(msg.replyTo!.id); }}
-                                                    style={{ margin: msg.mediaUrl ? '4px 8px 6px' : '0 0 6px', padding: '6px 10px', borderRadius: 10, background: 'rgba(255,255,255,0.04)', borderLeft: '2px solid var(--primary)', fontSize: 11, cursor: 'pointer' }}
-                                                >
-                                                    <div style={{ fontWeight: 600, color: 'var(--primary)', marginBottom: 2 }}>{msg.replyTo.sender.name}</div>
-                                                    <div style={{ color: 'rgba(255,255,255,0.4)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                                        {msg.replyTo.mediaUrl ? (msg.replyTo.mediaType === 'image/gif' ? 'GIF' : msg.replyTo.mediaType?.startsWith('image') ? 'Photo' : msg.replyTo.mediaType?.startsWith('audio') ? 'Voice' : 'Video') : msg.replyTo.content}
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* Video */}
-                                            {msg.mediaUrl && isVid && (
-                                                <div style={{ position: 'relative' }}>
-                                                    <LazyVideo
-                                                        src={msg.mediaUrl}
-                                                        onLoadedData={() => scrollToBottom(false)}
-                                                        style={{ width: '100%', maxWidth: '100%', maxHeight: 300, display: 'block', objectFit: 'contain' }}
-                                                        onExpand={(videoSrc) => setExpandedMedia({ url: videoSrc, type: 'video', message: msg })}
-                                                    />
-                                                    {/* Upload/processing progress overlay */}
-                                                    {uploadProgress[msg.id] !== undefined && uploadProgress[msg.id] < 100 && (
-                                                        <>
-                                                            <div style={{
-                                                                position: 'absolute', bottom: 0, left: 0, right: 0,
-                                                                background: 'linear-gradient(transparent, rgba(0,0,0,0.7))',
-                                                                padding: '16px 10px 8px',
-                                                                display: 'flex', flexDirection: 'column', gap: 4
-                                                            }}>
-                                                                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.8)', fontWeight: 600 }}>
-                                                                    {uploadProgress[msg.id] < 5 ? 'Processing…' : `Sending ${uploadProgress[msg.id]}%`}
-                                                                </div>
-                                                                <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.2)', overflow: 'hidden' }}>
-                                                                    <div style={{
-                                                                        height: '100%',
-                                                                        background: 'var(--primary)',
-                                                                        borderRadius: 2,
-                                                                        transition: 'width 150ms ease',
-                                                                        width: `${Math.max(uploadProgress[msg.id], 2)}%`
-                                                                    }} />
-                                                                </div>
-                                                            </div>
-                                                        </>
-                                                    )}
-                                                </div>
-                                            )}
-
-                                            {/* Image */}
-                                            {msg.mediaUrl && isImg && (
-                                                <div style={{ position: 'relative' }}>
-                                                    <img src={msg.mediaUrl} alt="" loading="lazy" onClick={() => setExpandedMedia({ url: msg.mediaUrl!, type: 'image', message: msg })} onLoad={() => scrollToBottom(false)}
-                                                        style={{ width: '100%', maxWidth: '100%', maxHeight: 200, borderRadius: 14, display: 'block', cursor: 'pointer', objectFit: 'cover' }} />
-                                                    {uploadProgress[msg.id] !== undefined && uploadProgress[msg.id] < 100 && (
-                                                        <div style={{
-                                                            position: 'absolute', bottom: 0, left: 0, right: 0,
-                                                            background: 'linear-gradient(transparent, rgba(0,0,0,0.6))',
-                                                            padding: '12px 10px 6px',
-                                                            borderRadius: '0 0 14px 14px',
-                                                            display: 'flex', flexDirection: 'column', gap: 3
-                                                        }}>
-                                                            <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.8)', fontWeight: 600 }}>
-                                                                {uploadProgress[msg.id] < 5 ? 'Processing…' : `Sending ${uploadProgress[msg.id]}%`}
-                                                            </div>
-                                                            <div style={{ height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.2)', overflow: 'hidden' }}>
-                                                                <div style={{ height: '100%', background: 'var(--primary)', borderRadius: 2, transition: 'width 150ms ease', width: `${Math.max(uploadProgress[msg.id], 2)}%` }} />
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                </div>
-                                            )}
-
-                                            {/* Audio (WhatsApp Style) */}
-                                            {msg.mediaUrl && isAudio && (
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '4px 8px', minWidth: 240 }}>
-                                                    {/* Profile Pic on left */}
-                                                    <div style={{ width: 45, height: 45, borderRadius: '50%', background: mine ? 'rgba(125,135,210,0.2)' : 'rgba(125,135,210,0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, overflow: 'hidden' }}>
-                                                        <span style={{ fontSize: 18, color: '#fff', fontWeight: 600 }}>{msg.sender.name[0]}</span>
-                                                    </div>
-
-                                                    {/* Waveform and Play */}
-                                                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                                                            {/* We'll use a custom audio player UI here for WhatsApp look */}
-                                                            <audio
-                                                                controls
-                                                                preload="metadata"
-                                                                style={{ height: 35, width: '100%', filter: 'brightness(0.8) contrast(1.1)', opacity: 0.8 }}
-                                                            >
-                                                                <source src={msg.mediaUrl} type={msg.mediaType || 'audio/mpeg'} />
-                                                            </audio>
-                                                        </div>
-                                                        {/* Pseudo Waveform (static bars for aesthetic) */}
-                                                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 2, height: 16, paddingLeft: 8 }}>
-                                                            {[3, 7, 5, 9, 4, 11, 6, 8, 5, 10, 4, 7, 3, 6, 9, 5].map((h, idx) => (
-                                                                <div key={idx} style={{ width: 2, height: `${(h / 12) * 100}%`, background: 'rgba(125,135,210,0.4)', borderRadius: 1 }} />
-                                                            ))}
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            )}
-
-                                            {/* Text */}
-                                            {(!msg.mediaUrl || (msg.content && !['Video', 'Photo', 'GIF', 'Voice Message'].includes(msg.content.trim()))) ? (
-                                                <div style={{ fontSize: 14, lineHeight: 1.4, color: 'rgba(255,255,255,0.9)', padding: msg.mediaUrl ? '0 10px' : 0, whiteSpace: 'pre-wrap' }}>{highlightMatch(msg.content)}</div>
-                                            ) : null}
-
-                                            {/* Time + Status */}
-                                            <div style={{
-                                                fontSize: 10,
-                                                color: 'rgba(255,255,255,0.5)',
-                                                marginTop: 4,
-                                                textAlign: 'right',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'flex-end',
-                                                gap: 4,
-                                                padding: msg.mediaUrl ? '0 8px' : 0
-                                            }}>
-                                                {fmtTime(msg.createdAt)}
-                                                {mine && !msg._uploadError && <span style={{ color: msg.read ? 'var(--primary)' : 'inherit', fontSize: 12 }}>✓✓</span>}
-                                                {msg._uploadError && <span style={{ color: 'var(--error)', fontSize: 10, fontWeight: 600 }}>⚠ Failed</span>}
-                                            </div>
-
-                                            {/* Upload error banner */}
-                                            {msg._uploadError && (
-                                                <div style={{
-                                                    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
-                                                    padding: '6px 10px', marginTop: 4,
-                                                    background: 'rgba(239, 68, 68, 0.15)', border: '1px solid rgba(239, 68, 68, 0.3)',
-                                                    borderRadius: 8, fontSize: 11, color: '#ef4444',
-                                                }}>
-                                                    <span style={{ fontWeight: 600 }}>Failed to send</span>
-                                                    <button
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            setMessages(prev => prev.filter(m => {
-                                                                if (m.id !== msg.id) return true;
-                                                                if (m.mediaUrl && m.mediaUrl.startsWith('blob:')) {
-                                                                    try { URL.revokeObjectURL(m.mediaUrl); } catch {}
-                                                                }
-                                                                return false;
-                                                            }));
-                                                        }}
-                                                        style={{
-                                                            background: 'rgba(239, 68, 68, 0.2)', border: '1px solid rgba(239, 68, 68, 0.3)',
-                                                            color: '#ef4444', fontSize: 10, fontWeight: 600, padding: '2px 8px',
-                                                            borderRadius: 6, cursor: 'pointer',
-                                                        }}
-                                                    >
-                                                        Dismiss
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        {/* Reactions display */}
-                                        {msg.reactions && Object.keys(msg.reactions).length > 0 && (
-                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 4, justifyContent: mine ? 'flex-end' : 'flex-start' }}>
-                                                {Object.entries(msg.reactions as Record<string, string[]>).map(([emoji, userIds]) => {
-                                                    const hasReacted = userIds.includes(currentUserId);
-                                                    return (
-                                                        <button
-                                                            key={emoji}
-                                                            onClick={(e) => { e.stopPropagation(); handleToggleReaction(msg.id, emoji); }}
-                                                            style={{
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                gap: 4,
-                                                                padding: '2px 6px',
-                                                                borderRadius: 10,
-                                                                background: hasReacted ? 'rgba(6, 182, 212, 0.2)' : 'rgba(255, 255, 255, 0.05)',
-                                                                border: hasReacted ? '1px solid rgba(6, 182, 212, 0.5)' : '1px solid rgba(255, 255, 255, 0.1)',
-                                                                cursor: 'pointer',
-                                                                transition: 'all 0.2s ease',
-                                                            }}
-                                                        >
-                                                            <span style={{ fontSize: 12 }}>{emoji}</span>
-                                                            <span style={{ fontSize: 10, color: hasReacted ? 'var(--primary)' : 'rgba(255,255,255,0.6)', fontWeight: 600 }}>{userIds.length}</span>
-                                                        </button>
-                                                    );
-                                                })}
-                                            </div>
-                                        )}
-
-                                        {/* Dropdown action menu — opens upward to avoid bottom cutoff */}
-                                        {activeMenu === msg.id && !isMultiSelecting && (
-                                            <>
-                                                {/* Backdrop to close menu — uses onTouchStart + onClick for reliable mobile dismissal */}
-                                                <div
-                                                    onTouchStart={(e) => { e.stopPropagation(); setActiveMenu(null); }}
-                                                    onClick={(e) => { e.stopPropagation(); setActiveMenu(null); }}
-                                                    style={{ position: 'fixed', inset: 0, zIndex: 998 }}
-                                                />
-                                                <div
-                                                    onTouchStart={e => e.stopPropagation()}
-                                                    onClick={e => e.stopPropagation()}
-                                                    style={{
-                                                        position: 'absolute',
-                                                        bottom: 0,
-                                                        [mine ? 'right' : 'left']: 0,
-                                                        zIndex: 999,
-                                                        background: '#1a1a24',
-                                                        border: '1px solid rgba(255,255,255,0.1)',
-                                                        borderRadius: 16,
-                                                        boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
-                                                        padding: '8px 0',
-                                                        width: 220,
-                                                        animation: 'scaleIn 0.15s ease-out'
-                                                    }}
-                                                >
-                                                    {/* Emoji reactions row */}
-                                                    <div style={{
-                                                        display: 'flex',
-                                                        justifyContent: 'space-around',
-                                                        alignItems: 'center',
-                                                        padding: '4px 12px 8px',
-                                                        borderBottom: '1px solid rgba(255,255,255,0.08)',
-                                                        marginBottom: 4,
-                                                        position: 'relative',
-                                                    }}>
-                                                        {['❤️', '🔥', '👍', '💪', '🙌', '💯'].map(emoji => (
-                                                            <button
-                                                                key={emoji}
-                                                                onClick={() => { handleToggleReaction(msg.id, emoji); setActiveMenu(null); setEmojiPickerMessageId(null); }}
-                                                                style={{ fontSize: 18, background: 'none', border: 'none', cursor: 'pointer', padding: 2 }}
-                                                            >
-                                                                {emoji}
-                                                            </button>
-                                                        ))}
-                                                        <button
-                                                            onClick={() => setEmojiPickerMessageId(emojiPickerMessageId === msg.id ? null : msg.id)}
-                                                            style={{
-                                                                fontSize: 14,
-                                                                background: emojiPickerMessageId === msg.id ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.06)',
-                                                                border: '1px solid rgba(255,255,255,0.1)',
-                                                                borderRadius: '50%',
-                                                                width: 24,
-                                                                height: 24,
-                                                                cursor: 'pointer',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center',
-                                                                color: 'var(--secondary-foreground)',
-                                                                flexShrink: 0,
-                                                            }}
-                                                            title="More emojis"
-                                                        >
-                                                            <Plus size={14} />
-                                                        </button>
-                                                        {emojiPickerMessageId === msg.id && (
-                                                            <EmojiPicker
-                                                                onSelect={(emoji) => { handleToggleReaction(msg.id, emoji); setActiveMenu(null); setEmojiPickerMessageId(null); }}
-                                                                onClose={() => setEmojiPickerMessageId(null)}
-                                                                position="above"
-                                                            />
-                                                        )}
-                                                    </div>
-
-                                                    <button onClick={() => { setReplyingTo(msg); setActiveMenu(null); setTimeout(() => inputRef.current?.focus(), 50); }}
-                                                        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: 'var(--foreground)', cursor: 'pointer' }}><Reply size={16} color="var(--secondary-foreground)" /> Reply</button>
-                                                    {mine && msg.content && !msg.mediaUrl && (
-                                                        <button onClick={() => { setEditingMessage(msg); setNewMessage(msg.content); setActiveMenu(null); setTimeout(() => inputRef.current?.focus(), 50); }}
-                                                            style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: 'var(--foreground)', cursor: 'pointer' }}><Pencil size={16} color="var(--secondary-foreground)" /> Edit</button>
-                                                    )}
-                                                    <button onClick={() => { navigator.clipboard.writeText(msg.content); setActiveMenu(null); }}
-                                                        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: 'var(--foreground)', cursor: 'pointer' }}><Copy size={16} color="var(--secondary-foreground)" /> Copy</button>
-                                                    <button onClick={() => { toggleSelection(msg.id); setActiveMenu(null); }}
-                                                        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: 'var(--foreground)', cursor: 'pointer' }}><MoreVertical size={16} color="var(--secondary-foreground)" /> Select</button>
-                                                    {msg.mediaUrl && <button onClick={() => { saveMedia(msg.mediaUrl!, msg.mediaType?.startsWith('image')); setActiveMenu(null); }}
-                                                        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: 'none', border: 'none', fontSize: 13, color: 'var(--foreground)', cursor: 'pointer' }}><Download size={16} color="var(--secondary-foreground)" /> Save</button>}
-                                                    <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '4px 0' }} />
-                                                    <button onClick={() => handleDeleteMessage(msg.id)}
-                                                        style={{ display: 'flex', alignItems: 'center', gap: 10, width: '100%', textAlign: 'left', padding: '8px 14px', background: confirmDeleteId === msg.id ? 'rgba(239,68,68,0.1)' : 'none', border: 'none', fontSize: 13, color: '#ef4444', cursor: 'pointer', fontWeight: 600 }}><X size={16} color="#ef4444" /> {confirmDeleteId === msg.id ? 'Tap again to delete' : 'Delete'}</button>
-                                                </div>
-                                            </>
-                                        )}
-                                    </div>
-
-                                    {/* Action button — right side for other's messages */}
-                                    {!mine && (
-                                        <button onClick={(e) => { e.stopPropagation(); setActiveMenu(activeMenu === msg.id ? null : msg.id); }}
-                                            style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.2)', padding: '2px 4px', flexShrink: 0, display: 'flex', alignItems: 'center', opacity: 0.6, transition: 'opacity 0.2s' }}
-                                            title="Actions"><MoreVertical size={14} color="rgba(255,255,255,0.3)" /></button>
-                                    )}
-                                </div>
-                            </div>
-                        </div>
-                    );
-                })}
-                <div ref={messagesEndRef} style={{ height: 8, flexShrink: 0, width: '100%' }} />
-            </div>
+            {/* Messages — memoized to isolate keyboard typing from message list re-rendering */}
+            <MemoizedMessageList
+                scrollContainerRef={scrollContainerRef}
+                messagesEndRef={messagesEndRef}
+                handleScroll={handleScroll}
+                loaded={loaded}
+                searchText={searchText}
+                filteredMessages={filteredMessages}
+                currentUserId={currentUserId}
+                otherUserName={otherUserName}
+                selectedMessageIds={selectedMessageIds}
+                isMultiSelecting={isMultiSelecting}
+                toggleSelection={toggleSelection}
+                activeMenu={activeMenu}
+                setActiveMenu={setActiveMenu}
+                scrollToMessage={scrollToMessage}
+                scrollToBottom={scrollToBottom}
+                setExpandedMedia={setExpandedMedia}
+                uploadProgress={uploadProgress}
+                setMessages={setMessages}
+                handleToggleReaction={handleToggleReaction}
+                emojiPickerMessageId={emojiPickerMessageId}
+                setEmojiPickerMessageId={setEmojiPickerMessageId}
+                setReplyingTo={setReplyingTo}
+                setEditingMessage={setEditingMessage}
+                setNewMessage={setNewMessage}
+                inputRef={inputRef}
+                saveMedia={saveMedia}
+                handleDeleteMessage={handleDeleteMessage}
+                confirmDeleteId={confirmDeleteId}
+            />
 
             {/* Reply bar */}
             {
@@ -1989,10 +2090,13 @@ export default function ChatInterface({
                             rows={editingMessage ? 6 : 1}
                             disabled={uploading}
                             enterKeyHint="send"
+                            autoCapitalize="sentences"
+                            autoCorrect="on"
+                            spellCheck={true}
                             style={{
                                 width: '100%', padding: '10px 0 8px', background: 'transparent', border: 'none',
-                                color: 'var(--foreground)', fontSize: 15, outline: 'none', opacity: uploading ? 0.5 : 1,
-                                resize: editingMessage ? 'vertical' : 'none', lineHeight: '1.5',
+                                color: 'var(--foreground)', fontSize: 16, outline: 'none', opacity: uploading ? 0.5 : 1,
+                                resize: editingMessage ? 'vertical' : 'none', lineHeight: '1.4',
                                 maxHeight: editingMessage ? 320 : 120, overflowY: 'auto', fontFamily: 'inherit'
                             }}
                         />
@@ -2218,7 +2322,10 @@ export default function ChatInterface({
                                     placeholder="Add a caption..."
                                     rows={1}
                                     enterKeyHint="send"
-                                    style={{ flex: 1, background: 'transparent', border: 'none', color: 'var(--foreground)', outline: 'none', fontSize: 15, padding: '8px 0', resize: 'none', lineHeight: '1.4', fontFamily: 'inherit' }}
+                                    autoCapitalize="sentences"
+                                    autoCorrect="on"
+                                    spellCheck={true}
+                                    style={{ flex: 1, background: 'transparent', border: 'none', color: 'var(--foreground)', outline: 'none', fontSize: 16, padding: '8px 0', resize: 'none', lineHeight: '1.4', fontFamily: 'inherit' }}
                                     onPaste={handlePaste}
                                     onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
                                 />
