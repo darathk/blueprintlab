@@ -70,7 +70,9 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
     useEffect(() => {
         const saved = localStorage.getItem('athlete-unit-pref');
         if (saved === 'kg' || saved === 'lbs') setUnit(saved);
-    }, []);
+        else if (initialLog?.exercises?.[0]?.unit) setUnit(initialLog.exercises[0].unit);
+        else if (initialLog?.exercises?.[0]?.sets?.[0]?.unit) setUnit(initialLog.exercises[0].sets[0].unit);
+    }, [initialLog]);
 
     const toggleUnit = (u: 'kg' | 'lbs') => {
         setUnit(u);
@@ -278,6 +280,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
             const cleanLogs = currentLogs.map(ex => ({
                 exerciseId: ex.exerciseId,
                 name: ex.name,
+                unit: unit,
                 sets: ex.sets.map(s => ({
                     weight: s.actual.weight,
                     reps: s.actual.reps,

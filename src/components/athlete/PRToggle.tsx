@@ -137,7 +137,7 @@ export default function PRToggle({
                     weight: set.weight,
                     reps: set.reps,
                     rpe: set.rpe || null,
-                    unit,
+                    unit: unit || (typeof window !== 'undefined' ? localStorage.getItem('athlete-unit-pref') : null) || 'lbs',
                     videoUrl,
                     videoType,
                     sessionId,

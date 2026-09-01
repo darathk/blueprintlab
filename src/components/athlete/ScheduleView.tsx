@@ -214,6 +214,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
             const copy = JSON.parse(JSON.stringify(prev));
             for (const k in copy) {
                 copy[k].forEach((ex: any) => {
+                    ex.unit = u;
                     ex.sets.forEach((s: any) => {
                         if (s.actual?.weight) {
                             const num = parseFloat(s.actual.weight);
@@ -288,15 +289,17 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
     // Initialize edit state when a session is opened
     const initEdit = useCallback((sKey: string, exercises: any[], log: any) => {
         if (editState[sKey]) return;
+        const savedPref = (typeof window !== 'undefined' ? localStorage.getItem('athlete-unit-pref') : null) as 'kg' | 'lbs' | null;
+        const effectiveUnit = savedPref || unit || 'lbs';
         const state = (exercises || []).map((ex: any) => {
             const logEx = log?.exercises?.find((l: any) => l.exerciseId === ex.id || l.name === ex.name);
             const sets = Array.isArray(ex.sets) ? ex.sets : [];
-            const savedUnit = logEx?.sets?.[0]?.unit || logEx?.unit;
+            const savedUnit = logEx?.unit || logEx?.sets?.[0]?.unit || effectiveUnit;
             return {
                 exerciseId: ex.id,
                 name: ex.name,
                 notes: logEx?.notes || ex.notes || '',
-                unit: savedUnit || unit,
+                unit: savedUnit,
                 sets: sets.map((s: any, i: number) => {
                     const saved = logEx?.sets?.[i];
                     return {
@@ -360,6 +363,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                 exerciseId: ex.exerciseId,
                 name: ex.name,
                 notes: ex.notes || '',
+                unit: ex.unit || unit,
                 sets: ex.sets.map((s: any) => ({ weight: s.actual.weight || '', reps: s.actual.reps, rpe: s.actual.rpe, unit: ex.unit || unit }))
             }));
 
@@ -440,6 +444,8 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
     };
 
     const updateExerciseUnit = (sKey: string, exIdx: number, value: 'lbs' | 'kg', programId: string) => {
+        setUnit(value);
+        localStorage.setItem('athlete-unit-pref', value);
         setEditState(prev => {
             const copy = JSON.parse(JSON.stringify(prev));
             if (copy[sKey]?.[exIdx]) copy[sKey][exIdx].unit = value;

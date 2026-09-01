@@ -77,12 +77,14 @@ export default function ExerciseFeedback({
     }, [athleteId, resolvedCoachId]);
 
     const buildAutoMessage = () => {
+        const savedPref = (typeof window !== 'undefined' ? localStorage.getItem('athlete-unit-pref') : null) as string | null;
+        const effectiveUnit = unit || savedPref || 'lbs';
         const setLines = (sets || [])
             .filter(s => s && s.actual && (s.actual.weight || s.actual.reps || s.actual.rpe))
             .map((s, idx) => {
                 const displayWeight = s.actual.weight;
                 const setNum = s.setNumber !== undefined ? s.setNumber : (idx + 1);
-                return `  Set ${setNum}: ${displayWeight || '—'} ${unit} × ${s.actual.reps || '—'} reps @ RPE ${s.actual.rpe || '—'}`;
+                return `  Set ${setNum}: ${displayWeight || '—'} ${effectiveUnit} × ${s.actual.reps || '—'} reps @ RPE ${s.actual.rpe || '—'}`;
             })
             .join('\n');
 
