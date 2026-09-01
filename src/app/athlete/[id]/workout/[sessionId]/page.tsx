@@ -2,6 +2,14 @@ import { getProgramsByAthlete, getLogsByAthlete, getAthleteById } from '@/lib/st
 import { prisma } from '@/lib/prisma';
 import WorkoutLogger from './workout-logger';
 
+function parseLocalDate(dateStr: any): Date {
+    const s = String(dateStr).split('T')[0];
+    const [y, m, d] = s.split('-').map(Number);
+    const date = new Date(y, m - 1, d);
+    date.setHours(0, 0, 0, 0);
+    return date;
+}
+
 export default async function WorkoutPage({ params }) {
     const { id: athleteId, sessionId } = await params;
 
@@ -59,7 +67,7 @@ export default async function WorkoutPage({ params }) {
     const weekDisplayNum = weeksWithSessions.findIndex((w: any) => (w?.weekNumber || 1) === weekNum) + 1;
 
     // Determine the week start date for display
-    const programStart = program.startDate ? new Date(program.startDate) : null;
+    const programStart = program.startDate ? parseLocalDate(program.startDate) : null;
     let weekStartDate = '';
     if (programStart) {
         const start = new Date(programStart);

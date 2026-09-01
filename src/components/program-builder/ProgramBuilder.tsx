@@ -3194,7 +3194,13 @@ export default function ProgramBuilder({
                                 .sort((a, b) => a.day - b.day)
                                 .map((sess) => {
                                     const sessIndex = weeks[weekOverviewIndex!].sessions.indexOf(sess);
-                                    const dayName = DAY_NAMES[((sess.day || 1) - 1) % 7] || `Day ${sess.day}`;
+                                    let dayName = DAY_NAMES[((sess.day || 1) - 1) % 7] || `Day ${sess.day}`;
+                                    if (startDate) {
+                                        const [sy, sm, sd] = startDate.split('-').map(Number);
+                                        const sessionDate = new Date(sy, sm - 1, sd);
+                                        sessionDate.setDate(sessionDate.getDate() + (weekOverviewIndex || 0) * 7 + ((sess.day || 1) - 1));
+                                        dayName = sessionDate.toLocaleDateString('en-US', { weekday: 'long' });
+                                    }
                                     const sessionLabel = sess.name ? `${dayName} — ${sess.name}` : dayName;
                                     return (
                                         <div key={sess.id} style={{ marginBottom: '1.25rem' }}>

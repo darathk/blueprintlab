@@ -802,7 +802,14 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                     {weekSessions
                         .sort((a, b) => a.day - b.day)
                         .map((sess) => {
-                            const dayName = DAY_NAMES[((sess.day || 1) - 1) % 7] || `Day ${sess.day}`;
+                            let dayName = DAY_NAMES[((sess.day || 1) - 1) % 7] || `Day ${sess.day}`;
+                            if (weekStartDate) {
+                                const start = new Date(weekStartDate);
+                                start.setDate(start.getDate() + ((sess.day || 1) - 1));
+                                if (!isNaN(start.getTime())) {
+                                    dayName = start.toLocaleDateString('en-US', { weekday: 'long' });
+                                }
+                            }
                             const fullLabel = sess.name ? `${dayName} — ${sess.name}` : dayName;
                             const isCurrentSession = sess.day === dayNum;
 

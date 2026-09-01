@@ -96,21 +96,16 @@ function sessionKey(programId: string, weekNum: number, day: number) {
     return `${programId}_w${weekNum}_d${day}`;
 }
 
-/** Compute the Sun-Sat date range for the calendar week containing a given date */
+/** Compute the date range for a given program week */
 function weekDateRangeFromDate(programStartDate: any, weekNumber: number): string {
     if (!programStartDate) return '';
     const start = parseLocalDate(programStartDate);
-    // Compute the actual session date anchor: start + (weekNumber-1)*7
-    const anchor = new Date(start);
-    anchor.setDate(anchor.getDate() + (weekNumber - 1) * 7);
-    // Snap to the Monday of that week
-    const monday = new Date(anchor);
-    const offset = (monday.getDay() + 6) % 7;
-    monday.setDate(monday.getDate() - offset);
-    const sunday = new Date(monday);
-    sunday.setDate(sunday.getDate() + 6);
+    const weekStart = new Date(start);
+    weekStart.setDate(weekStart.getDate() + (weekNumber - 1) * 7);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
     const fmt = (d: Date) => `${SHORT_MONTHS[d.getMonth()]} ${d.getDate()}`;
-    return `${fmt(monday)} – ${fmt(sunday)}`;
+    return `${fmt(weekStart)} – ${fmt(weekEnd)}`;
 }
 
 function sessionProgress(exercises: any[], log: any, editStateData?: any[]): number {
@@ -919,7 +914,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                 </div>
                                                             </div>
                                                             <div style={{ fontSize: '0.85rem', color: 'var(--secondary-foreground)', marginTop: 4, marginLeft: 30 }}>
-                                                                {program.name} — Week {weekDisplayNum} • {weekDateRangeFromDate(program.startDate, weekNum)}
+                                                                {program.name} — Week {weekNum} • {weekDateRangeFromDate(program.startDate, weekNum)}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -1485,15 +1480,12 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                             // Skip weeks that fall outside the program's date range
                             if (program.startDate) {
                                 const ps = parseLocalDate(program.startDate);
-                                const dow = ps.getDay();
-                                const w1Sun = new Date(ps);
-                                w1Sun.setDate(w1Sun.getDate() - dow);
-                                const wSun = new Date(w1Sun);
-                                wSun.setDate(wSun.getDate() + (weekNum - 1) * 7);
+                                const wStart = new Date(ps);
+                                wStart.setDate(wStart.getDate() + (weekNum - 1) * 7);
                                 if (program.endDate) {
                                     const pe = parseLocalDate(program.endDate);
                                     pe.setHours(23, 59, 59, 999);
-                                    if (wSun > pe) return null;
+                                    if (wStart > pe) return null;
                                 }
                             }
                             const weekKey = `${program.id}-w${weekNum}`;
@@ -1516,7 +1508,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                 minWidth: 0 // Prevent flex child from overflowing
                                             }}
                                         >
-                                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Week {weekDisplayNum} — {weekDateRangeFromDate(program.startDate, weekNum)} <span style={{ fontWeight: 400, color: 'var(--secondary-foreground)', fontSize: '0.85rem' }}>• {sessions.length} session{sessions.length !== 1 ? 's' : ''}</span></span>
+                                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Week {weekNum} — {weekDateRangeFromDate(program.startDate, weekNum)} <span style={{ fontWeight: 400, color: 'var(--secondary-foreground)', fontSize: '0.85rem' }}>• {sessions.length} session{sessions.length !== 1 ? 's' : ''}</span></span>
                                             <span style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', transition: 'transform 200ms', transform: weekOpen ? 'rotate(90deg)' : 'rotate(0deg)', marginRight: '8px', flexShrink: 0 }}>▶</span>
                                         </button>
                                         {/* Week Overview Button */}
@@ -2055,7 +2047,16 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                             {weekDrawer.sessions
                                 .sort((a: any, b: any) => (a.day || 1) - (b.day || 1))
                                 .map((sess: any) => {
-                                    const dayName = DAY_NAMES[((sess.day || 1) - 1) % 7] || `Day ${sess.day}`;
+                                    let dayName = DAY_NAMES[((sess.day || 1) - 1) % 7] || `Day ${sess.day}`;
+                                    if (weekDrawer.programId) {
+                                        const prog = programs.find(p => p.id === weekDrawer.programId);
+                                        if (prog?.startDate) {
+                                            const start = parseLocalDate(prog.startDate);
+                                            const sessionDate = new Date(start);
+                                            sessionDate.setDate(sessionDate.getDate() + (weekDrawer.weekNum - 1) * 7 + ((sess.day || 1) - 1));
+                                            dayName = sessionDate.toLocaleDateString('en-US', { weekday: 'long' });
+                                        }
+                                    }
                                     const fullLabel = sess.name ? `${dayName} — ${sess.name}` : dayName;
                                     return (
                                         <div key={sess.day} style={{ marginBottom: '1.25rem' }}>
