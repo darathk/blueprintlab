@@ -62,11 +62,19 @@ export default async function MeetDayAthletePage({
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
                     <Link
                         href="/dashboard/meet-day"
+                        className="chat-press"
                         style={{
                             color: 'var(--secondary-foreground)',
-                            fontSize: '0.9rem',
+                            fontSize: '0.85rem',
                             textDecoration: 'none',
-                            whiteSpace: 'nowrap',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '6px',
+                            padding: '6px 12px',
+                            borderRadius: '16px',
+                            background: 'var(--glass-surface-2)',
+                            border: '1px solid var(--glass-border)',
+                            transition: 'all 0.16s var(--ease-out)',
                         }}
                     >
                         ← All Meets
@@ -91,11 +99,8 @@ export default async function MeetDayAthletePage({
 
             {/* Meet info banner */}
             {(athlete.nextMeetName || athlete.nextMeetDate) && (
-                <div style={{
-                    background: 'var(--card-bg)',
-                    border: '1px solid var(--card-border)',
-                    borderRadius: 12,
-                    padding: '1rem 1.25rem',
+                <div className="glass-panel" style={{
+                    padding: '1.25rem 1.5rem',
                     marginBottom: '1.5rem',
                     display: 'flex',
                     flexWrap: 'wrap',
@@ -108,7 +113,7 @@ export default async function MeetDayAthletePage({
                             <span style={{
                                 fontSize: '1.1rem',
                                 fontWeight: 700,
-                                color: 'var(--primary)',
+                                color: 'var(--foreground)',
                             }}>
                                 {athlete.nextMeetName}
                             </span>
@@ -127,45 +132,19 @@ export default async function MeetDayAthletePage({
                             </span>
                         )}
                     </div>
-                    <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
                         {athlete.weightClass && (
-                            <span style={{
-                                fontSize: '0.75rem',
-                                fontWeight: 600,
-                                background: 'rgba(255,255,255,0.06)',
-                                border: '1px solid rgba(255,255,255,0.1)',
-                                borderRadius: 6,
-                                padding: '4px 10px',
-                                color: 'var(--foreground)',
-                            }}>
+                            <span className="glass-badge" style={{ color: 'var(--foreground)' }}>
                                 {athlete.weightClass}kg
                             </span>
                         )}
                         {athlete.gender && (
-                            <span style={{
-                                fontSize: '0.75rem',
-                                fontWeight: 600,
-                                background: 'rgba(255,255,255,0.06)',
-                                border: '1px solid rgba(255,255,255,0.1)',
-                                borderRadius: 6,
-                                padding: '4px 10px',
-                                color: 'var(--foreground)',
-                                textTransform: 'capitalize',
-                            }}>
+                            <span className="glass-badge" style={{ color: 'var(--foreground)', textTransform: 'capitalize' }}>
                                 {athlete.gender}
                             </span>
                         )}
                         {athlete.federation && (
-                            <span style={{
-                                fontSize: '0.75rem',
-                                fontWeight: 600,
-                                background: 'rgba(255,255,255,0.06)',
-                                border: '1px solid rgba(255,255,255,0.1)',
-                                borderRadius: 6,
-                                padding: '4px 10px',
-                                color: 'var(--foreground)',
-                                textTransform: 'uppercase',
-                            }}>
+                            <span className="glass-badge" style={{ color: 'var(--foreground)', textTransform: 'uppercase' }}>
                                 {athlete.federation}
                             </span>
                         )}

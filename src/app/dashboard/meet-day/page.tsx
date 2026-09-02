@@ -74,12 +74,20 @@ export default async function MeetDayPage() {
             {/* Back link */}
             <Link
                 href="/dashboard"
+                className="chat-press"
                 style={{
                     color: 'var(--secondary-foreground)',
-                    fontSize: '0.9rem',
+                    fontSize: '0.85rem',
                     textDecoration: 'none',
-                    display: 'inline-block',
-                    marginBottom: '1rem',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    padding: '6px 12px',
+                    borderRadius: '16px',
+                    background: 'var(--glass-surface-2)',
+                    border: '1px solid var(--glass-border)',
+                    marginBottom: '1.5rem',
+                    transition: 'all 0.16s var(--ease-out)',
                 }}
             >
                 ← Back to Command Center
@@ -97,7 +105,7 @@ export default async function MeetDayPage() {
                     Meet Day{' '}
                     <span style={{
                         color: 'var(--primary)',
-                        textShadow: '0 0 20px rgba(6,182,212,0.4)',
+                        textShadow: '0 0 24px rgba(125, 135, 210, 0.4)',
                     }}>
                         Command Center
                     </span>
@@ -173,16 +181,16 @@ export default async function MeetDayPage() {
                         return (
                             <div
                                 key={athlete.id}
+                                className="glass-panel chat-press"
                                 style={{
-                                    background: 'var(--card-bg)',
-                                    border: `1px solid ${isToday ? 'rgba(6,182,212,0.5)' : 'var(--card-border)'}`,
+                                    border: `1px solid ${isToday ? 'rgba(125, 135, 210, 0.6)' : 'var(--glass-border)'}`,
                                     borderRadius: 16,
                                     padding: '1.5rem',
                                     display: 'flex',
                                     flexDirection: 'column',
                                     gap: '1rem',
-                                    transition: 'border-color 0.2s, transform 0.2s',
-                                    ...(isToday ? { boxShadow: '0 0 24px rgba(6,182,212,0.15)' } : {}),
+                                    transition: 'all 0.2s var(--ease-out)',
+                                    boxShadow: isToday ? '0 0 24px rgba(125, 135, 210, 0.3)' : 'var(--glass-shadow-sm)',
                                 }}
                             >
                                 {/* Top row: Name + Days out badge */}
@@ -192,7 +200,7 @@ export default async function MeetDayPage() {
                                     alignItems: 'flex-start',
                                 }}>
                                     <h2 style={{
-                                        fontSize: '1.4rem',
+                                        fontSize: '1.35rem',
                                         fontWeight: 700,
                                         color: 'var(--foreground)',
                                         margin: 0,
@@ -202,16 +210,11 @@ export default async function MeetDayPage() {
                                         {athlete.name}
                                     </h2>
                                     {daysLabel && (
-                                        <span style={{
-                                            fontSize: '0.75rem',
+                                        <span className="glass-badge" style={{
+                                            fontSize: '0.72rem',
                                             fontWeight: 800,
                                             color: daysColor,
-                                            background: 'rgba(255,255,255,0.06)',
-                                            border: `1px solid ${daysColor}33`,
-                                            borderRadius: 8,
-                                            padding: '4px 10px',
-                                            letterSpacing: '0.04em',
-                                            textTransform: 'uppercase',
+                                            borderColor: `${daysColor}40`,
                                             whiteSpace: 'nowrap',
                                             flexShrink: 0,
                                         }}>
@@ -262,31 +265,23 @@ export default async function MeetDayPage() {
                                     flexWrap: 'wrap',
                                 }}>
                                     {athlete.meetAttempts && (
-                                        <span style={{
+                                        <span className="glass-badge" style={{
                                             fontSize: '0.7rem',
                                             fontWeight: 600,
                                             color: '#34d399',
+                                            borderColor: 'rgba(52,211,153,0.3)',
                                             background: 'rgba(52,211,153,0.1)',
-                                            border: '1px solid rgba(52,211,153,0.2)',
-                                            borderRadius: 6,
-                                            padding: '3px 8px',
-                                            textTransform: 'uppercase',
-                                            letterSpacing: '0.04em',
                                         }}>
                                             ✓ Attempts Set
                                         </span>
                                     )}
                                     {isPast && (
-                                        <span style={{
+                                        <span className="glass-badge" style={{
                                             fontSize: '0.7rem',
                                             fontWeight: 600,
                                             color: '#f87171',
+                                            borderColor: 'rgba(248,113,113,0.3)',
                                             background: 'rgba(248,113,113,0.1)',
-                                            border: '1px solid rgba(248,113,113,0.2)',
-                                            borderRadius: 6,
-                                            padding: '3px 8px',
-                                            textTransform: 'uppercase',
-                                            letterSpacing: '0.04em',
                                         }}>
                                             Meet Passed
                                         </span>
@@ -296,24 +291,16 @@ export default async function MeetDayPage() {
                                 {/* CTA */}
                                 <Link
                                     href={`/dashboard/meet-day/${athlete.id}`}
+                                    className="glass-button glass-button-primary chat-press"
                                     style={{
                                         display: 'block',
                                         width: '100%',
-                                        padding: '0.875rem',
-                                        background: isToday
-                                            ? 'var(--primary)'
-                                            : 'rgba(6,182,212,0.15)',
-                                        color: isToday ? '#000' : 'var(--primary)',
-                                        border: isToday
-                                            ? 'none'
-                                            : '1px solid rgba(6,182,212,0.3)',
+                                        padding: '0.75rem',
                                         borderRadius: 12,
                                         fontWeight: 700,
-                                        fontSize: '1rem',
+                                        fontSize: '0.95rem',
                                         textAlign: 'center',
                                         textDecoration: 'none',
-                                        letterSpacing: '-0.01em',
-                                        transition: 'background 0.15s, transform 0.1s',
                                         marginTop: 'auto',
                                     }}
                                 >

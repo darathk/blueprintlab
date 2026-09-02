@@ -34,7 +34,7 @@ export default async function TemplatesPage() {
         <div>
             <div style={{ marginBottom: '2rem' }}>
                 <h1 style={{ fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
-                    Program <span style={{ color: 'var(--primary)', textShadow: '0 0 20px rgba(6,182,212,0.4)' }}>Templates</span>
+                    Program <span style={{ color: 'var(--primary)', textShadow: '0 0 20px rgba(125, 135, 210, 0.4)' }}>Templates</span>
                 </h1>
                 <p style={{ color: 'var(--secondary-foreground)', fontSize: '0.9rem', marginTop: '0.5rem' }}>
                     Reusable program structures you can apply to any athlete.

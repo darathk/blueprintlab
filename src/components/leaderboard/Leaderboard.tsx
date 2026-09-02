@@ -390,20 +390,21 @@ export default function Leaderboard({
                 <div style={{
                     display: 'flex',
                     justifyContent: 'center',
-                    background: 'rgba(15, 23, 42, 0.6)',
-                    borderRadius: 14,
-                    padding: 4,
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    background: 'var(--glass-surface-2)',
+                    borderRadius: 20,
+                    padding: 3,
+                    border: '1px solid var(--glass-border)',
                     margin: '1rem auto 0.5rem',
                     maxWidth: 460,
                 }}>
                     <button
                         onClick={() => { setTab('monthly'); setSearchQuery(''); }}
+                        className="chat-press"
                         style={{
                             flex: 1,
-                            padding: '8px 10px',
-                            borderRadius: 10,
-                            border: 'none',
+                            padding: '7px 10px',
+                            borderRadius: 16,
+                            border: tab === 'monthly' ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid transparent',
                             fontSize: '0.78rem',
                             fontWeight: 700,
                             cursor: 'pointer',
@@ -411,10 +412,10 @@ export default function Leaderboard({
                             alignItems: 'center',
                             justifyContent: 'center',
                             gap: '0.35rem',
-                            background: tab === 'monthly' ? 'var(--primary)' : 'transparent',
+                            background: tab === 'monthly' ? 'rgba(125, 135, 210, 0.2)' : 'transparent',
                             color: tab === 'monthly' ? '#ffffff' : 'var(--secondary-foreground)',
-                            transition: 'all 0.2s ease',
-                            boxShadow: tab === 'monthly' ? '0 2px 10px rgba(6, 182, 212, 0.3)' : 'none',
+                            transition: 'all 0.16s var(--ease-out)',
+                            boxShadow: tab === 'monthly' ? '0 0 10px rgba(125, 135, 210, 0.25)' : 'none',
                         }}
                     >
                         <Calendar size={13} />
@@ -423,11 +424,12 @@ export default function Leaderboard({
 
                     <button
                         onClick={() => { setTab('allTime'); setSearchQuery(''); }}
+                        className="chat-press"
                         style={{
                             flex: 1,
-                            padding: '8px 10px',
-                            borderRadius: 10,
-                            border: 'none',
+                            padding: '7px 10px',
+                            borderRadius: 16,
+                            border: tab === 'allTime' ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid transparent',
                             fontSize: '0.78rem',
                             fontWeight: 700,
                             cursor: 'pointer',
@@ -435,10 +437,10 @@ export default function Leaderboard({
                             alignItems: 'center',
                             justifyContent: 'center',
                             gap: '0.35rem',
-                            background: tab === 'allTime' ? 'var(--primary)' : 'transparent',
+                            background: tab === 'allTime' ? 'rgba(125, 135, 210, 0.2)' : 'transparent',
                             color: tab === 'allTime' ? '#ffffff' : 'var(--secondary-foreground)',
-                            transition: 'all 0.2s ease',
-                            boxShadow: tab === 'allTime' ? '0 2px 10px rgba(6, 182, 212, 0.3)' : 'none',
+                            transition: 'all 0.16s var(--ease-out)',
+                            boxShadow: tab === 'allTime' ? '0 0 10px rgba(125, 135, 210, 0.25)' : 'none',
                         }}
                     >
                         <Award size={13} />
@@ -447,11 +449,12 @@ export default function Leaderboard({
 
                     <button
                         onClick={() => { setTab('history'); setSearchQuery(''); }}
+                        className="chat-press"
                         style={{
                             flex: 1,
-                            padding: '8px 10px',
-                            borderRadius: 10,
-                            border: 'none',
+                            padding: '7px 10px',
+                            borderRadius: 16,
+                            border: tab === 'history' ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid transparent',
                             fontSize: '0.78rem',
                             fontWeight: 700,
                             cursor: 'pointer',
@@ -459,10 +462,10 @@ export default function Leaderboard({
                             alignItems: 'center',
                             justifyContent: 'center',
                             gap: '0.35rem',
-                            background: tab === 'history' ? 'var(--primary)' : 'transparent',
+                            background: tab === 'history' ? 'rgba(125, 135, 210, 0.2)' : 'transparent',
                             color: tab === 'history' ? '#ffffff' : 'var(--secondary-foreground)',
-                            transition: 'all 0.2s ease',
-                            boxShadow: tab === 'history' ? '0 2px 10px rgba(6, 182, 212, 0.3)' : 'none',
+                            transition: 'all 0.16s var(--ease-out)',
+                            boxShadow: tab === 'history' ? '0 0 10px rgba(125, 135, 210, 0.25)' : 'none',
                         }}
                     >
                         <History size={13} />

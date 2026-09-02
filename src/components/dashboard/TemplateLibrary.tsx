@@ -108,11 +108,10 @@ export default function TemplateLibrary({ athletes }: { athletes: { id: string; 
         <div>
             {/* Search */}
             {templates.length > 0 && (
-                <div style={{
+                <div className="glass-panel" style={{
                     display: 'flex', alignItems: 'center', gap: '0.75rem',
-                    padding: '0.6rem 1rem', borderRadius: '10px',
-                    border: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.03)',
-                    marginBottom: '1.25rem',
+                    padding: '0.6rem 1rem', borderRadius: '12px',
+                    marginBottom: '1.5rem',
                 }}>
                     <input
                         type="text"
@@ -125,7 +124,7 @@ export default function TemplateLibrary({ athletes }: { athletes: { id: string; 
                         }}
                     />
                     {searchQuery && (
-                        <button onClick={() => setSearchQuery('')} style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', display: 'flex' }}>
+                        <button onClick={() => setSearchQuery('')} className="chat-press" style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', display: 'flex' }}>
                             <X size={16} />
                         </button>
                     )}
@@ -143,14 +142,14 @@ export default function TemplateLibrary({ athletes }: { athletes: { id: string; 
                     </p>
                 </div>
             ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1rem' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.25rem' }}>
                     {filtered.map(template => {
                         const isExpanded = expandedId === template.id;
                         const isApplying = applyingId === template.id;
                         const isEditing = editingId === template.id;
 
                         return (
-                            <div key={template.id} className="card" style={{ position: 'relative', display: 'flex', flexDirection: 'column' }}>
+                            <div key={template.id} className="glass-panel chat-press" style={{ position: 'relative', display: 'flex', flexDirection: 'column', padding: '1.25rem' }}>
                                 {/* Header */}
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
                                     {isEditing ? (
@@ -158,27 +157,21 @@ export default function TemplateLibrary({ athletes }: { athletes: { id: string; 
                                             <input
                                                 value={editName}
                                                 onChange={e => setEditName(e.target.value)}
-                                                style={{
-                                                    width: '100%', padding: '0.4rem', borderRadius: '6px',
-                                                    border: '1px solid var(--primary)', background: 'rgba(255,255,255,0.05)',
-                                                    color: 'var(--foreground)', fontSize: '1.1rem', fontWeight: 600,
-                                                }}
+                                                className="glass-input"
+                                                style={{ width: '100%', fontSize: '1rem', fontWeight: 600, padding: '0.4rem 0.6rem' }}
                                             />
                                             <textarea
                                                 value={editDesc}
                                                 onChange={e => setEditDesc(e.target.value)}
                                                 placeholder="Description (optional)"
                                                 rows={2}
-                                                style={{
-                                                    width: '100%', padding: '0.4rem', borderRadius: '6px', marginTop: '0.4rem',
-                                                    border: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.05)',
-                                                    color: 'var(--foreground)', fontSize: '0.85rem', resize: 'vertical',
-                                                }}
+                                                className="glass-input"
+                                                style={{ width: '100%', marginTop: '0.4rem', fontSize: '0.85rem', resize: 'vertical' }}
                                             />
                                         </div>
                                     ) : (
                                         <div style={{ flex: 1 }}>
-                                            <h3 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0, lineHeight: 1.3 }}>{template.name}</h3>
+                                            <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0, lineHeight: 1.3, color: 'var(--foreground)' }}>{template.name}</h3>
                                             {template.description && (
                                                 <p style={{ fontSize: '0.85rem', color: 'var(--secondary-foreground)', margin: '0.3rem 0 0', lineHeight: 1.4 }}>
                                                     {template.description}
@@ -190,10 +183,12 @@ export default function TemplateLibrary({ athletes }: { athletes: { id: string; 
                                         {isEditing ? (
                                             <>
                                                 <button onClick={() => handleSaveEdit(template.id)} disabled={actionLoading}
+                                                    className="chat-press"
                                                     style={{ background: 'none', border: 'none', color: '#10b981', cursor: 'pointer', padding: 4 }}>
                                                     <Check size={16} />
                                                 </button>
                                                 <button onClick={() => setEditingId(null)}
+                                                    className="chat-press"
                                                     style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', padding: 4 }}>
                                                     <X size={16} />
                                                 </button>
@@ -201,10 +196,12 @@ export default function TemplateLibrary({ athletes }: { athletes: { id: string; 
                                         ) : (
                                             <>
                                                 <button onClick={() => { setEditingId(template.id); setEditName(template.name); setEditDesc(template.description || ''); }}
+                                                    className="chat-press"
                                                     style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', padding: 4 }}>
                                                     <Edit3 size={14} />
                                                 </button>
                                                 <button onClick={() => handleDelete(template.id, template.name)}
+                                                    className="chat-press"
                                                     style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', padding: 4 }}>
                                                     <Trash2 size={14} />
                                                 </button>
@@ -214,8 +211,8 @@ export default function TemplateLibrary({ athletes }: { athletes: { id: string; 
                                 </div>
 
                                 {/* Stats */}
-                                <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '0.75rem', fontSize: '0.8rem', color: 'var(--secondary-foreground)' }}>
-                                    <span style={{ padding: '2px 8px', borderRadius: '4px', background: 'var(--accent)', color: 'black', fontWeight: 'bold' }}>
+                                <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '0.75rem', fontSize: '0.8rem', color: 'var(--secondary-foreground)', alignItems: 'center' }}>
+                                    <span className="glass-badge" style={{ color: 'var(--foreground)', fontWeight: 600 }}>
                                         {weekCount(template.weeks)} Weeks
                                     </span>
                                     <span>{sessionCount(template.weeks)} Sessions</span>
@@ -225,11 +222,7 @@ export default function TemplateLibrary({ athletes }: { athletes: { id: string; 
                                 {template.tags && (template.tags as string[]).length > 0 && (
                                     <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap', marginBottom: '0.75rem' }}>
                                         {(template.tags as string[]).map(tag => (
-                                            <span key={tag} style={{
-                                                fontSize: '0.7rem', padding: '2px 8px', borderRadius: '12px',
-                                                background: 'rgba(6,182,212,0.12)', color: 'var(--primary)',
-                                                border: '1px solid rgba(6,182,212,0.2)',
-                                            }}>
+                                            <span key={tag} className="glass-badge" style={{ color: 'var(--primary)', borderColor: 'rgba(125, 135, 210, 0.3)' }}>
                                                 {tag}
                                             </span>
                                         ))}
@@ -239,6 +232,7 @@ export default function TemplateLibrary({ athletes }: { athletes: { id: string; 
                                 {/* Expand for preview */}
                                 <button
                                     onClick={() => setExpandedId(isExpanded ? null : template.id)}
+                                    className="chat-press"
                                     style={{
                                         background: 'none', border: 'none', color: 'var(--secondary-foreground)',
                                         cursor: 'pointer', fontSize: '0.8rem', display: 'flex', alignItems: 'center', gap: '0.3rem',
@@ -250,8 +244,8 @@ export default function TemplateLibrary({ athletes }: { athletes: { id: string; 
                                 </button>
 
                                 {isExpanded && Array.isArray(template.weeks) && (
-                                    <div style={{
-                                        padding: '0.75rem', background: 'rgba(0,0,0,0.3)', borderRadius: '8px',
+                                    <div className="glass-panel" style={{
+                                        padding: '0.75rem',
                                         marginBottom: '0.75rem', maxHeight: '200px', overflowY: 'auto',
                                         fontSize: '0.8rem', color: 'var(--secondary-foreground)',
                                     }}>
@@ -271,23 +265,17 @@ export default function TemplateLibrary({ athletes }: { athletes: { id: string; 
                                 )}
 
                                 {/* Apply to athlete */}
-                                <div style={{ marginTop: 'auto' }}>
+                                <div style={{ marginTop: 'auto', paddingTop: '0.5rem' }}>
                                     {isApplying ? (
-                                        <div style={{
-                                            padding: '0.75rem', background: 'rgba(0,0,0,0.4)', borderRadius: '8px',
-                                            border: '1px solid var(--primary)',
-                                        }}>
+                                        <div className="glass-panel-elevated" style={{ padding: '0.85rem', borderRadius: '12px' }}>
                                             <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginBottom: '0.5rem', fontWeight: 600 }}>
                                                 Apply to athlete:
                                             </div>
                                             <select
                                                 value={selectedAthleteId}
                                                 onChange={e => setSelectedAthleteId(e.target.value)}
-                                                style={{
-                                                    width: '100%', padding: '0.5rem', borderRadius: '6px',
-                                                    border: '1px solid var(--card-border)', background: 'var(--background)',
-                                                    color: 'var(--foreground)', fontSize: '0.85rem', marginBottom: '0.5rem',
-                                                }}
+                                                className="glass-input"
+                                                style={{ width: '100%', marginBottom: '0.75rem', fontSize: '0.85rem' }}
                                             >
                                                 <option value="">Select athlete...</option>
                                                 {athletes.map(a => (
@@ -298,18 +286,15 @@ export default function TemplateLibrary({ athletes }: { athletes: { id: string; 
                                                 <button
                                                     onClick={() => handleApply(template.id)}
                                                     disabled={!selectedAthleteId || actionLoading}
-                                                    className="btn btn-primary"
-                                                    style={{ flex: 1, fontSize: '0.85rem', padding: '0.45rem' }}
+                                                    className="glass-button glass-button-primary chat-press"
+                                                    style={{ flex: 1, fontSize: '0.82rem', padding: '0.45rem' }}
                                                 >
                                                     {actionLoading ? 'Creating...' : 'Create Program'}
                                                 </button>
                                                 <button
                                                     onClick={() => { setApplyingId(null); setSelectedAthleteId(''); }}
-                                                    style={{
-                                                        padding: '0.45rem 0.75rem', borderRadius: '8px', fontSize: '0.85rem',
-                                                        background: 'rgba(255,255,255,0.05)', border: '1px solid var(--card-border)',
-                                                        color: 'var(--secondary-foreground)', cursor: 'pointer',
-                                                    }}
+                                                    className="glass-button chat-press"
+                                                    style={{ fontSize: '0.82rem', padding: '0.45rem 0.75rem' }}
                                                 >
                                                     Cancel
                                                 </button>
@@ -318,15 +303,11 @@ export default function TemplateLibrary({ athletes }: { athletes: { id: string; 
                                     ) : (
                                         <button
                                             onClick={() => setApplyingId(template.id)}
+                                            className="glass-button glass-button-primary chat-press"
                                             style={{
-                                                width: '100%', padding: '0.5rem', borderRadius: '8px', fontSize: '0.85rem',
-                                                background: 'rgba(6,182,212,0.1)', border: '1px solid rgba(6,182,212,0.25)',
-                                                color: 'var(--primary)', cursor: 'pointer', fontWeight: 600,
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.4rem',
-                                                transition: 'all 0.2s',
+                                                width: '100%', padding: '0.55rem', fontSize: '0.85rem',
+                                                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem',
                                             }}
-                                            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(6,182,212,0.2)'; }}
-                                            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(6,182,212,0.1)'; }}
                                         >
                                             <Users size={14} /> Apply to Athlete
                                         </button>

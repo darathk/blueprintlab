@@ -42,23 +42,23 @@ export default function CoachSettingsPage() {
             }}>
                 <Link
                     href="/dashboard"
+                    className="glass-button chat-press"
                     style={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: '10px',
+                        width: 38,
+                        height: 38,
+                        borderRadius: '12px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        background: 'rgba(255, 255, 255, 0.06)',
-                        border: '1px solid rgba(255, 255, 255, 0.08)',
                         color: 'var(--secondary-foreground)',
+                        padding: 0,
                     }}
                 >
                     <ArrowLeft size={18} />
                 </Link>
                 <h1 style={{
-                    fontSize: '1.4rem',
-                    fontWeight: 700,
+                    fontSize: '1.5rem',
+                    fontWeight: 800,
                     letterSpacing: '-0.02em',
                     color: 'var(--foreground)',
                     margin: 0,
@@ -70,14 +70,12 @@ export default function CoachSettingsPage() {
             {/* Account Section */}
             <div style={{ marginBottom: '28px' }}>
                 <div style={sectionLabelStyle}>Account</div>
-                <div style={{
+                <div className="glass-panel" style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '14px',
-                    padding: '16px',
-                    borderRadius: '12px',
-                    background: 'rgba(255, 255, 255, 0.04)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    padding: '18px',
+                    borderRadius: '16px',
                 }}>
                     <UserButton
                         afterSignOutUrl="/sign-in"
@@ -116,11 +114,9 @@ export default function CoachSettingsPage() {
             {/* Data Cleanup Section */}
             <div style={{ marginBottom: '28px' }}>
                 <div style={sectionLabelStyle}>Data Cleanup</div>
-                <div style={{
-                    padding: '16px',
-                    borderRadius: '12px',
-                    background: 'rgba(255, 255, 255, 0.04)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                <div className="glass-panel" style={{
+                    padding: '18px',
+                    borderRadius: '16px',
                 }}>
                     <div style={{
                         fontSize: '0.95rem',
@@ -133,7 +129,7 @@ export default function CoachSettingsPage() {
                     <div style={{
                         fontSize: '0.8rem',
                         color: 'var(--secondary-foreground)',
-                        marginBottom: '12px',
+                        marginBottom: '14px',
                         lineHeight: 1.4,
                     }}>
                         If the same athlete appears twice due to email casing differences (e.g. &quot;John@Email.com&quot; vs &quot;john@email.com&quot;), this will merge them into one record and transfer all programs and data.
@@ -141,24 +137,20 @@ export default function CoachSettingsPage() {
                     <button
                         onClick={handleNormalizeEmails}
                         disabled={normalizeLoading}
+                        className="glass-button chat-press"
                         style={{
                             padding: '10px 20px',
-                            borderRadius: '10px',
-                            border: '1px solid rgba(255, 255, 255, 0.12)',
-                            background: 'rgba(255, 255, 255, 0.06)',
-                            color: 'var(--foreground)',
                             fontSize: '0.85rem',
                             fontWeight: 600,
                             cursor: normalizeLoading ? 'wait' : 'pointer',
                             opacity: normalizeLoading ? 0.5 : 1,
-                            transition: 'all 0.2s',
                         }}
                     >
                         {normalizeLoading ? 'Fixing...' : 'Fix Email Duplicates'}
                     </button>
                     {normalizeStatus && (
                         <div style={{
-                            marginTop: '10px',
+                            marginTop: '12px',
                             fontSize: '0.8rem',
                             color: normalizeStatus.startsWith('Failed') || normalizeStatus === 'Network error'
                                 ? 'var(--destructive)'
