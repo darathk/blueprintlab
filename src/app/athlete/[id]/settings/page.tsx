@@ -25,23 +25,23 @@ export default function AthleteSettingsPage() {
             }}>
                 <Link
                     href={`/athlete/${id}/dashboard`}
+                    className="glass-button chat-press"
                     style={{
-                        width: 36,
-                        height: 36,
-                        borderRadius: '10px',
+                        width: 38,
+                        height: 38,
+                        borderRadius: '12px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        background: 'rgba(255, 255, 255, 0.06)',
-                        border: '1px solid rgba(255, 255, 255, 0.08)',
                         color: 'var(--secondary-foreground)',
+                        padding: 0,
                     }}
                 >
                     <ArrowLeft size={18} />
                 </Link>
                 <h1 style={{
-                    fontSize: '1.4rem',
-                    fontWeight: 700,
+                    fontSize: '1.5rem',
+                    fontWeight: 800,
                     letterSpacing: '-0.02em',
                     color: 'var(--foreground)',
                     margin: 0,
@@ -53,14 +53,12 @@ export default function AthleteSettingsPage() {
             {/* Account Section */}
             <div style={{ marginBottom: '28px' }}>
                 <div style={sectionLabelStyle}>Account</div>
-                <div style={{
+                <div className="glass-panel" style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: '14px',
-                    padding: '16px',
-                    borderRadius: '12px',
-                    background: 'rgba(255, 255, 255, 0.04)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    padding: '18px',
+                    borderRadius: '16px',
                 }}>
                     <UserButton
                         afterSignOutUrl="/sign-in"

@@ -151,25 +151,29 @@ export default function TrainingHistory({
 
     return (
         <div style={{ padding: '1rem', maxWidth: 600, margin: '0 auto' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <h1 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0 }}>Training History</h1>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                <h1 style={{ fontSize: '1.4rem', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
+                    Training <span style={{ color: 'var(--primary)', textShadow: '0 0 16px rgba(125, 135, 210, 0.3)' }}>History</span>
+                </h1>
                 {/* Unit toggle */}
-                <div style={{ display: 'flex', background: 'rgba(255,255,255,0.05)', borderRadius: '8px', padding: '2px' }}>
+                <div style={{ display: 'flex', background: 'var(--glass-surface-2)', border: '1px solid var(--glass-border)', borderRadius: '20px', padding: '3px' }}>
                     {(['lbs', 'kg'] as const).map(u => (
                         <button
                             key={u}
                             onClick={() => toggleUnit(u)}
+                            className="chat-press"
                             style={{
                                 padding: '4px 12px',
-                                borderRadius: '6px',
-                                border: 'none',
-                                background: unit === u ? 'var(--primary)' : 'transparent',
+                                borderRadius: '16px',
+                                border: unit === u ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid transparent',
+                                background: unit === u ? 'rgba(125, 135, 210, 0.2)' : 'transparent',
                                 color: unit === u ? 'white' : 'var(--secondary-foreground)',
                                 fontSize: '0.75rem',
-                                fontWeight: 600,
+                                fontWeight: 700,
                                 cursor: 'pointer',
                                 textTransform: 'uppercase',
-                                transition: 'all 0.2s ease'
+                                transition: 'all 0.16s var(--ease-out)',
+                                boxShadow: unit === u ? '0 0 10px rgba(125, 135, 210, 0.25)' : 'none',
                             }}
                         >
                             {u}
@@ -185,52 +189,50 @@ export default function TrainingHistory({
             }}>
                 <Search size={18} style={{
                     position: 'absolute',
-                    left: 12,
+                    left: 14,
                     top: '50%',
                     transform: 'translateY(-50%)',
                     color: 'var(--secondary-foreground)',
                     pointerEvents: 'none',
+                    zIndex: 2,
                 }} />
                 <input
                     type="text"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder="Search exercises... e.g. paused squats"
+                    className="glass-input"
                     style={{
                         width: '100%',
-                        padding: '0.75rem 0.75rem 0.75rem 2.5rem',
-                        borderRadius: 10,
-                        border: '1px solid var(--card-border)',
-                        background: 'var(--card-bg)',
-                        color: 'var(--foreground)',
-                        fontSize: '0.95rem',
-                        outline: 'none',
-                        boxSizing: 'border-box',
+                        paddingLeft: '2.5rem',
+                        fontSize: '0.92rem',
                     }}
                 />
             </div>
 
             {/* Results */}
             {query.trim() && results.length === 0 && (
-                <div style={{
+                <div className="glass-panel" style={{
                     textAlign: 'center',
-                    padding: '3rem 1rem',
+                    padding: '3rem 1.5rem',
                     color: 'var(--secondary-foreground)',
+                    borderRadius: 16,
                 }}>
-                    <Dumbbell size={32} style={{ marginBottom: '0.75rem', opacity: 0.4 }} />
-                    <p>No exercises found matching "{query}"</p>
+                    <Dumbbell size={36} style={{ marginBottom: '0.75rem', opacity: 0.5, color: 'var(--primary)' }} />
+                    <p style={{ fontWeight: 600, color: 'var(--foreground)' }}>No exercises found matching &quot;{query}&quot;</p>
                     <p style={{ fontSize: '0.8rem', marginTop: '0.5rem' }}>Try a different name or partial match</p>
                 </div>
             )}
 
             {!query.trim() && (
-                <div style={{
+                <div className="glass-panel" style={{
                     textAlign: 'center',
-                    padding: '3rem 1rem',
+                    padding: '3rem 1.5rem',
                     color: 'var(--secondary-foreground)',
+                    borderRadius: 16,
                 }}>
-                    <Search size={32} style={{ marginBottom: '0.75rem', opacity: 0.4 }} />
-                    <p>Search your training history</p>
+                    <Search size={36} style={{ marginBottom: '0.75rem', opacity: 0.5, color: 'var(--primary)' }} />
+                    <p style={{ fontWeight: 600, color: 'var(--foreground)' }}>Search your training history</p>
                     <p style={{ fontSize: '0.8rem', marginTop: '0.5rem' }}>
                         Find when you last did an exercise, track weights over time
                     </p>
@@ -254,11 +256,11 @@ export default function TrainingHistory({
                     return (
                         <div
                             key={key}
+                            className="glass-panel chat-press"
                             style={{
-                                border: '1px solid var(--card-border)',
-                                borderRadius: 10,
-                                background: 'var(--card-bg)',
+                                borderRadius: 14,
                                 overflow: 'hidden',
+                                transition: 'all 0.16s var(--ease-out)',
                             }}
                         >
                             <button
