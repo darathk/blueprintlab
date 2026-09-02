@@ -44,12 +44,29 @@ export default async function AthleteDashboard({ params }) {
 
     return (
         <div style={{ minHeight: '100vh', padding: '1rem 0', maxWidth: 600, margin: '0 auto' }}>
-            <header style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 1rem' }}>
+            <header style={{ marginBottom: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 1rem' }}>
                 <div>
-                    <h1 style={{ fontSize: '1.25rem', fontWeight: 700 }}>Hello, {athlete.name}</h1>
-                    <p style={{ color: 'var(--secondary-foreground)', fontSize: '0.85rem' }}>Ready to train?</p>
+                    <h1 style={{ fontSize: '1.4rem', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
+                        Hello, <span style={{ color: 'var(--primary)', textShadow: '0 0 16px rgba(125, 135, 210, 0.3)' }}>{athlete.name}</span>
+                    </h1>
+                    <p style={{ color: 'var(--secondary-foreground)', fontSize: '0.85rem', margin: '3px 0 0' }}>Ready to train?</p>
                 </div>
-                <Link href="/" style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)' }}>Logout</Link>
+                <Link
+                    href="/"
+                    className="chat-press"
+                    style={{
+                        fontSize: '0.78rem',
+                        color: 'var(--secondary-foreground)',
+                        padding: '6px 14px',
+                        borderRadius: 20,
+                        background: 'var(--glass-surface-2)',
+                        border: '1px solid var(--glass-border)',
+                        textDecoration: 'none',
+                        transition: 'all 0.16s var(--ease-out)',
+                    }}
+                >
+                    Logout
+                </Link>
             </header>
 
             {athlete.coachId && (

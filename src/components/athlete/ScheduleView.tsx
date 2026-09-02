@@ -701,24 +701,26 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                 gap: 4,
                                 minWidth: 44,
                                 padding: '8px 6px 6px',
-                                borderRadius: 12,
+                                borderRadius: 14,
                                 cursor: 'pointer',
-                                transition: 'all 0.2s',
+                                transition: 'all 0.16s var(--ease-out)',
                                 background: isSelected
-                                    ? 'var(--primary)'
+                                    ? 'rgba(125, 135, 210, 0.25)'
                                     : d.isToday
-                                        ? 'rgba(125, 135, 210, 0.15)'
-                                        : 'transparent',
+                                        ? 'rgba(125, 135, 210, 0.12)'
+                                        : 'var(--glass-surface-2)',
                                 border: isSelected
-                                    ? '1px solid var(--primary)'
+                                    ? '1px solid rgba(125, 135, 210, 0.5)'
                                     : d.isToday
                                         ? '1px solid rgba(125, 135, 210, 0.3)'
-                                        : '1px solid transparent',
+                                        : '1px solid var(--glass-border)',
+                                boxShadow: isSelected ? '0 0 12px rgba(125, 135, 210, 0.3)' : 'none',
                             }}
+                            className="chat-press"
                         >
                             <span style={{
                                 fontSize: '0.65rem',
-                                fontWeight: 600,
+                                fontWeight: 700,
                                 textTransform: 'uppercase',
                                 letterSpacing: '0.05em',
                                 color: isSelected ? 'white' : 'var(--secondary-foreground)',
@@ -759,20 +761,22 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
             {/* ═══ VIEW MODE TOGGLE ═══ */}
             <div style={{ padding: '0 16px 12px', display: 'flex', width: '100%' }}>
                 <div style={{
-                    display: 'flex', width: '100%', background: 'var(--card-bg)', borderRadius: 10,
-                    padding: 3, border: '1px solid var(--card-border)',
+                    display: 'flex', width: '100%', background: 'var(--glass-surface-2)', borderRadius: 20,
+                    padding: 3, border: '1px solid var(--glass-border)',
                 }}>
                     {([['date', 'Schedule'], ['blocks', 'All Blocks']] as const).map(([mode, label]) => (
                         <button
                             key={mode}
                             onClick={() => setViewMode(mode as 'date' | 'blocks')}
+                            className="chat-press"
                             style={{
                                 flex: 1,
-                                padding: '8px 14px', border: 'none', cursor: 'pointer',
-                                fontSize: '0.85rem', fontWeight: 600, borderRadius: 8,
-                                transition: 'all 0.2s',
-                                background: viewMode === mode ? 'var(--primary)' : 'transparent',
+                                padding: '7px 14px', border: viewMode === mode ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid transparent', cursor: 'pointer',
+                                fontSize: '0.82rem', fontWeight: 700, borderRadius: 16,
+                                transition: 'all 0.16s var(--ease-out)',
+                                background: viewMode === mode ? 'rgba(125, 135, 210, 0.2)' : 'transparent',
                                 color: viewMode === mode ? 'white' : 'var(--secondary-foreground)',
+                                boxShadow: viewMode === mode ? '0 0 10px rgba(125, 135, 210, 0.25)' : 'none',
                             }}
                         >
                             {label}
@@ -838,12 +842,12 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                 sessionMetaRef.current[sKey] = { exercises, sessionName: session.name || `Session ${session.day}` };
 
                                 return (
-                                    <div key={sKey} id={`session-${sKey}`} style={{
-                                        background: 'var(--card-bg)',
-                                        border: sessionOpen ? '1px solid var(--primary)' : '1px solid var(--card-border)',
-                                        borderRadius: 12,
+                                    <div key={sKey} id={`session-${sKey}`} className="glass-panel" style={{
+                                        border: sessionOpen ? '1px solid rgba(125, 135, 210, 0.5)' : '1px solid var(--glass-border)',
+                                        borderRadius: 16,
                                         overflow: 'hidden',
-                                        transition: 'border-color 0.2s, opacity 0.2s',
+                                        transition: 'all 0.2s var(--ease-out)',
+                                        boxShadow: sessionOpen ? '0 0 24px rgba(125, 135, 210, 0.2)' : 'var(--glass-shadow-sm)',
                                         opacity: 1,
                                     }}>
                                         {/* Past program label */}
@@ -851,7 +855,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                             <div style={{
                                                 padding: '4px 16px',
                                                 background: 'rgba(255,255,255,0.02)',
-                                                borderBottom: '1px solid var(--card-border)',
+                                                borderBottom: '1px solid var(--glass-border)',
                                                 fontSize: '0.65rem',
                                                 fontWeight: 600,
                                                 color: 'var(--secondary-foreground)',
@@ -866,9 +870,10 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                 style={{
                                                     display: 'flex', flexDirection: 'column',
                                                     padding: '16px 20px',
-                                                    background: 'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%)',
+                                                    background: 'var(--glass-surface-2)',
+                                                    backdropFilter: 'blur(12px)',
                                                     color: '#fff',
-                                                    borderBottom: '1px solid rgba(255,255,255,0.1)',
+                                                    borderBottom: '1px solid var(--glass-border)',
                                                 }}
                                             >
                                                 {/* Top Row: Title, Week Info, Collapse All */}
@@ -882,18 +887,19 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                 openWeekDrawer(program, weekObj);
                                                             }}
                                                             title="View week overview"
+                                                            className="chat-press"
                                                             style={{
-                                                                background: 'rgba(59, 130, 246, 0.2)',
-                                                                color: '#60a5fa',
-                                                                border: '1px solid rgba(59, 130, 246, 0.4)',
+                                                                background: 'rgba(125, 135, 210, 0.15)',
+                                                                color: 'var(--primary)',
+                                                                border: '1px solid rgba(125, 135, 210, 0.35)',
                                                                 width: '36px',
                                                                 height: '36px',
-                                                                borderRadius: '8px',
+                                                                borderRadius: '10px',
                                                                 cursor: 'pointer',
                                                                 display: 'flex',
                                                                 alignItems: 'center',
                                                                 justifyContent: 'center',
-                                                                transition: 'all 0.2s',
+                                                                transition: 'all 0.16s var(--ease-out)',
                                                                 marginTop: '2px',
                                                             }}
                                                         >
