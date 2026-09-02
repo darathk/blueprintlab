@@ -146,12 +146,13 @@ export default function ExercisePicker({ onDragStart, onAdd, initialExercises = 
     };
 
     return (
-        <div className="card" style={{ height: '100%', overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column' }}>
+        <div className="glass-panel" style={{ height: '100%', overflowY: 'auto', padding: '1rem', display: 'flex', flexDirection: 'column' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <h3 style={{ fontSize: '1.1rem', color: 'var(--primary)', margin: 0 }}>Exercise Library</h3>
+                <h3 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--foreground)', margin: 0, letterSpacing: '-0.01em' }}>Exercise Library</h3>
                 <button
                     onClick={() => setShowAddModal(true)}
-                    style={{ background: 'var(--accent)', color: 'black', border: 'none', borderRadius: '50%', width: '24px', height: '24px', cursor: 'pointer', fontWeight: 'bold' }}
+                    className="glass-button glass-button-primary chat-press"
+                    style={{ borderRadius: '50%', width: '26px', height: '26px', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: '1rem' }}
                     title="Add Custom Exercise"
                 >
                     +
@@ -159,73 +160,76 @@ export default function ExercisePicker({ onDragStart, onAdd, initialExercises = 
             </div>
 
             <input
-                className="input"
+                className="glass-input"
                 placeholder="Search exercises..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
-                style={{ marginBottom: '1rem', width: '100%' }}
+                style={{ marginBottom: '1rem', width: '100%', fontSize: '0.85rem' }}
             />
 
             {showAddModal && (
-                <div style={{ marginBottom: '1rem', padding: '1rem', background: 'rgba(255,255,255,0.05)', borderRadius: 'var(--radius)', border: '1px solid var(--accent)' }}>
-                    <h4 style={{ fontSize: '0.9rem', marginBottom: '0.5rem' }}>New Exercise</h4>
+                <div className="glass-panel-elevated" style={{ marginBottom: '1rem', padding: '1rem', borderRadius: '12px', animation: 'popoverIn 160ms var(--ease-out)' }}>
+                    <h4 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.5rem', color: 'var(--foreground)' }}>New Exercise</h4>
                     <input
-                        className="input"
+                        className="glass-input"
                         placeholder="Exercise Name"
                         value={newExerciseName}
                         onChange={e => setNewExerciseName(e.target.value)}
-                        style={{ marginBottom: '0.5rem', width: '100%' }}
+                        style={{ marginBottom: '0.5rem', width: '100%', fontSize: '0.85rem' }}
                     />
                     <select
-                        className="input"
+                        className="glass-input"
                         value={newExerciseCategory}
                         onChange={e => setNewExerciseCategory(e.target.value)}
-                        style={{ marginBottom: '0.5rem', width: '100%' }}
+                        style={{ marginBottom: '0.75rem', width: '100%', fontSize: '0.85rem' }}
                     >
                         {Object.values(EXERCISE_CATEGORIES).map(cat => (
                             <option key={cat} value={cat}>{cat}</option>
                         ))}
                     </select>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
-                        <button onClick={handleAddCustomExercise} disabled={isSaving} className="btn btn-primary" style={{ fontSize: '0.8rem', padding: '4px 8px' }}>
+                        <button onClick={handleAddCustomExercise} disabled={isSaving} className="glass-button glass-button-primary chat-press" style={{ fontSize: '0.8rem', padding: '4px 12px' }}>
                             {isSaving ? 'Saving...' : 'Save'}
                         </button>
-                        <button onClick={() => setShowAddModal(false)} className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '4px 8px' }}>
+                        <button onClick={() => setShowAddModal(false)} className="glass-button chat-press" style={{ fontSize: '0.8rem', padding: '4px 10px' }}>
                             Cancel
                         </button>
                     </div>
                 </div>
             )}
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                 {Object.keys(groupedExercises).map(category => {
                     const exercises = groupedExercises[category] || [];
                     const isExpanded = expandedCategory === category;
                     if (exercises.length === 0) return null;
 
                     return (
-                        <div key={category} style={{ border: '1px solid var(--card-border)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
+                        <div key={category} style={{ border: '1px solid var(--glass-border)', borderRadius: '10px', overflow: 'hidden' }}>
                             <button
                                 onClick={() => toggleCategory(category)}
+                                className="chat-press"
                                 style={{
                                     width: '100%',
-                                    padding: '0.75rem',
+                                    padding: '0.65rem 0.85rem',
                                     display: 'flex',
                                     justifyContent: 'space-between',
                                     alignItems: 'center',
-                                    background: isExpanded ? 'rgba(255,255,255,0.05)' : 'transparent',
+                                    background: isExpanded ? 'rgba(125, 135, 210, 0.12)' : 'var(--glass-surface-2)',
                                     border: 'none',
                                     color: 'var(--foreground)',
                                     cursor: 'pointer',
-                                    fontWeight: 600
+                                    fontWeight: 600,
+                                    fontSize: '0.85rem',
+                                    transition: 'all 0.15s'
                                 }}
                             >
                                 <span>{category}</span>
-                                <span style={{ fontSize: '0.8rem', opacity: 0.7 }}>{exercises.length}</span>
+                                <span className="glass-badge" style={{ fontSize: '0.7rem' }}>{exercises.length}</span>
                             </button>
 
                             {isExpanded && (
-                                <div style={{ padding: '0.5rem', background: 'rgba(0,0,0,0.2)' }}>
+                                <div style={{ padding: '0.4rem', background: 'var(--glass-surface-1)', display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
                                     {exercises.map(exName => {
                                         const exData: any = exerciseDB[exName] || { name: exName };
                                         const isCustom = !!exData.isCustom;
@@ -236,20 +240,18 @@ export default function ExercisePicker({ onDragStart, onAdd, initialExercises = 
                                                 onDragStart={(e) => handleDragStartInternal(e, exName)}
                                                 onClick={() => onAdd(exData)}
                                                 style={{
-                                                    padding: '0.5rem',
-                                                    marginBottom: '4px',
-                                                    background: 'var(--card-bg)',
-                                                    borderRadius: '4px',
+                                                    padding: '0.5rem 0.65rem',
+                                                    background: 'var(--glass-surface-2)',
+                                                    borderRadius: '8px',
                                                     cursor: 'grab',
-                                                    fontSize: '0.9rem',
-                                                    border: '1px solid transparent',
-                                                    transition: 'all 0.2s',
+                                                    border: '1px solid var(--glass-border)',
+                                                    transition: 'all 0.15s',
                                                     display: 'flex',
                                                     justifyContent: 'space-between',
                                                     alignItems: 'center',
                                                     gap: '0.5rem'
                                                 }}
-                                                className="exercise-item"
+                                                className="exercise-item chat-press"
                                             >
                                                 <span style={{ display: 'flex', alignItems: 'flex-start', gap: '0.4rem', minWidth: 0, flex: 1, flexWrap: 'wrap' }}>
                                                     <span style={{

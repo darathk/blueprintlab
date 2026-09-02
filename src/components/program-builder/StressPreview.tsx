@@ -86,18 +86,18 @@ export default function StressPreview({ weeks }) {
     };
 
     return (
-        <div className="card">
-            <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--warning)' }}>Stress Forecast (Per Session)</h3>
+        <div className="glass-panel" style={{ padding: '1.25rem' }}>
+            <h3 style={{ fontSize: '1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--foreground)' }}>Stress Forecast (Per Session)</h3>
             <div style={{ height: '200px', width: '100%' }}>
                 <ResponsiveContainer>
                     <BarChart data={data} margin={{ top: 5, right: 5, bottom: 5, left: -20 }}>
-                        <XAxis dataKey="name" style={{ fontSize: '0.6rem' }} tickFormatter={(val) => val.split(' ')[1]} />
-                        <YAxis style={{ fontSize: '0.75rem' }} />
+                        <XAxis dataKey="name" style={{ fontSize: '0.65rem' }} stroke="var(--secondary-foreground)" tickFormatter={(val) => val.split(' ')[1]} />
+                        <YAxis style={{ fontSize: '0.75rem' }} stroke="var(--secondary-foreground)" />
                         <Tooltip
-                            contentStyle={{ background: '#1c1c1c', border: '1px solid #333', fontSize: '0.8rem' }}
+                            contentStyle={{ background: 'var(--glass-surface-3)', border: '1px solid var(--glass-border)', borderRadius: '10px', backdropFilter: 'blur(16px)', fontSize: '0.8rem', color: 'var(--foreground)' }}
                             cursor={{ fill: 'rgba(255,255,255,0.05)' }}
                         />
-                        <ReferenceLine y={50} stroke="rgba(255,255,255,0.3)" strokeDasharray="3 3" />
+                        <ReferenceLine y={50} stroke="rgba(255,255,255,0.2)" strokeDasharray="3 3" />
 
                         <Bar dataKey="Knee" stackId="a" fill={colors['Knee']} />
                         <Bar dataKey="Hip" stackId="a" fill={colors['Hip']} />
@@ -109,10 +109,10 @@ export default function StressPreview({ weeks }) {
                     </BarChart>
                 </ResponsiveContainer>
             </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.5rem', fontSize: '0.7rem', color: 'var(--secondary-foreground)' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', marginTop: '0.75rem', fontSize: '0.75rem', color: 'var(--secondary-foreground)' }}>
                 {Object.entries(colors).map(([cat, color]) => (
-                    <div key={cat} style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                        <div style={{ width: 8, height: 8, background: color }}></div> {cat}
+                    <div key={cat} style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                        <div style={{ width: 8, height: 8, borderRadius: '2px', background: color }}></div> {cat}
                     </div>
                 ))}
             </div>

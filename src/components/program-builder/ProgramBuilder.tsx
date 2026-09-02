@@ -2014,35 +2014,28 @@ export default function ProgramBuilder({
                                 value={programName}
                                 onChange={e => setProgramName(e.target.value)}
                                 placeholder="Program Name"
+                                className="glass-input"
                                 style={{
-                                    background: 'rgba(18, 18, 18, 0.4)',
-                                    border: '1px solid var(--card-border)',
-                                    borderRadius: 'var(--radius)',
-                                    color: 'var(--foreground)',
                                     fontWeight: 600,
                                     fontSize: '1.1rem',
                                     padding: '0.6rem 1rem',
                                     width: '100%',
                                     minWidth: '360px',
-                                    transition: 'border-color 0.2s',
                                 }}
-                                onFocus={e => e.target.style.borderColor = 'var(--primary)'}
-                                onBlur={e => e.target.style.borderColor = 'var(--card-border)'}
                             />
                         </div>
                     </div>
 
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '1rem' }}>
-                        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center' }}>
                             {resumedFromDraft && autoSaveStatus === 'idle' && (
                                 <span
                                     title="This program was auto-saved as a draft. Click Save & Assign to publish it."
+                                    className="glass-badge"
                                     style={{
                                         fontSize: '0.75rem',
-                                        color: 'var(--secondary-foreground)',
-                                        background: 'rgba(125,135,210,0.10)',
-                                        border: '1px solid var(--card-border)',
-                                        padding: '3px 8px', borderRadius: 999,
+                                        color: 'var(--primary)',
+                                        borderColor: 'rgba(125, 135, 210, 0.3)',
                                         whiteSpace: 'nowrap',
                                     }}
                                 >
@@ -2065,28 +2058,26 @@ export default function ProgramBuilder({
                             {athleteId && (
                                 <button
                                     onClick={() => setToolsMenuOpen(true)}
+                                    className="glass-button chat-press"
                                     style={{
                                         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                                        background: 'rgba(255,255,255,0.07)',
-                                        border: '1px solid var(--card-border)',
-                                        borderRadius: 'var(--radius)', padding: '0.5rem',
+                                        padding: '0.5rem',
                                         color: 'var(--secondary-foreground)',
-                                        cursor: 'pointer', transition: 'all 0.2s',
                                     }}
                                     title="Open Tools Menu"
                                 >
                                     <Menu size={20} />
                                 </button>
                             )}
-                            <button onClick={handleSave} className="btn btn-primary" disabled={isSaving || isNavigating}>
+                            <button onClick={handleSave} className="glass-button glass-button-primary chat-press" disabled={isSaving || isNavigating} style={{ fontWeight: 600, padding: '0.6rem 1.25rem' }}>
                                 {isSaving ? 'Saving...' : isNavigating ? 'Loading dashboard...' : 'Save & Assign'}
                             </button>
                         </div>
 
                         {!athleteId && (
                             <select
-                                className="input"
-                                style={{ width: '200px', fontSize: '0.8rem', padding: '0.25rem' }}
+                                className="glass-input"
+                                style={{ width: '200px', fontSize: '0.8rem', padding: '0.35rem 0.6rem' }}
                                 value={selectedAthleteId}
                                 onChange={(e) => setSelectedAthleteId(e.target.value)}
                             >
@@ -2103,20 +2094,21 @@ export default function ProgramBuilder({
                 <div style={{ overflowY: 'auto', paddingRight: '0.5rem', flex: 1, width: '100%' }}>
                     
                     {/* Tab Navigation */}
-                    <div style={{ display: 'flex', gap: '0.5rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '0.5rem', width: '100%', marginBottom: '1.25rem' }}>
+                    <div style={{ display: 'flex', gap: '0.4rem', background: 'var(--glass-surface-2)', padding: '3px', borderRadius: '20px', width: 'fit-content', border: '1px solid var(--glass-border)', marginBottom: '1.25rem' }}>
                         {athleteId && (
                             <button
                                 onClick={() => router.push(`/dashboard/athletes/${athleteId}`)}
+                                className="chat-press"
                                 style={{
                                     background: 'transparent',
                                     color: 'var(--secondary-foreground)',
-                                    border: 'none',
-                                    borderRadius: '4px',
-                                    padding: '6px 16px',
-                                    fontSize: '0.85rem',
+                                    border: '1px solid transparent',
+                                    borderRadius: '16px',
+                                    padding: '5px 14px',
+                                    fontSize: '0.82rem',
                                     fontWeight: 600,
                                     cursor: 'pointer',
-                                    transition: 'all 0.2s',
+                                    transition: 'all 0.16s var(--ease-out)',
                                     display: 'flex',
                                     alignItems: 'center',
                                     gap: 6
@@ -2127,35 +2119,39 @@ export default function ProgramBuilder({
                         )}
                         <button
                             onClick={() => setActiveView('builder')}
+                            className="chat-press"
                             style={{
-                                background: activeView === 'builder' ? 'var(--primary)' : 'transparent',
-                                color: activeView === 'builder' ? '#000' : 'var(--secondary-foreground)',
-                                border: 'none',
-                                borderRadius: '4px',
-                                padding: '6px 16px',
-                                fontSize: '0.85rem',
+                                background: activeView === 'builder' ? 'rgba(125, 135, 210, 0.2)' : 'transparent',
+                                color: activeView === 'builder' ? '#fff' : 'var(--secondary-foreground)',
+                                border: activeView === 'builder' ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid transparent',
+                                borderRadius: '16px',
+                                padding: '5px 14px',
+                                fontSize: '0.82rem',
                                 fontWeight: 600,
                                 cursor: 'pointer',
-                                transition: 'all 0.2s'
+                                transition: 'all 0.16s var(--ease-out)',
+                                boxShadow: activeView === 'builder' ? '0 0 10px rgba(125, 135, 210, 0.25)' : 'none'
                             }}
                         >
                             Current Program
                         </button>
                         <button
                             onClick={() => { setActiveView('history'); setSelectedHistoryProgram(null); }}
+                            className="chat-press"
                             style={{
-                                background: activeView === 'history' ? 'var(--primary)' : 'transparent',
-                                color: activeView === 'history' ? '#000' : 'var(--secondary-foreground)',
-                                border: 'none',
-                                borderRadius: '4px',
-                                padding: '6px 16px',
-                                fontSize: '0.85rem',
+                                background: activeView === 'history' ? 'rgba(125, 135, 210, 0.2)' : 'transparent',
+                                color: activeView === 'history' ? '#fff' : 'var(--secondary-foreground)',
+                                border: activeView === 'history' ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid transparent',
+                                borderRadius: '16px',
+                                padding: '5px 14px',
+                                fontSize: '0.82rem',
                                 fontWeight: 600,
                                 cursor: 'pointer',
-                                transition: 'all 0.2s'
+                                transition: 'all 0.16s var(--ease-out)',
+                                boxShadow: activeView === 'history' ? '0 0 10px rgba(125, 135, 210, 0.25)' : 'none'
                             }}
                         >
-                            Program History
+                            History
                         </button>
                     </div>
 
@@ -2165,19 +2161,21 @@ export default function ProgramBuilder({
                             <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
                                 <button
                                     onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                                    className="chat-press"
                                     style={{
-                                        background: isSidebarOpen ? 'rgba(6, 182, 212, 0.15)' : 'var(--card-bg)',
-                                        color: isSidebarOpen ? 'var(--primary)' : 'var(--secondary-foreground)',
-                                        border: '1px solid var(--card-border)',
-                                        borderRadius: '8px',
-                                        padding: '6px 14px',
+                                        background: isSidebarOpen ? 'rgba(125, 135, 210, 0.2)' : 'var(--glass-surface-2)',
+                                        color: isSidebarOpen ? '#fff' : 'var(--secondary-foreground)',
+                                        border: `1px solid ${isSidebarOpen ? 'rgba(125, 135, 210, 0.4)' : 'var(--glass-border)'}`,
+                                        borderRadius: '16px',
+                                        padding: '5px 14px',
                                         cursor: 'pointer',
                                         fontSize: '0.8rem',
                                         fontWeight: 600,
                                         display: 'flex',
                                         alignItems: 'center',
                                         gap: '6px',
-                                        transition: 'all 0.2s',
+                                        transition: 'all 0.16s var(--ease-out)',
+                                        boxShadow: isSidebarOpen ? '0 0 10px rgba(125, 135, 210, 0.25)' : 'none'
                                     }}
                                     title={isSidebarOpen ? 'Hide Exercise Library' : 'Show Exercise Library'}
                                 >
@@ -2187,30 +2185,38 @@ export default function ProgramBuilder({
                                 </button>
 
                                 <div style={{
-                                    display: 'inline-flex', background: 'var(--card-bg)',
-                                    border: '1px solid var(--card-border)', borderRadius: '8px',
-                                    overflow: 'hidden',
+                                    display: 'inline-flex', background: 'var(--glass-surface-2)',
+                                    border: '1px solid var(--glass-border)', borderRadius: '20px',
+                                    padding: '3px',
                                 }}>
                                     <button
                                         onClick={() => setCalendarViewMode('monthly')}
+                                        className="chat-press"
                                         style={{
-                                            background: calendarViewMode === 'monthly' ? 'var(--primary)' : 'transparent',
-                                            color: calendarViewMode === 'monthly' ? '#000' : 'var(--secondary-foreground)',
-                                            border: 'none', padding: '6px 16px', cursor: 'pointer',
+                                            background: calendarViewMode === 'monthly' ? 'rgba(125, 135, 210, 0.2)' : 'transparent',
+                                            color: calendarViewMode === 'monthly' ? '#fff' : 'var(--secondary-foreground)',
+                                            border: calendarViewMode === 'monthly' ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid transparent',
+                                            borderRadius: '16px',
+                                            padding: '4px 14px', cursor: 'pointer',
                                             fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6,
-                                            transition: 'all 0.2s',
+                                            transition: 'all 0.16s var(--ease-out)',
+                                            boxShadow: calendarViewMode === 'monthly' ? '0 0 10px rgba(125, 135, 210, 0.25)' : 'none'
                                         }}
                                     >
                                         <CalendarIcon size={14} /> Monthly
                                     </button>
                                     <button
                                         onClick={() => setCalendarViewMode('weekly')}
+                                        className="chat-press"
                                         style={{
-                                            background: calendarViewMode === 'weekly' ? 'var(--primary)' : 'transparent',
-                                            color: calendarViewMode === 'weekly' ? '#000' : 'var(--secondary-foreground)',
-                                            border: 'none', padding: '6px 16px', cursor: 'pointer',
+                                            background: calendarViewMode === 'weekly' ? 'rgba(125, 135, 210, 0.2)' : 'transparent',
+                                            color: calendarViewMode === 'weekly' ? '#fff' : 'var(--secondary-foreground)',
+                                            border: calendarViewMode === 'weekly' ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid transparent',
+                                            borderRadius: '16px',
+                                            padding: '4px 14px', cursor: 'pointer',
                                             fontSize: '0.8rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6,
-                                            transition: 'all 0.2s',
+                                            transition: 'all 0.16s var(--ease-out)',
+                                            boxShadow: calendarViewMode === 'weekly' ? '0 0 10px rgba(125, 135, 210, 0.25)' : 'none'
                                         }}
                                     >
                                         <LayoutGrid size={14} /> Weekly

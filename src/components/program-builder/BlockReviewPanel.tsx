@@ -119,46 +119,56 @@ export default function BlockReviewPanel({ athleteId, coachId, existingPrograms,
     return (
         <div style={{
             position: 'fixed', top: 'var(--header-height, 56px)', left: 0, bottom: 0, width: 'calc(100vw - 380px)', zIndex: 850,
-            background: 'var(--background)', borderRight: '1px solid var(--card-border)',
-            display: 'flex', flexDirection: 'column', boxShadow: '4px 0 24px rgba(0,0,0,0.4)',
+            background: 'rgba(12, 14, 20, 0.85)', backdropFilter: 'blur(var(--glass-blur-lg))', WebkitBackdropFilter: 'blur(var(--glass-blur-lg))',
+            borderRight: '1px solid var(--glass-border)',
+            display: 'flex', flexDirection: 'column', boxShadow: 'var(--glass-shadow-lg), var(--glass-specular)',
         }}>
             {/* Header */}
             <div style={{
-                padding: '1rem 1.25rem', borderBottom: '1px solid var(--card-border)',
+                padding: '1rem 1.25rem', borderBottom: '1px solid var(--glass-border)',
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0,
             }}>
-                <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--foreground)' }}>
+                <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--foreground)', letterSpacing: '-0.01em' }}>
                     Meta Block Review
                 </div>
                 <button 
                     onClick={onClose}
+                    className="chat-press"
                     style={{ background: 'transparent', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', padding: '0.25rem' }}
                 >
                     <X size={20} />
                 </button>
             </div>
 
-            <div style={{ padding: '1rem', flex: 1, overflowY: 'auto' }}>
+            <div style={{ padding: '1.25rem', flex: 1, overflowY: 'auto' }}>
                 {/* Tabs */}
-                <div style={{ display: 'flex', gap: '1rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--card-border)' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1.5rem', background: 'var(--glass-surface-2)', padding: '3px', borderRadius: '20px', width: 'fit-content', border: '1px solid var(--glass-border)' }}>
                     <button 
                         onClick={() => setActiveTab('block')}
+                        className="chat-press"
                         style={{ 
-                            background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem 0',
-                            color: activeTab === 'block' ? 'var(--primary)' : 'var(--secondary-foreground)',
-                            borderBottom: activeTab === 'block' ? '2px solid var(--primary)' : '2px solid transparent',
-                            fontWeight: activeTab === 'block' ? 600 : 400, fontSize: '0.9rem'
+                            background: activeTab === 'block' ? 'rgba(125, 135, 210, 0.2)' : 'transparent',
+                            color: activeTab === 'block' ? '#fff' : 'var(--secondary-foreground)',
+                            border: activeTab === 'block' ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid transparent',
+                            cursor: 'pointer', padding: '0.35rem 0.9rem',
+                            fontWeight: 600, fontSize: '0.8rem', borderRadius: '16px',
+                            transition: 'all 0.16s var(--ease-out)',
+                            boxShadow: activeTab === 'block' ? '0 0 10px rgba(125, 135, 210, 0.25)' : 'none'
                         }}
                     >
                         Block Summary
                     </button>
                     <button 
                         onClick={() => setActiveTab('reports')}
+                        className="chat-press"
                         style={{ 
-                            background: 'none', border: 'none', cursor: 'pointer', padding: '0.5rem 0',
-                            color: activeTab === 'reports' ? 'var(--primary)' : 'var(--secondary-foreground)',
-                            borderBottom: activeTab === 'reports' ? '2px solid var(--primary)' : '2px solid transparent',
-                            fontWeight: activeTab === 'reports' ? 600 : 400, fontSize: '0.9rem'
+                            background: activeTab === 'reports' ? 'rgba(125, 135, 210, 0.2)' : 'transparent',
+                            color: activeTab === 'reports' ? '#fff' : 'var(--secondary-foreground)',
+                            border: activeTab === 'reports' ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid transparent',
+                            cursor: 'pointer', padding: '0.35rem 0.9rem',
+                            fontWeight: 600, fontSize: '0.8rem', borderRadius: '16px',
+                            transition: 'all 0.16s var(--ease-out)',
+                            boxShadow: activeTab === 'reports' ? '0 0 10px rgba(125, 135, 210, 0.25)' : 'none'
                         }}
                     >
                         Saved Reports
@@ -173,10 +183,10 @@ export default function BlockReviewPanel({ athleteId, coachId, existingPrograms,
                                 Select Block to Review
                             </label>
                             <select 
-                                className="input" 
+                                className="glass-input" 
                                 value={selectedProgramId} 
                                 onChange={e => setSelectedProgramId(e.target.value)}
-                                style={{ width: '100%', padding: '0.5rem', fontSize: '0.85rem' }}
+                                style={{ width: '100%', padding: '0.5rem 0.75rem', fontSize: '0.85rem' }}
                             >
                                 {existingPrograms.map(p => (
                                     <option key={p.id} value={p.id}>{p.name}</option>
