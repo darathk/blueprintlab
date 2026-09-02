@@ -7,7 +7,7 @@ import { chatUploadManager, useChatUploadJobsForConversation, usePreUploadJobs, 
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
-import { Mic, MoreVertical, Reply, Copy, Download, Paperclip, X, Send, Search, Scissors, Pencil, Play, Maximize, Minimize2, Plus } from 'lucide-react';
+import { Mic, MoreVertical, Reply, Copy, Download, Paperclip, X, Send, Search, Scissors, Pencil, Play, Maximize, Minimize2, Plus, ChevronLeft } from 'lucide-react';
 const VideoCropper = dynamic(() => import('./VideoCropper'), { ssr: false });
 const EmojiPicker = dynamic(() => import('./EmojiPicker'), { ssr: false });
 const GifPicker = dynamic(() => import('./GifPicker'), { ssr: false });
@@ -1924,95 +1924,220 @@ export default function ChatInterface({
             `}</style>
             {/* Header */}
             <div style={{
-                padding: '14px 20px',
-                paddingTop: 'calc(14px + env(safe-area-inset-top, 0px))',
+                paddingLeft: 12,
+                paddingRight: 12,
+                paddingTop: 'env(safe-area-inset-top, 0px)',
                 background: 'var(--background)',
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',
                 borderBottom: '1px solid rgba(255,255,255,0.06)',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 14,
+                gap: 10,
                 flexShrink: 0,
-                height: 'calc(var(--header-height) + env(safe-area-inset-top, 0px))',
+                minHeight: 'calc(58px + env(safe-area-inset-top, 0px))',
+                height: 'calc(58px + env(safe-area-inset-top, 0px))',
                 width: '100%',
-                zIndex: 40
+                zIndex: 40,
+                boxSizing: 'border-box'
             }}>
                 {isMultiSelecting ? (
-                    <>
-                        <button onClick={() => setSelectedMessageIds(new Set())} className="chat-press" style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', display: 'flex', alignItems: 'center' }}><X size={20} /></button>
-                        <div style={{ flex: 1, fontWeight: 600, color: 'var(--primary)', fontSize: 16 }}>{selectedMessageIds.size} Selected</div>
-                        <button onClick={handleCopyMultiple} className="chat-press" style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 20, color: '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer', padding: '6px 14px', transition: 'background 160ms var(--ease-out)' }}><Copy size={14} color="#fff" /> Copy</button>
+                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                        <button onClick={() => setSelectedMessageIds(new Set())} className="chat-press" style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', display: 'flex', alignItems: 'center', padding: 6 }}>
+                            <X size={20} />
+                        </button>
+                        <div style={{ flex: 1, fontWeight: 600, color: 'var(--primary)', fontSize: 15, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            {selectedMessageIds.size} Selected
+                        </div>
+                        <button onClick={handleCopyMultiple} className="chat-press" style={{ display: 'flex', alignItems: 'center', gap: 5, background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 20, color: '#fff', fontSize: 12, fontWeight: 500, cursor: 'pointer', padding: '5px 12px', transition: 'background 160ms var(--ease-out)', flexShrink: 0 }}>
+                            <Copy size={13} color="#fff" /> Copy
+                        </button>
                         <button onClick={async () => { 
                             if (!confirmBulkDelete) { setConfirmBulkDelete(true); return; } 
                             setConfirmBulkDelete(false); 
                             const idsToDelete = Array.from(selectedMessageIds);
-                            // Optimistically remove from UI
                             setMessages(prev => prev.filter(m => !selectedMessageIds.has(m.id)));
                             setSelectedMessageIds(new Set());
-                            
-                            // Delete in parallel
                             await Promise.allSettled(idsToDelete.map(id => fetch(`/api/messages?id=${id}`, { method: 'DELETE' })));
                             window.dispatchEvent(new Event('inbox-refresh'));
-                        }} className="chat-press" style={{ display: 'flex', alignItems: 'center', gap: 6, background: confirmBulkDelete ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.05)', border: confirmBulkDelete ? '1px solid rgba(239,68,68,0.35)' : '1px solid rgba(255,255,255,0.08)', color: '#ef4444', fontSize: 13, fontWeight: 600, cursor: 'pointer', borderRadius: 20, padding: '6px 14px', transition: 'background 160ms var(--ease-out)' }}><X size={14} color="#ef4444" /> {confirmBulkDelete ? 'Tap to confirm' : 'Delete'}</button>
-                    </>
+                        }} className="chat-press" style={{ display: 'flex', alignItems: 'center', gap: 5, background: confirmBulkDelete ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.05)', border: confirmBulkDelete ? '1px solid rgba(239,68,68,0.35)' : '1px solid rgba(255,255,255,0.08)', color: '#ef4444', fontSize: 12, fontWeight: 600, cursor: 'pointer', borderRadius: 20, padding: '5px 12px', transition: 'background 160ms var(--ease-out)', flexShrink: 0 }}>
+                            <X size={13} color="#ef4444" /> {confirmBulkDelete ? 'Confirm' : 'Delete'}
+                        </button>
+                    </div>
                 ) : (
                     <>
                         {onBack ? (
-                            <button onClick={onBack} className="chat-press" style={{ color: 'var(--secondary-foreground)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 22, fontWeight: 300, display: 'flex', alignItems: 'center' }}>&#8249;</button>
+                            <button
+                                onClick={onBack}
+                                className="chat-press"
+                                title="Back"
+                                style={{
+                                    color: 'var(--foreground)',
+                                    background: 'none',
+                                    border: 'none',
+                                    cursor: 'pointer',
+                                    width: 36,
+                                    height: 36,
+                                    borderRadius: '50%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0,
+                                    padding: 0,
+                                    marginLeft: -4
+                                }}
+                            >
+                                <ChevronLeft size={24} />
+                            </button>
                         ) : (
-                            <Link prefetch={true} href={`/athlete/${athleteId}/dashboard`} className="chat-press" style={{ color: 'var(--secondary-foreground)', background: 'none', border: 'none', textDecoration: 'none', fontSize: 22, fontWeight: 300, display: 'flex', alignItems: 'center' }}>&#8249;</Link>
+                            <Link
+                                prefetch={true}
+                                href={`/athlete/${athleteId}/dashboard`}
+                                className="chat-press"
+                                title="Back to dashboard"
+                                style={{
+                                    color: 'var(--foreground)',
+                                    background: 'none',
+                                    border: 'none',
+                                    textDecoration: 'none',
+                                    width: 36,
+                                    height: 36,
+                                    borderRadius: '50%',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    flexShrink: 0,
+                                    padding: 0,
+                                    marginLeft: -4
+                                }}
+                            >
+                                <ChevronLeft size={24} />
+                            </Link>
                         )}
 
-                        <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, rgba(125,135,210,0.3), rgba(168,85,247,0.3))', border: '1px solid rgba(125,135,210,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 600, color: 'var(--primary)', fontSize: 14, flexShrink: 0, boxShadow: '0 2px 10px rgba(125,135,210,0.2)' }}>
+                        <div style={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: '50%',
+                            background: 'linear-gradient(135deg, rgba(125,135,210,0.3), rgba(168,85,247,0.3))',
+                            border: '1px solid rgba(125,135,210,0.25)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 600,
+                            color: 'var(--primary)',
+                            fontSize: 14,
+                            flexShrink: 0,
+                            boxShadow: '0 2px 10px rgba(125,135,210,0.2)'
+                        }}>
                             {otherUserName.charAt(0).toUpperCase()}
                         </div>
 
                         {isSearchOpen ? (
-                            <div style={{ flex: 1, display: 'flex', alignItems: 'center', background: 'rgba(255,255,255,0.04)', borderRadius: 20, padding: '6px 14px', border: '1px solid rgba(125,135,210,0.3)', boxShadow: '0 0 0 2px rgba(125,135,210,0.08)', animation: 'fadeIn 150ms var(--ease-out)' }}>
-                                <Search size={14} style={{ color: 'var(--primary)', marginRight: 8 }} />
+                            <div style={{
+                                flex: 1,
+                                display: 'flex',
+                                alignItems: 'center',
+                                background: 'rgba(255,255,255,0.04)',
+                                borderRadius: 20,
+                                padding: '6px 12px',
+                                border: '1px solid rgba(125,135,210,0.3)',
+                                boxShadow: '0 0 0 2px rgba(125,135,210,0.08)',
+                                animation: 'fadeIn 150ms var(--ease-out)',
+                                minWidth: 0
+                            }}>
+                                <Search size={14} style={{ color: 'var(--primary)', marginRight: 8, flexShrink: 0 }} />
                                 <input
                                     autoFocus
                                     type="text"
                                     placeholder="Search messages..."
                                     value={searchText}
                                     onChange={(e) => setSearchText(e.target.value)}
-                                    style={{ background: 'none', border: 'none', color: '#fff', fontSize: 14, outline: 'none', flex: 1 }}
+                                    style={{ background: 'none', border: 'none', color: '#fff', fontSize: 14, outline: 'none', flex: 1, minWidth: 0 }}
                                 />
-                                <button onClick={() => { setIsSearchOpen(false); setSearchText(''); }} className="chat-press" style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: 2, display: 'flex' }}><X size={14} /></button>
+                                <button
+                                    onClick={() => { setIsSearchOpen(false); setSearchText(''); }}
+                                    className="chat-press"
+                                    style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: 4, display: 'flex', flexShrink: 0 }}
+                                >
+                                    <X size={14} />
+                                </button>
                             </div>
                         ) : (
                             <>
-                                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8 }}>
-                                    <div style={{ fontWeight: 600, color: 'var(--foreground)', fontSize: 16, letterSpacing: '-0.01em' }}>{otherUserName}</div>
-                                    {athletePosition && (() => {
-                                        const pos = athletePosition;
-                                        return (
-                                            <div style={{
-                                                display: 'flex', alignItems: 'center', gap: 4,
-                                                fontSize: 11, fontWeight: 600, color: pos.isFinished ? 'rgba(255,255,255,0.5)' : 'rgba(56,189,248,0.9)',
-                                                background: pos.isFinished ? 'rgba(255,255,255,0.04)' : 'rgba(56,189,248,0.12)',
-                                                border: pos.isFinished ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(56,189,248,0.2)',
-                                                borderRadius: 8, padding: '3px 9px',
-                                                whiteSpace: 'nowrap'
+                                <div style={{
+                                    flex: 1,
+                                    minWidth: 0,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    justifyContent: 'center'
+                                }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                                        <span style={{
+                                            fontWeight: 600,
+                                            color: 'var(--foreground)',
+                                            fontSize: 15,
+                                            letterSpacing: '-0.01em',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap',
+                                            lineHeight: 1.25
+                                        }}>
+                                            {otherUserName}
+                                        </span>
+                                    </div>
+                                    {athletePosition ? (
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 1, minWidth: 0 }}>
+                                            <span style={{
+                                                fontSize: 11,
+                                                fontWeight: 500,
+                                                color: athletePosition.isFinished ? 'rgba(255,255,255,0.45)' : 'rgba(56,189,248,0.9)',
+                                                overflow: 'hidden',
+                                                textOverflow: 'ellipsis',
+                                                whiteSpace: 'nowrap',
+                                                lineHeight: 1.2
                                             }}>
-                                                {pos.isFinished ? (
-                                                    <span>Finished {pos.blockName}</span>
-                                                ) : (
+                                                {athletePosition.blockName}
+                                                {athletePosition.isFinished ? ' · Finished' : (
                                                     <>
-                                                        <span>{pos.blockName}</span>
-                                                        {pos.weekNum && <span style={{ color: 'rgba(255,255,255,0.45)', paddingLeft: 2 }}>W{pos.weekNum}{pos.totalWeeks ? `/${pos.totalWeeks}` : ''}</span>}
-                                                        {pos.dayNum && <span style={{ color: 'rgba(255,255,255,0.35)' }}>D{pos.dayNum}</span>}
+                                                        {athletePosition.weekNum ? ` · W${athletePosition.weekNum}${athletePosition.totalWeeks ? `/${athletePosition.totalWeeks}` : ''}` : ''}
+                                                        {athletePosition.dayNum ? ` D${athletePosition.dayNum}` : ''}
                                                     </>
                                                 )}
-                                            </div>
-                                        );
-                                    })()}
+                                            </span>
+                                        </div>
+                                    ) : (
+                                        <span style={{
+                                            fontSize: 11,
+                                            color: 'rgba(255,255,255,0.4)',
+                                            marginTop: 1,
+                                            lineHeight: 1.2,
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            whiteSpace: 'nowrap'
+                                        }}>
+                                            {otherUserName.toLowerCase() === 'coach' ? 'Coach' : 'Athlete'}
+                                        </span>
+                                    )}
                                 </div>
                                 <button
                                     onClick={() => setIsSearchOpen(true)}
                                     className="chat-press"
-                                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)', borderRadius: '50%', width: 34, height: 34, color: 'rgba(255,255,255,0.5)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', transition: 'background 160ms var(--ease-out)' }}
+                                    title="Search messages"
+                                    style={{
+                                        background: 'rgba(255,255,255,0.04)',
+                                        border: '1px solid rgba(255,255,255,0.06)',
+                                        borderRadius: '50%',
+                                        width: 34,
+                                        height: 34,
+                                        color: 'rgba(255,255,255,0.6)',
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        flexShrink: 0,
+                                        transition: 'background 160ms var(--ease-out)'
+                                    }}
                                 >
                                     <Search size={16} />
                                 </button>

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import { MessageSquare, Calendar as CalendarIcon, Search, X, MailOpen, LayoutDashboard, Pencil, Menu } from 'lucide-react';
+import { MessageSquare, Calendar as CalendarIcon, Search, X, MailOpen, LayoutDashboard, Pencil, Menu, MoreVertical } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ChatInterface from './ChatInterface';
@@ -349,15 +349,20 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                                 <button
                                     onClick={() => setActionsMenuOpen(!actionsMenuOpen)}
                                     className="chat-press"
+                                    title="Actions"
                                     style={{
-                                        display: 'flex', alignItems: 'center', gap: 6,
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                                         background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
-                                        borderRadius: 8, padding: '6px 12px',
+                                        borderRadius: isMobile ? '50%' : 8,
+                                        width: isMobile ? 34 : undefined,
+                                        height: 34,
+                                        padding: isMobile ? 0 : '0 12px',
                                         color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
                                         transition: 'background 160ms var(--ease-out)', whiteSpace: 'nowrap'
                                     }}
                                 >
-                                    <Menu size={14} /> Actions
+                                    {isMobile ? <MoreVertical size={16} /> : <Menu size={14} />}
+                                    {!isMobile && <span>Actions</span>}
                                 </button>
 
                                 {actionsMenuOpen && (
