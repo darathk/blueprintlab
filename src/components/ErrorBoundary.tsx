@@ -38,28 +38,25 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
             }
 
             return (
-                <div style={{
+                <div className="glass-panel" style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                    minHeight: 300, padding: '2rem', textAlign: 'center',
-                    background: 'rgba(18, 18, 18, 0.6)', borderRadius: 12,
-                    border: '1px solid rgba(255,255,255,0.08)',
+                    minHeight: 300, padding: '2.5rem 2rem', textAlign: 'center',
+                    border: '1px solid rgba(239, 68, 68, 0.25)',
+                    boxShadow: '0 0 30px rgba(239, 68, 68, 0.08), var(--glass-specular)'
                 }}>
-                    <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>⚠️</div>
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: '#fff', marginBottom: '0.5rem' }}>
+                    <div style={{ fontSize: '2rem', marginBottom: '1rem', filter: 'drop-shadow(0 2px 8px rgba(239,68,68,0.3))' }}>⚠️</div>
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--foreground)', marginBottom: '0.5rem', letterSpacing: '-0.01em' }}>
                         Something went wrong
                     </h2>
-                    <p style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.5)', marginBottom: '1.5rem', maxWidth: 400 }}>
+                    <p style={{ fontSize: '0.875rem', color: 'var(--secondary-foreground)', marginBottom: '1.5rem', maxWidth: 400, lineHeight: 1.5 }}>
                         {this.state.error?.message || 'An unexpected error occurred while rendering this section.'}
                     </p>
                     <button
                         onClick={() => {
                             this.setState({ hasError: false, error: null });
                         }}
-                        style={{
-                            background: 'var(--primary)', color: '#000', border: 'none',
-                            borderRadius: 8, padding: '0.6rem 1.5rem', fontSize: '0.875rem',
-                            fontWeight: 600, cursor: 'pointer', transition: 'opacity 0.2s',
-                        }}
+                        className="glass-button glass-button-primary chat-press"
+                        style={{ padding: '0.6rem 1.75rem', fontWeight: 600 }}
                     >
                         Try Again
                     </button>

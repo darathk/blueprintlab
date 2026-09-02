@@ -18,121 +18,73 @@ export default function TopNavigation({ unreadCount = 0, userId }: { unreadCount
 
     return (
         <nav className="dashboard-nav flex w-full items-center justify-between md:justify-end" style={{ gap: '1.5rem' }}>
-            <div style={{ display: 'flex', gap: '1.75rem', alignItems: 'center' }}>
-                <Link
-                    prefetch={true}
-                    href="/dashboard"
-                    className="nav-link"
-                    style={{
-                        fontWeight: 600,
-                        fontSize: '0.85rem',
-                        color: isActive('/dashboard') ? 'var(--primary)' : 'var(--secondary-foreground)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        transition: 'color 0.2s ease',
-                        textShadow: isActive('/dashboard') ? '0 0 10px rgba(125, 135, 210,0.4)' : 'none'
-                    }}
-                >
-                    Command Center
-                </Link>
-                <Link
-                    href="/dashboard/messages"
-                    className="nav-link"
-                    style={{
-                        fontWeight: 600,
-                        fontSize: '0.85rem',
-                        color: isActive('/dashboard/messages') ? 'var(--primary)' : 'var(--secondary-foreground)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        transition: 'color 0.2s ease',
-                        textShadow: isActive('/dashboard/messages') ? '0 0 10px rgba(125, 135, 210,0.4)' : 'none',
-                        position: 'relative',
-                        display: 'inline-flex',
-                        alignItems: 'center'
-                    }}
-                >
-                    Messages
-                    {displayUnread > 0 && (
-                        <div style={{
-                            position: 'absolute',
-                            top: '-6px',
-                            right: '-12px',
-                            background: '#ef4444',
-                            color: '#fff',
-                            fontSize: '0.65rem',
-                            fontWeight: 700,
-                            borderRadius: '10px',
-                            padding: '1px 5px',
-                            minWidth: '16px',
-                            textAlign: 'center',
-                            lineHeight: 1,
-                            boxShadow: '0 0 8px rgba(239, 68, 68, 0.4)'
-                        }}>
-                            {displayUnread}
-                        </div>
-                    )}
-                </Link>
-                <Link
-                    href="/dashboard/leaderboard"
-                    className="nav-link"
-                    style={{
-                        fontWeight: 600,
-                        fontSize: '0.85rem',
-                        color: isActive('/dashboard/leaderboard') ? 'var(--primary)' : 'var(--secondary-foreground)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        transition: 'color 0.2s ease',
-                        textShadow: isActive('/dashboard/leaderboard') ? '0 0 10px rgba(125, 135, 210,0.4)' : 'none'
-                    }}
-                >
-                    Leaderboard
-                </Link>
-                <Link
-                    href="/dashboard/highlights"
-                    className="nav-link"
-                    style={{
-                        fontWeight: 600,
-                        fontSize: '0.85rem',
-                        color: isActive('/dashboard/highlights') ? 'var(--primary)' : 'var(--secondary-foreground)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        transition: 'color 0.2s ease',
-                        textShadow: isActive('/dashboard/highlights') ? '0 0 10px rgba(125, 135, 210,0.4)' : 'none'
-                    }}
-                >
-                    Highlights
-                </Link>
-                <Link
-                    href="/dashboard/meet-data"
-                    className="nav-link"
-                    style={{
-                        fontWeight: 600,
-                        fontSize: '0.85rem',
-                        color: isActive('/dashboard/meet-data') ? 'var(--primary)' : 'var(--secondary-foreground)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        transition: 'color 0.2s ease',
-                        textShadow: isActive('/dashboard/meet-data') ? '0 0 10px rgba(125, 135, 210,0.4)' : 'none'
-                    }}
-                >
-                    Meet Data
-                </Link>
-                <Link
-                    href="/dashboard/meet-day"
-                    className="nav-link"
-                    style={{
-                        fontWeight: 600,
-                        fontSize: '0.85rem',
-                        color: isActive('/dashboard/meet-day') ? 'var(--primary)' : 'var(--secondary-foreground)',
-                        textTransform: 'uppercase',
-                        letterSpacing: '0.05em',
-                        transition: 'color 0.2s ease',
-                        textShadow: isActive('/dashboard/meet-day') ? '0 0 10px rgba(125, 135, 210,0.4)' : 'none'
-                    }}
-                >
-                    Meet Day
-                </Link>
-
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                {[
+                    { href: '/dashboard', label: 'Command Center' },
+                    { href: '/dashboard/messages', label: 'Messages', isMessages: true },
+                    { href: '/dashboard/leaderboard', label: 'Leaderboard' },
+                    { href: '/dashboard/highlights', label: 'Highlights' },
+                    { href: '/dashboard/meet-data', label: 'Meet Data' },
+                    { href: '/dashboard/meet-day', label: 'Meet Day' },
+                ].map((link) => {
+                    const active = isActive(link.href);
+                    return (
+                        <Link
+                            key={link.href}
+                            prefetch={true}
+                            href={link.href}
+                            className="chat-press"
+                            style={{
+                                fontWeight: active ? 600 : 500,
+                                fontSize: '0.8125rem',
+                                color: active ? '#fff' : 'var(--secondary-foreground)',
+                                padding: '6px 12px',
+                                borderRadius: 20,
+                                background: active ? 'rgba(125, 135, 210, 0.15)' : 'transparent',
+                                border: active ? '1px solid rgba(125, 135, 210, 0.3)' : '1px solid transparent',
+                                boxShadow: active ? '0 0 12px rgba(125, 135, 210, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.1)' : 'none',
+                                backdropFilter: active ? 'blur(8px)' : 'none',
+                                WebkitBackdropFilter: active ? 'blur(8px)' : 'none',
+                                transition: 'all 160ms var(--ease-out)',
+                                position: 'relative',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 6,
+                            }}
+                            onMouseEnter={(e) => {
+                                if (!active) {
+                                    e.currentTarget.style.background = 'var(--glass-surface-2)';
+                                    e.currentTarget.style.color = 'var(--foreground)';
+                                }
+                            }}
+                            onMouseLeave={(e) => {
+                                if (!active) {
+                                    e.currentTarget.style.background = 'transparent';
+                                    e.currentTarget.style.color = 'var(--secondary-foreground)';
+                                }
+                            }}
+                        >
+                            {link.label}
+                            {link.isMessages && displayUnread > 0 && (
+                                <span style={{
+                                    background: '#ef4444',
+                                    color: '#fff',
+                                    fontSize: '0.625rem',
+                                    fontWeight: 700,
+                                    borderRadius: 10,
+                                    padding: '1px 5px',
+                                    minWidth: 16,
+                                    textAlign: 'center',
+                                    lineHeight: 1.2,
+                                    boxShadow: '0 0 8px rgba(239, 68, 68, 0.5)',
+                                    border: '1px solid rgba(255, 255, 255, 0.2)'
+                                }}>
+                                    {displayUnread}
+                                </span>
+                            )}
+                        </Link>
+                    );
+                })}
             </div>
             <UserButton afterSignOutUrl="/" />
         </nav>

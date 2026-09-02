@@ -20,29 +20,37 @@ export default function InfoTooltip({ text, icon = 'info' }: Props) {
             onMouseLeave={() => setOpen(false)}
             onClick={(e) => { e.stopPropagation(); setOpen(!open); }}
         >
-            <div style={{ background: 'rgba(255,255,255,0.1)', borderRadius: '50%', width: 20, height: 20, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div className="chat-press" style={{
+                background: 'var(--glass-surface-3)',
+                border: '1px solid var(--glass-border)',
+                borderRadius: '50%',
+                width: 20,
+                height: 20,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                transition: 'background 160ms var(--ease-out)'
+            }}>
                 <IconComponent size={12} color="var(--secondary-foreground)" />
             </div>
             {open && (
-                <div style={{
+                <div className="glass-panel-elevated" style={{
                     position: 'absolute',
                     top: '100%',
                     left: '50%',
                     transform: 'translateX(-50%)',
                     marginTop: 8,
-                    background: 'rgba(20, 20, 20, 0.95)',
-                    border: '1px solid var(--primary)',
                     padding: '8px 12px',
-                    borderRadius: '8px',
                     fontSize: '11px',
-                    color: '#fff',
+                    color: 'var(--foreground)',
                     width: 'max-content',
                     maxWidth: 250,
                     textAlign: 'center',
-                    boxShadow: '0 4px 15px rgba(0,0,0,0.5)',
                     zIndex: 100,
                     pointerEvents: 'none',
-                    lineHeight: 1.4
+                    lineHeight: 1.4,
+                    animation: 'popoverIn 150ms var(--ease-out)'
                 }}>
                     {text}
                     {/* Small arrow pointing up */}
@@ -53,7 +61,7 @@ export default function InfoTooltip({ text, icon = 'info' }: Props) {
                         transform: 'translateX(-50%)',
                         borderWidth: '5px',
                         borderStyle: 'solid',
-                        borderColor: 'transparent transparent var(--primary) transparent'
+                        borderColor: 'transparent transparent rgba(255, 255, 255, 0.1) transparent'
                     }} />
                 </div>
             )}

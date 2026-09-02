@@ -79,7 +79,7 @@ export default function MobileBottomNav({ items, children, className, userId }: 
                 alignItems: 'center',
                 pointerEvents: 'auto',
             }}>
-                {/* Expanded Menu - Vertical Neumorphic Pill */}
+                {/* Expanded Menu - Vertical Glass Pill */}
                 <div style={{
                     position: 'absolute',
                     bottom: 'calc(100% + 16px)',
@@ -87,12 +87,14 @@ export default function MobileBottomNav({ items, children, className, userId }: 
                     flexDirection: 'column',
                     alignItems: 'stretch',
                     justifyContent: 'center',
-                    gap: '12px',
+                    gap: '10px',
                     padding: '12px',
-                    borderRadius: 36,
-                    background: '#151515', // Solid dark grey almost black
-                    border: '1px solid rgba(255, 255, 255, 0.03)',
-                    boxShadow: 'inset 0 2px 5px rgba(255,255,255,0.03), 0 10px 40px rgba(0, 0, 0, 0.8)',
+                    borderRadius: 32,
+                    background: 'rgba(18, 18, 26, 0.88)',
+                    backdropFilter: 'blur(var(--glass-blur-lg))',
+                    WebkitBackdropFilter: 'blur(var(--glass-blur-lg))',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    boxShadow: 'var(--glass-ring), 0 16px 48px rgba(0, 0, 0, 0.6), var(--glass-specular)',
                     opacity: isOpen ? 1 : 0,
                     transform: isOpen ? 'translateY(0) scale(1)' : 'translateY(20px) scale(0.9)',
                     transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
@@ -105,6 +107,7 @@ export default function MobileBottomNav({ items, children, className, userId }: 
                                 key={item.href}
                                 prefetch={true}
                                 href={item.href}
+                                className="chat-press"
                                 onClick={() => {
                                     setIsOpen(false);
                                     if (active) {
@@ -120,16 +123,17 @@ export default function MobileBottomNav({ items, children, className, userId }: 
                                     textDecoration: 'none',
                                     position: 'relative',
                                     minWidth: 160,
-                                    height: 54,
+                                    height: 52,
                                     padding: '0 20px',
-                                    borderRadius: 27,
-                                    background: active ? '#1a1a1a' : '#1e1e1e', // Darker when active
-                                    border: '1px solid rgba(255,255,255,0.02)',
-                                    // Neumorphic Shadows mimicking Image 2
+                                    borderRadius: 26,
+                                    background: active ? 'rgba(125, 135, 210, 0.16)' : 'rgba(255, 255, 255, 0.04)',
+                                    border: active ? '1px solid rgba(125, 135, 210, 0.35)' : '1px solid rgba(255, 255, 255, 0.06)',
+                                    backdropFilter: 'blur(8px)',
+                                    WebkitBackdropFilter: 'blur(8px)',
                                     boxShadow: active 
-                                        ? 'inset 4px 4px 8px rgba(0,0,0,0.6), inset -2px -2px 6px rgba(255,255,255,0.04)' 
-                                        : '3px 3px 8px rgba(0,0,0,0.7), -2px -2px 6px rgba(255,255,255,0.04)',
-                                    transition: 'all 0.2s ease',
+                                        ? '0 0 16px rgba(125, 135, 210, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.12)' 
+                                        : 'var(--glass-specular)',
+                                    transition: 'all 0.2s var(--ease-out)',
                                 }}
                             >
                                 <div style={{
@@ -137,19 +141,19 @@ export default function MobileBottomNav({ items, children, className, userId }: 
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     width: 24,
-                                    color: active ? '#fff' : 'rgba(255, 255, 255, 0.5)',
-                                    transform: active ? 'scale(0.95)' : 'scale(1)',
+                                    color: active ? 'var(--primary)' : 'rgba(255, 255, 255, 0.55)',
+                                    transform: active ? 'scale(1.05)' : 'scale(1)',
                                     transition: 'transform 0.2s ease, color 0.2s ease',
                                 }}>
                                     {item.icon}
                                 </div>
                                 
                                 <span style={{
-                                    marginLeft: 16,
-                                    fontSize: 15,
-                                    fontWeight: 600,
-                                    letterSpacing: '0.02em',
-                                    color: active ? '#fff' : 'rgba(255, 255, 255, 0.5)',
+                                    marginLeft: 14,
+                                    fontSize: 14,
+                                    fontWeight: active ? 600 : 500,
+                                    letterSpacing: '0.01em',
+                                    color: active ? '#fff' : 'rgba(255, 255, 255, 0.7)',
                                     transition: 'color 0.2s ease',
                                 }}>
                                     {item.label}
@@ -159,19 +163,19 @@ export default function MobileBottomNav({ items, children, className, userId }: 
                                 {item.unreadCount !== undefined && item.unreadCount > 0 && (
                                     <div style={{
                                         position: 'absolute',
-                                        top: -2,
-                                        right: -2,
+                                        top: 10,
+                                        right: 12,
                                         background: '#ef4444',
                                         color: '#fff',
-                                        fontSize: '0.6rem',
-                                        fontWeight: 800,
+                                        fontSize: '0.65rem',
+                                        fontWeight: 700,
                                         borderRadius: 12,
-                                        padding: '2px 5px',
+                                        padding: '2px 6px',
                                         minWidth: 18,
                                         textAlign: 'center',
-                                        lineHeight: '1',
+                                        lineHeight: '1.2',
                                         boxShadow: '0 2px 8px rgba(239, 68, 68, 0.5)',
-                                        border: '2px solid #1c1c1c'
+                                        border: '1px solid rgba(255,255,255,0.2)'
                                     }}>
                                         {item.unreadCount}
                                     </div>
@@ -191,36 +195,38 @@ export default function MobileBottomNav({ items, children, className, userId }: 
                 {/* FAB Toggle Button */}
                 <button
                     onClick={() => setIsOpen(!isOpen)}
+                    className="chat-press"
                     style={{
-                        width: 60,
-                        height: 60,
+                        width: 58,
+                        height: 58,
                         borderRadius: '50%',
-                        background: isOpen ? '#151515' : '#1e1e1e',
-                        color: isOpen ? 'rgba(255, 255, 255, 0.5)' : '#fff',
-                        border: '1px solid rgba(255, 255, 255, 0.03)',
-                        boxShadow: isOpen 
-                            ? 'inset 4px 4px 8px rgba(0,0,0,0.6), inset -2px -2px 6px rgba(255,255,255,0.04)' 
-                            : '3px 3px 8px rgba(0,0,0,0.7), -2px -2px 6px rgba(255,255,255,0.04)',
+                        background: isOpen ? 'rgba(24, 24, 34, 0.95)' : 'rgba(20, 20, 28, 0.88)',
+                        backdropFilter: 'blur(var(--glass-blur-lg))',
+                        WebkitBackdropFilter: 'blur(var(--glass-blur-lg))',
+                        color: isOpen ? 'var(--primary)' : '#fff',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.55), var(--glass-specular)',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
                         cursor: 'pointer',
-                        transition: 'all 0.3s ease',
+                        transition: 'all 0.25s var(--ease-out)',
                         position: 'relative',
                     }}
                     aria-label="Toggle Navigation"
                 >
-                    {isOpen ? <X size={26} /> : <Menu size={26} />}
+                    {isOpen ? <X size={24} /> : <Menu size={24} />}
                     {!isOpen && totalUnread > 0 && (
                         <div style={{
                             position: 'absolute',
-                            top: 2,
-                            right: 2,
+                            top: 4,
+                            right: 4,
                             background: '#ef4444',
                             width: 14,
                             height: 14,
                             borderRadius: '50%',
-                            border: '2px solid #1e1e1e',
+                            border: '2px solid rgba(20, 20, 28, 0.9)',
+                            boxShadow: '0 0 8px rgba(239, 68, 68, 0.6)'
                         }} />
                     )}
                 </button>
