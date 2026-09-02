@@ -121,37 +121,36 @@ export default function SessionDetailsModal({ session, programName, programId, s
             left: 0,
             right: 0,
             bottom: 0,
-            background: 'rgba(5, 10, 20, 0.85)',
+            background: 'rgba(5, 5, 10, 0.75)',
             display: 'flex',
             justifyContent: 'center',
             alignItems: 'center',
             zIndex: 1000,
-            backdropFilter: 'blur(8px)'
+            backdropFilter: 'blur(var(--glass-blur-lg))',
+            WebkitBackdropFilter: 'blur(var(--glass-blur-lg))',
         }} onClick={onClose}>
-            <div className="glass-panel" style={{
+            <div className="glass-panel-modal" style={{
                 width: '95%',
-                maxWidth: '800px', // Wider for Target/Actual columns
+                maxWidth: '800px',
                 maxHeight: '90vh',
                 overflowY: 'auto',
                 padding: '0',
                 position: 'relative',
-                boxShadow: '0 0 40px rgba(6, 182, 212, 0.2)',
-                border: '1px solid rgba(6, 182, 212, 0.3)',
-                background: 'var(--card-bg)',
-                borderRadius: '8px'
+                borderRadius: '16px'
             }} onClick={e => e.stopPropagation()}>
 
                 {/* Header */}
                 <div style={{
                     padding: '1.5rem',
-                    background: 'linear-gradient(to right, var(--primary-dark), var(--card-bg))',
-                    borderBottom: '1px solid var(--primary)',
-                    color: 'white'
+                    background: 'linear-gradient(to right, rgba(125, 135, 210, 0.15), var(--glass-surface-2))',
+                    borderBottom: '1px solid var(--glass-border)',
+                    boxShadow: 'var(--glass-specular)',
+                    color: 'var(--foreground)'
                 }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                         <div>
-                            <h2 style={{ fontSize: '1.5rem', fontWeight: 800, margin: 0 }}>{session.name}</h2>
-                            <div style={{ fontSize: '0.9rem', opacity: 0.8, marginTop: '0.25rem' }}>{programName}</div>
+                            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, margin: 0, letterSpacing: '-0.02em' }}>{session.name}</h2>
+                            <div style={{ fontSize: '0.875rem', color: 'var(--secondary-foreground)', marginTop: '0.25rem' }}>{programName}</div>
                         </div>
                         <div style={{ textAlign: 'right' }}>
                             <div style={{ fontSize: '0.8rem', opacity: 0.7, textTransform: 'uppercase' }}>Session Stress</div>

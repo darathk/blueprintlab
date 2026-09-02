@@ -20,51 +20,51 @@ export default function AnalyticsClient({ logs }) {
             <PrimaryLiftProgress logs={logs} />
 
             {/* Feature A: Variation Impact */}
-            <div className="card">
-                <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem', color: 'var(--primary)' }}>Variation Impact Report</h2>
-                <p style={{ fontSize: '0.9rem', color: 'var(--secondary-foreground)', marginBottom: '1rem' }}>
+            <div className="glass-panel" style={{ padding: '1.5rem' }}>
+                <h2 style={{ fontSize: '1.25rem', marginBottom: '0.5rem', color: 'var(--foreground)', fontWeight: 600 }}>Variation Impact Report</h2>
+                <p style={{ fontSize: '0.875rem', color: 'var(--secondary-foreground)', marginBottom: '1.25rem' }}>
                     Impact of secondary variations on primary lift gains.
                 </p>
                 <div style={{ height: '300px', width: '100%' }}>
                     <ResponsiveContainer>
                         <BarChart data={variationData} layout="vertical" margin={{ top: 5, right: 30, left: 40, bottom: 5 }}>
-                            <XAxis type="number" unit="%" />
-                            <YAxis type="category" dataKey="name" width={120} style={{ fontSize: '0.8rem' }} />
+                            <XAxis type="number" unit="%" stroke="var(--secondary-foreground)" />
+                            <YAxis type="category" dataKey="name" width={120} stroke="var(--secondary-foreground)" style={{ fontSize: '0.8rem' }} />
                             <Tooltip
-                                contentStyle={{ background: '#1c1c1c', border: '1px solid #333' }}
+                                contentStyle={{ background: 'var(--glass-surface-3)', border: '1px solid var(--glass-border)', borderRadius: '10px', backdropFilter: 'blur(16px)', color: 'var(--foreground)' }}
                                 formatter={(value) => [`${value}% Gain`, 'Impact']}
                             />
                             <Legend />
-                            <Bar dataKey="avgGain" fill="var(--success)" name="Avg Primary Gain %" />
+                            <Bar dataKey="avgGain" fill="var(--primary)" name="Avg Primary Gain %" radius={[0, 4, 4, 0]} />
                         </BarChart>
                     </ResponsiveContainer>
                 </div>
             </div>
 
             {/* Feature B: Central Balance */}
-            <div className="card">
-                <h2 style={{ fontSize: '1.25rem', marginBottom: '1rem', color: 'var(--accent)' }}>Central Balance Sweet Spot</h2>
-                <p style={{ fontSize: '0.9rem', color: 'var(--secondary-foreground)', marginBottom: '1rem' }}>
+            <div className="glass-panel" style={{ padding: '1.5rem' }}>
+                <h2 style={{ fontSize: '1.25rem', marginBottom: '0.5rem', color: 'var(--foreground)', fontWeight: 600 }}>Central Balance Sweet Spot</h2>
+                <p style={{ fontSize: '0.875rem', color: 'var(--secondary-foreground)', marginBottom: '1.25rem' }}>
                     Ratio of Central/Total Stress vs E1RM Gain.
                 </p>
                 <div style={{ height: '300px', width: '100%' }}>
                     <ResponsiveContainer>
                         <ScatterChart margin={{ top: 20, right: 20, bottom: 20, left: 20 }}>
-                            <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
-                            <XAxis type="number" dataKey="x" name="Central Ratio" unit="" domain={[0, 1]} />
-                            <YAxis type="number" dataKey="y" name="Gain" unit="%" />
+                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
+                            <XAxis type="number" dataKey="x" name="Central Ratio" unit="" domain={[0, 1]} stroke="var(--secondary-foreground)" />
+                            <YAxis type="number" dataKey="y" name="Gain" unit="%" stroke="var(--secondary-foreground)" />
                             <ZAxis range={[100, 100]} />
-                            <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{ background: '#1c1c1c', border: '1px solid #333' }} />
-                            <Scatter name="Blocks" data={centralData} fill="var(--warning)" />
+                            <Tooltip cursor={{ strokeDasharray: '3 3' }} contentStyle={{ background: 'var(--glass-surface-3)', border: '1px solid var(--glass-border)', borderRadius: '10px', backdropFilter: 'blur(16px)', color: 'var(--foreground)' }} />
+                            <Scatter name="Blocks" data={centralData} fill="var(--accent)" />
                         </ScatterChart>
                     </ResponsiveContainer>
                 </div>
             </div>
 
             {/* Feature C: Intensity Heatmap */}
-            <div className="card">
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                    <h2 style={{ fontSize: '1.25rem', color: 'var(--foreground)' }}>Intensity Heatmap</h2>
+            <div className="glass-panel" style={{ padding: '1.5rem' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem' }}>
+                    <h2 style={{ fontSize: '1.25rem', color: 'var(--foreground)', fontWeight: 600 }}>Intensity Heatmap</h2>
                     <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)' }}>Gain % per Zone</div>
                 </div>
 

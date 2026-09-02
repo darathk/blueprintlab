@@ -247,20 +247,20 @@ export default function HistoricalPerformance({ athlete }) {
     return (
         <div style={{ marginBottom: '2rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                <p style={{ color: 'var(--secondary-foreground)', fontSize: '0.9rem' }}>
+                <p style={{ color: 'var(--secondary-foreground)', fontSize: '0.875rem' }}>
                     Track past performance. Upload CSV exports from OpenPowerlifting.
                 </p>
-                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                     <button
                         onClick={() => setShowAddForm(!showAddForm)}
-                        className="btn btn-secondary"
-                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+                        className="glass-button chat-press"
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}
                     >
-                        {showAddForm ? <X size={16} /> : <Plus size={16} />}
+                        {showAddForm ? <X size={15} /> : <Plus size={15} />}
                         {showAddForm ? 'Cancel' : 'Add Manually'}
                     </button>
-                    <label className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-                        <Upload size={16} />
+                    <label className="glass-button glass-button-primary chat-press" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.85rem' }}>
+                        <Upload size={15} />
                         {isUploading ? 'Parsing...' : 'Import CSV'}
                         <input type="file" accept=".csv" onChange={handleFileUpload} style={{ display: 'none' }} disabled={isUploading} />
                     </label>
@@ -269,35 +269,35 @@ export default function HistoricalPerformance({ athlete }) {
 
             {/* Manual Entry Form */}
             {showAddForm && (
-                <div style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '0.5rem', padding: '1.5rem', marginBottom: '2rem' }}>
-                    <h3 style={{ fontSize: '1.1rem', marginBottom: '1rem', color: 'var(--foreground)' }}>Log Past Meet</h3>
+                <div className="glass-panel-elevated" style={{ padding: '1.5rem', marginBottom: '2rem', borderRadius: '14px', animation: 'popoverIn 160ms var(--ease-out)' }}>
+                    <h3 style={{ fontSize: '1.05rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--foreground)' }}>Log Past Meet</h3>
                     <form onSubmit={handleAddMeet} style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
                         <div>
-                            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginBottom: '0.5rem' }}>Date *</label>
-                            <input type="date" className="input" value={newMeet.date} onChange={e => setNewMeet({ ...newMeet, date: e.target.value })} required style={{ width: '100%' }} />
+                            <label className="label">Date *</label>
+                            <input type="date" className="glass-input" value={newMeet.date} onChange={e => setNewMeet({ ...newMeet, date: e.target.value })} required style={{ width: '100%', colorScheme: 'dark' }} />
                         </div>
                         <div style={{ gridColumn: 'span 2' }}>
-                            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginBottom: '0.5rem' }}>Meet Name *</label>
-                            <input type="text" className="input" placeholder="e.g. USAPL Nationals" value={newMeet.name} onChange={e => setNewMeet({ ...newMeet, name: e.target.value })} required style={{ width: '100%' }} />
+                            <label className="label">Meet Name *</label>
+                            <input type="text" className="glass-input" placeholder="e.g. USAPL Nationals" value={newMeet.name} onChange={e => setNewMeet({ ...newMeet, name: e.target.value })} required style={{ width: '100%' }} />
                         </div>
                         <div>
-                            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginBottom: '0.5rem' }}>BW (kg) *</label>
-                            <input type="number" step="0.1" className="input" placeholder="0" value={newMeet.bw} onChange={e => setNewMeet({ ...newMeet, bw: e.target.value })} required style={{ width: '100%' }} />
+                            <label className="label">BW (kg) *</label>
+                            <input type="number" step="0.1" className="glass-input" placeholder="0" value={newMeet.bw} onChange={e => setNewMeet({ ...newMeet, bw: e.target.value })} required style={{ width: '100%' }} />
                         </div>
                         <div>
-                            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginBottom: '0.5rem' }}>Squat (kg)</label>
-                            <input type="number" step="0.5" className="input" placeholder="0" value={newMeet.squat} onChange={e => setNewMeet({ ...newMeet, squat: e.target.value })} style={{ width: '100%' }} />
+                            <label className="label">Squat (kg)</label>
+                            <input type="number" step="0.5" className="glass-input" placeholder="0" value={newMeet.squat} onChange={e => setNewMeet({ ...newMeet, squat: e.target.value })} style={{ width: '100%' }} />
                         </div>
                         <div>
-                            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginBottom: '0.5rem' }}>Bench (kg)</label>
-                            <input type="number" step="0.5" className="input" placeholder="0" value={newMeet.bench} onChange={e => setNewMeet({ ...newMeet, bench: e.target.value })} style={{ width: '100%' }} />
+                            <label className="label">Bench (kg)</label>
+                            <input type="number" step="0.5" className="glass-input" placeholder="0" value={newMeet.bench} onChange={e => setNewMeet({ ...newMeet, bench: e.target.value })} style={{ width: '100%' }} />
                         </div>
                         <div>
-                            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginBottom: '0.5rem' }}>Deadlift (kg)</label>
-                            <input type="number" step="0.5" className="input" placeholder="0" value={newMeet.deadlift} onChange={e => setNewMeet({ ...newMeet, deadlift: e.target.value })} style={{ width: '100%' }} />
+                            <label className="label">Deadlift (kg)</label>
+                            <input type="number" step="0.5" className="glass-input" placeholder="0" value={newMeet.deadlift} onChange={e => setNewMeet({ ...newMeet, deadlift: e.target.value })} style={{ width: '100%' }} />
                         </div>
                         <div style={{ gridColumn: '1 / -1', display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
-                            <button type="submit" className="btn btn-primary">Save Meet</button>
+                            <button type="submit" className="glass-button glass-button-primary chat-press" style={{ padding: '0.6rem 1.5rem', fontWeight: 600 }}>Save Meet</button>
                         </div>
                     </form>
                 </div>
@@ -305,15 +305,13 @@ export default function HistoricalPerformance({ athlete }) {
 
             {/* All-Time PRs */}
             {allTimePRs && (
-                <div style={{
-                    background: 'var(--card-bg)',
-                    border: '1px solid var(--card-border)',
+                <div className="glass-panel" style={{
                     borderRadius: 16,
                     padding: '1.5rem',
                     marginBottom: '2rem',
                 }}>
                     <div style={{ marginBottom: '1rem' }}>
-                        <h3 style={{ fontSize: 13, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--secondary-foreground)', margin: 0 }}>
+                        <h3 style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--secondary-foreground)', margin: 0 }}>
                             All-Time PRs
                         </h3>
                     </div>
@@ -325,7 +323,7 @@ export default function HistoricalPerformance({ athlete }) {
                             { label: 'Total', data: allTimePRs.total, color: 'var(--primary)' },
                             { label: 'DOTS', data: allTimePRs.dots, color: '#f59e0b' },
                         ].map(item => (
-                            <div key={item.label} style={{ textAlign: 'center', padding: '12px 8px', background: 'rgba(255,255,255,0.03)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.05)' }}>
+                            <div key={item.label} className="glass-panel" style={{ textAlign: 'center', padding: '14px 10px', background: 'var(--glass-surface-2)', borderRadius: 12, border: '1px solid var(--glass-border)' }}>
                                 <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>{item.label}</div>
                                 <div style={{ fontSize: 20, fontWeight: 800, color: item.color }}>
                                     {item.data.value > 0 ? (

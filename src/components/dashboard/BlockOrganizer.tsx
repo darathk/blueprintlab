@@ -381,19 +381,19 @@ export default function PeriodizationPlanner({ athlete }) {
         <div className="glass-panel" style={{ marginBottom: '2rem', padding: '1.5rem' }}>
 
             {/* Header */}
-            <div className="planner-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '1rem' }}>
+            <div className="planner-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem' }}>
                 <div>
                     <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--foreground)' }}>Meet Planner</h2>
-                    <p style={{ color: 'var(--secondary-foreground)', fontSize: '0.9rem' }}>Mapping the roadmap to {meetName || 'Victory'}</p>
+                    <p style={{ color: 'var(--secondary-foreground)', fontSize: '0.85rem' }}>Mapping the roadmap to {meetName || 'Victory'}</p>
                 </div>
 
                 {/* Days Out Counter */}
                 {daysOutData && (
-                    <div className="glass-panel" style={{ textAlign: 'center', padding: '0.75rem 1.25rem' }}>
-                        <div style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--primary)', lineHeight: 1 }}>
+                    <div className="glass-panel" style={{ textAlign: 'center', padding: '0.65rem 1.25rem', borderRadius: '12px' }}>
+                        <div style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--primary)', lineHeight: 1, textShadow: '0 0 16px rgba(125, 135, 210, 0.4)' }}>
                             {Math.abs(daysOutData.totalDays)}
                         </div>
-                        <div style={{ fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--secondary-foreground)' }}>
+                        <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--secondary-foreground)', marginTop: 4 }}>
                             {daysOutData.totalDays >= 0 ? 'Days Out' : 'Days Since'}
                         </div>
                     </div>
@@ -402,47 +402,47 @@ export default function PeriodizationPlanner({ athlete }) {
 
             {/* Action Bar */}
             <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
-                <button onClick={() => setIsEditing(!isEditing)} className="btn btn-secondary" style={{ fontSize: '0.85rem' }}>
+                <button onClick={() => setIsEditing(!isEditing)} className="glass-button chat-press" style={{ fontSize: '0.85rem' }}>
                     {isEditing ? 'Cancel Editing' : 'Edit Plan & Meet'}
                 </button>
             </div>
 
             {/* Editor Mode */}
             {isEditing && (
-                <div style={{ marginBottom: '2rem', padding: '1.5rem', background: 'var(--card-bg)', borderRadius: '2rem', border: '1px solid var(--card-border)' }}>
+                <div className="glass-panel-elevated" style={{ marginBottom: '2rem', padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--glass-border)' }}>
 
                     <h3 style={{ fontSize: '1rem', marginBottom: '1.25rem', color: 'var(--foreground)', fontWeight: 600 }}>Mission Parameters</h3>
-                    <div className="flex-mobile-col" style={{ display: 'flex', gap: '1.5rem', marginBottom: '2rem' }}>
+                    <div className="flex-mobile-col" style={{ display: 'flex', gap: '1.25rem', marginBottom: '1.5rem' }}>
                         <div style={{ flex: 1 }}>
                             <label className="label">Target Objective (Meet Name)</label>
-                            <input className="input" value={meetName} onChange={e => setMeetName(e.target.value)} placeholder="e.g. Galactic Nationals" />
+                            <input className="glass-input" value={meetName} onChange={e => setMeetName(e.target.value)} placeholder="e.g. Galactic Nationals" />
                         </div>
                         <div style={{ flex: 1 }}>
                             <label className="label">Start Date</label>
-                            <input className="input" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} style={{ colorScheme: 'dark' }} />
+                            <input className="glass-input" type="date" value={startDate} onChange={e => setStartDate(e.target.value)} style={{ colorScheme: 'dark' }} />
                         </div>
                         <div style={{ flex: 1 }}>
                             <label className="label">Launch Date (Meet Date)</label>
-                            <input className="input" type="date" value={meetDate} onChange={e => setMeetDate(e.target.value)} style={{ colorScheme: 'dark' }} />
+                            <input className="glass-input" type="date" value={meetDate} onChange={e => setMeetDate(e.target.value)} style={{ colorScheme: 'dark' }} />
                         </div>
                     </div>
 
                     {/* Auto-Generator */}
-                    <div style={{ marginBottom: '2rem', padding: '1.25rem', background: 'var(--card-bg)', borderRadius: '12px', border: '1px solid var(--card-border)' }}>
-                        <h4 style={{ fontSize: '0.9rem', marginBottom: '1rem', color: 'var(--foreground)', fontWeight: 500 }}>Auto-Sequence Generator</h4>
+                    <div className="glass-panel" style={{ marginBottom: '1.5rem', padding: '1.25rem', borderRadius: '12px', border: '1px solid var(--glass-border)' }}>
+                        <h4 style={{ fontSize: '0.875rem', marginBottom: '0.75rem', color: 'var(--foreground)', fontWeight: 600 }}>Auto-Sequence Generator</h4>
                         <div className="flex-mobile-col" style={{ display: 'flex', gap: '1rem', alignItems: 'end' }}>
                             <div>
                                 <label className="label">Peak Duration (Weeks)</label>
                                 <input
                                     type="number"
-                                    className="input"
+                                    className="glass-input"
                                     value={timeToPeak}
                                     onChange={(e) => setTimeToPeak(parseInt(e.target.value))}
                                     style={{ width: '120px', textAlign: 'center', fontWeight: 'bold' }}
                                     min="2"
                                 />
                             </div>
-                            <button onClick={generatePlan} className="btn btn-primary" style={{ height: '42px' }}>
+                            <button onClick={generatePlan} className="glass-button glass-button-primary chat-press" style={{ height: '40px' }}>
                                 Initialize Sequence
                             </button>
                         </div>

@@ -36,18 +36,22 @@ async function AthleteData({ id }: { id: string }) {
         <>
             {/* Header */}
             <div style={{ marginBottom: '2rem', paddingTop: '1.5rem' }}>
-                <Link href="/dashboard" style={{ color: 'var(--secondary-foreground)', fontSize: '0.9rem' }}>← Back to Command Center</Link>
-                <div className="athlete-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
-                    <h1 style={{ fontSize: '1.875rem', fontWeight: 700, whiteSpace: 'nowrap' }}>{athlete?.name || 'Athlete'} Analytics</h1>
+                <Link href="/dashboard" className="chat-press" style={{ color: 'var(--secondary-foreground)', fontSize: '0.875rem', display: 'inline-flex', alignItems: 'center', gap: 6, marginBottom: '0.5rem', textDecoration: 'none' }}>
+                    <span>←</span> Back to Command Center
+                </Link>
+                <div className="athlete-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.75rem', flexWrap: 'wrap', gap: '1rem' }}>
+                    <h1 style={{ fontSize: '1.875rem', fontWeight: 700, whiteSpace: 'nowrap', color: 'var(--foreground)', letterSpacing: '-0.02em' }}>
+                        {athlete?.name || 'Athlete'} <span style={{ color: 'var(--primary)', textShadow: '0 0 16px rgba(125, 135, 210, 0.35)' }}>Analytics</span>
+                    </h1>
                     <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
-                        <Link href={`/dashboard/messages?athleteId=${id}`} className="btn btn-secondary" style={{ fontSize: '0.9rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                            <MessageSquare size={16} /> Chat
+                        <Link href={`/dashboard/messages?athleteId=${id}`} className="glass-button chat-press" style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <MessageSquare size={15} /> Chat
                         </Link>
-                        <Link href={`/dashboard/athletes/${id}/reports`} className="btn btn-secondary" style={{ fontSize: '0.9rem' }}>
-                            View Meta-Analytics Reports
+                        <Link href={`/dashboard/athletes/${id}/reports`} className="glass-button chat-press" style={{ fontSize: '0.85rem' }}>
+                            Meta-Analytics Reports
                         </Link>
-                        <Link href={`/dashboard/athletes/${id}/new-program`} className="btn btn-primary" style={{ fontSize: '0.9rem' }}>
-                            + New Program (Builder)
+                        <Link href={`/dashboard/athletes/${id}/new-program`} className="glass-button glass-button-primary chat-press" style={{ fontSize: '0.85rem', fontWeight: 600 }}>
+                            + New Program
                         </Link>
                     </div>
                 </div>

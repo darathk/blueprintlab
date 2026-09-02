@@ -129,11 +129,12 @@ export default function CoachNotes({ athleteId }: { athleteId: string }) {
                 <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
                     <button
                         onClick={() => setFilterCategory(null)}
+                        className="chat-press"
                         style={{
-                            padding: '0.3rem 0.6rem', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 500,
-                            background: !filterCategory ? 'rgba(6,182,212,0.15)' : 'transparent',
-                            border: `1px solid ${!filterCategory ? 'var(--primary)' : 'var(--card-border)'}`,
-                            color: !filterCategory ? 'var(--primary)' : 'var(--secondary-foreground)',
+                            padding: '0.3rem 0.75rem', borderRadius: '14px', fontSize: '0.75rem', fontWeight: 600,
+                            background: !filterCategory ? 'rgba(125,135,210,0.2)' : 'transparent',
+                            border: `1px solid ${!filterCategory ? 'rgba(125,135,210,0.4)' : 'var(--glass-border)'}`,
+                            color: !filterCategory ? '#fff' : 'var(--secondary-foreground)',
                             cursor: 'pointer', transition: 'all 0.15s',
                         }}
                     >
@@ -143,15 +144,17 @@ export default function CoachNotes({ athleteId }: { athleteId: string }) {
                         const count = notes.filter(n => n.category === cat.value).length;
                         if (count === 0) return null;
                         const Icon = cat.icon;
+                        const isSelected = filterCategory === cat.value;
                         return (
                             <button
                                 key={cat.value}
-                                onClick={() => setFilterCategory(filterCategory === cat.value ? null : cat.value)}
+                                onClick={() => setFilterCategory(isSelected ? null : cat.value)}
+                                className="chat-press"
                                 style={{
-                                    padding: '0.3rem 0.6rem', borderRadius: '8px', fontSize: '0.75rem', fontWeight: 500,
-                                    background: filterCategory === cat.value ? 'rgba(6,182,212,0.15)' : 'transparent',
-                                    border: `1px solid ${filterCategory === cat.value ? 'var(--primary)' : 'var(--card-border)'}`,
-                                    color: filterCategory === cat.value ? 'var(--primary)' : 'var(--secondary-foreground)',
+                                    padding: '0.3rem 0.75rem', borderRadius: '14px', fontSize: '0.75rem', fontWeight: 600,
+                                    background: isSelected ? 'rgba(125,135,210,0.2)' : 'transparent',
+                                    border: `1px solid ${isSelected ? 'rgba(125,135,210,0.4)' : 'var(--glass-border)'}`,
+                                    color: isSelected ? '#fff' : 'var(--secondary-foreground)',
                                     cursor: 'pointer', transition: 'all 0.15s',
                                     display: 'flex', alignItems: 'center', gap: '0.25rem',
                                 }}
@@ -163,36 +166,37 @@ export default function CoachNotes({ athleteId }: { athleteId: string }) {
                 </div>
                 <button
                     onClick={() => setIsAdding(!isAdding)}
+                    className="glass-button chat-press"
                     style={{
-                        background: 'none', border: 'none', cursor: 'pointer',
-                        color: isAdding ? 'var(--primary)' : 'var(--secondary-foreground)',
-                        display: 'flex', alignItems: 'center', gap: '0.3rem', fontSize: '0.85rem', fontWeight: 500,
+                        display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem',
                     }}
                 >
-                    {isAdding ? <X size={16} /> : <Plus size={16} />}
+                    {isAdding ? <X size={14} /> : <Plus size={14} />}
                     {isAdding ? 'Cancel' : 'Add Note'}
                 </button>
             </div>
 
             {/* Add note form */}
             {isAdding && (
-                <div style={{
-                    padding: '1rem', marginBottom: '1rem', borderRadius: '10px',
-                    border: '1px solid var(--primary)', background: 'rgba(0,0,0,0.3)',
+                <div className="glass-panel-elevated" style={{
+                    padding: '1.25rem', marginBottom: '1.25rem', borderRadius: '14px',
+                    border: '1px solid rgba(125, 135, 210, 0.3)', animation: 'popoverIn 160ms var(--ease-out)'
                 }}>
-                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                    <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
                         {CATEGORIES.map(cat => {
                             const Icon = cat.icon;
+                            const isCatActive = newCategory === cat.value;
                             return (
                                 <button
                                     key={cat.value}
                                     onClick={() => setNewCategory(cat.value)}
+                                    className="chat-press"
                                     style={{
-                                        padding: '0.35rem 0.6rem', borderRadius: '8px', fontSize: '0.75rem',
-                                        background: newCategory === cat.value ? 'rgba(6,182,212,0.15)' : 'rgba(255,255,255,0.04)',
-                                        border: `1px solid ${newCategory === cat.value ? cat.color : 'var(--card-border)'}`,
-                                        color: newCategory === cat.value ? cat.color : 'var(--secondary-foreground)',
-                                        cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.3rem',
+                                        padding: '0.35rem 0.75rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600,
+                                        background: isCatActive ? 'rgba(125,135,210,0.2)' : 'rgba(255,255,255,0.04)',
+                                        border: `1px solid ${isCatActive ? cat.color : 'var(--glass-border)'}`,
+                                        color: isCatActive ? cat.color : 'var(--secondary-foreground)',
+                                        cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem',
                                     }}
                                 >
                                     <Icon size={12} /> {cat.label}
@@ -205,19 +209,19 @@ export default function CoachNotes({ athleteId }: { athleteId: string }) {
                         onChange={e => setNewContent(e.target.value)}
                         placeholder="Write a private note about this athlete..."
                         rows={3}
+                        className="glass-input"
                         style={{
-                            width: '100%', padding: '0.6rem', borderRadius: '8px', resize: 'vertical',
-                            border: '1px solid var(--card-border)', background: 'rgba(255,255,255,0.03)',
-                            color: 'var(--foreground)', fontSize: '0.9rem',
+                            width: '100%', padding: '0.75rem', borderRadius: '10px', resize: 'vertical',
+                            fontSize: '0.875rem',
                         }}
                         autoFocus
                     />
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.75rem' }}>
                         <button
                             onClick={handleAdd}
                             disabled={!newContent.trim() || saving}
-                            className="btn btn-primary"
-                            style={{ fontSize: '0.85rem', padding: '0.4rem 1.25rem' }}
+                            className="glass-button glass-button-primary chat-press"
+                            style={{ fontSize: '0.82rem', padding: '0.45rem 1.25rem' }}
                         >
                             {saving ? 'Saving...' : 'Save Note'}
                         </button>
@@ -240,11 +244,12 @@ export default function CoachNotes({ athleteId }: { athleteId: string }) {
                         return (
                             <div
                                 key={note.id}
+                                className="glass-panel"
                                 style={{
-                                    padding: '0.75rem 1rem', borderRadius: '10px',
-                                    background: note.pinned ? 'rgba(6,182,212,0.06)' : 'rgba(255,255,255,0.02)',
-                                    border: `1px solid ${note.pinned ? 'rgba(6,182,212,0.2)' : 'var(--card-border)'}`,
-                                    transition: 'all 0.15s',
+                                    padding: '0.85rem 1.1rem', borderRadius: '12px',
+                                    background: note.pinned ? 'rgba(125,135,210,0.08)' : 'var(--glass-surface-2)',
+                                    border: `1px solid ${note.pinned ? 'rgba(125,135,210,0.3)' : 'var(--glass-border)'}`,
+                                    transition: 'all 0.2s var(--ease-out)',
                                 }}
                             >
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '0.5rem' }}>
@@ -257,30 +262,30 @@ export default function CoachNotes({ athleteId }: { athleteId: string }) {
                                             {formatDate(note.updatedAt)}
                                         </span>
                                     </div>
-                                    <div style={{ display: 'flex', gap: '0.15rem', flexShrink: 0 }}>
+                                    <div style={{ display: 'flex', gap: '0.2rem', flexShrink: 0 }}>
                                         {isEditing ? (
                                             <>
                                                 <button onClick={() => handleSaveEdit(note.id)} disabled={saving}
-                                                    style={{ background: 'none', border: 'none', color: '#10b981', cursor: 'pointer', padding: 3 }}>
+                                                    style={{ background: 'none', border: 'none', color: '#10b981', cursor: 'pointer', padding: 4 }}>
                                                     <Check size={14} />
                                                 </button>
                                                 <button onClick={() => setEditingId(null)}
-                                                    style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', padding: 3 }}>
+                                                    style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', padding: 4 }}>
                                                     <X size={14} />
                                                 </button>
                                             </>
                                         ) : (
                                             <>
                                                 <button onClick={() => handleTogglePin(note)} title={note.pinned ? 'Unpin' : 'Pin'}
-                                                    style={{ background: 'none', border: 'none', color: note.pinned ? 'var(--primary)' : 'var(--secondary-foreground)', cursor: 'pointer', padding: 3 }}>
+                                                    style={{ background: 'none', border: 'none', color: note.pinned ? 'var(--primary)' : 'var(--secondary-foreground)', cursor: 'pointer', padding: 4 }}>
                                                     <Pin size={13} style={{ transform: note.pinned ? 'rotate(-45deg)' : 'none' }} />
                                                 </button>
                                                 <button onClick={() => { setEditingId(note.id); setEditContent(note.content); setEditCategory(note.category); }}
-                                                    style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', padding: 3 }}>
+                                                    style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', padding: 4 }}>
                                                     <Edit3 size={13} />
                                                 </button>
                                                 <button onClick={() => handleDelete(note.id)}
-                                                    style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', padding: 3 }}>
+                                                    style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', padding: 4 }}>
                                                     <Trash2 size={13} />
                                                 </button>
                                             </>
@@ -290,18 +295,20 @@ export default function CoachNotes({ athleteId }: { athleteId: string }) {
 
                                 {isEditing ? (
                                     <div>
-                                        <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.5rem' }}>
+                                        <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
                                             {CATEGORIES.map(cat => {
                                                 const CatIcon = cat.icon;
+                                                const isEditCatActive = editCategory === cat.value;
                                                 return (
                                                     <button
                                                         key={cat.value}
                                                         onClick={() => setEditCategory(cat.value)}
+                                                        className="chat-press"
                                                         style={{
-                                                            padding: '0.2rem 0.5rem', borderRadius: '6px', fontSize: '0.7rem',
-                                                            background: editCategory === cat.value ? 'rgba(6,182,212,0.15)' : 'transparent',
-                                                            border: `1px solid ${editCategory === cat.value ? cat.color : 'var(--card-border)'}`,
-                                                            color: editCategory === cat.value ? cat.color : 'var(--secondary-foreground)',
+                                                            padding: '0.2rem 0.6rem', borderRadius: '10px', fontSize: '0.7rem', fontWeight: 600,
+                                                            background: isEditCatActive ? 'rgba(125,135,210,0.2)' : 'transparent',
+                                                            border: `1px solid ${isEditCatActive ? cat.color : 'var(--glass-border)'}`,
+                                                            color: isEditCatActive ? cat.color : 'var(--secondary-foreground)',
                                                             cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.2rem',
                                                         }}
                                                     >
@@ -314,10 +321,10 @@ export default function CoachNotes({ athleteId }: { athleteId: string }) {
                                             value={editContent}
                                             onChange={e => setEditContent(e.target.value)}
                                             rows={3}
+                                            className="glass-input"
                                             style={{
-                                                width: '100%', padding: '0.5rem', borderRadius: '6px', resize: 'vertical',
-                                                border: '1px solid var(--primary)', background: 'rgba(255,255,255,0.03)',
-                                                color: 'var(--foreground)', fontSize: '0.85rem',
+                                                width: '100%', padding: '0.6rem', borderRadius: '8px', resize: 'vertical',
+                                                fontSize: '0.85rem',
                                             }}
                                             autoFocus
                                         />

@@ -25,26 +25,28 @@ export default function PrimaryLiftProgress({ logs }) {
     ];
 
     return (
-        <div className="card">
+        <div className="glass-panel" style={{ padding: '1.5rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
-                <h2 style={{ fontSize: '1.25rem', color: 'var(--foreground)' }}>Primary Lift Progress</h2>
+                <h2 style={{ fontSize: '1.25rem', color: 'var(--foreground)', fontWeight: 600 }}>Primary Lift Progress</h2>
 
                 {/* Filter Controls */}
-                <div style={{ display: 'flex', gap: '0.5rem', background: 'var(--secondary)', padding: '0.25rem', borderRadius: 'var(--radius)' }}>
+                <div style={{ display: 'flex', gap: '0.25rem', background: 'var(--glass-surface-2)', padding: '3px', borderRadius: '20px', border: '1px solid var(--glass-border)' }}>
                     {ranges.map(range => (
                         <button
                             key={range.value}
                             onClick={() => setTimeRange(range.value)}
+                            className="chat-press"
                             style={{
-                                background: timeRange === range.value ? 'var(--card-bg)' : 'transparent',
-                                color: timeRange === range.value ? 'var(--foreground)' : 'var(--secondary-foreground)',
-                                border: 'none',
-                                padding: '0.25rem 0.75rem',
-                                borderRadius: '4px',
-                                fontSize: '0.85rem',
+                                background: timeRange === range.value ? 'rgba(125, 135, 210, 0.2)' : 'transparent',
+                                color: timeRange === range.value ? '#fff' : 'var(--secondary-foreground)',
+                                border: timeRange === range.value ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid transparent',
+                                padding: '0.35rem 0.85rem',
+                                borderRadius: '16px',
+                                fontSize: '0.78rem',
                                 cursor: 'pointer',
-                                fontWeight: timeRange === range.value ? 600 : 400,
-                                boxShadow: timeRange === range.value ? '0 1px 2px rgba(0,0,0,0.2)' : 'none'
+                                fontWeight: 600,
+                                transition: 'all 0.16s var(--ease-out)',
+                                boxShadow: timeRange === range.value ? '0 0 10px rgba(125, 135, 210, 0.25)' : 'none'
                             }}
                         >
                             {range.label}

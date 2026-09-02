@@ -50,9 +50,9 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     if (!validPayload.length) return null;
     const session = payload[0]?.payload?.session;
     return (
-        <div style={{ background: 'rgba(15,23,42,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 14px', fontSize: 12 }}>
-            <p style={{ fontWeight: 700, color: '#f8fafc', marginBottom: 2 }}>{label}</p>
-            {session && <p style={{ color: '#64748b', margin: '0 0 6px', fontSize: 11 }}>{session}</p>}
+        <div className="glass-panel-elevated" style={{ padding: '10px 14px', fontSize: 12, borderRadius: 10, animation: 'popoverIn 140ms var(--ease-out)' }}>
+            <p style={{ fontWeight: 700, color: 'var(--foreground)', marginBottom: 2 }}>{label}</p>
+            {session && <p style={{ color: 'var(--secondary-foreground)', margin: '0 0 6px', fontSize: 11 }}>{session}</p>}
             {validPayload.map((p: any) => (
                 <p key={p.dataKey} style={{ color: p.color, margin: '2px 0' }}>
                     {p.name}: <strong>{p.value > 0 ? p.value : '—'}{p.dataKey === 'dots' ? '' : ' lbs'}</strong>
@@ -294,7 +294,7 @@ export default function DotsChart({ athleteId, logs, programs = [], initialGende
                                 : 'var(--secondary-foreground)';
                             const arrow = s.pct == null ? '' : s.pct > 0 ? '↑' : s.pct < 0 ? '↓' : '→';
                             return (
-                                <div key={s.label} style={{ flex: '1 1 110px', background: 'rgba(15,23,42,0.5)', border: `1px solid ${s.color}33`, borderRadius: 10, padding: '12px 16px' }}>
+                                <div key={s.label} className="glass-panel" style={{ flex: '1 1 110px', background: 'var(--glass-surface-2)', border: `1px solid ${s.color}35`, borderRadius: 12, padding: '12px 16px' }}>
                                     <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{s.label}</div>
                                     <div style={{ fontSize: 22, fontWeight: 800, color: s.color, marginTop: 4 }}>{s.value}</div>
                                     <div style={{ fontSize: 11, fontWeight: 600, color: pctColor, marginTop: 3, minHeight: 14 }}>
@@ -308,16 +308,16 @@ export default function DotsChart({ athleteId, logs, programs = [], initialGende
             })()}
 
             {/* Chart Area */}
-            <div style={{ background: 'rgba(15,23,42,0.4)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.07)', padding: '16px 8px 8px' }}>
+            <div className="glass-panel" style={{ background: 'var(--glass-surface-1)', borderRadius: 14, border: '1px solid var(--glass-border)', padding: '16px 8px 8px' }}>
                 {/* Controls Row 1: Mission Filter and Timeline */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', paddingLeft: 12, paddingRight: 12 }}>
                         {/* Program Filter */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                            <label style={{ fontSize: '0.85rem', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Mission Filter:</label>
+                            <label style={{ fontSize: '0.8125rem', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Mission Filter:</label>
                             <div style={{ position: 'relative' }}>
                                 <select
-                                    className="input"
-                                    style={{ width: 'auto', padding: '0.5rem 2rem 0.5rem 1rem', appearance: 'none', background: 'var(--card-bg)', border: '1px solid var(--primary)', color: 'var(--primary)' }}
+                                    className="glass-input"
+                                    style={{ width: 'auto', padding: '0.45rem 2rem 0.45rem 1rem', appearance: 'none', color: 'var(--primary)', fontWeight: 600 }}
                                     value={selectedProgramId}
                                     onChange={(e) => setSelectedProgramId(e.target.value)}
                                 >
@@ -335,22 +335,23 @@ export default function DotsChart({ athleteId, logs, programs = [], initialGende
                         </div>
 
                         {/* Timeline */}
-                        <div style={{ display: 'flex', background: 'rgba(18, 18, 18, 0.6)', borderRadius: '8px', padding: '4px', border: '1px solid var(--card-border)' }}>
+                        <div style={{ display: 'flex', background: 'var(--glass-surface-2)', borderRadius: '20px', padding: '3px', border: '1px solid var(--glass-border)' }}>
                             {Object.keys(TIMELINES).map(tl => (
                                 <button
                                     key={tl}
                                     onClick={() => setTimeline(tl)}
+                                    className="chat-press"
                                     style={{
-                                        padding: '0.4rem 1rem',
-                                        background: timeline === tl ? 'var(--primary)' : 'transparent',
-                                        color: timeline === tl ? 'white' : 'var(--foreground)',
-                                        border: 'none',
+                                        padding: '0.35rem 0.85rem',
+                                        background: timeline === tl ? 'rgba(125, 135, 210, 0.2)' : 'transparent',
+                                        color: timeline === tl ? '#fff' : 'var(--secondary-foreground)',
+                                        border: timeline === tl ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid transparent',
                                         cursor: 'pointer',
                                         fontSize: '0.75rem',
-                                        fontWeight: 700,
-                                        borderRadius: '6px',
-                                        transition: 'all 0.2s',
-                                        boxShadow: timeline === tl ? '0 0 10px rgba(6, 182, 212, 0.3)' : 'none'
+                                        fontWeight: 600,
+                                        borderRadius: '16px',
+                                        transition: 'all 0.16s var(--ease-out)',
+                                        boxShadow: timeline === tl ? '0 0 10px rgba(125, 135, 210, 0.25)' : 'none'
                                     }}
                                 >
                                     {tl}

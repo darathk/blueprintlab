@@ -33,8 +33,8 @@ const TIMELINES: Record<string, number> = { '1W': 7, '2W': 14, '1M': 30, '3M': 9
 const CustomTooltip = ({ active, payload, label }: any) => {
     if (!active || !payload?.length) return null;
     return (
-        <div style={{ background: 'rgba(15,23,42,0.95)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10, padding: '10px 14px', fontSize: 12, maxWidth: 220 }}>
-            <p style={{ fontWeight: 700, color: '#f8fafc', marginBottom: 6 }}>{label}</p>
+        <div className="glass-panel-elevated" style={{ padding: '10px 14px', fontSize: 12, maxWidth: 220, borderRadius: 10, animation: 'popoverIn 140ms var(--ease-out)' }}>
+            <p style={{ fontWeight: 700, color: 'var(--foreground)', marginBottom: 6 }}>{label}</p>
             {payload.filter((p: any) => p.value > 0).map((p: any) => (
                 <p key={p.dataKey} style={{ color: p.color, margin: '2px 0', display: 'flex', justifyContent: 'space-between', gap: 12 }}>
                     <span>{p.name}</span>
@@ -106,9 +106,9 @@ export default function FatigueChart({ readinessLogs }: Props) {
 
     if (!readinessLogs?.length) {
         return (
-            <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--secondary-foreground)', fontSize: 14, background: 'rgba(15,23,42,0.3)', borderRadius: 12, border: '1px dashed rgba(255,255,255,0.08)' }}>
+            <div className="glass-panel" style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--secondary-foreground)', fontSize: 14, border: '1px dashed var(--glass-border)' }}>
                 <div style={{ fontSize: 32, marginBottom: 10 }}>📊</div>
-                <div style={{ fontWeight: 600, marginBottom: 5 }}>No readiness data yet</div>
+                <div style={{ fontWeight: 600, marginBottom: 5, color: 'var(--foreground)' }}>No readiness data yet</div>
                 <div style={{ fontSize: 12, opacity: 0.7 }}>Athlete readiness check-ins will appear here once submitted.</div>
             </div>
         );
@@ -145,7 +145,7 @@ export default function FatigueChart({ readinessLogs }: Props) {
                             color: '#7d87d2',
                         },
                     ].map(s => (
-                        <div key={s.label} style={{ flex: '1 1 110px', background: 'rgba(15,23,42,0.5)', border: `1px solid ${s.color}33`, borderRadius: 10, padding: '12px 16px' }}>
+                        <div key={s.label} className="glass-panel" style={{ flex: '1 1 110px', background: 'var(--glass-surface-2)', border: `1px solid ${s.color}35`, borderRadius: 12, padding: '12px 16px' }}>
                             <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{s.label}</div>
                             <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginTop: 4 }}>
                                 <span style={{ fontSize: 22, fontWeight: 800, color: s.color }}>{s.value}</span>
@@ -157,29 +157,31 @@ export default function FatigueChart({ readinessLogs }: Props) {
             )}
 
             {/* Chart Container */}
-            <div style={{ background: 'rgba(15,23,42,0.4)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.07)', padding: '16px 8px 8px' }}>
+            <div className="glass-panel" style={{ background: 'var(--glass-surface-1)', borderRadius: 14, border: '1px solid var(--glass-border)', padding: '16px 8px 8px' }}>
                 {/* Controls */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, paddingLeft: 12, paddingRight: 12, marginBottom: 12, alignItems: 'center' }}>
                     {/* View toggle */}
-                    <div style={{ display: 'flex', gap: 6 }}>
-                        <button onClick={() => setShowRadar(false)} style={{
-                            padding: '5px 14px', borderRadius: 6, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                            background: !showRadar ? 'var(--primary)' : 'rgba(255,255,255,0.07)', color: !showRadar ? '#fff' : 'var(--secondary-foreground)',
+                    <div style={{ display: 'flex', background: 'var(--glass-surface-2)', borderRadius: '20px', padding: '3px', border: '1px solid var(--glass-border)' }}>
+                        <button onClick={() => setShowRadar(false)} className="chat-press" style={{
+                            padding: '4px 14px', borderRadius: '16px', border: !showRadar ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid transparent', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                            background: !showRadar ? 'rgba(125, 135, 210, 0.2)' : 'transparent', color: !showRadar ? '#fff' : 'var(--secondary-foreground)',
+                            transition: 'all 0.16s var(--ease-out)'
                         }}>Trend</button>
-                        <button onClick={() => setShowRadar(true)} style={{
-                            padding: '5px 14px', borderRadius: 6, border: 'none', fontSize: 12, fontWeight: 600, cursor: 'pointer',
-                            background: showRadar ? 'var(--primary)' : 'rgba(255,255,255,0.07)', color: showRadar ? '#fff' : 'var(--secondary-foreground)',
+                        <button onClick={() => setShowRadar(true)} className="chat-press" style={{
+                            padding: '4px 14px', borderRadius: '16px', border: showRadar ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid transparent', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                            background: showRadar ? 'rgba(125, 135, 210, 0.2)' : 'transparent', color: showRadar ? '#fff' : 'var(--secondary-foreground)',
+                            transition: 'all 0.16s var(--ease-out)'
                         }}>Radar</button>
                     </div>
 
                     {/* Timeline */}
-                    <div style={{ display: 'flex', background: 'rgba(15,23,42,0.6)', borderRadius: 8, padding: 4, border: '1px solid var(--card-border)' }}>
+                    <div style={{ display: 'flex', background: 'var(--glass-surface-2)', borderRadius: '20px', padding: '3px', border: '1px solid var(--glass-border)' }}>
                         {Object.keys(TIMELINES).map(tl => (
-                            <button key={tl} onClick={() => setTimeline(tl)} style={{
-                                padding: '4px 10px', background: timeline === tl ? 'var(--primary)' : 'transparent',
-                                color: timeline === tl ? '#fff' : 'var(--foreground)', border: 'none', cursor: 'pointer',
-                                fontSize: 11, fontWeight: 700, borderRadius: 6, transition: 'all 0.2s',
-                                boxShadow: timeline === tl ? '0 0 10px rgba(125,135,210,0.3)' : 'none',
+                            <button key={tl} onClick={() => setTimeline(tl)} className="chat-press" style={{
+                                padding: '4px 10px', background: timeline === tl ? 'rgba(125, 135, 210, 0.2)' : 'transparent',
+                                color: timeline === tl ? '#fff' : 'var(--foreground)', border: timeline === tl ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid transparent', cursor: 'pointer',
+                                fontSize: 11, fontWeight: 700, borderRadius: '16px', transition: 'all 0.16s var(--ease-out)',
+                                boxShadow: timeline === tl ? '0 0 10px rgba(125,135,210,0.25)' : 'none',
                             }}>{tl}</button>
                         ))}
                     </div>

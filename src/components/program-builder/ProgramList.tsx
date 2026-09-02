@@ -240,10 +240,10 @@ export default function ProgramList({ athleteId, initialPrograms }: { athleteId:
     const actionBtnStyle = (isActive: boolean) => ({
         flex: 1, textAlign: 'center' as const, fontSize: '0.8rem',
         padding: '0.45rem 0.5rem', borderRadius: 8, cursor: 'pointer', fontWeight: 600,
-        background: isActive ? 'rgba(6, 182, 212, 0.2)' : 'rgba(255,255,255,0.05)',
-        border: isActive ? '1px solid var(--primary)' : '1px solid rgba(255,255,255,0.12)',
-        color: isActive ? 'var(--primary)' : 'var(--secondary-foreground)',
-        transition: 'all 0.2s',
+        background: isActive ? 'rgba(125, 135, 210, 0.2)' : 'rgba(255,255,255,0.04)',
+        border: isActive ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid var(--glass-border)',
+        color: isActive ? '#fff' : 'var(--secondary-foreground)',
+        transition: 'all 0.15s var(--ease-out)',
     });
 
     const [athleteSearch, setAthleteSearch] = useState('');
@@ -288,24 +288,25 @@ export default function ProgramList({ athleteId, initialPrograms }: { athleteId:
     return (
         <div style={{ marginTop: '2rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
-                <h2 style={{ fontSize: '1.5rem', margin: 0, color: 'var(--primary)' }}>Assigned Programs</h2>
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'var(--foreground)' }}>Assigned Programs</h2>
                 {/* Timeline Filter */}
-                <div style={{ display: 'flex', background: 'rgba(18, 18, 18, 0.6)', borderRadius: '8px', padding: '4px', border: '1px solid var(--card-border)' }}>
+                <div style={{ display: 'flex', background: 'var(--glass-surface-2)', borderRadius: '20px', padding: '3px', border: '1px solid var(--glass-border)' }}>
                     {Object.keys(TIMELINES).map(tl => (
                         <button
                             key={tl}
                             onClick={() => setTimeline(tl)}
+                            className="chat-press"
                             style={{
-                                padding: '0.4rem 1rem',
-                                background: timeline === tl ? 'var(--primary)' : 'transparent',
-                                color: timeline === tl ? 'white' : 'var(--foreground)',
-                                border: 'none',
+                                padding: '0.35rem 0.85rem',
+                                background: timeline === tl ? 'rgba(125, 135, 210, 0.2)' : 'transparent',
+                                color: timeline === tl ? '#fff' : 'var(--secondary-foreground)',
+                                border: timeline === tl ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid transparent',
                                 cursor: 'pointer',
                                 fontSize: '0.75rem',
-                                fontWeight: 700,
-                                borderRadius: '6px',
-                                transition: 'all 0.2s',
-                                boxShadow: timeline === tl ? '0 0 10px rgba(6, 182, 212, 0.3)' : 'none'
+                                fontWeight: 600,
+                                borderRadius: '16px',
+                                transition: 'all 0.16s var(--ease-out)',
+                                boxShadow: timeline === tl ? '0 0 10px rgba(125, 135, 210, 0.25)' : 'none'
                             }}
                         >
                             {tl}
@@ -315,7 +316,7 @@ export default function ProgramList({ athleteId, initialPrograms }: { athleteId:
             </div>
             
             {filteredAndSortedPrograms.length === 0 ? (
-                <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--secondary-foreground)', background: 'rgba(255,255,255,0.02)', borderRadius: 12, border: '1px dashed rgba(255,255,255,0.1)' }}>
+                <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center', color: 'var(--secondary-foreground)', borderRadius: 12, border: '1px dashed var(--glass-border)' }}>
                     No programs found in the selected time range.
                 </div>
             ) : (
@@ -326,10 +327,11 @@ export default function ProgramList({ athleteId, initialPrograms }: { athleteId:
                     const isAnyDropdownOpen = isTransferOpen || isCopyOpen;
 
                     return (
-                        <div key={p.id} className="card" style={{ position: 'relative' }}>
+                        <div key={p.id} className="glass-panel" style={{ position: 'relative', padding: '1.25rem' }}>
                             {/* Delete X */}
                             <button
                                 onClick={() => handleDelete(p.id, p.name)}
+                                className="chat-press"
                                 style={{
                                     position: 'absolute', top: '10px', right: '10px',
                                     background: 'transparent', border: 'none',
@@ -342,12 +344,12 @@ export default function ProgramList({ athleteId, initialPrograms }: { athleteId:
                             </button>
 
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', paddingRight: '1rem' }}>
-                                <h3 style={{ fontSize: '1.2rem', fontWeight: 600 }}>{p.name}</h3>
-                                <span style={{ fontSize: '0.8rem', padding: '2px 8px', borderRadius: '4px', background: 'var(--accent)', color: 'black', fontWeight: 'bold' }}>
+                                <h3 style={{ fontSize: '1.15rem', fontWeight: 600, color: 'var(--foreground)' }}>{p.name}</h3>
+                                <span className="glass-badge" style={{ fontSize: '0.75rem', color: 'var(--primary)', borderColor: 'rgba(125, 135, 210, 0.3)' }}>
                                     {activeWeekCount(p.weeks)} Weeks
                                 </span>
                             </div>
-                            <div style={{ fontSize: '0.9rem', color: 'var(--secondary-foreground)', marginBottom: '1rem' }}>
+                            <div style={{ fontSize: '0.85rem', color: 'var(--secondary-foreground)', marginBottom: '1rem' }}>
                                 {activeDateRange(p.startDate, p.weeks)}
                             </div>
 
@@ -355,7 +357,7 @@ export default function ProgramList({ athleteId, initialPrograms }: { athleteId:
                             <div style={{ display: 'flex', gap: '0.4rem', marginTop: 'auto', flexWrap: 'wrap' }}>
                                 <Link
                                     href={`/dashboard/athletes/${athleteId}/programs/${p.id}`}
-                                    className="btn btn-secondary"
+                                    className="glass-button chat-press"
                                     style={{ flex: 1, textAlign: 'center', fontSize: '0.8rem', padding: '0.45rem 0.5rem' }}
                                 >
                                     Edit
@@ -378,10 +380,10 @@ export default function ProgramList({ athleteId, initialPrograms }: { athleteId:
                             {isAnyDropdownOpen && (
                                 <div
                                     ref={dropdownRef}
+                                    className="glass-panel-elevated"
                                     style={{
-                                        marginTop: '0.5rem', padding: '0.75rem',
-                                        background: 'rgba(0,0,0,0.6)', border: '1px solid var(--primary)',
-                                        borderRadius: 10, backdropFilter: 'blur(12px)',
+                                        marginTop: '0.65rem', padding: '0.85rem',
+                                        borderRadius: 12, animation: 'popoverIn 160ms var(--ease-out)'
                                     }}
                                 >
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
@@ -397,10 +399,10 @@ export default function ProgramList({ athleteId, initialPrograms }: { athleteId:
                                         autoFocus
                                         value={athleteSearch}
                                         onChange={(e) => setAthleteSearch(e.target.value)}
+                                        className="glass-input"
                                         style={{
-                                            width: '100%', marginBottom: '0.75rem', padding: '0.4rem 0.6rem',
-                                            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
-                                            borderRadius: 6, color: 'var(--foreground)', fontSize: '0.8rem', outline: 'none'
+                                            width: '100%', marginBottom: '0.75rem', padding: '0.45rem 0.75rem',
+                                            fontSize: '0.8rem'
                                         }}
                                     />
 
@@ -413,7 +415,7 @@ export default function ProgramList({ athleteId, initialPrograms }: { athleteId:
                                             No athletes found
                                         </div>
                                     ) : (
-                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem', maxHeight: 200, overflowY: 'auto', paddingRight: '2px' }}>
+                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem', maxHeight: 200, overflowY: 'auto', paddingRight: '2px' }}>
                                             {filteredAthletes.map((a: any) => (
                                                 <button
                                                     key={a.id}
@@ -422,22 +424,23 @@ export default function ProgramList({ athleteId, initialPrograms }: { athleteId:
                                                         ? handleTransfer(p.id, a.id, a.name)
                                                         : handleCopy(p.id, a.id, a.name)
                                                     }
+                                                    className="chat-press"
                                                     style={{
                                                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                                                         padding: '0.5rem 0.75rem', borderRadius: 8,
-                                                        background: 'rgba(255,255,255,0.04)',
-                                                        border: '1px solid rgba(255,255,255,0.08)',
+                                                        background: 'rgba(255,255,255,0.03)',
+                                                        border: '1px solid var(--glass-border)',
                                                         color: 'var(--foreground)', cursor: actionLoading ? 'wait' : 'pointer',
                                                         fontSize: '0.85rem', fontWeight: 500,
                                                         transition: 'all 0.15s', textAlign: 'left',
                                                     }}
                                                     onMouseEnter={(e) => {
-                                                        e.currentTarget.style.background = 'rgba(6, 182, 212, 0.12)';
-                                                        e.currentTarget.style.borderColor = 'rgba(6, 182, 212, 0.3)';
+                                                        e.currentTarget.style.background = 'rgba(125, 135, 210, 0.15)';
+                                                        e.currentTarget.style.borderColor = 'rgba(125, 135, 210, 0.4)';
                                                     }}
                                                     onMouseLeave={(e) => {
-                                                        e.currentTarget.style.background = 'rgba(255,255,255,0.04)';
-                                                        e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)';
+                                                        e.currentTarget.style.background = 'rgba(255,255,255,0.03)';
+                                                        e.currentTarget.style.borderColor = 'var(--glass-border)';
                                                     }}
                                                 >
                                                     <span style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
