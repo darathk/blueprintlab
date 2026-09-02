@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { calculateStress } from '@/lib/stress-index';
 import { getExerciseCategory } from '@/lib/exercise-db';
-import { Plus, Trash2, Copy, ChevronLeft, ChevronRight, CopyPlus, CheckCircle2, StickyNote, Activity, Calendar } from 'lucide-react';
+import { Plus, Trash2, Copy, ChevronLeft, ChevronRight, CopyPlus, CheckCircle2, StickyNote, Activity, Calendar, GripVertical } from 'lucide-react';
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
@@ -84,8 +84,9 @@ export default function ProgramWeeklyView({
     const selectedDay = controlledSelectedDay !== undefined ? controlledSelectedDay : internalSelectedDay;
     const onSelectDay = controlledOnSelectDay !== undefined ? controlledOnSelectDay : setInternalSelectedDay;
 
-    // Drag state for exercises between days
+    // Drag state for exercises and whole sessions between days
     const [dragSource, setDragSource] = useState<{ weekIdx: number; sessionIdx: number; exerciseIdx: number } | null>(null);
+    const [dragSessionSource, setDragSessionSource] = useState<{ weekIdx: number; sessionIdx: number; dayNum: number } | null>(null);
     const [dropTargetDay, setDropTargetDay] = useState<number | null>(null);
     const [dropTargetExIdx, setDropTargetExIdx] = useState<number | null>(null);
 
@@ -572,10 +573,21 @@ export default function ProgramWeeklyView({
 
     // ──── Drag & Drop ────
 
+    const handleSessionDragStart = (e: React.DragEvent, dayNum: number) => {
+        const wIdx = weeks.findIndex(w => w.weekNumber === currentWeekNum);
+        const sIdx = weeks[wIdx]?.sessions.findIndex((s: any) => Number(s.day) === Number(dayNum));
+        if (wIdx === -1 || sIdx === -1) return;
+        setDragSource(null);
+        setDragSessionSource({ weekIdx: wIdx, sessionIdx: sIdx, dayNum });
+        e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'weekly-session', sourceDayNum: dayNum }));
+        e.dataTransfer.effectAllowed = 'move';
+    };
+
     const handleExDragStart = (e: React.DragEvent, dayNum: number, exerciseIdx: number) => {
         const wIdx = weeks.findIndex(w => w.weekNumber === currentWeekNum);
         const sIdx = weeks[wIdx]?.sessions.findIndex((s: any) => Number(s.day) === Number(dayNum));
         if (wIdx === -1 || sIdx === -1) return;
+        setDragSessionSource(null);
         setDragSource({ weekIdx: wIdx, sessionIdx: sIdx, exerciseIdx });
         e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'weekly-exercise', dayNum, exerciseIdx }));
         e.dataTransfer.effectAllowed = 'move';
@@ -602,6 +614,65 @@ export default function ProgramWeeklyView({
         } catch { /* fallback */ }
 
         if (!data) return;
+
+        // Handle drag of whole session between days
+        if (data.type === 'weekly-session') {
+            const sourceDayNum = Number(data.sourceDayNum);
+            if (sourceDayNum === targetDayNum) {
+                setDragSessionSource(null);
+                return;
+            }
+
+            setWeeks((prev: any[]) => {
+                const newWeeks = prev.map(w => ({
+                    ...w,
+                    sessions: (w.sessions || []).map((s: any) => ({
+                        ...s,
+                        exercises: [...(s.exercises || [])],
+                    })),
+                }));
+
+                const currentWIdx = newWeeks.findIndex(w => w.weekNumber === currentWeekNum);
+                if (currentWIdx === -1) return prev;
+
+                const currentWeekSessions = newWeeks[currentWIdx].sessions;
+                const srcSessionIdx = currentWeekSessions.findIndex((s: any) => Number(s.day) === Number(sourceDayNum));
+                if (srcSessionIdx === -1) return prev;
+
+                const srcSession = currentWeekSessions[srcSessionIdx];
+                const tgtSessionIdx = currentWeekSessions.findIndex((s: any) => Number(s.day) === Number(targetDayNum));
+
+                const targetDateStr = getDateStringForDay(targetDayNum);
+                const sourceDateStr = getDateStringForDay(sourceDayNum);
+
+                if (tgtSessionIdx === -1) {
+                    // Target day has no session: move srcSession to targetDayNum
+                    srcSession.day = targetDayNum;
+                    if (targetDateStr) srcSession.scheduledDate = targetDateStr;
+                } else {
+                    const tgtSession = currentWeekSessions[tgtSessionIdx];
+                    const tgtHasContent = (Array.isArray(tgtSession.exercises) && tgtSession.exercises.length > 0) || Boolean(tgtSession.warmupDrills?.trim());
+
+                    if (!tgtHasContent) {
+                        // Target day has an empty placeholder session: remove it and place srcSession on targetDayNum
+                        currentWeekSessions.splice(tgtSessionIdx, 1);
+                        srcSession.day = targetDayNum;
+                        if (targetDateStr) srcSession.scheduledDate = targetDateStr;
+                    } else {
+                        // Both days have workouts: swap their day numbers and dates!
+                        srcSession.day = targetDayNum;
+                        tgtSession.day = sourceDayNum;
+                        if (targetDateStr) srcSession.scheduledDate = targetDateStr;
+                        if (sourceDateStr) tgtSession.scheduledDate = sourceDateStr;
+                    }
+                }
+
+                return newWeeks;
+            });
+            setDragSessionSource(null);
+            onSelectDay(targetDayNum);
+            return;
+        }
 
         // Handle drag from ExercisePicker (library)
         if (data.type === 'exercise-library' || data.type === 'exercise') {
@@ -657,6 +728,7 @@ export default function ProgramWeeklyView({
 
     const handleDragEnd = () => {
         setDragSource(null);
+        setDragSessionSource(null);
         setDropTargetDay(null);
         setDropTargetExIdx(null);
     };
@@ -977,6 +1049,8 @@ export default function ProgramWeeklyView({
                     const dateLabel = getDateForDay(dayNum);
                     const dayDateStr = getDateStringForDay(dayNum);
                     const existingGhostSessions = dayDateStr ? (existingSessionsByDate[dayDateStr] || []) : [];
+                    const isDraggingThisSession = dragSessionSource?.dayNum === dayNum;
+                    const isTargetOfSessionDrag = isDragOverThis && dragSessionSource && !isDraggingThisSession;
 
                     return (
                         <div
@@ -986,36 +1060,100 @@ export default function ProgramWeeklyView({
                             onDrop={(e) => handleDayDrop(e, dayNum)}
                             onDragLeave={() => { if (dropTargetDay === dayNum) { setDropTargetDay(null); setDropTargetExIdx(null); } }}
                             style={{
-                                background: isDragOverThis
-                                    ? 'rgba(6,182,212,0.14)'
-                                    : isSelected
-                                        ? 'rgba(6,182,212,0.06)'
-                                        : 'var(--card-bg)',
-                                border: isDragOverThis
-                                    ? '2px solid var(--primary)'
-                                    : isSelected
-                                        ? '2px solid var(--primary)'
-                                        : '1px solid var(--card-border)',
+                                opacity: isDraggingThisSession ? 0.45 : 1,
+                                background: isTargetOfSessionDrag
+                                    ? 'rgba(6,182,212,0.18)'
+                                    : isDragOverThis
+                                        ? 'rgba(6,182,212,0.14)'
+                                        : isSelected
+                                            ? 'rgba(6,182,212,0.06)'
+                                            : 'var(--card-bg)',
+                                border: isTargetOfSessionDrag
+                                    ? '2px dashed var(--primary)'
+                                    : isDraggingThisSession
+                                        ? '2px dashed var(--secondary-foreground)'
+                                        : isDragOverThis
+                                            ? '2px solid var(--primary)'
+                                            : isSelected
+                                                ? '2px solid var(--primary)'
+                                                : '1px solid var(--card-border)',
                                 borderRadius: '10px',
                                 display: 'flex', flexDirection: 'column',
                                 overflow: 'hidden',
                                 transition: 'all 0.15s ease',
                                 minHeight: '350px',
-                                boxShadow: isSelected
-                                    ? '0 0 16px rgba(6, 182, 212, 0.22), 0 2px 8px rgba(0,0,0,0.3)'
-                                    : '0 2px 8px rgba(0,0,0,0.15)',
+                                boxShadow: isTargetOfSessionDrag
+                                    ? '0 0 24px rgba(6, 182, 212, 0.4), 0 2px 8px rgba(0,0,0,0.3)'
+                                    : isSelected
+                                        ? '0 0 16px rgba(6, 182, 212, 0.22), 0 2px 8px rgba(0,0,0,0.3)'
+                                        : '0 2px 8px rgba(0,0,0,0.15)',
                                 cursor: 'pointer',
                             }}
                         >
+                            {/* Session Drop Preview Banner */}
+                            {isTargetOfSessionDrag && (
+                                <div style={{
+                                    background: 'var(--primary)',
+                                    color: '#000',
+                                    fontWeight: 800,
+                                    fontSize: '0.68rem',
+                                    padding: '5px 8px',
+                                    textAlign: 'center',
+                                    letterSpacing: '0.04em',
+                                    textTransform: 'uppercase',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    gap: 5,
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.3)',
+                                }}>
+                                    <GripVertical size={12} />
+                                    {session ? `Swap with ${dayLabel}` : `Move Session to ${dayLabel}`}
+                                </div>
+                            )}
+
                             {/* Day Column Header */}
-                            <div style={{
-                                padding: '10px 12px',
-                                borderBottom: isSelected ? '1px solid rgba(6,182,212,0.3)' : '1px solid var(--card-border)',
-                                background: isSelected ? 'rgba(6, 182, 212, 0.12)' : 'rgba(255,255,255,0.03)',
-                                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                            }}>
+                            <div
+                                draggable={Boolean(session)}
+                                onDragStart={(e) => {
+                                    if (session) handleSessionDragStart(e, dayNum);
+                                }}
+                                onDragEnd={handleDragEnd}
+                                title={session ? "Drag whole session to another day" : undefined}
+                                style={{
+                                    padding: '10px 12px',
+                                    borderBottom: isSelected ? '1px solid rgba(6,182,212,0.3)' : '1px solid var(--card-border)',
+                                    background: isSelected ? 'rgba(6, 182, 212, 0.12)' : 'rgba(255,255,255,0.03)',
+                                    display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                                    cursor: session ? 'grab' : 'pointer',
+                                }}
+                            >
                                 <div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                        {session && (
+                                            <div
+                                                draggable
+                                                onDragStart={(e) => {
+                                                    e.stopPropagation();
+                                                    handleSessionDragStart(e, dayNum);
+                                                }}
+                                                onDragEnd={handleDragEnd}
+                                                title="Drag whole session to another day"
+                                                style={{
+                                                    cursor: 'grab',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    padding: '1px 3px',
+                                                    borderRadius: '4px',
+                                                    background: 'rgba(6, 182, 212, 0.12)',
+                                                    border: '1px solid rgba(6, 182, 212, 0.3)',
+                                                    color: 'var(--primary)',
+                                                }}
+                                            >
+                                                <GripVertical size={12} />
+                                            </div>
+                                        )}
                                         <span style={{
                                             fontSize: '0.75rem', fontWeight: 800, letterSpacing: '0.06em',
                                             color: isSelected
@@ -1042,7 +1180,7 @@ export default function ProgramWeeklyView({
                                         {dateLabel}
                                     </div>
                                 </div>
-                                <div style={{ display: 'flex', gap: '4px' }} onClick={e => e.stopPropagation()}>
+                                <div style={{ display: 'flex', gap: '4px' }} onClick={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()}>
                                     {session && (
                                         <button
                                             onClick={() => clearDay(dayNum)}
@@ -1084,13 +1222,42 @@ export default function ProgramWeeklyView({
                             {/* Session Name (editable) */}
                             {session && (
                                 <div
-                                    onClick={e => e.stopPropagation()}
-                                    style={{ padding: '6px 12px', borderBottom: '1px solid rgba(255,255,255,0.04)', background: 'rgba(0,0,0,0.1)' }}
+                                    style={{
+                                        padding: '6px 10px 6px 8px',
+                                        borderBottom: '1px solid rgba(255,255,255,0.04)',
+                                        background: 'rgba(0,0,0,0.1)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 6,
+                                    }}
                                 >
+                                    <div
+                                        draggable
+                                        onDragStart={(e) => {
+                                            e.stopPropagation();
+                                            handleSessionDragStart(e, dayNum);
+                                        }}
+                                        onDragEnd={handleDragEnd}
+                                        title="Drag whole session to another day"
+                                        style={{
+                                            cursor: 'grab',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            color: 'var(--secondary-foreground)',
+                                            opacity: 0.6,
+                                            padding: '2px',
+                                        }}
+                                        onMouseOver={e => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.color = 'var(--primary)'; }}
+                                        onMouseOut={e => { e.currentTarget.style.opacity = '0.6'; e.currentTarget.style.color = 'var(--secondary-foreground)'; }}
+                                    >
+                                        <GripVertical size={14} />
+                                    </div>
                                     <input
                                         value={session.name}
                                         onChange={e => updateSessionName(dayNum, e.target.value)}
                                         onFocus={() => onSelectDay(dayNum)}
+                                        onClick={e => e.stopPropagation()}
+                                        onMouseDown={e => e.stopPropagation()}
                                         placeholder="Session Name"
                                         style={{
                                             background: 'transparent', border: 'none', color: 'var(--foreground)',
