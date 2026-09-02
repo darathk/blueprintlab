@@ -175,14 +175,20 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
     return (
         <div className={isMobile && selectedId ? 'chat-full-screen' : 'glass-panel'} style={{ display: 'flex', height: isMobile && selectedId ? undefined : (isMobile ? 'calc(100dvh - 120px)' : 874), overflow: 'hidden', borderRadius: isMobile && selectedId ? 0 : 12 }}>
             {/* Sidebar */}
-            <div style={{ width: isMobile ? '100%' : 260, flexShrink: 0, borderRight: isMobile ? 'none' : '1px solid rgba(255,255,255,0.08)', display: isMobile && selectedId ? 'none' : 'flex', flexDirection: 'column', background: 'rgba(18, 18, 18, 0.5)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)' }}>
-                <div style={{ padding: '12px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontWeight: 600, fontSize: 14, color: 'var(--foreground)' }}>Messages</span>
+            <div style={{
+                width: isMobile ? '100%' : 260, flexShrink: 0,
+                borderRight: isMobile ? 'none' : '1px solid rgba(255,255,255,0.08)',
+                borderTop: '1px solid var(--glass-specular)',
+                display: isMobile && selectedId ? 'none' : 'flex', flexDirection: 'column',
+                background: 'rgba(18, 18, 18, 0.5)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)'
+            }}>
+                <div style={{ padding: '14px 18px', borderBottom: '1px solid rgba(255,255,255,0.05)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span style={{ fontWeight: 600, fontSize: 14, color: 'var(--foreground)', letterSpacing: '-0.01em' }}>Messages</span>
                     {totalUnread > 0 && <span style={{ background: 'var(--primary)', boxShadow: '0 0 10px rgba(125,135,210,0.5)', color: '#fff', fontSize: 10, fontWeight: 800, borderRadius: 10, padding: '1px 7px', minWidth: 18, textAlign: 'center' as const }}>{totalUnread}</span>}
                 </div>
 
                 {/* Search Bar */}
-                <div style={{ padding: '8px 16px', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                <div style={{ padding: '10px 16px', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
                     <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
                         <Search size={14} style={{ position: 'absolute', left: 10, color: 'rgba(255,255,255,0.3)' }} />
                         <input
@@ -192,18 +198,20 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                             onChange={(e) => setSearchTerm(e.target.value)}
                             style={{
                                 width: '100%',
-                                background: 'rgba(255,255,255,0.05)',
-                                border: '1px solid rgba(255,255,255,0.1)',
+                                background: 'rgba(255,255,255,0.04)',
+                                border: '1px solid rgba(255,255,255,0.08)',
                                 borderRadius: 8,
                                 padding: '6px 12px 6px 32px',
                                 fontSize: 13,
                                 color: '#fff',
-                                outline: 'none'
+                                outline: 'none',
+                                transition: 'border-color 200ms var(--ease-out)'
                             }}
                         />
                         {searchTerm && (
                             <button
                                 onClick={() => setSearchTerm('')}
+                                className="chat-press"
                                 style={{ position: 'absolute', right: 8, background: 'none', border: 'none', color: 'rgba(255,255,255,0.4)', cursor: 'pointer', padding: 4, display: 'flex' }}
                             >
                                 <X size={14} />
@@ -212,30 +220,49 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                     </div>
                 </div>
 
-                {/* Filter Toggle */}
-                <div style={{ padding: '8px 16px', display: 'flex', gap: 6, borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
-                    <button
-                        onClick={() => setFilterType('all')}
-                        style={{
-                            flex: 1, padding: '6px 0', borderRadius: 6, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer',
-                            background: filterType === 'all' ? 'rgba(125,135,210,0.15)' : 'transparent',
-                            color: filterType === 'all' ? 'var(--primary)' : 'rgba(255,255,255,0.4)',
-                            transition: 'all 0.2s'
-                        }}
-                    >
-                        All
-                    </button>
-                    <button
-                        onClick={() => setFilterType('unread')}
-                        style={{
-                            flex: 1, padding: '6px 0', borderRadius: 6, fontSize: 12, fontWeight: 600, border: 'none', cursor: 'pointer',
-                            background: filterType === 'unread' ? 'rgba(125,135,210,0.15)' : 'transparent',
-                            color: filterType === 'unread' ? 'var(--primary)' : 'rgba(255,255,255,0.4)',
-                            transition: 'all 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6
-                        }}
-                    >
-                        Unread {totalUnread > 0 && <span style={{ background: filterType === 'unread' ? 'var(--primary)' : 'rgba(255,255,255,0.2)', color: filterType === 'unread' ? '#fff' : '#fff', fontSize: 10, padding: '2px 6px', borderRadius: 10 }}>{totalUnread}</span>}
-                    </button>
+                {/* Filter Toggle — Apple-style Segmented Control with Sliding Active Pill */}
+                <div style={{ padding: '8px 16px', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                    <div style={{
+                        display: 'flex', position: 'relative', background: 'rgba(255,255,255,0.04)',
+                        borderRadius: 8, padding: 2, border: '1px solid rgba(255,255,255,0.06)'
+                    }}>
+                        {/* Sliding active pill indicator */}
+                        <div style={{
+                            position: 'absolute', top: 2, bottom: 2,
+                            left: filterType === 'all' ? 2 : '50%',
+                            width: 'calc(50% - 2px)',
+                            background: 'rgba(125,135,210,0.18)',
+                            border: '1px solid rgba(125,135,210,0.3)',
+                            borderRadius: 6,
+                            transition: 'left 250ms var(--ease-out)',
+                            pointerEvents: 'none'
+                        }} />
+                        <button
+                            onClick={() => setFilterType('all')}
+                            className="chat-press"
+                            style={{
+                                flex: 1, padding: '6px 0', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                                border: 'none', cursor: 'pointer', background: 'transparent',
+                                color: filterType === 'all' ? 'var(--primary)' : 'rgba(255,255,255,0.4)',
+                                transition: 'color 200ms var(--ease-out)', position: 'relative', zIndex: 1
+                            }}
+                        >
+                            All
+                        </button>
+                        <button
+                            onClick={() => setFilterType('unread')}
+                            className="chat-press"
+                            style={{
+                                flex: 1, padding: '6px 0', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                                border: 'none', cursor: 'pointer', background: 'transparent',
+                                color: filterType === 'unread' ? 'var(--primary)' : 'rgba(255,255,255,0.4)',
+                                transition: 'color 200ms var(--ease-out)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                                position: 'relative', zIndex: 1
+                            }}
+                        >
+                            Unread {totalUnread > 0 && <span style={{ background: filterType === 'unread' ? 'var(--primary)' : 'rgba(255,255,255,0.2)', color: '#fff', fontSize: 10, padding: '1px 6px', borderRadius: 10, fontWeight: 700 }}>{totalUnread}</span>}
+                        </button>
+                    </div>
                 </div>
 
                 <div style={{ flex: 1, overflowY: 'auto' }}>
@@ -253,12 +280,13 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                                 setConvos(prev => prev.map(cv => cv.athleteId === c.athleteId ? { ...cv, unreadCount: 0 } : cv));
                             }
                         }}
+                            className="chat-press"
                             style={{
                                 display: 'flex', alignItems: 'center', gap: 10, width: '100%', padding: '10px 14px', border: 'none', cursor: 'pointer', textAlign: 'left' as const,
-                                background: selectedId === c.athleteId ? 'linear-gradient(90deg, rgba(125,135,210,0.15), transparent)' : 'transparent',
+                                background: selectedId === c.athleteId ? 'linear-gradient(90deg, rgba(125,135,210,0.14), transparent)' : 'transparent',
                                 borderLeft: selectedId === c.athleteId ? '2px solid var(--primary)' : '2px solid transparent',
-                                boxShadow: selectedId === c.athleteId ? 'inset 2px 0 10px -2px rgba(125,135,210,0.3)' : 'none',
-                                transition: 'all 0.2s ease',
+                                boxShadow: selectedId === c.athleteId ? 'inset 2px 0 12px -2px rgba(125,135,210,0.25)' : 'none',
+                                transition: 'background 200ms var(--ease-out), border-color 200ms var(--ease-out)',
                             }}>
                             <div style={{ position: 'relative', flexShrink: 0 }}>
                                 <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg, #7d87d2, #a855f7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 800, color: '#fff', fontSize: 14, boxShadow: '0 2px 8px rgba(125,135,210,0.3)' }}>
@@ -275,22 +303,22 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                                                 type="button"
                                                 onClick={(e) => markAsUnread(c.athleteId, e)}
                                                 title="Mark as unread"
-                                                className="mark-unread-btn"
+                                                className="mark-unread-btn chat-press"
                                                 style={{
                                                     background: 'none', border: 'none', cursor: 'pointer', padding: 2,
-                                                    color: 'rgba(255,255,255,0.15)', display: 'flex', alignItems: 'center',
-                                                    borderRadius: 4, transition: 'color 0.15s',
+                                                    color: 'rgba(255,255,255,0.2)', display: 'flex', alignItems: 'center',
+                                                    borderRadius: 4, transition: 'color 150ms var(--ease-out)',
                                                 }}
                                                 onMouseEnter={e => (e.currentTarget.style.color = 'var(--primary)')}
-                                                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.15)')}
+                                                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(255,255,255,0.2)')}
                                             >
                                                 <MailOpen size={12} />
                                             </button>
                                         )}
-                                        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.2)' }}>{c.lastMessageAt === '1970-01-01T00:00:00Z' ? '' : fmtTime(c.lastMessageAt)}</span>
+                                        <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.35)' }}>{c.lastMessageAt === '1970-01-01T00:00:00Z' ? '' : fmtTime(c.lastMessageAt)}</span>
                                     </div>
                                 </div>
-                                <div style={{ fontSize: 11, color: c.unreadCount > 0 ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.25)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const, marginTop: 1 }}>{c.lastMessage || 'No messages yet'}</div>
+                                <div style={{ fontSize: 11, color: c.unreadCount > 0 ? 'rgba(255,255,255,0.65)' : 'rgba(255,255,255,0.3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const, marginTop: 1 }}>{c.lastMessage || 'No messages yet'}</div>
                             </div>
                         </div>
                     ))}
@@ -320,12 +348,13 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                             <div style={{ position: 'relative' }}>
                                 <button
                                     onClick={() => setActionsMenuOpen(!actionsMenuOpen)}
+                                    className="chat-press"
                                     style={{
                                         display: 'flex', alignItems: 'center', gap: 6,
                                         background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
                                         borderRadius: 8, padding: '6px 12px',
                                         color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                                        transition: 'background 0.2s', whiteSpace: 'nowrap'
+                                        transition: 'background 160ms var(--ease-out)', whiteSpace: 'nowrap'
                                     }}
                                 >
                                     <Menu size={14} /> Actions
@@ -336,58 +365,75 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                                         <div onClick={() => setActionsMenuOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
                                         <div style={{
                                             position: 'absolute', top: '100%', right: 0, marginTop: 8,
-                                            background: '#1a1a1a', border: '1px solid rgba(255,255,255,0.1)',
-                                            borderRadius: 8, padding: 6, display: 'flex', flexDirection: 'column', gap: 4, zIndex: 50,
-                                            minWidth: 160, boxShadow: '0 10px 40px rgba(0,0,0,0.5)'
+                                            background: 'rgba(20, 20, 30, 0.96)',
+                                            backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+                                            border: '1px solid var(--glass-border)',
+                                            borderTop: '1px solid var(--glass-specular)',
+                                            borderRadius: 12, padding: 6, display: 'flex', flexDirection: 'column', gap: 4, zIndex: 50,
+                                            minWidth: 170, boxShadow: '0 10px 40px rgba(0,0,0,0.6), 0 0 0 0.5px rgba(255,255,255,0.08)',
+                                            transformOrigin: 'top right',
+                                            animation: 'popoverIn 200ms var(--ease-out)'
                                         }}>
                                             <Link
                                                 prefetch={true}
                                                 href={`/dashboard/athletes/${selectedId}`}
                                                 title="Dashboard"
                                                 onClick={() => setActionsMenuOpen(false)}
+                                                className="chat-press"
                                                 style={{
                                                     display: 'flex', alignItems: 'center', gap: 8,
                                                     background: 'transparent',
                                                     border: 'none', borderRadius: 6, padding: '8px 12px',
                                                     color: '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer',
-                                                    textDecoration: 'none', transition: 'background 0.2s'
+                                                    textDecoration: 'none', transition: 'background 160ms var(--ease-out)'
                                                 }}
+                                                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
+                                                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
                                             >
                                                 <LayoutDashboard size={14} /> Dashboard
                                             </Link>
                                             <button
                                                 onClick={() => { setActiveSidebar(activeSidebar === 'notes' ? null : 'notes'); setActionsMenuOpen(false); }}
+                                                className="chat-press"
                                                 style={{
                                                     display: 'flex', alignItems: 'center', gap: 8,
                                                     background: activeSidebar === 'notes' ? 'var(--primary)' : 'transparent',
                                                     border: 'none', borderRadius: 6, padding: '8px 12px',
-                                                    color: activeSidebar === 'notes' ? '#000' : '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer',
-                                                    textAlign: 'left'
+                                                    color: activeSidebar === 'notes' ? '#fff' : '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                                                    textAlign: 'left', transition: 'background 160ms var(--ease-out)'
                                                 }}
+                                                onMouseEnter={e => { if (activeSidebar !== 'notes') e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
+                                                onMouseLeave={e => { if (activeSidebar !== 'notes') e.currentTarget.style.background = 'transparent'; }}
                                             >
                                                 <StickyNote size={14} /> {activeSidebar === 'notes' ? 'Close Notes' : 'Notes'}
                                             </button>
                                             <button
                                                 onClick={() => { setActiveSidebar(activeSidebar === 'edit' ? null : 'edit'); setActionsMenuOpen(false); }}
+                                                className="chat-press"
                                                 style={{
                                                     display: 'flex', alignItems: 'center', gap: 8,
                                                     background: activeSidebar === 'edit' ? 'var(--primary)' : 'transparent',
                                                     border: 'none', borderRadius: 6, padding: '8px 12px',
-                                                    color: activeSidebar === 'edit' ? '#000' : '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer',
-                                                    textAlign: 'left'
+                                                    color: activeSidebar === 'edit' ? '#fff' : '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                                                    textAlign: 'left', transition: 'background 160ms var(--ease-out)'
                                                 }}
+                                                onMouseEnter={e => { if (activeSidebar !== 'edit') e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
+                                                onMouseLeave={e => { if (activeSidebar !== 'edit') e.currentTarget.style.background = 'transparent'; }}
                                             >
                                                 <Pencil size={14} /> {activeSidebar === 'edit' ? 'Close Editor' : 'Edit Program'}
                                             </button>
                                             <button
                                                 onClick={() => { setActiveSidebar(activeSidebar === 'view' ? null : 'view'); setActionsMenuOpen(false); }}
+                                                className="chat-press"
                                                 style={{
                                                     display: 'flex', alignItems: 'center', gap: 8,
                                                     background: activeSidebar === 'view' ? 'var(--primary)' : 'transparent',
                                                     border: 'none', borderRadius: 6, padding: '8px 12px',
-                                                    color: activeSidebar === 'view' ? '#000' : '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer',
-                                                    textAlign: 'left'
+                                                    color: activeSidebar === 'view' ? '#fff' : '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                                                    textAlign: 'left', transition: 'background 160ms var(--ease-out)'
                                                 }}
+                                                onMouseEnter={e => { if (activeSidebar !== 'view') e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
+                                                onMouseLeave={e => { if (activeSidebar !== 'view') e.currentTarget.style.background = 'transparent'; }}
                                             >
                                                 <CalendarIcon size={14} /> {activeSidebar === 'view' ? 'Hide Program' : 'View Program'}
                                             </button>

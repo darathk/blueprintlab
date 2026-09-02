@@ -227,7 +227,7 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
     return (
         <div style={{
             position: 'fixed', inset: 0, zIndex: 9999,
-            background: '#0b141a',
+            background: '#0d0f14',
             display: 'flex', flexDirection: 'column',
             color: '#fff', touchAction: 'none'
         }}>
@@ -236,29 +236,32 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
                 padding: '12px 16px',
                 paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))',
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                background: '#1f2c34'
+                background: '#13161f',
+                borderBottom: '1px solid rgba(255,255,255,0.06)'
             }}>
-                <button onClick={onCancel} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: 8 }}>
-                    <X size={24} />
+                <button onClick={onCancel} className="chat-press" style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: 8, display: 'flex', alignItems: 'center' }}>
+                    <X size={22} />
                 </button>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Scissors size={18} color="#00a884" />
-                    <span style={{ fontWeight: 600, fontSize: 16 }}>Trim Video</span>
+                    <Scissors size={18} color="var(--primary)" />
+                    <span style={{ fontWeight: 600, fontSize: 16, letterSpacing: '-0.01em' }}>Trim Video</span>
                 </div>
                 <button
                     onClick={processVideo}
+                    className="chat-press"
                     style={{
-                        background: '#00a884',
+                        background: 'var(--primary)',
                         border: 'none',
                         borderRadius: 20,
                         color: '#fff',
                         cursor: 'pointer',
-                        padding: '8px 16px',
+                        padding: '8px 18px',
                         fontWeight: 600,
                         fontSize: 14,
                         display: 'flex',
                         alignItems: 'center',
-                        gap: 6
+                        gap: 6,
+                        boxShadow: '0 0 14px rgba(125,135,210,0.4)'
                     }}
                 >
                     <Check size={18} /> Done
@@ -266,7 +269,7 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
             </div>
 
             {/* Filmstrip Timeline */}
-            <div style={{ padding: '12px 44px 8px', background: '#1f2c34' }}>
+            <div style={{ padding: '12px 44px 8px', background: '#13161f', borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
                 <div
                     ref={filmstripRef}
                     onClick={handleFilmstripTap}
@@ -298,7 +301,7 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
                         )) : (
                             <div style={{
                                 width: '100%', height: '100%',
-                                background: 'linear-gradient(90deg, #2a3942 0%, #1f2c34 50%, #2a3942 100%)',
+                                background: 'linear-gradient(90deg, #1a1e2e 0%, #13161f 50%, #1a1e2e 100%)',
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                                 fontSize: 12, color: 'rgba(255,255,255,0.3)'
                             }}>
@@ -330,8 +333,8 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
                         left: `${startPct}%`,
                         width: `${endPct - startPct}%`,
                         height: '100%',
-                        borderTop: '3px solid #00a884',
-                        borderBottom: '3px solid #00a884',
+                        borderTop: '3px solid var(--primary)',
+                        borderBottom: '3px solid var(--primary)',
                         boxSizing: 'border-box',
                         pointerEvents: 'none'
                     }} />
@@ -346,14 +349,15 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
                             left: `${startPct}%`,
                             transform: 'translateX(-100%)',
                             width: 22,
-                            background: '#00a884',
+                            background: 'var(--primary)',
                             borderRadius: '8px 0 0 8px',
                             cursor: 'ew-resize',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             touchAction: 'none',
-                            zIndex: 10
+                            zIndex: 10,
+                            boxShadow: '0 0 10px rgba(125,135,210,0.5)'
                         }}
                     >
                         <div style={{
@@ -370,14 +374,15 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
                             bottom: -4,
                             left: `${endPct}%`,
                             width: 22,
-                            background: '#00a884',
+                            background: 'var(--primary)',
                             borderRadius: '0 8px 8px 0',
                             cursor: 'ew-resize',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
                             touchAction: 'none',
-                            zIndex: 10
+                            zIndex: 10,
+                            boxShadow: '0 0 10px rgba(125,135,210,0.5)'
                         }}
                     >
                         <div style={{
@@ -406,20 +411,21 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
                     display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                     marginTop: 8, padding: '0 4px'
                 }}>
-                    <span style={{ fontSize: 12, color: '#00a884', fontWeight: 600 }}>
+                    <span style={{ fontSize: 12, color: 'var(--primary)', fontWeight: 600 }}>
                         {formatTime(startTime)}
                     </span>
                     <span style={{
                         fontSize: 12,
-                        color: noTrimApplied ? 'rgba(255,255,255,0.5)' : '#00a884',
+                        color: noTrimApplied ? 'rgba(255,255,255,0.5)' : 'var(--primary)',
                         fontWeight: 600,
-                        background: noTrimApplied ? 'transparent' : 'rgba(0,168,132,0.15)',
+                        background: noTrimApplied ? 'transparent' : 'rgba(125,135,210,0.15)',
+                        border: noTrimApplied ? 'none' : '1px solid rgba(125,135,210,0.25)',
                         padding: '2px 8px',
                         borderRadius: 10
                     }}>
                         {formatTime(trimDuration)} / {formatTime(duration)}
                     </span>
-                    <span style={{ fontSize: 12, color: '#00a884', fontWeight: 600 }}>
+                    <span style={{ fontSize: 12, color: 'var(--primary)', fontWeight: 600 }}>
                         {formatTime(endTime)}
                     </span>
                 </div>
@@ -485,7 +491,8 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
             <div style={{
                 padding: '12px 20px',
                 paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
-                background: '#1f2c34',
+                background: '#13161f',
+                borderTop: '1px solid rgba(255,255,255,0.06)',
                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16
             }}>
                 <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>
@@ -493,8 +500,9 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
                 </span>
                 {!noTrimApplied && (
                     <span style={{
-                        fontSize: 12, color: '#00a884', fontWeight: 600,
-                        background: 'rgba(0,168,132,0.15)',
+                        fontSize: 12, color: 'var(--primary)', fontWeight: 600,
+                        background: 'rgba(125,135,210,0.15)',
+                        border: '1px solid rgba(125,135,210,0.25)',
                         padding: '4px 12px',
                         borderRadius: 12
                     }}>

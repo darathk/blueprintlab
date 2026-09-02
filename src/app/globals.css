@@ -25,6 +25,25 @@
 
   --radius: 14px;
   --header-height: 64px;
+
+  /* Motion tokens (Emil Kowalski / Apple design principles) */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* Semantic error variable */
+  --error: #ef4444;
+
+  /* Messaging surfaces */
+  --bubble-mine: rgba(125, 135, 210, 0.14);
+  --bubble-mine-border: rgba(125, 135, 210, 0.16);
+  --bubble-theirs: rgba(255, 255, 255, 0.05);
+  --bubble-theirs-border: rgba(255, 255, 255, 0.07);
+
+  /* Translucent materials & depth */
+  --glass-bg: rgba(255, 255, 255, 0.03);
+  --glass-border: rgba(255, 255, 255, 0.08);
+  --glass-specular: rgba(255, 255, 255, 0.12);
 }
 
 * {
@@ -470,4 +489,33 @@ a {
     transform: scale(1);
     opacity: 1;
   }
+}
+
+/* Emil Kowalski popover entrance (scale from 0.95, no translating) */
+@keyframes popoverIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Instant active press feedback for chat buttons & interactive items */
+.chat-press {
+  transition: transform 160ms var(--ease-out);
+}
+.chat-press:active {
+  transform: scale(0.97);
 }
