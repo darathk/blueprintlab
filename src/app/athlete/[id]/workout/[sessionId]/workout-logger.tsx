@@ -357,17 +357,15 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
 
             <div style={{ padding: '0 1rem' }}>
                 {/* Session Name & Stats */}
-                <div style={{
-                    background: 'rgba(6, 182, 212, 0.1)',
-                    color: 'white',
-                    padding: '0.75rem 1rem',
+                <div className="glass-panel" style={{
+                    padding: '0.85rem 1.25rem',
                     marginBottom: '1rem',
-                    borderRadius: '4px',
+                    borderRadius: '16px',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center'
                 }}>
-                    <h2 style={{ fontSize: '1.2rem', margin: 0, fontWeight: 600 }}>Session {dayNum}</h2>
+                    <h2 style={{ fontSize: '1.2rem', margin: 0, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--foreground)' }}>Session {dayNum}</h2>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         {/* Unit toggle */}
                         <div style={{
@@ -915,9 +913,11 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                 bottom: 0,
                 left: 0,
                 width: '100%',
-                background: 'var(--background)',
-                borderTop: '1px solid var(--card-border)',
-                padding: '1rem',
+                background: 'var(--glass-surface-2)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+                borderTop: '1px solid var(--glass-border)',
+                padding: '1rem 1.25rem calc(1rem + env(safe-area-inset-bottom, 0px))',
                 zIndex: 100,
                 display: 'flex',
                 flexDirection: 'column',
@@ -926,16 +926,13 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
             }}>
                 <button
                     onClick={() => router.push(`/athlete/${athleteId}/dashboard`)}
+                    className="glass-button glass-button-primary chat-press"
                     style={{
-                        background: 'rgba(6, 182, 212, 0.1)',
-                        color: 'white',
-                        border: 'none',
-                        padding: '1rem',
-                        borderRadius: '4px',
-                        fontWeight: 600,
+                        padding: '0.875rem 1.5rem',
+                        borderRadius: '14px',
+                        fontWeight: 700,
                         width: '100%',
-                        cursor: 'pointer',
-                        fontSize: '1rem'
+                        fontSize: '1rem',
                     }}
                 >
                     Finish Session
@@ -945,23 +942,19 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                 {weekSessions.length > 0 && (
                     <button
                         onClick={() => setWeekDrawerOpen(true)}
+                        className="glass-button chat-press"
                         style={{
-                            background: '#3B82F6',
                             color: 'white',
-                            border: 'none',
                             width: '56px',
-                            height: '36px',
+                            height: '34px',
                             borderRadius: '12px',
-                            cursor: 'pointer',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            fontSize: '1.2rem',
-                            boxShadow: '0 2px 8px rgba(59, 130, 246, 0.4)',
-                            transition: 'transform 0.15s ease'
+                            padding: 0,
                         }}
                     >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="18 15 12 9 6 15" />
                         </svg>
                     </button>
