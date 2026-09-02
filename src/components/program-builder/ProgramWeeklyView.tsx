@@ -664,6 +664,49 @@ export default function ProgramWeeklyView({
                         tgtSession.day = sourceDayNum;
                         if (targetDateStr) srcSession.scheduledDate = targetDateStr;
                         if (sourceDateStr) tgtSession.scheduledDate = sourceDateStr;
+
+                        // Auto change session names so the session moved to sourceDayNum takes sourceDayNum's name
+                        // and the session moved to targetDayNum takes targetDayNum's name
+                        const prevSrcName = srcSession.name;
+                        const prevTgtName = tgtSession.name;
+                        srcSession.name = prevTgtName;
+                        tgtSession.name = prevSrcName;
+                    }
+                }
+
+                // Auto-normalize session numbering in chronological day order (e.g. Session 1, Session 2, Session 3...)
+                const sessionNumRegex = /^Session(\s+\d+)?$/i;
+                const blockDRegex = /^(Block\s+\d+\s*\/\s*D)\d+$/i;
+                const bDRegex = /^(B\d+D)\d+$/i;
+
+                const populated = currentWeekSessions.filter((s: any) =>
+                    (Array.isArray(s.exercises) && s.exercises.length > 0) || Boolean(s.warmupDrills?.trim())
+                );
+
+                if (populated.length > 0) {
+                    if (populated.every((s: any) => !s.name || sessionNumRegex.test(String(s.name).trim()))) {
+                        const sorted = [...currentWeekSessions].sort((a: any, b: any) => Number(a.day || 0) - Number(b.day || 0));
+                        sorted.forEach((s: any, idx: number) => {
+                            s.name = `Session ${idx + 1}`;
+                        });
+                    } else if (populated.every((s: any) => blockDRegex.test(String(s.name || '').trim()))) {
+                        const match = populated[0].name.match(blockDRegex);
+                        if (match) {
+                            const prefix = match[1];
+                            const sorted = [...currentWeekSessions].sort((a: any, b: any) => Number(a.day || 0) - Number(b.day || 0));
+                            sorted.forEach((s: any, idx: number) => {
+                                s.name = `${prefix}${idx + 1}`;
+                            });
+                        }
+                    } else if (populated.every((s: any) => bDRegex.test(String(s.name || '').trim()))) {
+                        const match = populated[0].name.match(bDRegex);
+                        if (match) {
+                            const prefix = match[1];
+                            const sorted = [...currentWeekSessions].sort((a: any, b: any) => Number(a.day || 0) - Number(b.day || 0));
+                            sorted.forEach((s: any, idx: number) => {
+                                s.name = `${prefix}${idx + 1}`;
+                            });
+                        }
                     }
                 }
 
