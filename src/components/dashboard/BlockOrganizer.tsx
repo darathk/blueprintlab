@@ -620,9 +620,9 @@ export default function PeriodizationPlanner({ athlete }) {
 
                         ))}
                     </div>
-                    <div className="planner-actions" style={{ marginTop: '2rem', display: 'flex', gap: '1rem', borderTop: '1px solid var(--card-border)', paddingTop: '1.5rem' }}>
-                        <button onClick={() => addBlock('Development')} className="btn btn-secondary">+ Add Segment</button>
-                        <button onClick={handleSave} className="btn btn-primary" style={{ marginLeft: 'auto' }}>Save Configuration</button>
+                    <div className="planner-actions" style={{ marginTop: '2rem', display: 'flex', gap: '1rem', borderTop: '1px solid var(--glass-border)', paddingTop: '1.5rem' }}>
+                        <button onClick={() => addBlock('Development')} className="glass-button chat-press" style={{ padding: '0.6rem 1.25rem', borderRadius: 12 }}>+ Add Segment</button>
+                        <button onClick={handleSave} className="glass-button glass-button-primary chat-press" style={{ marginLeft: 'auto', padding: '0.6rem 1.5rem', borderRadius: 12, fontWeight: 700 }}>Save Configuration</button>
                     </div>
                 </div>
             )}

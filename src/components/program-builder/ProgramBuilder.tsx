@@ -2421,7 +2421,7 @@ export default function ProgramBuilder({
                             >
                                 <Trash2 size={16} />
                             </button>
-                            <button onClick={closeEditor} className="btn btn-primary" style={{ marginLeft: '0.5rem' }}>Done</button>
+                            <button onClick={closeEditor} className="glass-button glass-button-primary chat-press" style={{ marginLeft: '0.5rem', padding: '0.4rem 1.1rem', borderRadius: 10, fontWeight: 700, fontSize: '0.85rem' }}>Done</button>
                         </div>
                     </div>
 
@@ -2667,8 +2667,8 @@ export default function ProgramBuilder({
                         </div>
                         <button
                             onClick={() => setReferenceSession(null)}
-                            className="btn btn-secondary"
-                            style={{ marginLeft: '1rem', flexShrink: 0 }}
+                            className="glass-button chat-press"
+                            style={{ marginLeft: '1rem', flexShrink: 0, padding: '0.4rem 1rem', borderRadius: 10, fontSize: '0.85rem' }}
                         >
                             Close
                         </button>
@@ -3042,9 +3042,10 @@ export default function ProgramBuilder({
                                 <button
                                     onClick={addNote}
                                     disabled={notesSaving || !newNoteContent.trim()}
-                                    className="btn btn-primary"
+                                    className="glass-button glass-button-primary chat-press"
                                     style={{
-                                        fontSize: '0.8rem', padding: '0.4rem 1rem', flexShrink: 0,
+                                        fontSize: '0.8rem', padding: '0.4rem 1.1rem', flexShrink: 0,
+                                        borderRadius: 10, fontWeight: 700,
                                         opacity: notesSaving || !newNoteContent.trim() ? 0.5 : 1,
                                         cursor: notesSaving || !newNoteContent.trim() ? 'not-allowed' : 'pointer',
                                     }}
@@ -3304,17 +3305,17 @@ export default function ProgramBuilder({
                         </div>
                         <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
                             <button
-                                className="btn btn-secondary"
+                                className="glass-button chat-press"
                                 onClick={() => { setDuplicateSource(null); setDuplicateTargetDate(''); }}
-                                style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}
+                                style={{ padding: '0.4rem 1rem', fontSize: '0.85rem', borderRadius: 10 }}
                             >
                                 Cancel
                             </button>
                             <button
-                                className="btn btn-primary"
+                                className="glass-button glass-button-primary chat-press"
                                 disabled={!duplicateTargetDate}
                                 onClick={() => duplicateSessionToDate(duplicateSource.weekIndex, duplicateSource.sessionIndex, duplicateTargetDate)}
-                                style={{ padding: '0.4rem 1rem', fontSize: '0.85rem' }}
+                                style={{ padding: '0.4rem 1.25rem', fontSize: '0.85rem', borderRadius: 10, fontWeight: 700 }}
                             >
                                 Duplicate
                             </button>
@@ -3329,10 +3330,11 @@ export default function ProgramBuilder({
                     key={toast.key}
                     style={{
                         position: 'fixed', bottom: '2rem', left: '50%', transform: 'translateX(-50%)',
-                        background: 'var(--card-bg)', border: '1px solid var(--primary)',
-                        borderRadius: '8px', padding: '10px 20px', zIndex: 1200,
+                        background: 'var(--glass-surface-3)', border: '1px solid var(--glass-border)',
+                        backdropFilter: 'blur(20px)',
+                        borderRadius: '12px', padding: '10px 20px', zIndex: 1200,
                         display: 'flex', alignItems: 'center', gap: '8px',
-                        boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+                        boxShadow: 'var(--glass-specular), 0 8px 32px rgba(0,0,0,0.5)',
                         animation: 'toast-in 0.2s ease-out',
                         fontSize: '0.9rem', fontWeight: 500, color: 'var(--foreground)',
                     }}
@@ -3347,15 +3349,16 @@ export default function ProgramBuilder({
             {progressionSession && (
                 <div
                     style={{
-                        position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.88)',
+                        position: 'fixed', inset: 0, background: 'rgba(9, 9, 15, 0.88)',
+                        backdropFilter: 'blur(24px)',
                         zIndex: 1100, display: 'flex', flexDirection: 'column',
                     }}
                     onClick={(e) => { if (e.target === e.currentTarget) setProgressionSession(null); }}
                 >
                     <div style={{
                         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                        padding: '1rem 1.5rem', borderBottom: '1px solid var(--card-border)',
-                        background: 'var(--card-bg)', flexShrink: 0,
+                        padding: '1rem 1.5rem', borderBottom: '1px solid var(--glass-border)',
+                        background: 'var(--glass-surface-2)', flexShrink: 0,
                     }}>
                         <div>
                             <div style={{ fontSize: '0.7rem', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 2 }}>
@@ -3366,7 +3369,7 @@ export default function ProgramBuilder({
                                 Edit weight, reps & RPE across every week. Scroll horizontally →
                             </div>
                         </div>
-                        <button onClick={() => setProgressionSession(null)} className="btn btn-primary">Done</button>
+                        <button onClick={() => setProgressionSession(null)} className="glass-button glass-button-primary chat-press" style={{ padding: '0.5rem 1.25rem', borderRadius: 10, fontWeight: 700 }}>Done</button>
                     </div>
 
                     <div style={{ flex: 1, overflow: 'auto', padding: '1.5rem', background: 'var(--background)' }}>

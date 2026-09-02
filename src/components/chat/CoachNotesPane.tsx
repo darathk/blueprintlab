@@ -103,8 +103,9 @@ export default function CoachNotesPane({ athleteId, onClose, athleteName }: Coac
         }}>
             {/* Panel header */}
             <div style={{
-                padding: '1rem 1.25rem', borderBottom: '1px solid var(--card-border)',
+                padding: '1rem 1.25rem', borderBottom: '1px solid var(--glass-border)',
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0,
+                background: 'var(--glass-surface-2)'
             }}>
                 <div>
                     <div style={{ fontWeight: 700, fontSize: '1rem', color: 'var(--foreground)' }}>
@@ -119,9 +120,10 @@ export default function CoachNotesPane({ athleteId, onClose, athleteName }: Coac
                 <button
                     onClick={onClose}
                     title="Close"
-                    style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center' }}
+                    className="glass-button chat-press"
+                    style={{ width: 28, height: 28, borderRadius: '50%', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--secondary-foreground)' }}
                 >
-                    <X size={16} />
+                    <X size={14} />
                 </button>
             </div>
 
@@ -140,10 +142,9 @@ export default function CoachNotesPane({ athleteId, onClose, athleteName }: Coac
                         {sortedNotes.map(note => {
                             const cat = NOTE_CATEGORIES.find(c => c.value === note.category) || NOTE_CATEGORIES[0];
                             return (
-                                <div key={note.id} style={{
-                                    background: 'var(--card-bg)', border: `1px solid var(--card-border)`,
+                                <div key={note.id} className="glass-panel" style={{
                                     borderLeft: `3px solid ${cat.color}`,
-                                    borderRadius: 'var(--radius)', padding: '0.75rem',
+                                    borderRadius: 12, padding: '0.75rem',
                                     position: 'relative',
                                 }}>
                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 8, marginBottom: '0.4rem' }}>
@@ -186,7 +187,7 @@ export default function CoachNotesPane({ athleteId, onClose, athleteName }: Coac
                                     <div style={{ fontSize: '0.85rem', color: 'var(--foreground)', lineHeight: 1.5, whiteSpace: 'pre-wrap', wordBreak: 'break-word' }}>
                                         {note.content}
                                     </div>
-                                    <div style={{ fontSize: '0.7rem', color: 'rgba(255,255,255,0.25)', marginTop: '0.4rem' }}>
+                                    <div style={{ fontSize: '0.7rem', color: 'var(--secondary-foreground)', marginTop: '0.4rem', opacity: 0.6 }}>
                                         {fmtNoteDate(note.updatedAt)}
                                     </div>
                                 </div>
@@ -198,43 +199,44 @@ export default function CoachNotesPane({ athleteId, onClose, athleteName }: Coac
 
             {/* Quick-add form */}
             <div style={{
-                padding: '1rem', borderTop: '1px solid var(--card-border)', flexShrink: 0,
-                background: 'rgba(125,135,210,0.04)',
+                padding: '1rem', borderTop: '1px solid var(--glass-border)', flexShrink: 0,
+                background: 'var(--glass-surface-2)',
             }}>
                 <textarea
                     value={newNoteContent}
                     onChange={e => setNewNoteContent(e.target.value)}
                     placeholder="Add a note..."
                     onKeyDown={e => { if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) addNote(); }}
+                    className="glass-input"
                     style={{
-                        width: '100%', background: 'var(--card-bg)', border: '1px solid var(--card-border)',
-                        borderRadius: 'var(--radius)', color: 'var(--foreground)', fontSize: '0.85rem',
-                        padding: '0.6rem 0.75rem', resize: 'none', minHeight: 72, outline: 'none',
+                        width: '100%',
+                        borderRadius: 10, fontSize: '0.85rem',
+                        padding: '0.6rem 0.75rem', resize: 'none', minHeight: 72,
                         boxSizing: 'border-box',
                     }}
-                    onFocus={e => (e.target.style.borderColor = 'var(--primary)')}
-                    onBlur={e => (e.target.style.borderColor = 'var(--card-border)')}
                 />
                 <div style={{ display: 'flex', gap: 8, marginTop: 8, alignItems: 'center' }}>
                     <select
                         value={newNoteCategory}
                         onChange={e => setNewNoteCategory(e.target.value)}
+                        className="glass-input"
                         style={{
-                            flex: 1, background: 'var(--card-bg)', border: '1px solid var(--card-border)',
-                            borderRadius: 'var(--radius)', color: 'var(--foreground)', fontSize: '0.8rem',
-                            padding: '0.4rem 0.6rem', outline: 'none',
+                            flex: 1,
+                            borderRadius: 10, fontSize: '0.8rem',
+                            padding: '0.4rem 0.6rem',
                         }}
                     >
                         {NOTE_CATEGORIES.map(c => (
-                            <option key={c.value} value={c.value}>{c.label}</option>
+                            <option key={c.value} value={c.value} style={{ background: '#181824' }}>{c.label}</option>
                         ))}
                     </select>
                     <button
                         onClick={addNote}
                         disabled={notesSaving || !newNoteContent.trim()}
-                        className="btn btn-primary"
+                        className="glass-button glass-button-primary chat-press"
                         style={{
-                            fontSize: '0.8rem', padding: '0.4rem 1rem', flexShrink: 0,
+                            fontSize: '0.8rem', padding: '0.4rem 1.1rem', flexShrink: 0,
+                            borderRadius: 10, fontWeight: 700,
                             opacity: notesSaving || !newNoteContent.trim() ? 0.5 : 1,
                             cursor: notesSaving || !newNoteContent.trim() ? 'not-allowed' : 'pointer',
                         }}

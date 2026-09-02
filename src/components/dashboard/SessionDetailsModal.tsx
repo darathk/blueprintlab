@@ -333,9 +333,9 @@ export default function SessionDetailsModal({ session, programName, programId, s
                 </div>
 
                 {/* Footer Actions */}
-                <div style={{ borderTop: '1px solid var(--card-border)', padding: '1rem', textAlign: 'right', background: 'var(--card-bg)', position: 'sticky', bottom: 0 }}>
-                    <button className="btn btn-secondary" onClick={onClose} style={{ marginRight: '1rem' }}>Cancel</button>
-                    <button className="btn btn-primary" onClick={handleSave}>Complete Workout</button>
+                <div style={{ borderTop: '1px solid var(--glass-border)', padding: '1.25rem 1.5rem', textAlign: 'right', background: 'var(--glass-surface-2)', position: 'sticky', bottom: 0, display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+                    <button className="glass-button chat-press" onClick={onClose} style={{ padding: '0.6rem 1.25rem', borderRadius: 12 }}>Cancel</button>
+                    <button className="glass-button glass-button-primary chat-press" onClick={handleSave} style={{ padding: '0.6rem 1.5rem', borderRadius: 12, fontWeight: 700 }}>Complete Workout</button>
                 </div>
 
             </div>

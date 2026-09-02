@@ -201,11 +201,11 @@ export default function BlockReviewPanel({ athleteId, coachId, existingPrograms,
                                 <label style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                     Block Notes & Takeaways
                                 </label>
-                                {saveStatus === 'saved' && <span style={{ fontSize: '0.75rem', color: '#10b981' }}>Saved!</span>}
-                                {saveStatus === 'error' && <span style={{ fontSize: '0.75rem', color: '#ef4444' }}>Error saving</span>}
+                                {saveStatus === 'saved' && <span style={{ fontSize: '0.75rem', color: '#10b981', fontWeight: 600 }}>Saved!</span>}
+                                {saveStatus === 'error' && <span style={{ fontSize: '0.75rem', color: '#ef4444', fontWeight: 600 }}>Error saving</span>}
                             </div>
                             <textarea
-                                className="input"
+                                className="glass-input"
                                 placeholder="What worked? What should change for the next block? (e.g. 'Responded well to 3x squat frequency, keep bench RPE under 9')"
                                 value={notes}
                                 onChange={e => {
@@ -213,7 +213,7 @@ export default function BlockReviewPanel({ athleteId, coachId, existingPrograms,
                                     if (saveStatus !== 'idle') setSaveStatus('idle');
                                 }}
                                 onBlur={handleSaveNote}
-                                style={{ width: '100%', height: '100px', resize: 'vertical', fontSize: '0.85rem', padding: '0.75rem' }}
+                                style={{ width: '100%', height: '100px', resize: 'vertical', fontSize: '0.85rem', padding: '0.75rem', boxSizing: 'border-box' }}
                             />
                         </div>
 
@@ -221,11 +221,11 @@ export default function BlockReviewPanel({ athleteId, coachId, existingPrograms,
                             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--secondary-foreground)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                 Comp Lifts Progression (E1RM)
                             </label>
-                            <div style={{ minHeight: '200px', height: 'auto', background: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--card-border)', overflow: 'hidden' }}>
+                            <div style={{ minHeight: '200px', height: 'auto', overflow: 'hidden' }}>
                                 {programLogs.length > 0 ? (
                                     <BlockImprovements logs={programLogs} dateRange="all" programs={existingPrograms} />
                                 ) : (
-                                    <div style={{ height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--secondary-foreground)', fontSize: '0.85rem' }}>
+                                    <div className="glass-panel" style={{ height: '160px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--secondary-foreground)', fontSize: '0.85rem', borderRadius: 12 }}>
                                         No logs available for this block.
                                     </div>
                                 )}
@@ -236,7 +236,7 @@ export default function BlockReviewPanel({ athleteId, coachId, existingPrograms,
                             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--secondary-foreground)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                 Comp Stats
                             </label>
-                            <div style={{ background: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--card-border)', overflow: 'hidden' }}>
+                            <div style={{ overflow: 'hidden' }}>
                                 <CompStats logs={programLogs} programs={existingPrograms} />
                             </div>
                         </div>
@@ -245,7 +245,7 @@ export default function BlockReviewPanel({ athleteId, coachId, existingPrograms,
                             <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--secondary-foreground)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                 Rep Heatmap (Volume Distribution)
                             </label>
-                            <div style={{ background: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--card-border)', overflow: 'hidden' }}>
+                            <div style={{ overflow: 'hidden' }}>
                                 <LiftDensity logs={programLogs} />
                             </div>
                         </div>
@@ -255,8 +255,8 @@ export default function BlockReviewPanel({ athleteId, coachId, existingPrograms,
                                 href={`/dashboard/athletes/${athleteId}/reports`}
                                 target="_blank"
                                 rel="noreferrer"
-                                className="btn btn-secondary"
-                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}
+                                className="glass-button chat-press"
+                                style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', padding: '8px 18px', borderRadius: '12px', textDecoration: 'none' }}
                             >
                                 Open Full Report <ExternalLink size={14} />
                             </a>
@@ -283,10 +283,10 @@ export default function BlockReviewPanel({ athleteId, coachId, existingPrograms,
                                 <div style={{ fontSize: '0.85rem', color: 'var(--secondary-foreground)' }}>No reports found. Generate one in the Analytics tab.</div>
                             ) : (
                                 <select 
-                                    className="input" 
+                                    className="glass-input" 
                                     value={selectedReportId} 
                                     onChange={e => setSelectedReportId(e.target.value)}
-                                    style={{ width: '100%', padding: '0.5rem', fontSize: '0.85rem' }}
+                                    style={{ width: '100%', padding: '0.5rem 0.75rem', fontSize: '0.85rem' }}
                                 >
                                     {reports.map(r => (
                                         <option key={r.id} value={r.id}>{r.name} ({new Date(r.created).toLocaleDateString()})</option>
@@ -320,10 +320,10 @@ export default function BlockReviewPanel({ athleteId, coachId, existingPrograms,
 
                             return (
                                 <div style={{ marginTop: '1rem' }}>
-                                    <h4 style={{ fontSize: '1.1rem', fontWeight: 600, marginBottom: '1rem', color: 'var(--foreground)' }}>{report.name}</h4>
+                                    <h4 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '1rem', color: 'var(--foreground)' }}>{report.name}</h4>
                                     
                                     {report.type === 'Meta Block Review' ? (
-                                        <div style={{ overflowX: 'auto', background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '8px' }}>
+                                        <div style={{ overflowX: 'auto' }}>
                                             <MetaBlockReview
                                                 programs={existingPrograms}
                                                 logs={filtered}
@@ -332,13 +332,13 @@ export default function BlockReviewPanel({ athleteId, coachId, existingPrograms,
                                         </div>
                                     ) : (
                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                                            <div style={{ minHeight: '200px', height: 'auto', background: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--card-border)', overflow: 'hidden' }}>
+                                            <div style={{ minHeight: '200px', height: 'auto', overflow: 'hidden' }}>
                                                 <BlockImprovements logs={filtered} dateRange={report.parameters.dateRange} programs={existingPrograms} />
                                             </div>
-                                            <div style={{ background: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--card-border)', overflow: 'hidden' }}>
+                                            <div style={{ overflow: 'hidden' }}>
                                                 <CompStats logs={filtered} programs={existingPrograms} />
                                             </div>
-                                            <div style={{ background: 'var(--card-bg)', borderRadius: '8px', border: '1px solid var(--card-border)', overflow: 'hidden' }}>
+                                            <div style={{ overflow: 'hidden' }}>
                                                 <LiftDensity logs={filtered} />
                                             </div>
                                         </div>
@@ -349,8 +349,8 @@ export default function BlockReviewPanel({ athleteId, coachId, existingPrograms,
                                             href={`/dashboard/athletes/${athleteId}/reports/${report.id}`}
                                             target="_blank"
                                             rel="noreferrer"
-                                            className="btn btn-secondary"
-                                            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem' }}
+                                            className="glass-button chat-press"
+                                            style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.85rem', padding: '8px 18px', borderRadius: '12px', textDecoration: 'none' }}
                                         >
                                             View Full Screen <ExternalLink size={14} />
                                         </a>

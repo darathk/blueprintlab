@@ -420,20 +420,24 @@ export default function CompetitionLiftHeatMap({ blocks, logs, primaryLift }) {
                 return (
                 <div style={{
                     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                    background: 'rgba(5, 10, 20, 0.8)', zIndex: 1000,
+                    background: 'rgba(9, 9, 15, 0.85)', zIndex: 1000,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    backdropFilter: 'blur(8px)'
+                    backdropFilter: 'blur(24px)', padding: '1rem'
                 }} onClick={() => { setSelectedCell(null); setExpandedBlockId(null); }}>
-                    <div className="solid-panel" style={{
-                        padding: '2rem', borderRadius: '12px',
-                        width: '650px', maxWidth: '90vw', maxHeight: '85vh', border: '1px solid var(--primary)',
+                    <div className="glass-panel-modal" style={{
+                        padding: '2rem', borderRadius: 20,
+                        width: '680px', maxWidth: '95vw', maxHeight: '85vh',
                         display: 'flex', flexDirection: 'column'
                     }} onClick={e => e.stopPropagation()}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', borderBottom: '1px solid var(--card-border)', paddingBottom: '1rem', flexShrink: 0 }}>
-                            <h3 style={{ margin: 0, fontSize: '1.25rem', color: 'var(--foreground)' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem', flexShrink: 0 }}>
+                            <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 700, color: 'var(--foreground)' }}>
                                 <span style={{ color: 'var(--primary)' }}>{selectedCell.reps}</span> Reps @ <span style={{ color: 'var(--accent)' }}>RPE {selectedCell.rpe}</span>
                             </h3>
-                            <button onClick={() => { setSelectedCell(null); setExpandedBlockId(null); }} style={{ background: 'transparent', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', fontSize: '1.5rem', lineHeight: 0.5 }}>&times;</button>
+                            <button
+                                onClick={() => { setSelectedCell(null); setExpandedBlockId(null); }}
+                                className="glass-button chat-press"
+                                style={{ width: 32, height: 32, borderRadius: '50%', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem', color: 'var(--secondary-foreground)' }}
+                            >&times;</button>
                         </div>
 
                         <div style={{ marginBottom: '1.5rem', fontSize: '1rem', color: 'var(--muted)', flexShrink: 0 }}>
@@ -591,7 +595,7 @@ export default function CompetitionLiftHeatMap({ blocks, logs, primaryLift }) {
                         </div>
 
                         <div style={{ marginTop: '1.5rem', textAlign: 'right', flexShrink: 0 }}>
-                            <button className="btn btn-primary" onClick={() => { setSelectedCell(null); setExpandedBlockId(null); }}>Close Data</button>
+                            <button className="glass-button glass-button-primary chat-press" onClick={() => { setSelectedCell(null); setExpandedBlockId(null); }} style={{ padding: '0.6rem 1.5rem', borderRadius: 12, fontWeight: 700 }}>Close Data</button>
                         </div>
                     </div>
                 </div>

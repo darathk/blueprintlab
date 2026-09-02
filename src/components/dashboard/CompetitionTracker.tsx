@@ -62,40 +62,42 @@ export default function CompetitionTracker({ athlete }) {
             <div style={{ position: 'absolute', top: '-50px', right: '-50px', width: '200px', height: '200px', background: 'radial-gradient(circle, rgba(6, 182, 212, 0.1) 0%, transparent 70%)', pointerEvents: 'none' }}></div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', position: 'relative' }}>
-                <h2 style={{ fontSize: '1.25rem', color: 'var(--primary)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }} className="neon-text">
-                    <span>🛸</span> Target Coordinates
+                <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--foreground)', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ color: 'var(--primary)', textShadow: '0 0 16px rgba(125, 135, 210, 0.4)' }}>///</span> Target Coordinates
                 </h2>
                 <button
                     onClick={() => setIsEditing(!isEditing)}
-                    className="btn btn-secondary"
-                    style={{ fontSize: '0.8rem', padding: '0.4rem 1rem' }}
+                    className="glass-button chat-press"
+                    style={{ fontSize: '0.8rem', padding: '0.4rem 1rem', borderRadius: 12 }}
                 >
                     {isEditing ? 'Cancel' : 'Calibrate Target'}
                 </button>
             </div>
 
             {isEditing ? (
-                <div className="competition-edit-grid" style={{ display: 'grid', gap: '1.5rem', gridTemplateColumns: '1fr 1fr auto', alignItems: 'end', background: 'rgba(0,0,0,0.2)', padding: '1.5rem', borderRadius: '8px', border: '1px solid var(--card-border)' }}>
+                <div className="competition-edit-grid" style={{ display: 'grid', gap: '1.5rem', gridTemplateColumns: '1fr 1fr auto', alignItems: 'end', background: 'var(--glass-surface-2)', padding: '1.5rem', borderRadius: '16px', border: '1px solid var(--glass-border)' }}>
                     <div>
-                        <label className="label">Mission Name (Meet)</label>
+                        <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--secondary-foreground)', marginBottom: '6px' }}>Mission Name (Meet)</label>
                         <input
-                            className="input"
+                            className="glass-input"
                             placeholder="e.g. Galactic Championships"
                             value={meetName}
                             onChange={(e) => setMeetName(e.target.value)}
                         />
                     </div>
                     <div>
-                        <label className="label">Launch Date</label>
+                        <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--secondary-foreground)', marginBottom: '6px' }}>Launch Date</label>
                         <input
-                            className="input"
+                            className="glass-input"
                             type="date"
                             value={meetDate}
                             onChange={(e) => setMeetDate(e.target.value)}
                             style={{ colorScheme: 'dark' }}
                         />
                     </div>
-                    <button className="btn btn-primary" onClick={handleSave}>Lock Coordinates</button>
+                    <button className="glass-button glass-button-primary chat-press" onClick={handleSave} style={{ padding: '0.6rem 1.25rem', borderRadius: 12, fontWeight: 700 }}>
+                        Lock Coordinates
+                    </button>
                 </div>
             ) : (
                 <>

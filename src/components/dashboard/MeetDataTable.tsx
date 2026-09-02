@@ -485,13 +485,13 @@ export default function MeetDataTable({ athletes, coachId }: Props) {
                 <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap' }}>
                     <button
                         onClick={() => setShowAddForm(!showAddForm)}
-                        className="btn btn-secondary"
-                        style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem' }}
+                        className="glass-button chat-press"
+                        style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.85rem', padding: '0.6rem 1.1rem', borderRadius: 12 }}
                     >
                         {showAddForm ? <X size={16} /> : <Plus size={16} />}
                         {showAddForm ? 'Cancel' : 'Add Entry'}
                     </button>
-                    <label className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', fontSize: '0.85rem' }}>
+                    <label className="glass-button glass-button-primary chat-press" style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', fontSize: '0.85rem', padding: '0.6rem 1.25rem', borderRadius: 12, fontWeight: 700 }}>
                         <Upload size={16} />
                         {importing ? 'Importing...' : 'Import LiftingCast CSV'}
                         <input type="file" accept=".csv" onChange={handleLiftingCastImport} style={{ display: 'none' }} disabled={importing} />
@@ -606,15 +606,15 @@ export default function MeetDataTable({ athletes, coachId }: Props) {
                         })}
                     </div>
 
-                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-                        <button onClick={handleAdd} className="btn btn-primary">Add Meet Entry</button>
+                    <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.25rem' }}>
+                        <button onClick={handleAdd} className="glass-button glass-button-primary chat-press" style={{ padding: '0.6rem 1.5rem', borderRadius: 12, fontWeight: 700 }}>Add Meet Entry</button>
                     </div>
                 </div>
             )}
 
             {/* Chart Section — Attempt Success by Lift */}
             {entries.length > 0 && (
-                <div style={{ marginBottom: '1.5rem', background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: '0.75rem', padding: '1.25rem' }}>
+                <div className="glass-panel" style={{ marginBottom: '1.5rem', borderRadius: 16, padding: '1.5rem' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                         <label style={{ fontSize: '0.85rem', color: 'var(--secondary-foreground)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Attempt Success Rate by Lift</label>
                         <div style={{ display: 'flex', gap: '1rem', fontSize: '0.7rem', color: '#cbd5e1' }}>

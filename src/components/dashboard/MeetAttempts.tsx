@@ -1194,7 +1194,7 @@ export default function MeetAttempts({
                     <button
                         onClick={saveToMeetHistory}
                         disabled={savingHistory}
-                        className="btn btn-primary"
+                        className="glass-button glass-button-primary chat-press"
                         style={{
                             width: '100%',
                             padding: '14px',

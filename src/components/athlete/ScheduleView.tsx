@@ -808,8 +808,8 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                             <div style={{ marginTop: '1.5rem', display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                                 <button 
                                     onClick={() => setViewMode('blocks')}
-                                    className="btn btn-secondary"
-                                    style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}
+                                    className="glass-button chat-press"
+                                    style={{ fontSize: '0.85rem', padding: '0.5rem 1.25rem', borderRadius: 12 }}
                                 >
                                     View Full Block
                                 </button>
@@ -819,8 +819,8 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                         return (
                                             <button 
                                                 onClick={() => setSelectedDate(nextDates[0])}
-                                                className="btn btn-primary"
-                                                style={{ fontSize: '0.85rem', padding: '0.5rem 1rem' }}
+                                                className="glass-button glass-button-primary chat-press"
+                                                style={{ fontSize: '0.85rem', padding: '0.5rem 1.25rem', borderRadius: 12, fontWeight: 700 }}
                                             >
                                                 Next Session
                                             </button>

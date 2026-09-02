@@ -101,8 +101,8 @@ export default function ReadinessForm({ onSubmit, onCancel }) {
 
     return (
         <div style={{ padding: '1.5rem', maxWidth: '800px' }}>
-            <h2 style={{ fontSize: '1.5rem', marginBottom: '1.5rem', color: 'var(--primary)', borderBottom: '1px solid var(--card-border)', paddingBottom: '1rem' }}>
-                Daily Readiness Check
+            <h2 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '1.5rem', color: 'var(--foreground)', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem' }}>
+                Daily Readiness <span style={{ color: 'var(--primary)' }}>Check</span>
             </h2>
 
             <div style={{ display: 'grid', gap: '2rem' }}>
@@ -112,7 +112,7 @@ export default function ReadinessForm({ onSubmit, onCancel }) {
                     return (
                         <div key={q.id}>
                             <div style={{ marginBottom: '0.75rem', display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-                                <span style={{ fontWeight: 600, fontSize: '1.1rem' }}>{q.label}</span>
+                                <span style={{ fontWeight: 600, fontSize: '1.05rem', color: 'var(--foreground)' }}>{q.label}</span>
                                 <span style={{ fontSize: '0.85rem', color: 'var(--secondary-foreground)' }}>{q.description}</span>
                             </div>
 
@@ -123,21 +123,23 @@ export default function ReadinessForm({ onSubmit, onCancel }) {
                                         <button
                                             key={opt.value}
                                             onClick={() => handleSelect(q.id, opt.value)}
+                                            className="chat-press"
                                             style={{
-                                                background: isSelected ? opt.color : 'rgba(255,255,255,0.03)',
-                                                border: isSelected ? `1px solid ${opt.color}` : '1px solid var(--card-border)',
-                                                borderRadius: '6px',
-                                                padding: '0.5rem',
-                                                color: isSelected ? 'black' : 'var(--foreground)',
+                                                background: isSelected ? opt.color : 'var(--glass-surface-2)',
+                                                border: isSelected ? `1px solid ${opt.color}` : '1px solid var(--glass-border)',
+                                                borderRadius: '12px',
+                                                padding: '0.6rem 0.4rem',
+                                                color: isSelected ? '#000000' : 'var(--foreground)',
                                                 cursor: 'pointer',
-                                                transition: 'all 0.2s',
+                                                transition: 'all 0.16s var(--ease-out)',
                                                 textAlign: 'center',
-                                                opacity: (scores[q.id] && !isSelected) ? 0.5 : 1
+                                                opacity: (scores[q.id] && !isSelected) ? 0.45 : 1,
+                                                boxShadow: isSelected ? `0 0 12px ${opt.color}66` : 'none'
                                             }}
                                             title={opt.desc}
                                         >
                                             <div style={{ fontSize: '0.8rem', fontWeight: 700 }}>{opt.label}</div>
-                                            {isSelected && <div style={{ fontSize: '0.65rem', marginTop: '2px', fontWeight: 500 }}>{opt.desc}</div>}
+                                            {isSelected && <div style={{ fontSize: '0.65rem', marginTop: '2px', fontWeight: 600 }}>{opt.desc}</div>}
                                         </button>
                                     );
                                 })}
@@ -147,13 +149,13 @@ export default function ReadinessForm({ onSubmit, onCancel }) {
                 })}
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '1rem', marginTop: '2rem', borderTop: '1px solid var(--card-border)', paddingTop: '1.5rem' }}>
-                <button onClick={onCancel} className="btn btn-secondary">Cancel</button>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', marginTop: '2rem', borderTop: '1px solid var(--glass-border)', paddingTop: '1.5rem' }}>
+                <button onClick={onCancel} className="glass-button chat-press" style={{ padding: '0.6rem 1.25rem', borderRadius: 12 }}>Cancel</button>
                 <button
                     onClick={handleSubmit}
-                    className="btn btn-primary"
+                    className="glass-button glass-button-primary chat-press"
                     disabled={!isComplete}
-                    style={{ opacity: isComplete ? 1 : 0.5 }}
+                    style={{ padding: '0.6rem 1.5rem', borderRadius: 12, fontWeight: 700, opacity: isComplete ? 1 : 0.5 }}
                 >
                     Submit & Start Workout
                 </button>

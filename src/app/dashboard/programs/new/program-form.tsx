@@ -227,23 +227,23 @@ export default function ProgramForm() {
                                 </table>
                             </div>
 
-                            <button type="button" onClick={() => addExercise(wIndex, sIndex)} className="btn btn-secondary" style={{ fontSize: '0.8rem' }}>
+                            <button type="button" onClick={() => addExercise(wIndex, sIndex)} className="glass-button chat-press" style={{ fontSize: '0.8rem', padding: '0.4rem 0.9rem', borderRadius: 10 }}>
                                 + Add Exercise
                             </button>
                         </div>
                     ))}
 
-                    <button type="button" onClick={() => addSession(wIndex)} className="btn btn-secondary" style={{ marginLeft: '1rem' }}>
+                    <button type="button" onClick={() => addSession(wIndex)} className="glass-button chat-press" style={{ marginLeft: '1rem', fontSize: '0.85rem', padding: '0.5rem 1.1rem', borderRadius: 12 }}>
                         + Add Session to Week {week.weekNumber}
                     </button>
                 </div>
             ))}
 
             <div style={{ display: 'flex', gap: '1rem', marginTop: '2rem' }}>
-                <button type="button" onClick={addWeek} className="btn btn-secondary">
+                <button type="button" onClick={addWeek} className="glass-button chat-press" style={{ padding: '0.6rem 1.25rem', borderRadius: 12 }}>
                     + Add Week
                 </button>
-                <button type="submit" className="btn btn-primary">
+                <button type="submit" className="glass-button glass-button-primary chat-press" style={{ padding: '0.6rem 1.5rem', borderRadius: 12, fontWeight: 700 }}>
                     Save Program
                 </button>
             </div>

@@ -113,9 +113,9 @@ export default function ImportProgram({ onImport }: { onImport?: (data: any) => 
 
     return (
         <div style={{ marginBottom: '1rem', display: 'flex', gap: '1rem', alignItems: 'center' }}>
-            <label className="btn" style={{
-                background: 'var(--accent)', color: 'black', padding: '0.5rem 1rem',
-                borderRadius: '4px', cursor: 'pointer', fontWeight: 600, fontSize: '0.9rem'
+            <label className="glass-button glass-button-primary chat-press" style={{
+                padding: '0.55rem 1.25rem',
+                borderRadius: '12px', cursor: 'pointer', fontWeight: 700, fontSize: '0.85rem'
             }}>
                 Import Program (CSV)
                 <input

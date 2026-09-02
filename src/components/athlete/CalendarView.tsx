@@ -179,33 +179,42 @@ export default function CalendarView({ program, athleteId }) {
     };
 
     return (
-        <div className="card" style={{ padding: 0, overflow: 'hidden', position: 'relative' }}>
+        <div className="glass-panel" style={{ padding: 0, overflow: 'hidden', position: 'relative', borderRadius: 16 }}>
             {/* Header */}
             <div style={{
-                background: 'var(--primary)', color: 'white', padding: '1rem',
+                background: 'var(--glass-surface-2)', color: 'var(--foreground)', padding: '1rem 1.5rem',
+                borderBottom: '1px solid var(--glass-border)',
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center'
             }}>
-                <button onClick={() => changeMonth(-1)} style={{ background: 'transparent', border: 'none', color: 'white', fontSize: '1.2rem', cursor: 'pointer' }}>
+                <button
+                    onClick={() => changeMonth(-1)}
+                    className="glass-button chat-press"
+                    style={{ width: 32, height: 32, borderRadius: '50%', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem' }}
+                >
                     ←
                 </button>
-                <div style={{ fontSize: '1.2rem', fontWeight: 700 }}>
+                <div style={{ fontSize: '1.15rem', fontWeight: 700, letterSpacing: '-0.01em' }}>
                     {monthNames[month]} {year}
                 </div>
-                <button onClick={() => changeMonth(1)} style={{ background: 'transparent', border: 'none', color: 'white', fontSize: '1.2rem', cursor: 'pointer' }}>
+                <button
+                    onClick={() => changeMonth(1)}
+                    className="glass-button chat-press"
+                    style={{ width: 32, height: 32, borderRadius: '50%', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1rem' }}
+                >
                     →
                 </button>
             </div>
 
             {/* Grid Header */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', textAlign: 'center', background: 'var(--accent)', color: 'black', fontWeight: 'bold', fontSize: '0.8rem', padding: '0.5rem 0' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', textAlign: 'center', background: 'var(--glass-surface-3)', borderBottom: '1px solid var(--glass-border)', color: 'var(--secondary-foreground)', fontWeight: 700, fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em', padding: '0.6rem 0' }}>
                 <div style={{ minWidth: 0 }}>Mon</div><div style={{ minWidth: 0 }}>Tue</div><div style={{ minWidth: 0 }}>Wed</div><div style={{ minWidth: 0 }}>Thu</div><div style={{ minWidth: 0 }}>Fri</div><div style={{ minWidth: 0 }}>Sat</div><div style={{ minWidth: 0 }}>Sun</div>
             </div>
 
             {/* Grid Body */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', background: 'var(--card-bg)' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))' }}>
                 {/* Empty Cells */}
                 {Array.from({ length: firstDay }).map((_, i) => (
-                    <div key={`empty-${i}`} style={{ minHeight: '120px', border: '1px solid var(--card-border)', background: 'rgba(0,0,0,0.2)' }}></div>
+                    <div key={`empty-${i}`} style={{ minHeight: '120px', border: '1px solid var(--glass-border)', background: 'rgba(0,0,0,0.15)' }}></div>
                 ))}
 
                 {/* Days */}
@@ -217,39 +226,63 @@ export default function CalendarView({ program, athleteId }) {
                     return (
                         <div key={day} style={{
                             minHeight: '120px',
-                            border: '1px solid var(--card-border)',
+                            border: '1px solid var(--glass-border)',
                             padding: '0.5rem',
                             position: 'relative',
-                            background: isToday ? 'rgba(78, 205, 196, 0.05)' : 'transparent',
+                            background: isToday ? 'rgba(125, 135, 210, 0.1)' : 'transparent',
                             overflow: 'hidden',
                             minWidth: 0
                         }}>
-                            <div style={{ fontSize: '0.8rem', marginBottom: '0.5rem', fontWeight: isToday ? 'bold' : 'normal', color: isToday ? 'var(--accent)' : 'inherit', display: 'flex', justifyContent: 'space-between' }}>
+                            <div style={{ fontSize: '0.8rem', marginBottom: '0.5rem', fontWeight: isToday ? 800 : 500, color: isToday ? 'var(--primary)' : 'inherit', display: 'flex', justifyContent: 'space-between' }}>
                                 <span>{day}</span>
                                 {travelDates.includes(new Date(year, month, day).toISOString().split('T')[0]) && (
                                     <span title="Travel Day">✈️</span>
                                 )}
                             </div>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                                {sessions.map((s, idx) => (
+                            {/* Readiness Dot */}
+                            {(() => {
+                                const log = getReadinessForDate(day);
+                                if (!log) return null;
+                                const color = getScoreColor(log.score);
+                                return (
                                     <div
-                                        key={idx}
-                                        onClick={() => handleSessionClick(s)}
+                                        title={`Readiness: ${log.score}/25`}
                                         style={{
-                                            display: 'block',
-                                            background: 'var(--success)',
-                                            color: 'black',
-                                            padding: '4px 6px',
-                                            borderRadius: '4px',
-                                            fontSize: '0.7rem',
-                                            cursor: 'pointer',
+                                            position: 'absolute',
+                                            top: '0.5rem',
+                                            right: '0.5rem',
+                                            width: '8px',
+                                            height: '8px',
+                                            borderRadius: '50%',
+                                            background: color,
+                                            boxShadow: `0 0 5px ${color}`
+                                        }}
+                                    />
+                                );
+                            })()}
+
+                            {/* Session Badges */}
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+                                {sessions.map((s, sIdx) => (
+                                    <div
+                                        key={sIdx}
+                                        onClick={() => handleSessionClick(s)}
+                                        className="chat-press"
+                                        style={{
+                                            background: 'rgba(125, 135, 210, 0.15)',
+                                            border: '1px solid rgba(125, 135, 210, 0.3)',
+                                            color: 'var(--foreground)',
+                                            padding: '0.25rem 0.4rem',
+                                            borderRadius: '8px',
+                                            fontSize: '0.75rem',
                                             fontWeight: 600,
+                                            cursor: 'pointer',
                                             overflow: 'hidden',
                                             textOverflow: 'ellipsis',
                                             whiteSpace: 'nowrap',
                                             position: 'relative',
-                                            paddingRight: '20px' // Space for X
+                                            paddingRight: '20px'
                                         }}
                                         title={`${s.name}`}
                                     >
@@ -261,7 +294,7 @@ export default function CalendarView({ program, athleteId }) {
                                                 top: 0, bottom: 0, right: 0,
                                                 width: '18px',
                                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                background: 'rgba(0,0,0,0.1)',
+                                                background: 'rgba(0,0,0,0.15)',
                                                 cursor: 'pointer',
                                                 fontSize: '10px',
                                                 fontWeight: 'bold'
@@ -282,24 +315,25 @@ export default function CalendarView({ program, athleteId }) {
             {selectedSession && (
                 <div style={{
                     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                    background: 'rgba(0,0,0,0.85)',
+                    background: 'rgba(9, 9, 15, 0.85)',
+                    backdropFilter: 'blur(24px)',
                     zIndex: 1000,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     padding: '1rem'
                 }} onClick={() => setSelectedSession(null)}>
-                    <div style={{
-                        background: 'var(--card-bg)',
-                        border: '1px solid var(--card-border)',
-                        borderRadius: '12px',
-                        width: '100%', maxWidth: '500px',
+                    <div className="glass-panel-modal" style={{
+                        borderRadius: '20px',
+                        width: '100%', maxWidth: '520px',
                         maxHeight: '90vh', overflowY: 'auto',
-                        position: 'relative'
+                        position: 'relative',
+                        padding: 0
                     }} onClick={e => e.stopPropagation()}>
 
                         {/* Close Button */}
                         <button
                             onClick={() => setSelectedSession(null)}
-                            style={{ position: 'absolute', top: '1rem', right: '1rem', background: 'transparent', border: 'none', color: 'white', fontSize: '1.5rem', cursor: 'pointer', zIndex: 10 }}
+                            className="glass-button chat-press"
+                            style={{ position: 'absolute', top: '1rem', right: '1rem', width: 32, height: 32, borderRadius: '50%', padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--secondary-foreground)', zIndex: 10 }}
                         >
                             ×
                         </button>
@@ -311,38 +345,40 @@ export default function CalendarView({ program, athleteId }) {
                             />
                         ) : (
                             <div style={{ padding: '2rem' }}>
-                                <h1 style={{ fontSize: '1.5rem', marginBottom: '1rem', color: 'var(--primary)' }}>{selectedSession.name}</h1>
-                                <p style={{ color: 'var(--secondary-foreground)', marginBottom: '2rem' }}>
+                                <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--foreground)' }}>
+                                    {selectedSession.name}
+                                </h1>
+                                <p style={{ color: 'var(--secondary-foreground)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
                                     {selectedSession.exercises.length} Exercises Scheduled
                                 </p>
 
                                 <div style={{ marginBottom: '2rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                     {selectedSession.exercises.map((ex, i) => (
-                                        <div key={i} style={{ padding: '0.75rem', background: 'rgba(255,255,255,0.05)', borderRadius: '8px' }}>
-                                            <div style={{ fontWeight: 600 }}>{ex.name}</div>
-                                            <div style={{ fontSize: '0.85rem', color: 'var(--secondary-foreground)' }}>{ex.sets.length} Sets</div>
+                                        <div key={i} className="glass-panel" style={{ padding: '0.85rem 1rem', borderRadius: 12 }}>
+                                            <div style={{ fontWeight: 600, color: 'var(--foreground)', fontSize: '0.92rem' }}>{ex.name}</div>
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginTop: 2 }}>{ex.sets.length} Sets</div>
                                         </div>
                                     ))}
                                 </div>
 
-                                <div style={{ display: 'flex', gap: '1rem' }}>
+                                <div style={{ display: 'flex', gap: '0.75rem' }}>
                                     <button
                                         onClick={() => router.push(`/athlete/${athleteId}/workout/${program.id}_w${selectedSession.weekNumber}_d${selectedSession.day}`)}
-                                        className="btn btn-primary"
-                                        style={{ flex: 1, padding: '1rem', fontSize: '1.1rem' }}
+                                        className="glass-button glass-button-primary chat-press"
+                                        style={{ flex: 1, padding: '0.85rem', fontSize: '1rem', fontWeight: 700, borderRadius: 14 }}
                                     >
                                         Start Workout
                                     </button>
                                     <button
                                         onClick={(e) => handleDeleteSession(selectedSession, null)}
-                                        className="btn"
+                                        className="glass-button chat-press"
                                         style={{
-                                            background: '#ef4444',
-                                            color: 'white',
-                                            border: 'none',
-                                            padding: '0 1.5rem',
-                                            borderRadius: '6px',
-                                            cursor: 'pointer'
+                                            color: '#ef4444',
+                                            border: '1px solid rgba(239, 68, 68, 0.4)',
+                                            padding: '0 1.25rem',
+                                            borderRadius: '14px',
+                                            cursor: 'pointer',
+                                            fontWeight: 600
                                         }}
                                     >
                                         Delete
@@ -355,5 +391,4 @@ export default function CalendarView({ program, athleteId }) {
             )}
         </div>
     );
-
 }
