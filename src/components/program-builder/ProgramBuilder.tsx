@@ -577,47 +577,35 @@ export default function ProgramBuilder({
                     }))
                 }));
 
-                // If startDate was snapped to Sunday, rebucket sessions to align with calendar weeks
-                if (rawStartDate !== snappedStartDate) {
-                    const [oldY, oldM, oldD] = rawStartDate.split('-').map(Number);
-                    const oldStart = new Date(oldY, oldM - 1, oldD);
-                    oldStart.setHours(0, 0, 0, 0);
-                    const [newY, newM, newD] = snappedStartDate.split('-').map(Number);
-                    const newStart = new Date(newY, newM - 1, newD);
-                    newStart.setHours(0, 0, 0, 0);
+                // Ensure Week 1 is always the first week with actual content:
+                // If leading weeks are empty (e.g. Week 1 is empty, Week 2 has duplicate program sessions),
+                // trim empty leading weeks and renumber so Week 1 has the duplicate program!
+                let normalizedWeeks = [...sanitizedWeeks];
+                normalizedWeeks.sort((a, b) => (a.weekNumber || 0) - (b.weekNumber || 0));
 
-                    const allSessions: any[] = [];
-                    sanitizedWeeks.forEach(w => {
-                        w.sessions.forEach(s => {
-                            const actualDate = new Date(oldStart);
-                            actualDate.setDate(actualDate.getDate() + (w.weekNumber - 1) * 7 + ((s.day || 1) - 1));
-                            const diffTime = actualDate.getTime() - newStart.getTime();
-                            const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
-                            if (diffDays >= 0) {
-                                allSessions.push({ ...s, day: (diffDays % 7) + 1, _tempWeekNum: Math.floor(diffDays / 7) + 1 });
-                            }
-                        });
-                    });
-
-                    const reorganizedWeeks: any[][] = [];
-                    allSessions.forEach(s => {
-                        const wn = s._tempWeekNum;
-                        if (!reorganizedWeeks[wn]) reorganizedWeeks[wn] = [];
-                        const { _tempWeekNum, ...cleanSession } = s;
-                        reorganizedWeeks[wn].push(cleanSession);
-                    });
-                    const maxWeek = allSessions.reduce((max, s) => s._tempWeekNum > max ? s._tempWeekNum : max, 0);
-                    const finalWeeks: any[] = [];
-                    for (let i = 1; i <= maxWeek; i++) {
-                        finalWeeks.push({ id: generateId(), weekNumber: i, sessions: reorganizedWeeks[i] || [] });
-                    }
-                    if (finalWeeks.length === 0) {
-                        finalWeeks.push({ id: generateId(), weekNumber: 1, sessions: [] });
-                    }
-                    setWeeks(finalWeeks);
-                } else {
-                    setWeeks(sanitizedWeeks);
+                const firstPopulatedIdx = normalizedWeeks.findIndex(w => Array.isArray(w.sessions) && w.sessions.length > 0);
+                if (firstPopulatedIdx > 0) {
+                    // Shift start date forward by the number of empty weeks so session calendar dates align
+                    const [sy, sm, sd] = snappedStartDate.split('-').map(Number);
+                    const adjDate = new Date(sy, sm - 1, sd);
+                    adjDate.setDate(adjDate.getDate() + firstPopulatedIdx * 7);
+                    const adjStr = `${adjDate.getFullYear()}-${String(adjDate.getMonth() + 1).padStart(2, '0')}-${String(adjDate.getDate()).padStart(2, '0')}`;
+                    setStartDate(adjStr);
+                    normalizedWeeks = normalizedWeeks.slice(firstPopulatedIdx);
                 }
+
+                // Renumber weeks sequentially 1, 2, 3...
+                const finalWeeks = normalizedWeeks.map((w, idx) => ({
+                    ...w,
+                    weekNumber: idx + 1,
+                }));
+
+                if (finalWeeks.length === 0) {
+                    finalWeeks.push({ id: generateId(), weekNumber: 1, sessions: [] });
+                }
+
+                setWeeks(finalWeeks);
+                setWeeklyActiveWeekNum(1);
             }
             // Reset initialLoadRef so the state changes from loading don't trigger auto-save
             initialLoadRef.current = true;

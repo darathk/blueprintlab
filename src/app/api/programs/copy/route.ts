@@ -32,7 +32,7 @@ export async function POST(request: Request) {
         const isDuplicate = program.athleteId === targetAthleteId;
 
         // Deep-clone weeks with fresh UUIDs for all nested objects
-        const clonedWeeks = Array.isArray(program.weeks) ? (program.weeks as any[]).map(week => ({
+        let rawWeeks = Array.isArray(program.weeks) ? (program.weeks as any[]).map(week => ({
             ...week,
             id: randomUUID(),
             sessions: Array.isArray(week.sessions) ? week.sessions.map(session => ({
@@ -43,7 +43,22 @@ export async function POST(request: Request) {
                     id: randomUUID(),
                 })) : [],
             })) : [],
-        })) : program.weeks;
+        })) : [];
+
+        // Sort by weekNumber
+        rawWeeks.sort((a, b) => (a.weekNumber || 0) - (b.weekNumber || 0));
+
+        // Strip leading empty weeks so the duplicate program always starts with Week 1 content
+        const firstPopulatedIdx = rawWeeks.findIndex(w => Array.isArray(w.sessions) && w.sessions.length > 0);
+        if (firstPopulatedIdx > 0) {
+            rawWeeks = rawWeeks.slice(firstPopulatedIdx);
+        }
+
+        // Renumber weeks sequentially 1, 2, 3...
+        const clonedWeeks = rawWeeks.map((week, idx) => ({
+            ...week,
+            weekNumber: idx + 1,
+        }));
 
         let targetStartDate = new Date().toISOString().split('T')[0];
         if (isDuplicate) {
@@ -67,10 +82,23 @@ export async function POST(request: Request) {
                     }
                 }
             }
-            // Add leading zeroes if needed
+
+            // Always start new program on MONDAY following previous program
+            const dayOfWeek = maxEndDate.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+            const daysUntilMonday = (8 - dayOfWeek) % 7; // Sun(0)->1, Mon(1)->0, Tue(2)->6, etc.
+            maxEndDate.setDate(maxEndDate.getDate() + daysUntilMonday);
+
             targetStartDate = `${maxEndDate.getFullYear()}-${String(maxEndDate.getMonth() + 1).padStart(2, '0')}-${String(maxEndDate.getDate()).padStart(2, '0')}`;
         } else {
-            targetStartDate = program.startDate;
+            if (program.startDate) {
+                const raw = typeof program.startDate === 'string' ? program.startDate : program.startDate.toISOString();
+                const [y, m, d] = raw.slice(0, 10).split('-').map(Number);
+                const dt = new Date(y, m - 1, d);
+                const dayOfWeek = dt.getDay();
+                const daysUntilMonday = (8 - dayOfWeek) % 7;
+                dt.setDate(dt.getDate() + daysUntilMonday);
+                targetStartDate = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+            }
         }
 
         const newProgram = await prisma.program.create({
