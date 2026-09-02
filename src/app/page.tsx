@@ -30,29 +30,50 @@ export default async function Home() {
   }
 
   return (
-    <div className={styles.page} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--background)' }}>
-      <main className={styles.main} style={{ textAlign: 'center', position: 'relative', zIndex: 1 }}>
+    <div className={styles.page} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--background)', padding: '1.5rem' }}>
+      <main className={styles.main} style={{ textAlign: 'center', position: 'relative', zIndex: 1, width: '100%', maxWidth: '640px' }}>
         <div style={{
           position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
-          width: '600px', height: '600px', background: 'radial-gradient(circle, rgba(125, 135, 210, 0.1) 0%, transparent 70%)',
-          pointerEvents: 'none', zIndex: -1
+          width: '600px', height: '600px', background: 'radial-gradient(circle, rgba(125, 135, 210, 0.22) 0%, rgba(168, 85, 247, 0.1) 45%, transparent 70%)',
+          pointerEvents: 'none', zIndex: -1, filter: 'blur(30px)'
         }}></div>
 
+        <div className="glass-panel" style={{ padding: '3.5rem 2rem', borderRadius: 24, textAlign: 'center' }}>
+          <h1 style={{ fontSize: '3.25rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: '0.75rem', lineHeight: 1.15 }}>
+            Blueprint<span style={{ color: 'var(--primary)', textShadow: '0 0 32px rgba(125, 135, 210, 0.5)' }}>Lab</span>
+          </h1>
+          <p style={{ marginBottom: '2.5rem', color: 'var(--secondary-foreground)', fontSize: '1.1rem', maxWidth: '480px', margin: '0 auto 2.5rem', lineHeight: 1.5 }}>
+            Next-Generation Performance Telemetry & Mission Planning
+          </p>
 
-        <h1 style={{ fontSize: '3.5rem', fontWeight: 800, letterSpacing: '-0.03em', marginBottom: '0.5rem' }}>
-          Blueprint<span className="neon-text" style={{ color: 'var(--primary)' }}>Lab</span>
-        </h1>
-        <p style={{ marginBottom: '3rem', color: 'var(--secondary-foreground)', fontSize: '1.2rem', maxWidth: '600px', margin: '0 auto 3rem' }}>
-          Next-Generation Performance Telemetry & Mission Planning
-        </p>
-
-        <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center' }}>
-          <Link href="/dashboard" className="btn btn-primary" style={{ padding: '1rem 3rem', fontSize: '1.1rem', boxShadow: '0 0 30px rgba(6,182,212,0.2)' }}>
-            Coach Portal
-          </Link>
-          <Link href="/athlete" className="btn btn-secondary" style={{ padding: '1rem 3rem', fontSize: '1.1rem' }}>
-            Athlete Portal
-          </Link>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link
+              href="/dashboard"
+              className="glass-button glass-button-primary chat-press"
+              style={{
+                padding: '0.875rem 2.25rem',
+                fontSize: '1rem',
+                borderRadius: 14,
+                textDecoration: 'none',
+                fontWeight: 700,
+              }}
+            >
+              Coach Portal
+            </Link>
+            <Link
+              href="/athlete"
+              className="glass-button chat-press"
+              style={{
+                padding: '0.875rem 2.25rem',
+                fontSize: '1rem',
+                borderRadius: 14,
+                textDecoration: 'none',
+                fontWeight: 600,
+              }}
+            >
+              Athlete Portal
+            </Link>
+          </div>
         </div>
       </main>
     </div>

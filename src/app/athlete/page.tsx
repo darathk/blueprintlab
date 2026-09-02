@@ -107,31 +107,33 @@ export default async function AthleteLoginPage() {
 
     return (
         <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '2rem', background: 'var(--background)' }}>
-            <div className="card" style={{ width: '100%', maxWidth: '400px', textAlign: 'center' }}>
-                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+            <div className="glass-panel" style={{ width: '100%', maxWidth: '420px', textAlign: 'center', padding: '2.25rem 2rem', borderRadius: 20 }}>
+                <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1.25rem' }}>
                     <UserButton afterSignOutUrl="/" />
                 </div>
 
-                <h1 style={{ fontSize: '1.5rem', fontWeight: 700, marginBottom: '0.5rem' }}>Welcome to BlueprintLab</h1>
-                <p style={{ marginBottom: '2rem', color: 'var(--secondary-foreground)' }}>
-                    Your email <strong>{email}</strong> is not connected to any active profile. How would you like to proceed?
+                <h1 style={{ fontSize: '1.6rem', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '0.5rem' }}>
+                    Welcome to Blueprint<span style={{ color: 'var(--primary)', textShadow: '0 0 20px rgba(125, 135, 210, 0.4)' }}>Lab</span>
+                </h1>
+                <p style={{ marginBottom: '2rem', color: 'var(--secondary-foreground)', fontSize: '0.9rem', lineHeight: 1.5 }}>
+                    Your email <strong style={{ color: 'var(--foreground)' }}>{email}</strong> is not connected to any active profile. How would you like to proceed?
                 </p>
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                     <form action={registerAthlete}>
-                        <button type="submit" className="btn btn-primary" style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}>
+                        <button type="submit" className="glass-button glass-button-primary chat-press" style={{ width: '100%', padding: '0.875rem', fontSize: '1rem', borderRadius: 14 }}>
                             Join as an Athlete
                         </button>
                     </form>
 
-                    <div style={{ display: 'flex', alignItems: 'center', margin: '0.5rem 0' }}>
-                        <div style={{ flex: 1, height: '1px', background: 'var(--card-border)' }}></div>
-                        <span style={{ margin: '0 1rem', color: 'var(--muted)', fontSize: '0.8rem' }}>OR</span>
-                        <div style={{ flex: 1, height: '1px', background: 'var(--card-border)' }}></div>
+                    <div style={{ display: 'flex', alignItems: 'center', margin: '0.25rem 0' }}>
+                        <div style={{ flex: 1, height: '1px', background: 'var(--glass-border)' }}></div>
+                        <span style={{ margin: '0 1rem', color: 'var(--secondary-foreground)', fontSize: '0.75rem', fontWeight: 700 }}>OR</span>
+                        <div style={{ flex: 1, height: '1px', background: 'var(--glass-border)' }}></div>
                     </div>
 
                     <form action={registerCoach}>
-                        <button type="submit" className="btn btn-secondary" style={{ width: '100%', padding: '1rem', fontSize: '1.1rem' }}>
+                        <button type="submit" className="glass-button chat-press" style={{ width: '100%', padding: '0.875rem', fontSize: '1rem', borderRadius: 14 }}>
                             Register as a Coach
                         </button>
                     </form>

@@ -9,22 +9,22 @@ export const metadata = {
 export default function PrivacyPolicy() {
     return (
         <>
-            <div className="min-h-screen bg-white text-black py-20 px-4 sm:px-6 lg:px-8 font-serif flex flex-col items-center">
+            <div className="min-h-screen py-16 px-4 sm:px-6 lg:px-8 flex flex-col items-center" style={{ background: 'var(--background)' }}>
                 <div className="w-full max-w-4xl space-y-8">
 
-                    <div className="text-center space-y-4 mb-12">
-                        <h1 className="text-3xl font-extrabold tracking-tight text-[#e31837] uppercase">
-                            Privacy Policy
+                    <div className="glass-panel text-center p-8 sm:p-12 mb-8 rounded-2xl">
+                        <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight uppercase mb-3" style={{ color: 'var(--foreground)' }}>
+                            Privacy <span style={{ color: 'var(--primary)', textShadow: '0 0 20px rgba(125, 135, 210, 0.4)' }}>Policy</span>
                         </h1>
-                        <p className="text-black font-bold">
+                        <p className="font-semibold" style={{ color: 'var(--secondary-foreground)' }}>
                             BlueprintLab – Privacy Policy / Data Protection
                         </p>
-                        <p className="text-gray-600 text-sm italic">
+                        <p className="text-xs italic mt-2" style={{ color: 'var(--secondary-foreground)', opacity: 0.7 }}>
                             Last Updated: {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
                         </p>
                     </div>
 
-                    <div className="space-y-8 text-[15px] leading-[1.6]">
+                    <div className="glass-panel p-8 sm:p-12 rounded-2xl space-y-8 text-[15px] leading-[1.7]" style={{ color: 'var(--foreground)' }}>
 
                         <section>
                             <h2 className="font-bold uppercase mb-4 underline decoration-1 underline-offset-4">1. INTRODUCTION</h2>
@@ -115,7 +115,7 @@ export default function PrivacyPolicy() {
                             </p>
                         </section>
 
-                        <section className="border-t border-gray-300 pt-8 mt-12 text-sm text-gray-600 italic">
+                        <section className="pt-8 mt-12 text-sm italic" style={{ borderTop: '1px solid var(--glass-border)', color: 'var(--secondary-foreground)' }}>
                             <p>
                                 We may update this Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page and updating the &quot;Last Updated&quot; date.
                             </p>
