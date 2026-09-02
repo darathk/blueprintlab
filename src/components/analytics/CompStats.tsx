@@ -98,12 +98,12 @@ export default function CompStats({ logs, programs }) {
         const isPositive = change >= 0;
 
         return (
-            <tr style={{ borderBottom: '1px solid var(--card-border)', background: isTotal ? 'rgba(255,255,255,0.03)' : 'transparent' }}>
-                <td style={{ padding: '1rem', fontWeight: 'bold' }}>{label}</td>
-                <td style={{ padding: '1rem', color: 'var(--secondary-foreground)' }}>{row.start.toFixed(1)} lbs</td>
-                <td style={{ padding: '1rem', color: 'var(--secondary-foreground)' }}>{row.peak.toFixed(1)} lbs</td>
-                <td style={{ padding: '1rem', color: 'var(--secondary-foreground)' }}>{row.end.toFixed(1)} lbs</td>
-                <td style={{ padding: '1rem', fontWeight: 'bold', color: isPositive ? 'var(--success)' : 'var(--danger)' }}>
+            <tr style={{ borderBottom: '1px solid var(--glass-border)', background: isTotal ? 'rgba(125, 135, 210, 0.06)' : 'transparent' }}>
+                <td style={{ padding: '0.9rem 1.25rem', fontWeight: 700, color: isTotal ? 'var(--primary)' : 'var(--foreground)' }}>{label}</td>
+                <td style={{ padding: '0.9rem 1.25rem', color: 'var(--secondary-foreground)' }}>{row.start.toFixed(1)} lbs</td>
+                <td style={{ padding: '0.9rem 1.25rem', color: 'var(--secondary-foreground)' }}>{row.peak.toFixed(1)} lbs</td>
+                <td style={{ padding: '0.9rem 1.25rem', color: 'var(--secondary-foreground)' }}>{row.end.toFixed(1)} lbs</td>
+                <td style={{ padding: '0.9rem 1.25rem', fontWeight: 700, color: isPositive ? 'var(--success)' : 'var(--danger)' }}>
                     {isPositive ? '+' : ''}{change.toFixed(1)} {key === 'Wilks' ? '' : 'lbs'}
                 </td>
             </tr>
@@ -111,20 +111,20 @@ export default function CompStats({ logs, programs }) {
     }
 
     return (
-        <div className="solid-panel" style={{ marginBottom: '2rem', padding: 0, overflow: 'hidden' }}>
-            <h3 style={{ padding: '1.5rem', background: 'rgba(6, 182, 212, 0.1)', margin: 0, color: 'var(--primary)', borderBottom: '1px solid var(--card-border)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span className="neon-text">///</span> Mission Telemetry Specs
+        <div className="glass-panel" style={{ marginBottom: '2rem', padding: 0, overflow: 'hidden', borderRadius: 16 }}>
+            <h3 style={{ padding: '1.25rem 1.5rem', background: 'var(--glass-surface-2)', margin: 0, color: 'var(--foreground)', borderBottom: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.15rem', fontWeight: 700 }}>
+                <span style={{ color: 'var(--primary)', textShadow: '0 0 16px rgba(125, 135, 210, 0.4)' }}>///</span> Mission Telemetry Specs
                 <InfoTooltip text="Analyzes your e1RM at the Start, Peak, and End of the block. 'Delta' shows the total gain or loss from the beginning to the end of the block." />
             </h3>
             <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem' }}>
-                    <thead style={{ background: 'rgba(0,0,0,0.4)', color: 'var(--secondary-foreground)' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
+                    <thead style={{ background: 'var(--glass-surface-3)', borderBottom: '1px solid var(--glass-border)', color: 'var(--secondary-foreground)' }}>
                         <tr>
-                            <th style={{ padding: '1rem', textAlign: 'left', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}>Metric</th>
-                            <th style={{ padding: '1rem', textAlign: 'left', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}>Start</th>
-                            <th style={{ padding: '1rem', textAlign: 'left', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}>Peak</th>
-                            <th style={{ padding: '1rem', textAlign: 'left', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}>End</th>
-                            <th style={{ padding: '1rem', textAlign: 'left', textTransform: 'uppercase', fontSize: '0.75rem', letterSpacing: '0.05em' }}>Delta</th>
+                            <th style={{ padding: '0.75rem 1.25rem', textAlign: 'left', textTransform: 'uppercase', fontSize: '0.72rem', letterSpacing: '0.05em' }}>Metric</th>
+                            <th style={{ padding: '0.75rem 1.25rem', textAlign: 'left', textTransform: 'uppercase', fontSize: '0.72rem', letterSpacing: '0.05em' }}>Start</th>
+                            <th style={{ padding: '0.75rem 1.25rem', textAlign: 'left', textTransform: 'uppercase', fontSize: '0.72rem', letterSpacing: '0.05em' }}>Peak</th>
+                            <th style={{ padding: '0.75rem 1.25rem', textAlign: 'left', textTransform: 'uppercase', fontSize: '0.72rem', letterSpacing: '0.05em' }}>End</th>
+                            <th style={{ padding: '0.75rem 1.25rem', textAlign: 'left', textTransform: 'uppercase', fontSize: '0.72rem', letterSpacing: '0.05em' }}>Delta</th>
                         </tr>
                     </thead>
                     <tbody>

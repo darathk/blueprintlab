@@ -107,18 +107,49 @@ export default function ReportsPage({ params }: { params: Promise<{ id: string }
     };
 
     return (
-        <div>
+        <div style={{ maxWidth: '1400px', margin: '0 auto', paddingBottom: '3rem' }}>
             <div style={{ marginBottom: '2rem' }}>
-                <Link href={`/dashboard/athletes/${id}`} style={{ color: 'var(--secondary-foreground)', fontSize: '0.9rem' }}>← Back to Dashboard</Link>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
-                    <h1 style={{ fontSize: '1.875rem', fontWeight: 700 }}>Meta-Analytics Reports</h1>
-                    <button onClick={() => setShowWizard(true)} className="btn btn-primary" style={{ background: 'var(--success)', border: 'none', color: 'white' }}>
-                        Queue New Report
+                <Link
+                    href={`/dashboard/athletes/${id}`}
+                    className="glass-button chat-press"
+                    style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        fontSize: '0.85rem',
+                        padding: '6px 14px',
+                        borderRadius: '16px',
+                        textDecoration: 'none',
+                        color: 'var(--secondary-foreground)',
+                        marginBottom: '1rem'
+                    }}
+                >
+                    ← Back to Athlete Dashboard
+                </Link>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+                    <h1 style={{ fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
+                        Meta-Analytics <span style={{ color: 'var(--primary)', textShadow: '0 0 24px rgba(125, 135, 210, 0.35)' }}>Reports</span>
+                    </h1>
+                    <button
+                        onClick={() => setShowWizard(true)}
+                        className="glass-button glass-button-primary chat-press"
+                        style={{
+                            padding: '0.75rem 1.5rem',
+                            borderRadius: '14px',
+                            fontWeight: 700,
+                            fontSize: '0.92rem',
+                        }}
+                    >
+                        + Queue New Report
                     </button>
                 </div>
             </div>
 
-            {loading ? <p>Loading reports...</p> : (
+            {loading ? (
+                <div className="glass-panel" style={{ padding: '3rem', textAlign: 'center', color: 'var(--secondary-foreground)', borderRadius: 16 }}>
+                    Loading reports...
+                </div>
+            ) : (
                 <ReportList reports={reports} onView={handleView} onDelete={handleDelete} />
             )}
 
@@ -134,15 +165,42 @@ export default function ReportsPage({ params }: { params: Promise<{ id: string }
             {selectedReport && (
                 <div style={{
                     position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
-                    background: 'var(--background)', zIndex: 2000,
+                    background: 'rgba(9, 9, 15, 0.85)', backdropFilter: 'blur(20px)', zIndex: 2000,
                     display: 'flex', flexDirection: 'column'
                 }}>
-                    <div style={{ padding: '1rem', borderBottom: '1px solid var(--card-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#111111' }}>
+                    <div style={{
+                        padding: '1rem 1.5rem',
+                        borderBottom: '1px solid var(--glass-border)',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        background: 'var(--glass-surface-2)',
+                        backdropFilter: 'blur(16px)'
+                    }}>
                         <div>
-                            <h2 style={{ margin: 0, color: 'var(--foreground)' }}>{selectedReport.name}</h2>
-                            <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--secondary-foreground)' }}>{selectedReport.type} • {new Date(selectedReport.created).toLocaleDateString()}</p>
+                            <h2 style={{ margin: 0, color: 'var(--foreground)', fontSize: '1.25rem', fontWeight: 700 }}>{selectedReport.name}</h2>
+                            <p style={{ margin: '3px 0 0', fontSize: '0.8rem', color: 'var(--secondary-foreground)' }}>
+                                <span className="glass-badge" style={{ fontSize: '0.7rem', padding: '2px 8px', marginRight: '8px' }}>{selectedReport.type}</span>
+                                {new Date(selectedReport.created).toLocaleDateString()}
+                            </p>
                         </div>
-                        <button onClick={() => setSelectedReport(null)} style={{ background: 'transparent', border: 'none', color: 'white', fontSize: '1.5rem', cursor: 'pointer' }}>×</button>
+                        <button
+                            onClick={() => setSelectedReport(null)}
+                            className="glass-button chat-press"
+                            style={{
+                                width: 36,
+                                height: 36,
+                                borderRadius: '50%',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                color: 'var(--foreground)',
+                                fontSize: '1.25rem',
+                                padding: 0
+                            }}
+                        >
+                            ×
+                        </button>
                     </div>
                     <div style={{ flex: 1, overflowY: 'auto', padding: '2rem' }}>
                         <div className="container">

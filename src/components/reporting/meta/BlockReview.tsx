@@ -92,44 +92,101 @@ export default function BlockReview({ programs, logs, reportParams }) {
     };
 
     return (
-        <div style={{ display: 'grid', gridTemplateColumns: '250px 1fr', minHeight: '100%', background: 'var(--background)' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: '260px 1fr', minHeight: '100%', background: 'var(--background)' }}>
 
             {/* Sidebar */}
             <div style={{
-                background: '#111111',
-                borderRight: '1px solid var(--card-border)',
+                background: 'var(--glass-surface-2)',
+                backdropFilter: 'blur(16px)',
+                borderRight: '1px solid var(--glass-border)',
                 padding: '1.5rem',
-                color: 'var(--primary)',
                 height: '100%',
                 overflowY: 'auto'
             }}>
-                <div style={{ background: 'rgba(78, 205, 196, 0.1)', color: 'var(--primary)', padding: '0.5rem 1rem', marginBottom: '1.5rem', borderRadius: '4px', textAlign: 'center', fontWeight: 'bold' }}>
+                <div style={{
+                    background: 'rgba(125, 135, 210, 0.12)',
+                    border: '1px solid rgba(125, 135, 210, 0.25)',
+                    color: 'var(--primary)',
+                    padding: '0.6rem 1rem',
+                    marginBottom: '1.5rem',
+                    borderRadius: '12px',
+                    textAlign: 'center',
+                    fontWeight: 700,
+                    fontSize: '0.9rem',
+                    boxShadow: '0 0 12px rgba(125, 135, 210, 0.15)'
+                }}>
                     Block Review Report
                 </div>
 
-                <div style={{ marginBottom: '2rem', fontSize: '0.9rem' }}>
-                    <p style={{ margin: '0.5rem 0' }}><strong>Program:</strong> {program.name}</p>
-                    <p style={{ margin: '0.5rem 0' }}><strong>End Date:</strong> {program.endDate ? new Date(program.endDate).toLocaleDateString() : 'Ongoing'}</p>
-                    <p style={{ margin: '0.5rem 0' }}><strong>Duration:</strong> {lookBackWeeks}{typeof lookBackWeeks === 'number' ? ' Weeks' : ''}</p>
+                <div className="glass-panel" style={{ padding: '1rem', borderRadius: '12px', marginBottom: '1.5rem', fontSize: '0.85rem' }}>
+                    <p style={{ margin: '0.35rem 0' }}><strong style={{ color: 'var(--secondary-foreground)' }}>Program:</strong> <span style={{ fontWeight: 600, color: 'var(--foreground)' }}>{program.name}</span></p>
+                    <p style={{ margin: '0.35rem 0' }}><strong style={{ color: 'var(--secondary-foreground)' }}>End Date:</strong> <span style={{ color: 'var(--foreground)' }}>{program.endDate ? new Date(program.endDate).toLocaleDateString() : 'Ongoing'}</span></p>
+                    <p style={{ margin: '0.35rem 0' }}><strong style={{ color: 'var(--secondary-foreground)' }}>Duration:</strong> <span style={{ color: 'var(--foreground)' }}>{lookBackWeeks}{typeof lookBackWeeks === 'number' ? ' Weeks' : ''}</span></p>
                 </div>
 
-                <div style={{ background: 'rgba(78, 205, 196, 0.1)', color: 'var(--primary)', padding: '0.5rem 1rem', marginBottom: '0.5rem', borderRadius: '4px', fontWeight: 'bold' }}>
+                <div style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.07em',
+                    color: 'var(--primary)',
+                    marginBottom: '0.6rem',
+                    paddingLeft: '0.25rem'
+                }}>
                     Comp Lifts
                 </div>
-                <div style={{ marginBottom: '2rem', fontSize: '0.85rem', color: 'var(--secondary-foreground)' }}>
+                <div className="glass-panel" style={{ padding: '0.85rem', borderRadius: '12px', marginBottom: '1.5rem', fontSize: '0.82rem', color: 'var(--secondary-foreground)' }}>
                     <p style={{ margin: '0.25rem 0' }}><strong style={{ color: 'var(--primary)' }}>Squat:</strong> Competition Squat</p>
                     <p style={{ margin: '0.25rem 0' }}><strong style={{ color: 'var(--primary)' }}>Bench:</strong> Competition Bench</p>
                     <p style={{ margin: '0.25rem 0' }}><strong style={{ color: 'var(--primary)' }}>Deadlift:</strong> Competition Deadlift</p>
                 </div>
 
-                <div style={{ background: 'rgba(78, 205, 196, 0.1)', color: 'var(--primary)', padding: '0.5rem 1rem', marginBottom: '0.5rem', borderRadius: '4px', fontWeight: 'bold' }}>
+                <div style={{
+                    fontSize: '0.75rem',
+                    fontWeight: 700,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.07em',
+                    color: 'var(--primary)',
+                    marginBottom: '0.6rem',
+                    paddingLeft: '0.25rem'
+                }}>
                     Report Sections
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.9rem' }}>
-                    <button onClick={() => scrollToSection('improvements')} style={{ textAlign: 'left', background: 'transparent', border: 'none', color: 'var(--accent)', cursor: 'pointer', padding: 0 }}>Block Improvements</button>
-                    <button onClick={() => scrollToSection('notes')} style={{ textAlign: 'left', background: 'transparent', border: 'none', color: 'var(--accent)', cursor: 'pointer', padding: 0 }}>Coach Notes</button>
-                    <button onClick={() => scrollToSection('comp-stats')} style={{ textAlign: 'left', background: 'transparent', border: 'none', color: 'var(--accent)', cursor: 'pointer', padding: 0 }}>Competition Lift Stats</button>
-                    <button onClick={() => scrollToSection('density')} style={{ textAlign: 'left', background: 'transparent', border: 'none', color: 'var(--accent)', cursor: 'pointer', padding: 0 }}>All Lift Density Data</button>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+                    {[
+                        { id: 'improvements', label: 'Block Improvements' },
+                        { id: 'notes', label: 'Coach Notes' },
+                        { id: 'comp-stats', label: 'Competition Lift Stats' },
+                        { id: 'density', label: 'All Lift Density Data' },
+                    ].map(sec => (
+                        <button
+                            key={sec.id}
+                            onClick={() => scrollToSection(sec.id)}
+                            className="chat-press"
+                            style={{
+                                textAlign: 'left',
+                                background: 'transparent',
+                                border: '1px solid transparent',
+                                color: 'var(--secondary-foreground)',
+                                cursor: 'pointer',
+                                padding: '0.5rem 0.75rem',
+                                borderRadius: '10px',
+                                fontSize: '0.85rem',
+                                fontWeight: 500,
+                                transition: 'all 0.15s ease'
+                            }}
+                            onMouseEnter={e => {
+                                e.currentTarget.style.background = 'var(--glass-surface-3)';
+                                e.currentTarget.style.color = 'var(--foreground)';
+                            }}
+                            onMouseLeave={e => {
+                                e.currentTarget.style.background = 'transparent';
+                                e.currentTarget.style.color = 'var(--secondary-foreground)';
+                            }}
+                        >
+                            {sec.label}
+                        </button>
+                    ))}
                 </div>
             </div>
 
@@ -137,31 +194,36 @@ export default function BlockReview({ programs, logs, reportParams }) {
             <div style={{ padding: '2rem', overflowY: 'auto' }}>
 
                 {/* Block Improvements (Trends) */}
-                <div id="improvements" style={{ marginBottom: '3rem' }}>
+                <div id="improvements" style={{ marginBottom: '2.5rem' }}>
                     <BlockImprovements logs={programLogs} dateRange="all" programs={programs} />
                 </div>
 
                 {/* Notes */}
-                <div id="notes" style={{ marginBottom: '1rem' }}>
+                <div id="notes" className="glass-panel" style={{ marginBottom: '2.5rem', padding: '1.5rem', borderRadius: 16 }}>
+                    <h3 style={{ margin: '0 0 1rem', fontSize: '1.1rem', fontWeight: 700, color: 'var(--foreground)' }}>
+                        Coach Notes
+                    </h3>
                     <textarea
-                        className="input"
-                        placeholder="Enter block notes here..."
+                        className="glass-input"
+                        placeholder="Enter block notes, takeaways, or modifications here..."
                         value={notes}
                         onChange={e => setNotes(e.target.value)}
-                        style={{ width: '100%', height: '100px', resize: 'vertical', fontFamily: 'inherit' }}
+                        style={{ width: '100%', height: '110px', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box' }}
                     />
-                    <div style={{ textAlign: 'right', marginTop: '0.5rem' }}>
-                        <button className="btn btn-primary" style={{ background: '#16a34a', border: 'none' }}>Save Notes</button>
+                    <div style={{ textAlign: 'right', marginTop: '0.75rem' }}>
+                        <button className="glass-button glass-button-primary chat-press" style={{ padding: '0.6rem 1.5rem', borderRadius: 12, fontWeight: 700 }}>
+                            Save Notes
+                        </button>
                     </div>
                 </div>
 
                 {/* Comp Stats */}
-                <div id="comp-stats" style={{ marginBottom: '3rem' }}>
+                <div id="comp-stats" style={{ marginBottom: '2.5rem' }}>
                     <CompStats logs={programLogs} programs={programs} />
                 </div>
 
                 {/* Lift Density */}
-                <div id="density" style={{ marginBottom: '3rem' }}>
+                <div id="density" style={{ marginBottom: '2.5rem' }}>
                     <LiftDensity logs={programLogs} />
                 </div>
 

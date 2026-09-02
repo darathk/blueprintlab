@@ -65,17 +65,42 @@ export default function ReportDetailsPage({ params }: { params: Promise<{ id: st
     if (!report) return <div style={{ padding: '2rem' }}>Report not found.</div>;
 
     return (
-        <div>
+        <div style={{ maxWidth: '1400px', margin: '0 auto', paddingBottom: '3rem' }}>
             <div style={{ marginBottom: '2rem' }}>
-                <Link href={`/dashboard/athletes/${id}/reports`} style={{ color: 'var(--secondary-foreground)', fontSize: '0.9rem' }}>← Back to Reports</Link>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '1rem' }}>
+                <Link
+                    href={`/dashboard/athletes/${id}/reports`}
+                    className="glass-button chat-press"
+                    style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        fontSize: '0.85rem',
+                        padding: '6px 14px',
+                        borderRadius: '16px',
+                        textDecoration: 'none',
+                        color: 'var(--secondary-foreground)',
+                        marginBottom: '1rem'
+                    }}
+                >
+                    ← Back to Reports
+                </Link>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '0.5rem', flexWrap: 'wrap', gap: '1rem' }}>
                     <div>
-                        <h1 style={{ fontSize: '1.875rem', fontWeight: 700 }}>{report.name}</h1>
-                        <div style={{ fontSize: '0.9rem', color: 'var(--secondary-foreground)', marginTop: '0.5rem' }}>
-                            Type: {report.type} • Generated: {new Date(report.created).toLocaleDateString()}
+                        <h1 style={{ fontSize: '2rem', fontWeight: 800, letterSpacing: '-0.02em', margin: 0, color: 'var(--foreground)' }}>
+                            {report.name}
+                        </h1>
+                        <div style={{ fontSize: '0.85rem', color: 'var(--secondary-foreground)', marginTop: '0.4rem', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span className="glass-badge" style={{ fontSize: '0.72rem', padding: '2px 8px' }}>{report.type}</span>
+                            <span>Generated: {new Date(report.created).toLocaleDateString()}</span>
                         </div>
                     </div>
-                    <button className="btn btn-secondary" onClick={() => window.print()}>Export / Print</button>
+                    <button
+                        className="glass-button chat-press"
+                        onClick={() => window.print()}
+                        style={{ padding: '0.65rem 1.25rem', borderRadius: '12px', fontWeight: 600, fontSize: '0.88rem' }}
+                    >
+                        Export / Print
+                    </button>
                 </div>
             </div>
 
@@ -98,16 +123,18 @@ export default function ReportDetailsPage({ params }: { params: Promise<{ id: st
                 </>
             )}
 
-            {/* Notes Section (Mock) */}
-            <div className="card" style={{ marginTop: '2rem' }}>
-                <h3 style={{ marginBottom: '1rem', color: 'var(--primary)' }}>Notes</h3>
+            {/* Notes Section */}
+            <div className="glass-panel" style={{ marginTop: '2.5rem', padding: '1.75rem', borderRadius: 16 }}>
+                <h3 style={{ margin: '0 0 1rem', fontSize: '1.15rem', fontWeight: 700, color: 'var(--foreground)' }}>Notes</h3>
                 <textarea
-                    className="input"
-                    style={{ width: '100%', height: '100px', background: 'transparent', color: 'var(--foreground)' }}
+                    className="glass-input"
+                    style={{ width: '100%', height: '110px', resize: 'vertical', fontFamily: 'inherit', boxSizing: 'border-box' }}
                     placeholder="Add notes about this block..."
                 />
-                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
-                    <button className="btn btn-primary" style={{ background: 'var(--success)', border: 'none', color: 'white' }}>Save Notes</button>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.75rem' }}>
+                    <button className="glass-button glass-button-primary chat-press" style={{ padding: '0.6rem 1.5rem', borderRadius: 12, fontWeight: 700 }}>
+                        Save Notes
+                    </button>
                 </div>
             </div>
         </div>

@@ -113,33 +113,32 @@ export default function BlockImprovements({ logs, dateRange, programs }) {
     }, [logs, activeLift, programs]);
 
     return (
-        <div className="solid-panel" style={{ marginBottom: '2rem', padding: '1.5rem' }}>
-            <h3 style={{ borderBottom: '1px solid var(--card-border)', paddingBottom: '1rem', marginBottom: '1.5rem', color: 'var(--foreground)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                <span className="neon-text" style={{ color: 'var(--accent)' }}>///</span> Block Performance Trajectory
+        <div className="glass-panel" style={{ marginBottom: '2rem', padding: '1.75rem', borderRadius: 16 }}>
+            <h3 style={{ borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem', marginBottom: '1.5rem', color: 'var(--foreground)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.25rem', fontWeight: 700 }}>
+                <span style={{ color: 'var(--primary)', textShadow: '0 0 16px rgba(125, 135, 210, 0.4)' }}>///</span> Block Performance Trajectory
                 <InfoTooltip text="Visualizes your estimated 1 Rep Max (e1RM) progression for the primary competition lifts throughout the block. This helps you track strength trends over time." />
             </h3>
 
-            <div style={{ display: 'flex', gap: '1rem', marginBottom: '2rem', justifyContent: 'center' }}>
+            <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '2rem', justifyContent: 'center', flexWrap: 'wrap' }}>
                 {['Squat', 'Bench', 'Deadlift'].map(lift => {
-                    let activeColor = 'var(--primary)';
-                    if (lift === 'Bench') activeColor = 'var(--accent)';
-                    if (lift === 'Deadlift') activeColor = '#f472b6'; // Pink
+                    const isSelected = activeLift === lift;
 
                     return (
                         <button
                             key={lift}
                             onClick={() => setActiveLift(lift)}
+                            className="chat-press"
                             style={{
-                                padding: '0.6rem 2rem',
-                                background: activeLift === lift ? activeColor : 'transparent',
-                                color: activeLift === lift ? 'black' : 'var(--secondary-foreground)',
-                                border: `1px solid ${activeLift === lift ? activeColor : 'var(--card-border)'}`,
+                                padding: '0.55rem 1.75rem',
+                                background: isSelected ? 'rgba(125, 135, 210, 0.22)' : 'var(--glass-surface-2)',
+                                color: isSelected ? '#ffffff' : 'var(--secondary-foreground)',
+                                border: isSelected ? '1px solid rgba(125, 135, 210, 0.5)' : '1px solid var(--glass-border)',
                                 borderRadius: '20px',
                                 cursor: 'pointer',
                                 fontWeight: 700,
-                                transition: 'all 0.2s',
-                                fontSize: '0.9rem',
-                                boxShadow: activeLift === lift ? `0 0 15px ${activeColor}66` : 'none',
+                                transition: 'all 0.16s var(--ease-out)',
+                                fontSize: '0.88rem',
+                                boxShadow: isSelected ? '0 0 14px rgba(125, 135, 210, 0.3)' : 'none',
                                 textTransform: 'uppercase'
                             }}
                         >
@@ -178,15 +177,16 @@ export default function BlockImprovements({ logs, dateRange, programs }) {
                                 return label;
                             }}
                             contentStyle={{
-                                background: 'rgba(18, 18, 18, 0.95)',
-                                border: '1px solid var(--primary)',
-                                borderRadius: '8px',
-                                boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+                                background: 'rgba(15, 15, 25, 0.85)',
+                                backdropFilter: 'blur(16px)',
+                                border: '1px solid var(--glass-border)',
+                                borderRadius: '12px',
+                                boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
                                 color: 'var(--foreground)'
                             }}
-                            itemStyle={{ color: 'var(--primary)' }}
-                            labelStyle={{ color: 'var(--secondary-foreground)', marginBottom: '0.5rem' }}
-                            cursor={{ stroke: 'rgba(255,255,255,0.2)', strokeWidth: 1 }}
+                            itemStyle={{ color: 'var(--primary)', fontWeight: 600 }}
+                            labelStyle={{ color: 'var(--secondary-foreground)', marginBottom: '0.5rem', fontSize: '0.8rem' }}
+                            cursor={{ stroke: 'rgba(125, 135, 210, 0.3)', strokeWidth: 1.5 }}
                         />
                         <Line
                             type="monotone"

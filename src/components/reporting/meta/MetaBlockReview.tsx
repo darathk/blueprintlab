@@ -208,13 +208,27 @@ export default function MetaBlockReview({ programs, logs, reportParams }) {
         const filteredLogs = logs.filter(l => l.programId === viewingBlockId);
 
         return (
-            <div style={{ padding: '1rem', animation: 'fadeIn 0.3s' }}>
-                <button onClick={() => setViewingBlockId(null)} style={{ background: 'transparent', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem' }}>
+            <div style={{ padding: '0.5rem', animation: 'fadeIn 0.3s' }}>
+                <button
+                    onClick={() => setViewingBlockId(null)}
+                    className="glass-button chat-press"
+                    style={{
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        marginBottom: '1.5rem',
+                        fontSize: '0.85rem',
+                        padding: '6px 14px',
+                        borderRadius: '16px'
+                    }}
+                >
                     ← Back to Meta Block Review
                 </button>
                 <div style={{ marginBottom: '2rem' }}>
-                    <h2 style={{ fontSize: '1.875rem', fontWeight: 700, margin: 0, color: 'var(--foreground)' }}>Block Review: {program?.name}</h2>
-                    <div style={{ fontSize: '0.9rem', color: 'var(--secondary-foreground)', marginTop: '0.5rem' }}>
+                    <h2 style={{ fontSize: '1.875rem', fontWeight: 800, letterSpacing: '-0.02em', margin: 0, color: 'var(--foreground)' }}>
+                        Block Review: <span style={{ color: 'var(--primary)', textShadow: '0 0 24px rgba(125, 135, 210, 0.35)' }}>{program?.name}</span>
+                    </h2>
+                    <div style={{ fontSize: '0.85rem', color: 'var(--secondary-foreground)', marginTop: '0.4rem' }}>
                         {program?.startDate && new Date(program.startDate).toLocaleDateString()} - {program?.endDate ? new Date(program.endDate).toLocaleDateString() : 'Ongoing'}
                     </div>
                 </div>
@@ -229,31 +243,30 @@ export default function MetaBlockReview({ programs, logs, reportParams }) {
     return (
         <div>
             {/* Header / Config */}
-            <div className="solid-panel" style={{ marginBottom: '2rem', padding: '2rem', textAlign: 'center' }}>
-                <h3 style={{ marginBottom: '1.5rem', fontSize: '1.5rem', color: 'var(--primary)', letterSpacing: '-0.02em' }}>
-                    <span className="neon-text">///</span> METABLOCK ANALYTICS
+            <div className="glass-panel" style={{ marginBottom: '2rem', padding: '2rem 1.5rem', textAlign: 'center', borderRadius: 20 }}>
+                <h3 style={{ marginBottom: '1.25rem', fontSize: '1.4rem', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--foreground)' }}>
+                    METABLOCK <span style={{ color: 'var(--primary)', textShadow: '0 0 20px rgba(125, 135, 210, 0.4)' }}>ANALYTICS</span>
                 </h3>
-                <div style={{ display: 'flex', gap: '1.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
                     {['Squat', 'Bench', 'Deadlift'].map(lift => {
-                        let activeColor = 'var(--primary)';
-                        if (lift === 'Bench') activeColor = 'var(--accent)';
-                        if (lift === 'Deadlift') activeColor = '#f472b6'; // Pink
+                        const isSelected = primaryLift === lift;
 
                         return (
                             <button
                                 key={lift}
                                 onClick={() => setPrimaryLift(lift)}
+                                className="chat-press"
                                 style={{
-                                    padding: '0.75rem 2.5rem',
-                                    background: primaryLift === lift ? activeColor : 'transparent',
-                                    color: primaryLift === lift ? 'black' : 'var(--secondary-foreground)',
-                                    border: primaryLift === lift ? `1px solid ${activeColor}` : '1px solid var(--card-border)',
-                                    borderRadius: '30px',
+                                    padding: '0.65rem 2.25rem',
+                                    background: isSelected ? 'rgba(125, 135, 210, 0.22)' : 'var(--glass-surface-2)',
+                                    color: isSelected ? '#ffffff' : 'var(--secondary-foreground)',
+                                    border: isSelected ? '1px solid rgba(125, 135, 210, 0.5)' : '1px solid var(--glass-border)',
+                                    borderRadius: '24px',
                                     cursor: 'pointer',
                                     fontWeight: 700,
-                                    fontSize: '1rem',
-                                    transition: 'all 0.2s',
-                                    boxShadow: primaryLift === lift ? `0 0 20px ${activeColor}66` : 'none'
+                                    fontSize: '0.95rem',
+                                    transition: 'all 0.16s var(--ease-out)',
+                                    boxShadow: isSelected ? '0 0 16px rgba(125, 135, 210, 0.3)' : 'none'
                                 }}
                             >
                                 {lift}

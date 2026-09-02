@@ -221,60 +221,84 @@ export default function CompetitionLiftHeatMap({ blocks, logs, primaryLift }) {
     };
 
     return (
-        <div className="solid-panel" style={{ marginBottom: '2rem', padding: '1.5rem', overflow: 'visible', background: 'var(--background)' }}>
+        <div className="glass-panel" style={{ marginBottom: '2rem', padding: '1.5rem', overflow: 'visible', borderRadius: 16 }}>
             {/* Header / Config */}
             <div style={{ position: 'relative', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
-                <h3 style={{ margin: 0, color: 'var(--foreground)', fontSize: '1.25rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                    <span className="neon-text" style={{ color: 'var(--primary)' }}>///</span> {primaryLift} Heat Map
+                <h3 style={{ margin: 0, color: 'var(--foreground)', fontSize: '1.25rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                    <span style={{ color: 'var(--primary)', textShadow: '0 0 16px rgba(125, 135, 210, 0.4)' }}>///</span> {primaryLift} Heat Map
                     <span
                         onMouseEnter={() => setShowInfo(true)}
                         onMouseLeave={() => setShowInfo(false)}
-                        style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '20px', height: '20px', borderRadius: '50%', background: 'var(--card-border)', color: 'var(--secondary-foreground)', fontSize: '0.8rem', cursor: 'help', marginLeft: '0.5rem' }}
+                        style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '22px', height: '22px', borderRadius: '50%', background: 'var(--glass-surface-3)', border: '1px solid var(--glass-border)', color: 'var(--primary)', fontSize: '0.78rem', cursor: 'help', marginLeft: '0.5rem', fontWeight: 700 }}
                     >?</span>
                 </h3>
 
                 {/* RTS style tooltip popup */}
                 {showInfo && (
-                    <div style={{ position: 'absolute', top: '100%', left: '0', width: '450px', background: '#111111', backdropFilter: 'blur(12px)', color: 'var(--foreground)', padding: '1.5rem', borderRadius: 'var(--radius)', zIndex: 100, border: '1px solid var(--card-border)', boxShadow: '0 10px 25px rgba(0,0,0,0.5)', fontSize: '0.85rem', lineHeight: '1.5' }}>
-                        <strong style={{ display: 'block', marginBottom: '1rem', fontSize: '0.95rem', color: 'var(--primary)' }}>Green indicates higher values; Red indicates lower values.</strong>
+                    <div className="glass-panel-elevated" style={{ position: 'absolute', top: '100%', left: '0', width: '450px', padding: '1.5rem', borderRadius: 16, zIndex: 100, fontSize: '0.85rem', lineHeight: '1.5' }}>
+                        <strong style={{ display: 'block', marginBottom: '0.75rem', fontSize: '0.95rem', color: 'var(--primary)' }}>Green indicates higher values; Red indicates lower values.</strong>
                         <p style={{ marginBottom: '1rem', color: 'var(--secondary-foreground)' }}>This heat map is an easy way for you to see what kinds of rep and RPE pairings you respond well to. Reps are listed down the vertical axis. RPE is across the horizontal axis. Click on a dot for more detailed info.</p>
 
-                        <p style={{ marginBottom: '0.7rem' }}><strong style={{ color: 'var(--foreground)' }}>End E1RM:</strong> This is the final E1RM of the training block. Greener colors indicate a higher-than-average End E1RM for blocks containing this rep-RPE pairing.</p>
-                        <p style={{ marginBottom: '0.7rem' }}><strong style={{ color: 'var(--foreground)' }}>Peak E1RM:</strong> This is the best E1RM from the training block. Greener colors indicate a higher-than-average Peak E1RM for blocks containing this rep-RPE pairing.</p>
-                        <p style={{ marginBottom: '0.7rem' }}><strong style={{ color: 'var(--foreground)' }}>Gain:</strong> This refers to the change between your starting E1RM and End E1RM for each block. In other words, it's how productive each block was for you. Greener colors indicate a higher-than-average Gain for blocks containing this rep-RPE pairing.</p>
+                        <p style={{ marginBottom: '0.6rem' }}><strong style={{ color: 'var(--foreground)' }}>End E1RM:</strong> This is the final E1RM of the training block. Greener colors indicate a higher-than-average End E1RM for blocks containing this rep-RPE pairing.</p>
+                        <p style={{ marginBottom: '0.6rem' }}><strong style={{ color: 'var(--foreground)' }}>Peak E1RM:</strong> This is the best E1RM from the training block. Greener colors indicate a higher-than-average Peak E1RM for blocks containing this rep-RPE pairing.</p>
+                        <p style={{ marginBottom: '0.6rem' }}><strong style={{ color: 'var(--foreground)' }}>Gain:</strong> This refers to the change between your starting E1RM and End E1RM for each block. In other words, it&apos;s how productive each block was for you. Greener colors indicate a higher-than-average Gain for blocks containing this rep-RPE pairing.</p>
                         <p style={{ marginBottom: 0 }}><strong style={{ color: 'var(--foreground)' }}># of Blocks:</strong> This refers to how many blocks are associated with this rep-RPE combo. Greener colors indicate a higher-than-average number for blocks containing this rep-RPE pairing. This is useful in determining where you have robust data and where the data is more slim.</p>
                     </div>
                 )}
             </div>
 
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid var(--card-border)' }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid var(--glass-border)' }}>
                 <div style={{ color: 'var(--foreground)', fontSize: '0.9rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    Comp Lifts: <span style={{ fontWeight: 400 }}>{primaryLift}</span>
+                    Comp Lifts: <span style={{ fontWeight: 400, color: 'var(--secondary-foreground)' }}>{primaryLift}</span>
 
-                    <div style={{ display: 'flex', background: 'rgba(0,0,0,0.2)', borderRadius: '4px', padding: '2px', marginLeft: '1rem' }}>
+                    <div style={{ display: 'flex', background: 'var(--glass-surface-2)', border: '1px solid var(--glass-border)', borderRadius: '20px', padding: '3px', marginLeft: '0.5rem' }}>
                         <button
                             onClick={() => setViewMode('grid')}
-                            style={{ background: viewMode === 'grid' ? 'var(--primary)' : 'transparent', color: viewMode === 'grid' ? '#000' : 'var(--secondary-foreground)', border: 'none', padding: '0.4rem 1rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}
+                            className="chat-press"
+                            style={{
+                                background: viewMode === 'grid' ? 'rgba(125, 135, 210, 0.22)' : 'transparent',
+                                color: viewMode === 'grid' ? '#ffffff' : 'var(--secondary-foreground)',
+                                border: viewMode === 'grid' ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid transparent',
+                                padding: '0.35rem 0.9rem',
+                                borderRadius: '16px',
+                                cursor: 'pointer',
+                                fontSize: '0.78rem',
+                                fontWeight: 700,
+                                transition: 'all 0.16s var(--ease-out)',
+                                boxShadow: viewMode === 'grid' ? '0 0 10px rgba(125, 135, 210, 0.25)' : 'none'
+                            }}
                         >Grid View</button>
                         <button
                             onClick={() => setViewMode('radial')}
-                            style={{ background: viewMode === 'radial' ? 'var(--primary)' : 'transparent', color: viewMode === 'radial' ? '#000' : 'var(--secondary-foreground)', border: 'none', padding: '0.4rem 1rem', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}
+                            className="chat-press"
+                            style={{
+                                background: viewMode === 'radial' ? 'rgba(125, 135, 210, 0.22)' : 'transparent',
+                                color: viewMode === 'radial' ? '#ffffff' : 'var(--secondary-foreground)',
+                                border: viewMode === 'radial' ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid transparent',
+                                padding: '0.35rem 0.9rem',
+                                borderRadius: '16px',
+                                cursor: 'pointer',
+                                fontSize: '0.78rem',
+                                fontWeight: 700,
+                                transition: 'all 0.16s var(--ease-out)',
+                                boxShadow: viewMode === 'radial' ? '0 0 10px rgba(125, 135, 210, 0.25)' : 'none'
+                            }}
                         >Radial View</button>
                     </div>
                 </div>
 
-                <div style={{ background: 'var(--secondary)', border: '1px solid var(--card-border)', padding: '0.5rem 1rem', borderRadius: 'var(--radius)', display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+                <div style={{ background: 'var(--glass-surface-2)', border: '1px solid var(--glass-border)', padding: '6px 14px', borderRadius: '14px', display: 'flex', gap: '1.25rem', alignItems: 'center' }}>
                     <span style={{ color: 'var(--secondary-foreground)', display: 'flex', alignItems: 'center' }}>
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon></svg>
                     </span>
                     {['End E1RM', 'Peak E1RM', 'Gain', '# of Blocks'].map(opt => (
-                        <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer', fontSize: '0.85rem', color: 'var(--foreground)', fontWeight: 500 }}>
+                        <label key={opt} style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', cursor: 'pointer', fontSize: '0.82rem', color: metric === opt ? 'var(--foreground)' : 'var(--secondary-foreground)', fontWeight: 600 }}>
                             <input
                                 type="radio"
                                 name="heatmapMetric"
                                 checked={metric === opt}
                                 onChange={() => setMetric(opt)}
-                                style={{ accentColor: 'var(--primary)', transform: 'scale(1.1)' }}
+                                style={{ accentColor: 'var(--primary)' }}
                             />
                             {opt}
                         </label>
