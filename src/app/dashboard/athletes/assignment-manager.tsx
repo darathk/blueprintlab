@@ -58,29 +58,25 @@ export default function AssignmentManager({ athletes, programs, logs = [] }) {
 
     return (
         <div>
-            <ul style={{ listStyle: 'none' }}>
+            <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                 {activeAthletes.map(athlete => {
                     const currentProgram = programs.find(p => p.id === athlete.currentProgramId);
 
                     // Progress Calculation
                     let progressInfo = null;
                     if (currentProgram) {
-                        // Total Sessions in Program
                         let totalSessions = 0;
                         currentProgram.weeks.forEach(w => {
                             totalSessions += w.sessions.length;
                         });
 
-                        // Completed Sessions by this Athlete for this Program
                         const completedSessions = new Set(
                             logs.filter(l => l.athleteId === athlete.id && l.programId === currentProgram.id)
                                 .map(l => l.sessionId)
                         ).size;
 
-                        // Calculate Percentage
                         const percent = totalSessions > 0 ? Math.min(100, Math.round((completedSessions / totalSessions) * 100)) : 0;
 
-                        // Estimate Week
                         const totalWeeks = currentProgram.weeks.length;
                         const sessionsPerWeek = totalSessions / (totalWeeks || 1);
                         const currentWeek = Math.min(totalWeeks, Math.floor(completedSessions / (sessionsPerWeek || 1)) + 1);
@@ -97,10 +93,10 @@ export default function AssignmentManager({ athletes, programs, logs = [] }) {
                     }
 
                     return (
-                        <li key={athlete.id} style={{ padding: '1.5rem 0', borderBottom: '1px solid var(--card-border)' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                        <li key={athlete.id} className="glass-panel" style={{ padding: '1.25rem 1.5rem' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: progressInfo ? '1rem' : '0' }}>
                                 <div>
-                                    <div style={{ fontWeight: 600, fontSize: '1.1rem' }}>{athlete.name}</div>
+                                    <div style={{ fontWeight: 600, fontSize: '1.1rem', color: 'var(--foreground)' }}>{athlete.name}</div>
                                     <div style={{ fontSize: '0.85rem', color: 'var(--secondary-foreground)', marginTop: '0.2rem' }}>
                                         Current Program: <span style={{ color: 'var(--primary)', fontWeight: 500 }}>{currentProgram ? currentProgram.name : 'None'}</span>
                                     </div>
@@ -110,7 +106,7 @@ export default function AssignmentManager({ athletes, programs, logs = [] }) {
                             {/* Progress Bar Section */}
                             {
                                 currentProgram && progressInfo && (
-                                    <div style={{ background: 'rgba(255,255,255,0.03)', padding: '1rem', borderRadius: '6px' }}>
+                                    <div style={{ background: 'var(--glass-surface-2)', padding: '0.9rem 1rem', borderRadius: '10px', border: '1px solid var(--glass-border)', boxShadow: 'var(--glass-specular)' }}>
                                         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem', marginBottom: '0.5rem', color: 'var(--foreground)' }}>
                                             <span>
                                                 <strong>Session {progressInfo.completed}</strong> of {progressInfo.total}
@@ -124,16 +120,17 @@ export default function AssignmentManager({ athletes, programs, logs = [] }) {
                                         </div>
 
                                         {/* Bar Track */}
-                                        <div style={{ width: '100%', height: '8px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px', overflow: 'hidden' }}>
+                                        <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden' }}>
                                             {/* Bar Fill */}
                                             <div style={{
                                                 width: `${progressInfo.percent}%`,
                                                 height: '100%',
-                                                background: progressInfo.percent === 100 ? 'var(--success)' : 'var(--primary)',
+                                                background: progressInfo.percent === 100 ? 'var(--success)' : 'linear-gradient(90deg, var(--primary), var(--accent))',
+                                                boxShadow: '0 0 10px rgba(125, 135, 210, 0.4)',
                                                 transition: 'width 0.5s ease'
                                             }} />
                                         </div>
-                                        <div style={{ textAlign: 'right', fontSize: '0.75rem', marginTop: '0.2rem', color: 'var(--secondary-foreground)' }}>
+                                        <div style={{ textAlign: 'right', fontSize: '0.75rem', marginTop: '0.25rem', color: 'var(--primary)', fontWeight: 600 }}>
                                             {progressInfo.percent}% Complete
                                         </div>
                                     </div>
@@ -146,19 +143,19 @@ export default function AssignmentManager({ athletes, programs, logs = [] }) {
 
             {archivedAthletes.length > 0 && (
                 <div style={{ marginTop: '3rem' }}>
-                    <h2 style={{ fontSize: '1.5rem', fontWeight: 600, color: 'var(--secondary-foreground)', marginBottom: '1rem' }}>Archived Athletes</h2>
-                    <ul style={{ listStyle: 'none' }}>
+                    <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--foreground)', marginBottom: '1rem' }}>Archived Athletes</h2>
+                    <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                         {archivedAthletes.map(athlete => (
-                            <li key={athlete.id} style={{ padding: '1rem', background: 'rgba(0,0,0,0.2)', border: '1px dashed var(--card-border)', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                            <li key={athlete.id} className="glass-panel" style={{ padding: '1rem 1.25rem', border: '1px dashed var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                 <div>
-                                    <div style={{ fontWeight: 600 }}>{athlete.name}</div>
+                                    <div style={{ fontWeight: 600, color: 'var(--foreground)' }}>{athlete.name}</div>
                                     <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)' }}>{athlete.email}</div>
                                 </div>
                                 <button
-                                    className="btn-primary"
+                                    className="glass-button glass-button-primary chat-press"
                                     onClick={() => handleRestore(athlete.id)}
                                     disabled={loading}
-                                    style={{ padding: '0.5rem 1rem', fontSize: '0.85rem' }}
+                                    style={{ padding: '0.45rem 1rem', fontSize: '0.82rem' }}
                                 >
                                     Restore
                                 </button>

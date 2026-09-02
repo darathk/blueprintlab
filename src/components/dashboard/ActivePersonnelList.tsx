@@ -494,14 +494,14 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
             </div>
 
             {/* Search Bar */}
-            <div style={{
+            <div className="glass-panel" style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: '0.75rem',
-                padding: '0.7rem 1rem',
-                borderRadius: '12px',
-                border: '1px solid var(--card-border)',
-                background: 'rgba(255, 255, 255, 0.03)',
+                padding: '0.65rem 1.1rem',
+                borderRadius: '14px',
+                background: 'var(--glass-surface-2)',
+                border: '1px solid var(--glass-border)',
                 transition: 'border-color 0.2s',
             }}>
                 <Search size={18} style={{ color: 'var(--secondary-foreground)', flexShrink: 0 }} />
@@ -522,6 +522,7 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
                 {searchQuery && (
                     <button
                         onClick={() => setSearchQuery('')}
+                        className="chat-press"
                         style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', display: 'flex', padding: 2 }}
                     >
                         <X size={16} />
@@ -529,6 +530,7 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
                 )}
                 <button
                     onClick={() => setIsAdding(!isAdding)}
+                    className="chat-press"
                     style={{
                         background: 'none',
                         border: 'none',
@@ -544,10 +546,11 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
                 >
                     {isAdding ? <X size={20} /> : <Plus size={20} />}
                 </button>
-                <div style={{ width: 1, height: 20, background: 'var(--card-border)', flexShrink: 0 }} />
+                <div style={{ width: 1, height: 20, background: 'var(--glass-border)', flexShrink: 0 }} />
                 <div ref={filterRef} style={{ position: 'relative' }}>
                     <button
                         onClick={() => setShowFilters(!showFilters)}
+                        className="chat-press"
                         style={{
                             background: 'none',
                             border: 'none',
@@ -566,20 +569,18 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
 
                     {/* Filter Dropdown */}
                     {showFilters && (
-                        <div style={{
+                        <div className="glass-panel-elevated" style={{
                             position: 'absolute',
                             top: 'calc(100% + 8px)',
                             right: 0,
                             zIndex: 100,
-                            background: '#1a1a24',
-                            border: '1px solid rgba(255,255,255,0.1)',
-                            borderRadius: '12px',
-                            padding: '0.75rem',
-                            minWidth: '200px',
-                            boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+                            borderRadius: '14px',
+                            padding: '0.85rem',
+                            minWidth: '220px',
                             display: 'flex',
                             flexDirection: 'column',
-                            gap: '0.6rem',
+                            gap: '0.65rem',
+                            animation: 'popoverIn 160ms var(--ease-out)'
                         }}>
                             <div style={{ fontSize: '0.7rem', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Sort by</div>
                             <div style={{ display: 'flex', gap: '0.4rem' }}>
@@ -591,15 +592,16 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
                                     <button
                                         key={opt.value}
                                         onClick={() => updateSort(opt.value as any)}
+                                        className="chat-press"
                                         style={{
                                             flex: 1,
-                                            padding: '0.35rem 0.5rem',
+                                            padding: '0.4rem 0.5rem',
                                             borderRadius: '8px',
-                                            border: `1px solid ${sortBy === opt.value ? 'var(--primary)' : 'var(--card-border)'}`,
-                                            background: sortBy === opt.value ? 'rgba(6, 182, 212, 0.12)' : 'transparent',
-                                            color: sortBy === opt.value ? 'var(--primary)' : 'var(--foreground)',
+                                            border: `1px solid ${sortBy === opt.value ? 'rgba(125, 135, 210, 0.4)' : 'var(--glass-border)'}`,
+                                            background: sortBy === opt.value ? 'rgba(125, 135, 210, 0.16)' : 'var(--glass-surface-2)',
+                                            color: sortBy === opt.value ? '#fff' : 'var(--secondary-foreground)',
                                             fontSize: '0.8rem',
-                                            fontWeight: 500,
+                                            fontWeight: sortBy === opt.value ? 600 : 500,
                                             cursor: 'pointer',
                                             transition: 'all 0.15s',
                                         }}
@@ -608,18 +610,19 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
                                     </button>
                                 ))}
                             </div>
-                            <div style={{ height: 1, background: 'var(--card-border)' }} />
+                            <div style={{ height: 1, background: 'var(--glass-border)' }} />
                             <button
                                 onClick={() => updateFilterMeet(!filterMeet)}
+                                className="chat-press"
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'space-between',
-                                    padding: '0.35rem 0.5rem',
+                                    padding: '0.45rem 0.6rem',
                                     borderRadius: '8px',
-                                    border: `1px solid ${filterMeet ? 'var(--primary)' : 'var(--card-border)'}`,
-                                    background: filterMeet ? 'rgba(6, 182, 212, 0.12)' : 'transparent',
-                                    color: filterMeet ? 'var(--primary)' : 'var(--foreground)',
+                                    border: `1px solid ${filterMeet ? 'rgba(125, 135, 210, 0.4)' : 'var(--glass-border)'}`,
+                                    background: filterMeet ? 'rgba(125, 135, 210, 0.16)' : 'var(--glass-surface-2)',
+                                    color: filterMeet ? '#fff' : 'var(--foreground)',
                                     fontSize: '0.8rem',
                                     fontWeight: 500,
                                     cursor: 'pointer',
@@ -627,19 +630,20 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
                                     width: '100%',
                                 }}
                             >
-                                Has Meet
-                                <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>{filterMeet ? 'On' : 'Off'}</span>
+                                <span>Has Meet</span>
+                                <span style={{ fontSize: '0.75rem', color: filterMeet ? 'var(--primary)' : 'var(--secondary-foreground)', fontWeight: 600 }}>{filterMeet ? 'On' : 'Off'}</span>
                             </button>
                             <button
                                 onClick={() => updateFilterNeedsUpdate(!filterNeedsUpdate)}
+                                className="chat-press"
                                 style={{
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'space-between',
-                                    padding: '0.35rem 0.5rem',
+                                    padding: '0.45rem 0.6rem',
                                     borderRadius: '8px',
-                                    border: `1px solid ${filterNeedsUpdate ? '#F59E0B' : 'var(--card-border)'}`,
-                                    background: filterNeedsUpdate ? 'rgba(245, 158, 11, 0.12)' : 'transparent',
+                                    border: `1px solid ${filterNeedsUpdate ? 'rgba(245, 158, 11, 0.4)' : 'var(--glass-border)'}`,
+                                    background: filterNeedsUpdate ? 'rgba(245, 158, 11, 0.16)' : 'var(--glass-surface-2)',
                                     color: filterNeedsUpdate ? '#F59E0B' : 'var(--foreground)',
                                     fontSize: '0.8rem',
                                     fontWeight: 500,
@@ -648,8 +652,8 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
                                     width: '100%',
                                 }}
                             >
-                                Needs Update
-                                <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>{filterNeedsUpdate ? 'On' : 'Off'}</span>
+                                <span>Needs Update</span>
+                                <span style={{ fontSize: '0.75rem', color: filterNeedsUpdate ? '#F59E0B' : 'var(--secondary-foreground)', fontWeight: 600 }}>{filterNeedsUpdate ? 'On' : 'Off'}</span>
                             </button>
                         </div>
                     )}
@@ -657,32 +661,32 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
             </div>
 
             {isAdding && (
-                <div className="glass-panel" style={{ padding: '1.5rem', marginBottom: '1rem', border: '1px solid var(--primary)' }}>
-                    <h3 style={{ marginTop: 0, marginBottom: '1rem', fontSize: '1.1rem' }}>Add New Athlete</h3>
+                <div className="glass-panel-elevated" style={{ padding: '1.5rem', marginBottom: '0.5rem', border: '1px solid rgba(125, 135, 210, 0.35)', animation: 'popoverIn 160ms var(--ease-out)' }}>
+                    <h3 style={{ marginTop: 0, marginBottom: '1rem', fontSize: '1.1rem', fontWeight: 600, color: 'var(--foreground)' }}>Add New Athlete</h3>
                     <form onSubmit={handleAddAthlete} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-end', flexWrap: 'wrap' }}>
                         <div style={{ flex: 1, minWidth: '200px' }}>
-                            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--muted)', marginBottom: '0.3rem' }}>Name</label>
+                            <label className="label" style={{ marginBottom: '0.4rem' }}>Name</label>
                             <input
                                 type="text"
                                 required
+                                className="glass-input"
                                 value={newName}
                                 onChange={(e) => setNewName(e.target.value)}
-                                style={{ width: '100%', padding: '0.6rem', borderRadius: '4px', border: '1px solid var(--card-border)', background: 'var(--background)', color: 'white' }}
                                 placeholder="E.g. John Doe"
                             />
                         </div>
                         <div style={{ flex: 1, minWidth: '200px' }}>
-                            <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--muted)', marginBottom: '0.3rem' }}>Email</label>
+                            <label className="label" style={{ marginBottom: '0.4rem' }}>Email</label>
                             <input
                                 type="email"
                                 required
+                                className="glass-input"
                                 value={newEmail}
                                 onChange={(e) => setNewEmail(e.target.value)}
-                                style={{ width: '100%', padding: '0.6rem', borderRadius: '4px', border: '1px solid var(--card-border)', background: 'var(--background)', color: 'white' }}
                                 placeholder="john@example.com"
                             />
                         </div>
-                        <button type="submit" className="btn btn-primary" disabled={isSubmitting} style={{ padding: '0.6rem 1.5rem' }}>
+                        <button type="submit" className="glass-button glass-button-primary chat-press" disabled={isSubmitting} style={{ padding: '0.65rem 1.5rem', fontWeight: 600 }}>
                             {isSubmitting ? 'Adding...' : 'Add Athlete'}
                         </button>
                     </form>

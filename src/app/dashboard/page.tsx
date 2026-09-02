@@ -44,13 +44,17 @@ export default async function DashboardPage() {
 
     return (
         <div>
-            <div className="dashboard-heading-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '3rem' }}>
-                <h1 className="dashboard-heading" style={{ fontSize: '2.5rem', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>
-                    Coach <span style={{ color: 'var(--primary)', textShadow: '0 0 20px rgba(6,182,212,0.4)' }}>Command Center</span>
+            <div className="dashboard-heading-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2.5rem', paddingTop: '1.5rem' }}>
+                <h1 className="dashboard-heading" style={{ fontSize: '2.25rem', fontWeight: 800, letterSpacing: '-0.02em', margin: 0, color: 'var(--foreground)' }}>
+                    Coach <span style={{ color: 'var(--primary)', textShadow: '0 0 24px rgba(125, 135, 210, 0.45)' }}>Command Center</span>
                 </h1>
             </div>
 
-            <Suspense fallback={<div style={{ textAlign: 'center', padding: '50px', color: 'var(--secondary-foreground)' }} className="pulse">Loading athletes...</div>}>
+            <Suspense fallback={
+                <div className="glass-panel" style={{ textAlign: 'center', padding: '60px 20px', color: 'var(--secondary-foreground)' }}>
+                    <div style={{ fontSize: '1rem', fontWeight: 500 }}>Loading athletes...</div>
+                </div>
+            }>
                 <DashboardData coachId={coachId} />
             </Suspense>
         </div>

@@ -79,7 +79,7 @@ export default async function DashboardLayout({
         <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'var(--background)' }}>
             <header className="dashboard-header" style={{
                 height: 'var(--header-height)',
-                borderBottom: '1px solid var(--card-border)',
+                borderBottom: '1px solid var(--glass-border)',
                 marginBottom: '0',
                 borderRadius: '0',
                 borderTop: 'none',
@@ -88,14 +88,17 @@ export default async function DashboardLayout({
                 position: 'sticky',
                 top: 0,
                 zIndex: 100,
-                background: 'rgba(10, 10, 10, 0.85)',
-                backdropFilter: 'blur(16px)',
-                WebkitBackdropFilter: 'blur(16px)',
+                background: 'rgba(10, 10, 14, 0.82)',
+                backdropFilter: 'blur(var(--glass-blur-lg))',
+                WebkitBackdropFilter: 'blur(var(--glass-blur-lg))',
+                boxShadow: 'var(--glass-specular)'
             }}>
-                <div className="w-full flex items-center justify-between h-full px-8 md:px-14 lg:px-20">
-                    <div style={{ fontWeight: 800, fontSize: '1.25rem', letterSpacing: '-0.03em', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <span>Blueprint<span style={{ color: 'var(--primary)' }}>Lab</span></span>
-                    </div>
+                <div className="w-full flex items-center justify-between h-full px-6 md:px-12 lg:px-16">
+                    <Link href="/dashboard" className="chat-press" style={{ textDecoration: 'none' }}>
+                        <div style={{ fontWeight: 800, fontSize: '1.25rem', letterSpacing: '-0.03em', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <span style={{ color: 'var(--foreground)' }}>Blueprint<span style={{ color: 'var(--primary)', textShadow: '0 0 12px rgba(125, 135, 210, 0.4)' }}>Lab</span></span>
+                        </div>
+                    </Link>
 
                     <div className="hidden md:flex items-center gap-4">
                         <TopNavigation unreadCount={unreadCount} userId={athleteId || undefined} />

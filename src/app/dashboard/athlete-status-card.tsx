@@ -107,43 +107,44 @@ export default function AthleteStatusCard({ athlete, progress, daysSinceLastLog 
 
     return (
         <div
-            className="glass-panel athlete-card-inner"
+            className="glass-panel athlete-card-inner chat-press"
             style={{
                 padding: '1.5rem',
                 cursor: 'pointer',
-                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                transition: 'all 0.25s var(--ease-out)',
                 position: 'relative',
                 overflow: 'hidden',
-                border: '1px solid var(--card-border)'
+                borderRadius: '16px'
             }}
             onClick={() => router.push(`/dashboard/athletes/${athlete.id}`)}
             onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'var(--primary)';
-                e.currentTarget.style.boxShadow = '0 0 20px rgba(6, 182, 212, 0.2)';
+                e.currentTarget.style.borderColor = 'rgba(125, 135, 210, 0.4)';
+                e.currentTarget.style.boxShadow = 'var(--glass-ring), 0 12px 36px rgba(0, 0, 0, 0.45), 0 0 20px rgba(125, 135, 210, 0.18)';
                 e.currentTarget.style.transform = 'translateY(-2px)';
             }}
             onMouseLeave={(e) => {
                 e.currentTarget.style.borderColor = 'var(--card-border)';
-                e.currentTarget.style.boxShadow = 'none';
+                e.currentTarget.style.boxShadow = 'var(--glass-ring), var(--glass-shadow), var(--glass-specular)';
                 e.currentTarget.style.transform = 'translateY(0)';
             }}
         >
-            <div className="flex-mobile-col athlete-card-header" style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <div className="flex-mobile-col athlete-card-header" style={{ marginBottom: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <div>
-                    <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'white', letterSpacing: '-0.01em', display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    <h3 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'var(--foreground)', letterSpacing: '-0.01em', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                         {athlete.name}
                         <button
                             onClick={handleDelete}
+                            className="chat-press"
                             style={{
                                 background: 'transparent',
                                 border: 'none',
                                 color: 'var(--destructive)',
                                 cursor: 'pointer',
-                                fontSize: '0.9rem',
+                                fontSize: '0.8rem',
                                 padding: '0.2rem 0.5rem',
                                 opacity: 0.6,
                                 transition: 'opacity 0.2s',
-                                fontWeight: 'normal'
+                                fontWeight: 500
                             }}
                             onMouseEnter={(e) => e.currentTarget.style.opacity = '1'}
                             onMouseLeave={(e) => e.currentTarget.style.opacity = '0.6'}
@@ -152,8 +153,8 @@ export default function AthleteStatusCard({ athlete, progress, daysSinceLastLog 
                             Delete
                         </button>
                     </h3>
-                    <div style={{ fontSize: '0.85rem', color: 'var(--secondary-foreground)', marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--success)' }}></span>
+                    <div style={{ fontSize: '0.8125rem', color: 'var(--secondary-foreground)', marginTop: '0.25rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--success)', boxShadow: '0 0 8px rgba(16, 185, 129, 0.5)' }}></span>
                         {progress.programName}
                     </div>
 
@@ -173,31 +174,28 @@ export default function AthleteStatusCard({ athlete, progress, daysSinceLastLog 
                                         if (e.key === 'Enter') handleEmailSave();
                                         if (e.key === 'Escape') { setEditingEmail(false); setEmailValue(athlete.email || ''); setEmailError(''); }
                                     }}
+                                    className="glass-input"
                                     style={{
-                                        flex: 1, fontSize: '0.8rem', padding: '4px 8px',
-                                        background: 'rgba(0,0,0,0.4)', border: '1px solid var(--primary)',
-                                        borderRadius: 6, color: 'var(--foreground)', outline: 'none',
-                                        minWidth: 0,
+                                        fontSize: '0.8rem', padding: '4px 8px',
+                                        minWidth: 0, flex: 1
                                     }}
                                     placeholder="athlete@email.com"
                                 />
                                 <button
                                     onClick={handleEmailSave}
                                     disabled={emailSaving}
+                                    className="glass-button glass-button-primary chat-press"
                                     style={{
-                                        fontSize: '0.75rem', padding: '4px 10px', borderRadius: 6,
-                                        border: 'none', cursor: 'pointer', fontWeight: 600,
-                                        background: 'var(--primary)', color: '#000',
+                                        fontSize: '0.75rem', padding: '4px 10px',
                                     }}
                                 >
                                     {emailSaving ? '...' : 'Save'}
                                 </button>
                                 <button
                                     onClick={(e) => { e.stopPropagation(); setEditingEmail(false); setEmailValue(athlete.email || ''); setEmailError(''); }}
+                                    className="glass-button chat-press"
                                     style={{
-                                        fontSize: '0.75rem', padding: '4px 8px', borderRadius: 6,
-                                        border: '1px solid rgba(255,255,255,0.15)', cursor: 'pointer',
-                                        background: 'transparent', color: 'var(--secondary-foreground)',
+                                        fontSize: '0.75rem', padding: '4px 8px',
                                     }}
                                 >
                                     Cancel
@@ -234,25 +232,23 @@ export default function AthleteStatusCard({ athlete, progress, daysSinceLastLog 
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.75rem',
-                    padding: '0.6rem 0.85rem',
+                    padding: '0.65rem 0.95rem',
                     marginBottom: '1rem',
-                    borderRadius: '8px',
+                    borderRadius: '10px',
                     background: meetPassed
                         ? 'rgba(239, 68, 68, 0.08)'
                         : daysOut <= 14
-                            ? 'rgba(245, 158, 11, 0.1)'
-                            : 'rgba(6, 182, 212, 0.08)',
+                            ? 'rgba(245, 158, 11, 0.09)'
+                            : 'rgba(125, 135, 210, 0.09)',
                     border: `1px solid ${meetPassed
                         ? 'rgba(239, 68, 68, 0.2)'
                         : daysOut <= 14
-                            ? 'rgba(245, 158, 11, 0.2)'
-                            : 'rgba(6, 182, 212, 0.15)'
+                            ? 'rgba(245, 158, 11, 0.22)'
+                            : 'rgba(125, 135, 210, 0.22)'
                         }`,
-                    fontSize: '0.8rem'
+                    fontSize: '0.8rem',
+                    boxShadow: 'var(--glass-specular)'
                 }}>
-                    <span style={{ fontSize: '1rem' }}>
-                        {meetPassed ? '' : daysOut <= 14 ? '' : ''}
-                    </span>
                     <div style={{ flex: 1 }}>
                         <div style={{ fontWeight: 600, color: 'var(--foreground)' }}>
                             {athlete.nextMeetName || 'Meet'}
@@ -290,17 +286,19 @@ export default function AthleteStatusCard({ athlete, progress, daysSinceLastLog 
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.6rem',
-                    padding: '0.5rem 0.75rem',
+                    padding: '0.55rem 0.85rem',
                     marginBottom: '0.75rem',
-                    borderRadius: '8px',
-                    background: hasNextBlockReady ? 'rgba(245, 158, 11, 0.08)' : 'rgba(239, 68, 68, 0.1)',
-                    border: `1px solid ${hasNextBlockReady ? 'rgba(245, 158, 11, 0.25)' : 'rgba(239, 68, 68, 0.25)'}`,
+                    borderRadius: '10px',
+                    background: hasNextBlockReady ? 'rgba(245, 158, 11, 0.08)' : 'rgba(239, 68, 68, 0.09)',
+                    border: `1px solid ${hasNextBlockReady ? 'rgba(245, 158, 11, 0.22)' : 'rgba(239, 68, 68, 0.22)'}`,
                     fontSize: '0.78rem',
+                    boxShadow: 'var(--glass-specular)'
                 }}>
                     <span style={{
                         width: 8, height: 8, borderRadius: '50%', flexShrink: 0,
                         background: hasNextBlockReady ? '#F59E0B' : '#EF4444',
                         animation: 'pulse 2s infinite',
+                        boxShadow: `0 0 8px ${hasNextBlockReady ? '#F59E0B' : '#EF4444'}`
                     }} />
                     <span style={{ color: hasNextBlockReady ? '#FCD34D' : '#FCA5A5', fontWeight: 600 }}>
                         {hasNextBlockReady ? '⚡ Finishing soon — next block ready' : '⚠️ Finishing soon — needs new program'}
@@ -314,16 +312,17 @@ export default function AthleteStatusCard({ athlete, progress, daysSinceLastLog 
                     display: 'flex',
                     alignItems: 'center',
                     gap: '0.6rem',
-                    padding: '0.5rem 0.75rem',
+                    padding: '0.55rem 0.85rem',
                     marginBottom: '0.75rem',
-                    borderRadius: '8px',
+                    borderRadius: '10px',
                     background: daysSinceLastLog >= 7 || daysSinceLastLog === -1
-                        ? 'rgba(239, 68, 68, 0.1)'
-                        : 'rgba(245, 158, 11, 0.1)',
+                        ? 'rgba(239, 68, 68, 0.09)'
+                        : 'rgba(245, 158, 11, 0.09)',
                     border: `1px solid ${daysSinceLastLog >= 7 || daysSinceLastLog === -1
-                        ? 'rgba(239, 68, 68, 0.25)'
-                        : 'rgba(245, 158, 11, 0.25)'}`,
+                        ? 'rgba(239, 68, 68, 0.22)'
+                        : 'rgba(245, 158, 11, 0.22)'}`,
                     fontSize: '0.78rem',
+                    boxShadow: 'var(--glass-specular)'
                 }}>
                     <span style={{
                         width: 8,
@@ -332,6 +331,7 @@ export default function AthleteStatusCard({ athlete, progress, daysSinceLastLog 
                         background: daysSinceLastLog >= 7 || daysSinceLastLog === -1 ? '#EF4444' : '#F59E0B',
                         flexShrink: 0,
                         animation: 'pulse 2s infinite',
+                        boxShadow: `0 0 8px ${daysSinceLastLog >= 7 || daysSinceLastLog === -1 ? '#EF4444' : '#F59E0B'}`
                     }} />
                     <span style={{
                         color: daysSinceLastLog >= 7 || daysSinceLastLog === -1
@@ -346,8 +346,8 @@ export default function AthleteStatusCard({ athlete, progress, daysSinceLastLog 
                 </div>
             )}
 
-            <div style={{ background: 'rgba(0,0,0,0.3)', padding: '1rem', borderRadius: '8px', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.75rem', fontSize: '0.85rem' }}>
+            <div style={{ background: 'var(--glass-surface-2)', padding: '0.95rem 1.1rem', borderRadius: '10px', border: '1px solid var(--glass-border)', boxShadow: 'var(--glass-specular)' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.65rem', fontSize: '0.85rem' }}>
                     <div style={{ fontWeight: 600, color: 'var(--foreground)' }}>
                         Session {progress.completedSessions} <span style={{ color: 'var(--secondary-foreground)' }}>/ {progress.totalSessions}</span>
                     </div>
@@ -355,14 +355,14 @@ export default function AthleteStatusCard({ athlete, progress, daysSinceLastLog 
 
                 {/* Progress Bar Track + Percentage */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
-                    <div style={{ flex: 1, height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
+                    <div style={{ flex: 1, height: '6px', background: 'rgba(255,255,255,0.06)', borderRadius: '3px', overflow: 'hidden' }}>
                         <div style={{
                             height: '100%',
                             width: `${percentage}%`,
                             background: 'linear-gradient(90deg, var(--primary), var(--accent))',
                             borderRadius: '3px',
                             transition: 'width 1s cubic-bezier(0.4, 0, 0.2, 1)',
-                            boxShadow: '0 0 10px var(--primary)'
+                            boxShadow: '0 0 12px rgba(125, 135, 210, 0.45)'
                         }}></div>
                     </div>
                     <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--primary)', minWidth: '2.5rem', textAlign: 'right' }}>{percentage}%</span>
