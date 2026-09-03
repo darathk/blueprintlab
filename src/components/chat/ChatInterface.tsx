@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { chatUploadManager, useChatUploadJobsForConversation, usePreUploadJobs, type UploadCompleteDetail } from '@/lib/chat-upload-manager';
+import { downloadMediaFile } from '@/lib/download-media';
 
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
@@ -1601,31 +1602,10 @@ export default function ChatInterface({
         try {
             const ext = isImg ? '.jpg' : url.includes('.webm') ? '.webm' : url.includes('.mov') ? '.mov' : '.mp4';
             const filename = `lift_${Date.now()}${ext}`;
-
-            // On mobile, use Web Share API so the OS offers "Save to Photos"
-            if (navigator.share && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-                try {
-                    const r = await fetch(url);
-                    const b = await r.blob();
-                    const file = new File([b], filename, { type: b.type || (isImg ? 'image/jpeg' : 'video/mp4') });
-                    await navigator.share({ files: [file] });
-                    return;
-                } catch (shareErr: any) {
-                    // User cancelled or share failed — fall through to download
-                    if (shareErr?.name === 'AbortError') return;
-                }
-            }
-
-            // On desktop, trigger native download immediately without buffering entire multi-hundred MB video into memory
-            const separator = url.includes('?') ? '&' : '?';
-            const downloadUrl = `${url}${separator}download=${encodeURIComponent(filename)}`;
-            const a = document.createElement('a');
-            a.href = downloadUrl;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-        } catch { window.open(url, '_blank'); }
+            await downloadMediaFile({ url, filename });
+        } catch {
+            window.open(url, '_blank');
+        }
     }, []);
 
     // Filter messages for search

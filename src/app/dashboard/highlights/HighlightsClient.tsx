@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Trophy, ChevronLeft, ChevronRight, Download, Play, User, Calendar, Dumbbell, X, Trash2 } from 'lucide-react';
+import { downloadMediaFile } from '@/lib/download-media';
 
 interface PR {
     id: string;
@@ -66,29 +67,51 @@ export default function HighlightsClient() {
 
     const [weekIndex, setWeekIndex] = useState(0);
     const [downloadingId, setDownloadingId] = useState<string | null>(null);
+    const [downloadProgress, setDownloadProgress] = useState<Record<string, number>>({});
+    const [downloadStatus, setDownloadStatus] = useState<Record<string, 'downloading' | 'saved' | 'error'>>({});
     const currentWeek = weekGroups[weekIndex];
 
-    const handleDownload = useCallback((url: string, athleteName: string, exerciseName: string, prId?: string) => {
-        if (prId) setDownloadingId(prId);
+    const handleDownload = useCallback(async (url: string, athleteName: string, exerciseName: string, prId?: string) => {
+        const idKey = prId || url;
+        setDownloadingId(idKey);
+        setDownloadStatus(prev => ({ ...prev, [idKey]: 'downloading' }));
+        setDownloadProgress(prev => ({ ...prev, [idKey]: 0 }));
 
         const ext = url.includes('.mov') ? '.mov' : url.includes('.webm') ? '.webm' : '.mp4';
         const filename = `${athleteName.replace(/\s+/g, '_')}_${exerciseName.replace(/\s+/g, '_')}_PR${ext}`;
-        
-        // Append ?download= to force Content-Disposition: attachment on Supabase Storage
-        // This triggers the browser's native download prompt immediately without fetching into memory first.
-        const separator = url.includes('?') ? '&' : '?';
-        const downloadUrl = `${url}${separator}download=${encodeURIComponent(filename)}`;
-        
-        const a = document.createElement('a');
-        a.href = downloadUrl;
-        a.download = filename;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
 
-        setTimeout(() => {
-            setDownloadingId(null);
-        }, 2500);
+        try {
+            const result = await downloadMediaFile({
+                url,
+                filename,
+                onProgress: (pct) => {
+                    setDownloadProgress(prev => ({ ...prev, [idKey]: pct }));
+                }
+            });
+
+            if (result.success) {
+                setDownloadStatus(prev => ({ ...prev, [idKey]: 'saved' }));
+            } else {
+                setDownloadStatus(prev => ({ ...prev, [idKey]: 'error' }));
+            }
+        } catch (err) {
+            console.error('Download error:', err);
+            setDownloadStatus(prev => ({ ...prev, [idKey]: 'error' }));
+        } finally {
+            setTimeout(() => {
+                setDownloadingId(prev => (prev === idKey ? null : prev));
+                setDownloadStatus(prev => {
+                    const next = { ...prev };
+                    delete next[idKey];
+                    return next;
+                });
+                setDownloadProgress(prev => {
+                    const next = { ...prev };
+                    delete next[idKey];
+                    return next;
+                });
+            }, 2000);
+        }
     }, []);
 
     const handleDelete = useCallback(async (pr: PR) => {
@@ -221,9 +244,10 @@ export default function HighlightsClient() {
                                     <button
                                         onClick={(e) => { e.stopPropagation(); handleDownload(pr.videoUrl!, pr.athlete.name, pr.exerciseName, pr.id); }}
                                         disabled={downloadingId === pr.id}
+                                        className="chat-press"
                                         style={{
                                             position: 'absolute', bottom: 8, right: 8,
-                                            background: downloadingId === pr.id ? 'var(--primary)' : 'rgba(0,0,0,0.6)',
+                                            background: downloadStatus[pr.id] === 'saved' ? '#10b981' : downloadingId === pr.id ? 'var(--primary)' : 'rgba(0,0,0,0.6)',
                                             backdropFilter: 'blur(4px)',
                                             border: '1px solid rgba(255,255,255,0.2)', borderRadius: 8,
                                             padding: '6px 10px', cursor: downloadingId === pr.id ? 'default' : 'pointer',
@@ -232,8 +256,15 @@ export default function HighlightsClient() {
                                             transition: 'all 0.15s ease',
                                         }}
                                     >
-                                        {downloadingId === pr.id ? (
-                                            <><span>⏳</span> Saving...</>
+                                        {downloadStatus[pr.id] === 'saved' ? (
+                                            <><span>✓</span> Saved</>
+                                        ) : downloadingId === pr.id ? (
+                                            <>
+                                                <span>⏳</span>
+                                                {downloadProgress[pr.id] !== undefined && downloadProgress[pr.id] > 0
+                                                    ? `${downloadProgress[pr.id]}%`
+                                                    : 'Saving...'}
+                                            </>
                                         ) : (
                                             <><Download size={13} /> Save</>
                                         )}
@@ -310,19 +341,27 @@ export default function HighlightsClient() {
                                     {pr.videoUrl && (
                                         <button
                                             onClick={() => handleDownload(pr.videoUrl!, pr.athlete.name, pr.exerciseName, pr.id)}
+                                            disabled={downloadingId === pr.id}
                                             style={{
                                                 background: 'transparent',
                                                 border: 'none',
-                                                color: downloadingId === pr.id ? 'var(--primary)' : 'var(--secondary-foreground)',
+                                                color: downloadStatus[pr.id] === 'saved' ? '#10b981' : downloadingId === pr.id ? 'var(--primary)' : 'var(--secondary-foreground)',
                                                 fontSize: 11,
                                                 fontWeight: 600,
-                                                cursor: 'pointer',
+                                                cursor: downloadingId === pr.id ? 'default' : 'pointer',
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 gap: 4,
                                             }}
                                         >
-                                            <Download size={12} /> {downloadingId === pr.id ? 'Saving...' : 'Download'}
+                                            <Download size={12} />
+                                            {downloadStatus[pr.id] === 'saved'
+                                                ? 'Saved!'
+                                                : downloadingId === pr.id
+                                                ? (downloadProgress[pr.id] !== undefined && downloadProgress[pr.id] > 0
+                                                    ? `Saving (${downloadProgress[pr.id]}%)...`
+                                                    : 'Saving...')
+                                                : 'Download'}
                                         </button>
                                     )}
                                 </div>
@@ -349,21 +388,44 @@ export default function HighlightsClient() {
                     }}
                 >
                     <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', alignItems: 'center', gap: 10, zIndex: 10 }}>
-                        <button
-                            onClick={(e) => {
-                                e.stopPropagation();
-                                handleDownload(expandedVideo, 'Highlight', 'Lift');
-                            }}
-                            style={{
-                                background: 'rgba(255,255,255,0.15)', backdropFilter: 'blur(6px)',
-                                border: '1px solid rgba(255,255,255,0.2)', borderRadius: 20,
-                                padding: '8px 14px', cursor: 'pointer',
-                                display: 'flex', alignItems: 'center', gap: 6,
-                                color: '#fff', fontSize: 12, fontWeight: 700,
-                            }}
-                        >
-                            <Download size={14} /> Save Video
-                        </button>
+                        {(() => {
+                            const activePr = prs.find(p => p.videoUrl === expandedVideo);
+                            const modalId = activePr?.id || expandedVideo;
+                            const isDownloading = downloadingId === modalId;
+                            const isSaved = downloadStatus[modalId] === 'saved';
+                            const progress = downloadProgress[modalId];
+
+                            return (
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (activePr) {
+                                            handleDownload(expandedVideo, activePr.athlete.name, activePr.exerciseName, activePr.id);
+                                        } else {
+                                            handleDownload(expandedVideo, 'Highlight', 'Lift', expandedVideo);
+                                        }
+                                    }}
+                                    disabled={isDownloading}
+                                    className="chat-press"
+                                    style={{
+                                        background: isSaved ? '#10b981' : isDownloading ? 'var(--primary)' : 'rgba(255,255,255,0.15)',
+                                        backdropFilter: 'blur(6px)',
+                                        border: '1px solid rgba(255,255,255,0.2)', borderRadius: 20,
+                                        padding: '8px 14px', cursor: isDownloading ? 'default' : 'pointer',
+                                        display: 'flex', alignItems: 'center', gap: 6,
+                                        color: '#fff', fontSize: 12, fontWeight: 700,
+                                        transition: 'all 0.15s ease',
+                                    }}
+                                >
+                                    <Download size={14} />
+                                    {isSaved
+                                        ? 'Saved!'
+                                        : isDownloading
+                                        ? (progress !== undefined && progress > 0 ? `Saving (${progress}%)...` : 'Saving...')
+                                        : 'Save Video'}
+                                </button>
+                            );
+                        })()}
 
                         <button
                             onClick={() => setExpandedVideo(null)}
