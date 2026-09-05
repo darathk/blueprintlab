@@ -30,6 +30,19 @@ export default function CompetitionTracker({ athlete }) {
         router.refresh();
     };
 
+    const handleDelete = async () => {
+        if (!confirm('Are you sure you want to delete this meet plan? This will remove the meet name and countdown.')) return;
+        await fetch('/api/athletes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ id: athlete.id, nextMeetName: null, nextMeetDate: null })
+        });
+        setMeetName('');
+        setMeetDate('');
+        setIsEditing(false);
+        router.refresh();
+    };
+
     const getDaysOut = () => {
         if (!athlete.nextMeetDate) return null;
         const meet = new Date(athlete.nextMeetDate);
@@ -95,9 +108,21 @@ export default function CompetitionTracker({ athlete }) {
                             style={{ colorScheme: 'dark' }}
                         />
                     </div>
-                    <button className="glass-button glass-button-primary chat-press" onClick={handleSave} style={{ padding: '0.6rem 1.25rem', borderRadius: 12, fontWeight: 700 }}>
-                        Lock Coordinates
-                    </button>
+                    <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        {(athlete.nextMeetDate || athlete.nextMeetName) && (
+                            <button
+                                type="button"
+                                className="glass-button chat-press"
+                                onClick={handleDelete}
+                                style={{ padding: '0.6rem 1.25rem', borderRadius: 12, fontWeight: 600, color: '#fb7185', borderColor: 'rgba(251, 113, 133, 0.3)' }}
+                            >
+                                Delete Meet
+                            </button>
+                        )}
+                        <button className="glass-button glass-button-primary chat-press" onClick={handleSave} style={{ padding: '0.6rem 1.25rem', borderRadius: 12, fontWeight: 700 }}>
+                            Lock Coordinates
+                        </button>
+                    </div>
                 </div>
             ) : (
                 <>

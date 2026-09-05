@@ -62,21 +62,47 @@ function formatSetsSummary(sets: any[]) {
     return parts.join(', ');
 }
 
-// Snap a date string to the preceding Monday (or same day if already Monday)
-// This ensures program weeks align with the calendar's Mon-Sun grid.
+// Snap an arbitrary date string to Monday.
+// If already Monday -> returns same date.
+// If Sunday (day 0) -> in training calendars, Sunday begins the upcoming training week,
+// so move forward 1 day to Monday (+1 day) instead of snapping backward 6 days.
+// If Tue-Sat (days 2-6) -> snap back to the Monday of the current week.
 const snapToMonday = (dateStr: string): string => {
-    const [y, m, d] = dateStr.split('-').map(Number);
+    if (!dateStr) return '';
+    const cleanStr = String(dateStr).split('T')[0];
+    const [y, m, d] = cleanStr.split('-').map(Number);
     const date = new Date(y, m - 1, d);
-    // getDay(): 0=Sun, 1=Mon, ..., 6=Sat
-    // We want to go back to the most recent Monday:
-    // Mon(1)->0, Tue(2)->1, Wed(3)->2, Thu(4)->3, Fri(5)->4, Sat(6)->5, Sun(0)->6
-    const dayOfWeek = date.getDay();
-    const offset = (dayOfWeek + 6) % 7; // Mon=0, Tue=1, ..., Sun=6
-    date.setDate(date.getDate() - offset);
+    date.setHours(0, 0, 0, 0);
+    const dayOfWeek = date.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+
+    if (dayOfWeek === 1) {
+        return cleanStr;
+    } else if (dayOfWeek === 0) {
+        // Sunday: advance 1 day to Monday (the new training week)
+        date.setDate(date.getDate() + 1);
+    } else {
+        // Tue(2)..Sat(6): move back to Monday of the same week
+        date.setDate(date.getDate() - (dayOfWeek - 1));
+    }
     return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
 };
 
-// Calculate default start date for a new program so it seamlessly follows existing active programs
+// Snap any date to the NEXT Monday that follows it (or same day if already Monday)
+// This ensures that when a new program follows an existing program end date,
+// it ALWAYS starts on a fresh, non-overlapping week.
+const snapToNextMonday = (date: Date): string => {
+    const d = new Date(date);
+    d.setHours(0, 0, 0, 0);
+    const day = d.getDay(); // 0=Sun, 1=Mon, ..., 6=Sat
+    if (day === 1) {
+        return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+    const daysUntilMonday = (8 - day) % 7;
+    d.setDate(d.getDate() + daysUntilMonday);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
+
+// Calculate default start date for a new program so it seamlessly follows existing programs without overlap
 const calculateDefaultStartDate = (existingPrograms: any[], initialData: any): string => {
     if (initialData?.startDate) {
         return snapToMonday(String(initialData.startDate).split('T')[0]);
@@ -86,23 +112,40 @@ const calculateDefaultStartDate = (existingPrograms: any[], initialData: any): s
         let maxEndDate: Date | null = null;
 
         existingPrograms.forEach((prog: any) => {
-            if (!prog.startDate || prog.status === 'completed' || prog.status === 'archived') return;
+            // Skip archived programs or empty drafts
+            if (!prog.startDate || prog.status === 'archived') return;
+            if (prog.status === 'draft') {
+                const weeks = Array.isArray(prog.weeks) ? prog.weeks : [];
+                const hasContent = weeks.some((w: any) =>
+                    Array.isArray(w.sessions) && w.sessions.some((s: any) =>
+                        Array.isArray(s.exercises) && s.exercises.length > 0
+                    )
+                );
+                if (!hasContent) return;
+            }
+
             const startStr = String(prog.startDate).split('T')[0];
             const [sy, sm, sd] = startStr.split('-').map(Number);
             const pStart = new Date(sy, sm - 1, sd);
             pStart.setHours(0, 0, 0, 0);
 
-            let parsedWeeks = prog.weeks;
-            if (typeof parsedWeeks === 'string') {
-                try { parsedWeeks = JSON.parse(parsedWeeks); } catch { parsedWeeks = []; }
+            let pEnd: Date;
+            if (prog.endDate) {
+                const [ey, em, ed] = String(prog.endDate).split('T')[0].split('-').map(Number);
+                pEnd = new Date(ey, em - 1, ed);
+                pEnd.setHours(0, 0, 0, 0);
+            } else {
+                let parsedWeeks = prog.weeks;
+                if (typeof parsedWeeks === 'string') {
+                    try { parsedWeeks = JSON.parse(parsedWeeks); } catch { parsedWeeks = []; }
+                }
+                const weeksList: any[] = Array.isArray(parsedWeeks) ? parsedWeeks : [];
+                const numWeeks = weeksList.length > 0
+                    ? Math.max(...weeksList.map((w: any) => w.weekNumber || 1))
+                    : 1;
+                pEnd = new Date(pStart);
+                pEnd.setDate(pEnd.getDate() + numWeeks * 7);
             }
-            const weeksList: any[] = Array.isArray(parsedWeeks) ? parsedWeeks : [];
-            const numWeeks = weeksList.length > 0
-                ? Math.max(...weeksList.map((w: any) => w.weekNumber || 1))
-                : 1;
-
-            const pEnd = new Date(pStart);
-            pEnd.setDate(pEnd.getDate() + numWeeks * 7);
 
             if (!maxEndDate || pEnd > maxEndDate) {
                 maxEndDate = pEnd;
@@ -113,14 +156,19 @@ const calculateDefaultStartDate = (existingPrograms: any[], initialData: any): s
         today.setHours(0, 0, 0, 0);
 
         if (maxEndDate && maxEndDate > today) {
-            const y = maxEndDate.getFullYear();
-            const m = String(maxEndDate.getMonth() + 1).padStart(2, '0');
-            const d = String(maxEndDate.getDate()).padStart(2, '0');
-            return snapToMonday(`${y}-${m}-${d}`);
+            return snapToNextMonday(maxEndDate);
         }
     }
 
-    return snapToMonday(new Date().toISOString().split('T')[0]);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dayOfWeek = today.getDay();
+    if (dayOfWeek === 1) {
+        return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
+    }
+    const daysUntilMonday = (8 - dayOfWeek) % 7;
+    today.setDate(today.getDate() + daysUntilMonday);
+    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 };
 
 // Exercise Component

@@ -100,6 +100,9 @@ function sessionKey(programId: string, weekNum: number, day: number) {
 function weekDateRangeFromDate(programStartDate: any, weekNumber: number): string {
     if (!programStartDate) return '';
     const start = parseLocalDate(programStartDate);
+    const dayOfWeek = start.getDay();
+    if (dayOfWeek === 0) start.setDate(start.getDate() + 1);
+    else if (dayOfWeek > 1) start.setDate(start.getDate() - (dayOfWeek - 1));
     const weekStart = new Date(start);
     weekStart.setDate(weekStart.getDate() + (weekNumber - 1) * 7);
     const weekEnd = new Date(weekStart);
@@ -526,18 +529,23 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
 
         programs.forEach(program => {
             if (!program.startDate) return;
-            // Use RAW startDate for date computation — weekNum/dayNum are stored relative to this
             const start = parseLocalDate(program.startDate);
-            // Snap to Monday only for computing calendar-week display numbers
+            // In the data model, Day 1 is Monday, Day 2 is Tuesday, ..., Day 7 is Sunday.
+            // If the stored program.startDate is a Sunday (historical), the training week starts on Monday (+1 day).
+            // If it's Tue-Sat, snap back to Monday. If it's Monday, keep it.
             const startMonday = new Date(start);
-            const startOffset = (startMonday.getDay() + 6) % 7;
-            startMonday.setDate(startMonday.getDate() - startOffset);
+            const startDayOfWeek = startMonday.getDay();
+            if (startDayOfWeek === 0) {
+                startMonday.setDate(startMonday.getDate() + 1);
+            } else if (startDayOfWeek > 1) {
+                startMonday.setDate(startMonday.getDate() - (startDayOfWeek - 1));
+            }
             const isActive = program.status === 'active';
 
             // Date-based check: a program whose date range hasn't fully passed
             // should never show as "past", regardless of its DB status.
             const weeksArr: any[] = Array.isArray(program.weeks) ? program.weeks : [];
-            const programEnd = new Date(start);
+            const programEnd = new Date(startMonday);
             programEnd.setDate(programEnd.getDate() + Math.max(weeksArr.length, 1) * 7);
             const todayCheck = new Date();
             todayCheck.setHours(0, 0, 0, 0);
@@ -551,9 +559,18 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                 const sessions: any[] = Array.isArray(week.sessions) ? week.sessions : [];
                 sessions.forEach((session: any) => {
                     const day = session.day || 1;
-                    const d = new Date(start);
-                    d.setDate(d.getDate() + (wn - 1) * 7 + (day - 1));
-                    allSessionDates.push({ wn, date: d });
+                    let ds: string;
+                    if (session.scheduledDate) {
+                        ds = String(session.scheduledDate).split('T')[0];
+                    } else {
+                        const d = new Date(startMonday);
+                        d.setDate(d.getDate() + (wn - 1) * 7 + (day - 1));
+                        ds = toDateStr(d);
+                    }
+                    const [sy, sm, sd] = ds.split('-').map(Number);
+                    const sessionDateObj = new Date(sy, sm - 1, sd);
+                    sessionDateObj.setHours(0, 0, 0, 0);
+                    allSessionDates.push({ wn, date: sessionDateObj });
                 });
             });
             // Get unique calendar weeks (Mon-Sun) that have sessions, sorted chronologically
@@ -571,14 +588,19 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                 const sortedSessions = [...sessions].sort((a: any, b: any) => (a?.day || 1) - (b?.day || 1));
                 sessions.forEach((session: any) => {
                     const day = session.day || 1;
-                    // Compute actual date from raw startDate
-                    const d = new Date(start);
-                    d.setDate(d.getDate() + (wn - 1) * 7 + (day - 1));
-                    const ds = toDateStr(d);
+                    let ds: string;
+                    if (session.scheduledDate) {
+                        ds = String(session.scheduledDate).split('T')[0];
+                    } else {
+                        const d = new Date(startMonday);
+                        d.setDate(d.getDate() + (wn - 1) * 7 + (day - 1));
+                        ds = toDateStr(d);
+                    }
                     const legacyKey = sessionKey(program.id, wn, day);
                     const sKey = session.id || legacyKey;
                     // Compute calendar-week display number (1-based, only counting weeks with sessions)
-                    const sessionMonday = new Date(d);
+                    const [sy, sm, sd] = ds.split('-').map(Number);
+                    const sessionMonday = new Date(sy, sm - 1, sd);
                     const off = (sessionMonday.getDay() + 6) % 7;
                     sessionMonday.setDate(sessionMonday.getDate() - off);
                     const weekDisplayNum = calendarWeekMondays.indexOf(sessionMonday.getTime()) + 1;
@@ -1492,6 +1514,9 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                             // Skip weeks that fall outside the program's date range
                             if (program.startDate) {
                                 const ps = parseLocalDate(program.startDate);
+                                const dayOfWeek = ps.getDay();
+                                if (dayOfWeek === 0) ps.setDate(ps.getDate() + 1);
+                                else if (dayOfWeek > 1) ps.setDate(ps.getDate() - (dayOfWeek - 1));
                                 const wStart = new Date(ps);
                                 wStart.setDate(wStart.getDate() + (weekNum - 1) * 7);
                                 if (program.endDate) {
@@ -2060,10 +2085,16 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                 .sort((a: any, b: any) => (a.day || 1) - (b.day || 1))
                                 .map((sess: any) => {
                                     let dayName = DAY_NAMES[((sess.day || 1) - 1) % 7] || `Day ${sess.day}`;
-                                    if (weekDrawer.programId) {
+                                    if (sess.scheduledDate) {
+                                        const sDate = parseLocalDate(sess.scheduledDate);
+                                        dayName = sDate.toLocaleDateString('en-US', { weekday: 'long' });
+                                    } else if (weekDrawer.programId) {
                                         const prog = programs.find(p => p.id === weekDrawer.programId);
                                         if (prog?.startDate) {
                                             const start = parseLocalDate(prog.startDate);
+                                            const startDayOfWeek = start.getDay();
+                                            if (startDayOfWeek === 0) start.setDate(start.getDate() + 1);
+                                            else if (startDayOfWeek > 1) start.setDate(start.getDate() - (startDayOfWeek - 1));
                                             const sessionDate = new Date(start);
                                             sessionDate.setDate(sessionDate.getDate() + (weekDrawer.weekNum - 1) * 7 + ((sess.day || 1) - 1));
                                             dayName = sessionDate.toLocaleDateString('en-US', { weekday: 'long' });

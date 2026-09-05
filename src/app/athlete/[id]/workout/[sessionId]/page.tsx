@@ -71,6 +71,9 @@ export default async function WorkoutPage({ params }) {
     let weekStartDate = '';
     if (programStart) {
         const start = new Date(programStart);
+        const dayOfWeek = start.getDay();
+        if (dayOfWeek === 0) start.setDate(start.getDate() + 1);
+        else if (dayOfWeek > 1) start.setDate(start.getDate() - (dayOfWeek - 1));
         start.setDate(start.getDate() + (weekNum - 1) * 7);
         weekStartDate = start.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' });
     }

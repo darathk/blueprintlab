@@ -358,6 +358,26 @@ export default function PeriodizationPlanner({ athlete }) {
         router.refresh();
     };
 
+    const handleDeletePlan = async () => {
+        if (!confirm('Are you sure you want to delete this meet plan and roadmap? This will remove the meet date, meet name, and planned block segments.')) return;
+        await fetch('/api/athletes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id: athlete.id,
+                periodization: null,
+                nextMeetName: null,
+                nextMeetDate: null,
+                meetAttempts: null
+            })
+        });
+        setMeetName('');
+        setMeetDate('');
+        setBlocks([]);
+        setIsEditing(false);
+        router.refresh();
+    };
+
     const getTypeColor = (type) => {
         switch (type) {
             case 'Development': return '#38bdf8'; // Cyan Neon
@@ -620,8 +640,18 @@ export default function PeriodizationPlanner({ athlete }) {
 
                         ))}
                     </div>
-                    <div className="planner-actions" style={{ marginTop: '2rem', display: 'flex', gap: '1rem', borderTop: '1px solid var(--glass-border)', paddingTop: '1.5rem' }}>
+                    <div className="planner-actions" style={{ marginTop: '2rem', display: 'flex', gap: '1rem', borderTop: '1px solid var(--glass-border)', paddingTop: '1.5rem', alignItems: 'center' }}>
                         <button onClick={() => addBlock('Development')} className="glass-button chat-press" style={{ padding: '0.6rem 1.25rem', borderRadius: 12 }}>+ Add Segment</button>
+                        {(athlete.nextMeetDate || athlete.nextMeetName || (athlete.periodization && athlete.periodization.length > 0)) && (
+                            <button
+                                type="button"
+                                onClick={handleDeletePlan}
+                                className="glass-button chat-press"
+                                style={{ padding: '0.6rem 1.25rem', borderRadius: 12, fontWeight: 600, color: '#fb7185', borderColor: 'rgba(251, 113, 133, 0.3)' }}
+                            >
+                                Delete Meet Plan
+                            </button>
+                        )}
                         <button onClick={handleSave} className="glass-button glass-button-primary chat-press" style={{ marginLeft: 'auto', padding: '0.6rem 1.5rem', borderRadius: 12, fontWeight: 700 }}>Save Configuration</button>
                     </div>
                 </div>
