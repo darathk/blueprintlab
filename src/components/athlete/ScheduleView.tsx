@@ -196,7 +196,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
             programId: program.id,
             programName: program.name,
             weekNum: wn,
-            sessions: Array.isArray(week.sessions) ? week.sessions : [],
+            sessions: (Array.isArray(week.sessions) ? week.sessions : []).filter((s: any) => Array.isArray(s.exercises) && s.exercises.length > 0),
             startDate: dateRange
         });
     };
@@ -543,7 +543,8 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
             const allSessionDates: { wn: number; date: Date }[] = [];
             weeks.forEach((week: any) => {
                 const wn = week.weekNumber || 1;
-                const sessions: any[] = Array.isArray(week.sessions) ? week.sessions : [];
+                const sessions: any[] = (Array.isArray(week.sessions) ? week.sessions : [])
+                    .filter((s: any) => Array.isArray(s.exercises) && s.exercises.length > 0);
                 sessions.forEach((session: any) => {
                     const day = session.day || 1;
                     let ds: string;
@@ -570,7 +571,8 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
 
             weeks.forEach((week: any) => {
                 const wn = week.weekNumber || 1;
-                const sessions: any[] = Array.isArray(week.sessions) ? week.sessions : [];
+                const sessions: any[] = (Array.isArray(week.sessions) ? week.sessions : [])
+                    .filter((s: any) => Array.isArray(s.exercises) && s.exercises.length > 0);
                 // Sort sessions by day to determine sequential session number
                 const sortedSessions = [...sessions].sort((a: any, b: any) => (a?.day || 1) - (b?.day || 1));
                 sessions.forEach((session: any) => {
@@ -1419,13 +1421,13 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                         const blockOpen = openBlocks.has(program.id);
                         const weeks: any[] = Array.isArray(program.weeks) ? program.weeks : [];
                         const totalWeeks = weeks.length;
-                        const totalSessions = weeks.reduce((s: number, w: any) => s + (Array.isArray(w.sessions) ? w.sessions.length : 0), 0);
+                        const totalSessions = weeks.reduce((s: number, w: any) => s + (Array.isArray(w.sessions) ? w.sessions.filter((sess: any) => Array.isArray(sess?.exercises) && sess.exercises.length > 0).length : 0), 0);
 
                         // Calculate Block Progress
                         let bTotalSets = 0;
                         let bFilledSets = 0;
                         weeks.forEach((w: any) => {
-                            const wSessions: any[] = Array.isArray(w.sessions) ? w.sessions : [];
+                            const wSessions: any[] = (Array.isArray(w.sessions) ? w.sessions : []).filter((s: any) => Array.isArray(s?.exercises) && s.exercises.length > 0);
                             wSessions.forEach((s: any) => {
                                 const sKey = sessionKey(program.id, w.weekNumber || 1, s.day || 1);
                                 const exData: any[] = Array.isArray(s.exercises) ? s.exercises : [];
@@ -1474,10 +1476,10 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, paddingRight: 24 }}>
                                     <div style={{ flex: 1, height: 6, borderRadius: 3, background: 'var(--background)', overflow: 'hidden' }}>
                                         <div style={{
-                                            height: '100%', borderRadius: 3, transition: 'width 300ms',
-                                            width: `${blockProgressPct}%`,
-                                            background: blockProgressPct === 100 ? 'var(--success)' : 'var(--primary)'
-                                        }} />
+                                             height: '100%', borderRadius: 3, transition: 'width 300ms',
+                                             width: `${blockProgressPct}%`,
+                                             background: blockProgressPct === 100 ? 'var(--success)' : 'var(--primary)'
+                                         }} />
                                     </div>
                                     <span style={{ fontSize: '0.75rem', color: 'var(--foreground)', fontWeight: 600, width: 30 }}>
                                         {blockProgressPct}%
@@ -1490,10 +1492,10 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                         {/* ═══ Weeks ═══ */}
                         {blockOpen && (() => {
                             // Sort weeks with sessions for sequential display numbering (skip empty weeks)
-                            const sortedWeeksForDisplay = [...weeks].filter((w: any) => Array.isArray(w?.sessions) && w.sessions.length > 0).sort((a: any, b: any) => (a?.weekNumber || 1) - (b?.weekNumber || 1));
+                            const sortedWeeksForDisplay = [...weeks].filter((w: any) => Array.isArray(w?.sessions) && w.sessions.some((s: any) => Array.isArray(s?.exercises) && s.exercises.length > 0)).sort((a: any, b: any) => (a?.weekNumber || 1) - (b?.weekNumber || 1));
                             return weeks.map((week: any) => {
                             if (!week) return null;
-                            const sessions: any[] = Array.isArray(week.sessions) ? week.sessions : [];
+                            const sessions: any[] = (Array.isArray(week.sessions) ? week.sessions : []).filter((s: any) => Array.isArray(s?.exercises) && s.exercises.length > 0);
                             if (sessions.length === 0) return null;
                             const weekNum = week.weekNumber || 1;
                             const weekDisplayNum = sortedWeeksForDisplay.findIndex((w: any) => (w?.weekNumber || 1) === weekNum) + 1;
@@ -2065,7 +2067,8 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
 
                         {/* Sessions by Day */}
                         <div style={{ padding: '1rem' }}>
-                            {weekDrawer.sessions
+                            {(weekDrawer.sessions || [])
+                                .filter((sess: any) => Array.isArray(sess.exercises) && sess.exercises.length > 0)
                                 .sort((a: any, b: any) => (a.day || 1) - (b.day || 1))
                                 .map((sess: any) => {
                                     let dayName = DAY_NAMES[((sess.day || 1) - 1) % 7] || `Day ${sess.day}`;

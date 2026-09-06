@@ -632,7 +632,7 @@ export default function ProgramBuilder({
                 let normalizedWeeks = [...sanitizedWeeks];
                 normalizedWeeks.sort((a, b) => (a.weekNumber || 0) - (b.weekNumber || 0));
 
-                const firstPopulatedIdx = normalizedWeeks.findIndex(w => Array.isArray(w.sessions) && w.sessions.length > 0);
+                const firstPopulatedIdx = normalizedWeeks.findIndex(w => Array.isArray(w.sessions) && w.sessions.some((s: any) => Array.isArray(s.exercises) && s.exercises.length > 0));
                 if (firstPopulatedIdx > 0) {
                     // Shift start date forward by the number of empty weeks so session calendar dates align
                     const [sy, sm, sd] = snappedStartDate.split('-').map(Number);
@@ -999,6 +999,7 @@ export default function ProgramBuilder({
                 for (const w of parsedWeeks) {
                     const wn = w.weekNumber || 1;
                     for (const s of (w.sessions || [])) {
+                        if (!Array.isArray(s.exercises) || s.exercises.length === 0) continue;
                         const sDay = s.day || 1;
                         const sDate = new Date(pStart);
                         sDate.setDate(sDate.getDate() + (wn - 1) * 7 + (sDay - 1));
@@ -1016,7 +1017,7 @@ export default function ProgramBuilder({
         const maxSearch = candidate + 52;
         while (candidate < maxSearch) {
             const existingWeek = weeks.find(w => w.weekNumber === candidate);
-            const currentHasSessions = existingWeek && existingWeek.sessions.length > 0;
+            const currentHasSessions = existingWeek && existingWeek.sessions.some((s: any) => Array.isArray(s.exercises) && s.exercises.length > 0);
             const externallyOccupied = isWeekOccupiedByExisting(candidate);
             if (!currentHasSessions && !externallyOccupied) return candidate;
             candidate++;

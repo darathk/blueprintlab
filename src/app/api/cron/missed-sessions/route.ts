@@ -69,7 +69,7 @@ export async function GET(request: Request) {
             // Check if the program has sessions (not an empty program)
             const weeks = activeProgram.weeks as any[];
             if (!weeks || weeks.length === 0) continue;
-            const hasSessions = weeks.some((w: any) => w.sessions && w.sessions.length > 0);
+            const hasSessions = weeks.some((w: any) => Array.isArray(w.sessions) && w.sessions.some((s: any) => Array.isArray(s.exercises) && s.exercises.length > 0));
             if (!hasSessions) continue;
 
             // Find the most recent log date

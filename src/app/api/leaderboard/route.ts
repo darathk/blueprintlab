@@ -230,7 +230,7 @@ export async function GET(request: Request) {
                 if (Array.isArray(weeks)) {
                     for (const week of weeks) {
                         if (week.sessions && Array.isArray(week.sessions)) {
-                            progSessions += week.sessions.length;
+                            progSessions += week.sessions.filter((s: any) => Array.isArray(s.exercises) && s.exercises.length > 0).length;
                         } else if (week.days && Array.isArray(week.days)) {
                             progSessions += week.days.length;
                         }

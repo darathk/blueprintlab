@@ -41,6 +41,7 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
                 const wn = week.weekNumber || 1;
                 const sessions: any[] = Array.isArray(week.sessions) ? week.sessions : [];
                 sessions.forEach((session: any) => {
+                    if (!Array.isArray(session.exercises) || session.exercises.length === 0) return;
                     const day = session.day || 1;
                     const d = new Date(progStart);
                     d.setDate(d.getDate() + (wn - 1) * 7 + (day - 1));

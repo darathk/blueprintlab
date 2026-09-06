@@ -59,8 +59,8 @@ export default function CalendarView({ program, athleteId }) {
         // 1. Check for explicit scheduledDate
         const explicitlyScheduled = [];
         program.weeks.forEach(week => {
-            week.sessions.forEach(session => {
-                if (session.scheduledDate === targetDateStr) {
+            (week.sessions || []).forEach(session => {
+                if (session.scheduledDate === targetDateStr && Array.isArray(session.exercises) && session.exercises.length > 0) {
                     explicitlyScheduled.push({ ...session, weekNumber: week.weekNumber });
                 }
             });
@@ -101,7 +101,7 @@ export default function CalendarView({ program, athleteId }) {
 
                 const week = program.weeks.find(w => w.weekNumber === weekNum);
                 if (week) {
-                    const session = week.sessions.find(s => s.day === dayNum);
+                    const session = (week.sessions || []).find(s => s.day === dayNum && Array.isArray(s.exercises) && s.exercises.length > 0);
                     // Only show if it doesn't have an explicit date set to something else
                     if (session && !session.scheduledDate) {
                         return [{ ...session, weekNumber: weekNum }];

@@ -55,6 +55,7 @@ export async function GET(request: Request) {
                 const weekNumber = week.weekNumber || (wi + 1);
 
                 for (const session of week.sessions) {
+                    if (!Array.isArray(session.exercises) || session.exercises.length === 0) continue;
                     let isToday = false;
 
                     // Method 1: explicit scheduledDate on the session

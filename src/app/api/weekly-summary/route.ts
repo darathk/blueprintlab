@@ -74,11 +74,11 @@ export async function GET() {
             let expectedSessions = 0;
             if (activeProgram && Array.isArray(activeProgram.weeks)) {
                 const totalSessions = (activeProgram.weeks as any[]).reduce(
-                    (sum, w) => sum + (Array.isArray(w.sessions) ? w.sessions.length : 0),
+                    (sum, w) => sum + (Array.isArray(w.sessions) ? w.sessions.filter((s: any) => Array.isArray(s.exercises) && s.exercises.length > 0).length : 0),
                     0
                 );
                 const totalWeeks = (activeProgram.weeks as any[]).filter(
-                    w => Array.isArray(w.sessions) && w.sessions.length > 0
+                    w => Array.isArray(w.sessions) && w.sessions.some((s: any) => Array.isArray(s.exercises) && s.exercises.length > 0)
                 ).length;
                 expectedSessions = totalWeeks > 0 ? Math.round(totalSessions / totalWeeks) : 0;
             }

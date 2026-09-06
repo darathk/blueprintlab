@@ -49,7 +49,7 @@ export async function POST(request: Request) {
         rawWeeks.sort((a, b) => (a.weekNumber || 0) - (b.weekNumber || 0));
 
         // Strip leading empty weeks so the duplicate program always starts with Week 1 content
-        const firstPopulatedIdx = rawWeeks.findIndex(w => Array.isArray(w.sessions) && w.sessions.length > 0);
+        const firstPopulatedIdx = rawWeeks.findIndex(w => Array.isArray(w.sessions) && w.sessions.some((s: any) => Array.isArray(s.exercises) && s.exercises.length > 0));
         if (firstPopulatedIdx > 0) {
             rawWeeks = rawWeeks.slice(firstPopulatedIdx);
         }

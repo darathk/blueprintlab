@@ -67,7 +67,9 @@ export default function AssignmentManager({ athletes, programs, logs = [] }) {
                     if (currentProgram) {
                         let totalSessions = 0;
                         currentProgram.weeks.forEach(w => {
-                            totalSessions += w.sessions.length;
+                            if (Array.isArray(w.sessions)) {
+                                totalSessions += w.sessions.filter(s => Array.isArray(s.exercises) && s.exercises.length > 0).length;
+                            }
                         });
 
                         const completedSessions = new Set(

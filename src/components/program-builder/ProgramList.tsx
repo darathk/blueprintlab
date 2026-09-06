@@ -204,16 +204,16 @@ export default function ProgramList({ athleteId, initialPrograms }: { athleteId:
         </div>
     );
 
-    // Count only weeks that have at least one session
+    // Count only weeks that have at least one session with exercises
     const activeWeekCount = (weeks) => {
         if (!Array.isArray(weeks)) return 0;
-        return weeks.filter(w => Array.isArray(w.sessions) && w.sessions.length > 0).length;
+        return weeks.filter(w => Array.isArray(w.sessions) && w.sessions.some(s => Array.isArray(s.exercises) && s.exercises.length > 0)).length;
     };
 
     // Compute date range from only non-empty weeks, anchored to startDate
     const activeDateRange = (startDate, weeks) => {
         if (!startDate || !Array.isArray(weeks)) return '';
-        const nonEmpty = weeks.filter(w => Array.isArray(w.sessions) && w.sessions.length > 0);
+        const nonEmpty = weeks.filter(w => Array.isArray(w.sessions) && w.sessions.some(s => Array.isArray(s.exercises) && s.exercises.length > 0));
         if (nonEmpty.length === 0) return '';
         const [sy, sm, sd] = startDate.split('T')[0].split('-').map(Number);
         const start = new Date(sy, sm - 1, sd);
@@ -256,7 +256,7 @@ export default function ProgramList({ athleteId, initialPrograms }: { athleteId:
     const getActualStartDate = (startDate: string, weeks: any[]) => {
         if (!startDate) return 0;
         if (!Array.isArray(weeks)) return new Date(startDate).getTime();
-        const nonEmpty = weeks.filter(w => Array.isArray(w.sessions) && w.sessions.length > 0);
+        const nonEmpty = weeks.filter(w => Array.isArray(w.sessions) && w.sessions.some(s => Array.isArray(s.exercises) && s.exercises.length > 0));
         if (nonEmpty.length === 0) return new Date(startDate).getTime();
         const [sy, sm, sd] = startDate.split('T')[0].split('-').map(Number);
         const start = new Date(sy, sm - 1, sd);
