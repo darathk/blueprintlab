@@ -269,19 +269,38 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
             daysSinceLastLog = -1; // sentinel for "never logged"
         }
 
+        let isEndingSoon = false;
         let needsUpdate = false;
         let hasNextBlockReady = false;
 
         if (currentProgram && progress.totalSessions > 0) {
             const { calendarEnd } = getCalendarDates(currentProgram);
 
-            // ── Check if there's a program covering the time after the current one ends ──
-            // This is the simple, reliable check: does ANY program's calendar range
-            // start at or after the current one's end date?
+            // ── Check if there's an upcoming or next program ready ──
             hasNextBlockReady = programsWithDates.some(p => {
                 if (p.id === activeProgId) return false;
-                // Program starts at or after current ends (contiguous or overlapping coverage)
-                return p.calendarStart >= calendarEnd;
+                if (p.status === 'draft') return false;
+
+                // Ensure the program actually has exercises programmed
+                const pWeeks = Array.isArray(p.weeks) ? p.weeks : [];
+                const hasExercises = pWeeks.some((w: any) =>
+                    Array.isArray(w.sessions) && w.sessions.some((s: any) =>
+                        Array.isArray(s.exercises) && s.exercises.length > 0
+                    )
+                );
+                if (!hasExercises) return false;
+
+                // A next block is ready if:
+                // 1. It starts today or in the future
+                // 2. OR it starts on/after current program ends
+                // 3. OR it ends after current program ends
+                // 4. OR it started after current program started and extends past today
+                return p.calendarEnd > now && (
+                    p.calendarStart >= now ||
+                    p.calendarStart >= calendarEnd ||
+                    p.calendarEnd > calendarEnd ||
+                    p.calendarStart > currentProgram.calendarStart
+                );
             });
 
             // ── Needs update: current program is ending within 7 days or already expired ──
@@ -290,7 +309,8 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
             oneWeekBeforeExpiry.setDate(oneWeekBeforeExpiry.getDate() - 7);
             const isEndingSoonByTime = now >= oneWeekBeforeExpiry;
 
-            needsUpdate = (isEndingSoonByTime || isExpired) && !hasNextBlockReady;
+            isEndingSoon = isEndingSoonByTime || isExpired;
+            needsUpdate = isEndingSoon && !hasNextBlockReady;
         }
 
         return {
@@ -301,6 +321,7 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
             daysOut,
             hasMeet: !!athlete.nextMeetDate,
             daysSinceLastLog,
+            isEndingSoon,
             needsUpdate,
             hasNextBlockReady,
         };
@@ -705,7 +726,7 @@ export default function ActivePersonnelList({ athletes, programs, logSummaries, 
                             athlete={enrichedAthlete}
                             progress={enrichedAthlete.computedProgress}
                             daysSinceLastLog={enrichedAthlete.daysSinceLastLog}
-                            needsUpdate={enrichedAthlete.needsUpdate}
+                            needsUpdate={enrichedAthlete.isEndingSoon}
                             hasNextBlockReady={enrichedAthlete.hasNextBlockReady}
                         />
                     ))}
