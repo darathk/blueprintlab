@@ -2413,7 +2413,7 @@ export default function ChatInterface({
                     </div>
 
                     {/* Main Preview Container */}
-                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', padding: 16 }}>
+                    <div style={{ flex: 1, maxHeight: 'min(55vh, 420px)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', padding: 16 }}>
                         {stagedFiles[stagedPreviewIndex]?.type.startsWith('video/') ? (
                             <video
                                 key={stagedFileUrls[stagedPreviewIndex]}
@@ -2423,7 +2423,7 @@ export default function ChatInterface({
                                 playsInline
                                 webkit-playsinline="true"
                                 preload="auto"
-                                style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}
+                                style={{ maxWidth: '100%', maxHeight: 'min(50vh, 380px)', borderRadius: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}
                             />
                         ) : stagedFiles[stagedPreviewIndex]?.type.startsWith('audio/') ? (
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: 40 }}>
@@ -2437,17 +2437,17 @@ export default function ChatInterface({
                             <img
                                 src={stagedFileUrls[stagedPreviewIndex]}
                                 alt=""
-                                style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}
+                                style={{ maxWidth: '100%', maxHeight: 'min(50vh, 380px)', objectFit: 'contain', borderRadius: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}
                             />
                         )}
 
                         {/* File info overlay */}
                         {stagedFiles[stagedPreviewIndex]?.type.startsWith('video/') && (
                             <div style={{
-                                position: 'absolute', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-                                background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)',
-                                borderRadius: 16, padding: '6px 14px',
-                                fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: 500
+                                position: 'absolute', bottom: 12, right: 16,
+                                background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)',
+                                borderRadius: 10, padding: '3px 8px',
+                                fontSize: 11, color: 'rgba(255,255,255,0.85)', fontWeight: 600
                             }}>
                                 {(stagedFiles[stagedPreviewIndex].size / (1024 * 1024)).toFixed(1)} MB
                             </div>

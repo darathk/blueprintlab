@@ -518,174 +518,328 @@ export default function ExerciseFeedback({
                 </div>
             )}
 
-            {/* Full-screen media staging overlay (same as chat) */}
+            {/* Media staging dialog (compact, focused modal card) */}
             {showStaging && stagedFiles.length > 0 && (
-                <div style={{
-                    position: 'fixed', inset: 0, zIndex: 2000,
-                    background: '#0b141a',
-                    display: 'flex', flexDirection: 'column',
-                    animation: 'fadeIn 0.2s ease',
-                }}>
-                    {/* Top Bar */}
+                <div
+                    onClick={(e) => {
+                        if (e.target === e.currentTarget) closeStagingOverlay();
+                    }}
+                    style={{
+                        position: 'fixed',
+                        inset: 0,
+                        zIndex: 2000,
+                        background: 'rgba(0, 0, 0, 0.75)',
+                        backdropFilter: 'blur(12px)',
+                        WebkitBackdropFilter: 'blur(12px)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        padding: '16px',
+                        animation: 'fadeIn 0.2s ease',
+                    }}
+                >
                     <div style={{
-                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        padding: '12px 16px',
-                        paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))',
-                        color: '#fff', background: '#1f2c34',
+                        width: '100%',
+                        maxWidth: '460px',
+                        maxHeight: '90vh',
+                        background: 'var(--card-bg, #111b21)',
+                        border: '1px solid var(--card-border, rgba(255, 255, 255, 0.14))',
+                        borderRadius: 20,
+                        boxShadow: '0 24px 60px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255, 255, 255, 0.08)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        overflow: 'hidden',
                     }}>
-                        <button
-                            onClick={closeStagingOverlay}
-                            style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: 4 }}
-                        >
-                            <X size={26} />
-                        </button>
-                        <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
-                            {stagedFiles[stagedPreviewIndex] && getSafeMimeType(stagedFiles[stagedPreviewIndex]).startsWith('video/') && (
+                        {/* Top Bar */}
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '12px 16px',
+                            borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                            color: '#fff',
+                            background: 'rgba(255, 255, 255, 0.03)',
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                                 <button
-                                    onClick={() => setCropFile(stagedFiles[stagedPreviewIndex])}
+                                    onClick={closeStagingOverlay}
                                     style={{
-                                        background: 'rgba(0,168,132,0.2)', border: 'none', color: '#fff', cursor: 'pointer',
-                                        display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px',
-                                        borderRadius: 20,
+                                        background: 'rgba(255, 255, 255, 0.08)',
+                                        border: 'none',
+                                        borderRadius: '50%',
+                                        color: '#fff',
+                                        cursor: 'pointer',
+                                        width: 32,
+                                        height: 32,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        transition: 'background 0.15s ease',
                                     }}
+                                    title="Close"
                                 >
-                                    <Scissors size={18} color="#00a884" />
-                                    <span style={{ fontSize: 13, color: '#00a884', fontWeight: 600 }}>Trim</span>
+                                    <X size={18} />
                                 </button>
-                            )}
-                            <div style={{ border: '1px solid rgba(255,255,255,0.4)', borderRadius: 4, padding: '1px 5px', fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.6)' }}>HD</div>
-                            <button
-                                onClick={() => fileRef.current?.click()}
-                                style={{ background: 'none', border: 'none', color: '#8696a0', cursor: 'pointer', padding: 4 }}
-                            >
-                                <Paperclip size={22} />
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* Main Preview */}
-                    <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', padding: 16 }}>
-                        {stagedFiles[stagedPreviewIndex] && getSafeMimeType(stagedFiles[stagedPreviewIndex]).startsWith('video/') ? (
-                            <video
-                                key={stagedFileUrls[stagedPreviewIndex]}
-                                src={stagedFileUrls[stagedPreviewIndex]}
-                                poster={stagedPosters[stagedPreviewIndex] || undefined}
-                                controls
-                                playsInline
-                                preload="auto"
-                                style={{ maxWidth: '100%', maxHeight: '100%', borderRadius: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}
-                            />
-                        ) : (
-                            <img
-                                src={stagedFileUrls[stagedPreviewIndex]}
-                                alt=""
-                                style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain', borderRadius: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}
-                            />
-                        )}
-
-                        {/* File size overlay for videos */}
-                        {stagedFiles[stagedPreviewIndex] && getSafeMimeType(stagedFiles[stagedPreviewIndex]).startsWith('video/') && (
-                            <div style={{
-                                position: 'absolute', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-                                background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(8px)',
-                                borderRadius: 16, padding: '6px 14px',
-                                fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: 500,
-                            }}>
-                                {(stagedFiles[stagedPreviewIndex].size / (1024 * 1024)).toFixed(1)} MB
+                                <span style={{ fontSize: 14, fontWeight: 700, color: 'var(--foreground, #fff)' }}>
+                                    Attach Media
+                                </span>
                             </div>
-                        )}
-                    </div>
 
-                    {/* Bottom area */}
-                    <div style={{ background: '#111b21', padding: '12px 12px', paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))' }}>
-                        {/* File thumbnails */}
-                        {stagedFiles.length >= 1 && (
-                            <div style={{ display: 'flex', gap: 8, paddingBottom: 12, overflowX: 'auto', paddingLeft: 4 }}>
-                                {stagedFileUrls.map((url, i) => (
-                                    <div key={i} onClick={() => setStagedPreviewIndex(i)} style={{
-                                        width: 54, height: 54, borderRadius: 8, overflow: 'hidden',
-                                        border: i === stagedPreviewIndex ? '2px solid #00a884' : '2px solid transparent',
-                                        cursor: 'pointer', flexShrink: 0, position: 'relative', transition: 'all 0.15s ease',
-                                    }}>
-                                        {stagedFiles[i] && getSafeMimeType(stagedFiles[i]).startsWith('video/') ? (
-                                            stagedPosters[i] ? (
-                                                <img src={stagedPosters[i]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: i === stagedPreviewIndex ? 1 : 0.5 }} />
-                                            ) : (
-                                                <video
-                                                    src={url}
-                                                    muted
-                                                    playsInline
-                                                    preload="metadata"
-                                                    onLoadedData={e => { (e.target as HTMLVideoElement).currentTime = 0.1; }}
-                                                    style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: i === stagedPreviewIndex ? 1 : 0.5 }}
-                                                />
-                                            )
-                                        ) : (
-                                            <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: i === stagedPreviewIndex ? 1 : 0.5 }} />
-                                        )}
-                                        <button
-                                            onClick={(e) => { e.stopPropagation(); clearStagedMedia(i); }}
-                                            style={{
-                                                position: 'absolute', top: 2, right: 2,
-                                                background: 'rgba(0,0,0,0.7)', border: 'none', borderRadius: '50%',
-                                                color: '#fff', width: 18, height: 18,
-                                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                cursor: 'pointer',
-                                            }}
-                                        >
-                                            <X size={10} />
-                                        </button>
-                                    </div>
-                                ))}
+                            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+                                {stagedFiles[stagedPreviewIndex] && getSafeMimeType(stagedFiles[stagedPreviewIndex]).startsWith('video/') && (
+                                    <button
+                                        onClick={() => setCropFile(stagedFiles[stagedPreviewIndex])}
+                                        style={{
+                                            background: 'rgba(0, 168, 132, 0.18)',
+                                            border: '1px solid rgba(0, 168, 132, 0.35)',
+                                            color: '#00a884',
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 5,
+                                            padding: '5px 12px',
+                                            borderRadius: 16,
+                                            fontWeight: 600,
+                                            fontSize: 12,
+                                            transition: 'transform 0.15s ease',
+                                        }}
+                                    >
+                                        <Scissors size={15} color="#00a884" />
+                                        <span>Trim</span>
+                                    </button>
+                                )}
+                                <div style={{ border: '1px solid rgba(255, 255, 255, 0.25)', borderRadius: 4, padding: '1px 5px', fontSize: 10, fontWeight: 800, color: 'rgba(255, 255, 255, 0.6)' }}>
+                                    HD
+                                </div>
                                 <button
                                     onClick={() => fileRef.current?.click()}
                                     style={{
-                                        width: 54, height: 54, borderRadius: 8,
-                                        border: '2px dashed rgba(134,150,160,0.4)',
-                                        background: 'none', color: '#8696a0',
-                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                        cursor: 'pointer', flexShrink: 0,
+                                        background: 'rgba(255, 255, 255, 0.08)',
+                                        border: 'none',
+                                        borderRadius: '50%',
+                                        color: 'var(--secondary-foreground, #8696a0)',
+                                        cursor: 'pointer',
+                                        width: 32,
+                                        height: 32,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
                                     }}
+                                    title="Add file"
                                 >
-                                    <div style={{ fontSize: 26, fontWeight: 300 }}>+</div>
+                                    <Paperclip size={16} />
                                 </button>
                             </div>
-                        )}
+                        </div>
 
-                        {/* Caption / Feedback message input and direct send button */}
-                        <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10 }}>
-                            <div style={{
-                                flex: 1, background: '#2a3942', borderRadius: 16, padding: '8px 14px',
-                                display: 'flex', flexDirection: 'column', minHeight: 48,
-                                boxShadow: '0 1px 1px rgba(0,0,0,0.2)',
-                            }}>
-                                <div style={{ fontSize: 11, fontWeight: 700, color: '#818cf8', marginBottom: 2 }}>
-                                    Feedback attached ({stagedFiles.length} file{stagedFiles.length !== 1 ? 's' : ''})
-                                </div>
-                                <textarea
-                                    value={message}
-                                    onChange={e => setMessage(e.target.value)}
-                                    placeholder="Add feedback or notes for coach..."
-                                    rows={2}
+                        {/* Compact Main Preview Container */}
+                        <div style={{
+                            position: 'relative',
+                            width: '100%',
+                            height: '240px',
+                            background: '#050709',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            overflow: 'hidden',
+                        }}>
+                            {stagedFiles[stagedPreviewIndex] && getSafeMimeType(stagedFiles[stagedPreviewIndex]).startsWith('video/') ? (
+                                <video
+                                    key={stagedFileUrls[stagedPreviewIndex]}
+                                    src={stagedFileUrls[stagedPreviewIndex]}
+                                    poster={stagedPosters[stagedPreviewIndex] || undefined}
+                                    controls
+                                    playsInline
+                                    preload="auto"
                                     style={{
-                                        width: '100%', background: 'transparent', border: 'none',
-                                        color: '#fff', fontSize: 13, resize: 'none',
-                                        outline: 'none', fontFamily: 'inherit', lineHeight: 1.4,
+                                        maxWidth: '100%',
+                                        maxHeight: '100%',
+                                        objectFit: 'contain',
                                     }}
                                 />
+                            ) : (
+                                <img
+                                    src={stagedFileUrls[stagedPreviewIndex]}
+                                    alt=""
+                                    style={{
+                                        maxWidth: '100%',
+                                        maxHeight: '100%',
+                                        objectFit: 'contain',
+                                    }}
+                                />
+                            )}
+
+                            {/* File size overlay in bottom right corner */}
+                            {stagedFiles[stagedPreviewIndex] && getSafeMimeType(stagedFiles[stagedPreviewIndex]).startsWith('video/') && (
+                                <div style={{
+                                    position: 'absolute',
+                                    bottom: 10,
+                                    right: 10,
+                                    background: 'rgba(0, 0, 0, 0.75)',
+                                    backdropFilter: 'blur(6px)',
+                                    borderRadius: 10,
+                                    padding: '3px 8px',
+                                    fontSize: 11,
+                                    color: 'rgba(255, 255, 255, 0.85)',
+                                    fontWeight: 600,
+                                    pointerEvents: 'none',
+                                }}>
+                                    {(stagedFiles[stagedPreviewIndex].size / (1024 * 1024)).toFixed(1)} MB
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Bottom Action Area */}
+                        <div style={{
+                            background: 'var(--card-bg, #111b21)',
+                            padding: '12px 14px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: 10,
+                        }}>
+                            {/* File thumbnails strip */}
+                            {stagedFiles.length >= 1 && (
+                                <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2 }}>
+                                    {stagedFileUrls.map((url, i) => (
+                                        <div
+                                            key={i}
+                                            onClick={() => setStagedPreviewIndex(i)}
+                                            style={{
+                                                width: 50,
+                                                height: 50,
+                                                borderRadius: 8,
+                                                overflow: 'hidden',
+                                                border: i === stagedPreviewIndex ? '2px solid var(--primary, #6366f1)' : '1.5px solid rgba(255, 255, 255, 0.1)',
+                                                cursor: 'pointer',
+                                                flexShrink: 0,
+                                                position: 'relative',
+                                                transition: 'all 0.15s ease',
+                                            }}
+                                        >
+                                            {stagedFiles[i] && getSafeMimeType(stagedFiles[i]).startsWith('video/') ? (
+                                                stagedPosters[i] ? (
+                                                    <img src={stagedPosters[i]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: i === stagedPreviewIndex ? 1 : 0.6 }} />
+                                                ) : (
+                                                    <video
+                                                        src={url}
+                                                        muted
+                                                        playsInline
+                                                        preload="metadata"
+                                                        onLoadedData={e => { (e.target as HTMLVideoElement).currentTime = 0.1; }}
+                                                        style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: i === stagedPreviewIndex ? 1 : 0.6 }}
+                                                    />
+                                                )
+                                            ) : (
+                                                <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: i === stagedPreviewIndex ? 1 : 0.6 }} />
+                                            )}
+                                            <button
+                                                onClick={(e) => { e.stopPropagation(); clearStagedMedia(i); }}
+                                                style={{
+                                                    position: 'absolute',
+                                                    top: 2,
+                                                    right: 2,
+                                                    background: 'rgba(0, 0, 0, 0.75)',
+                                                    border: 'none',
+                                                    borderRadius: '50%',
+                                                    color: '#fff',
+                                                    width: 16,
+                                                    height: 16,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'center',
+                                                    cursor: 'pointer',
+                                                    padding: 0,
+                                                }}
+                                                title="Remove"
+                                            >
+                                                <X size={10} />
+                                            </button>
+                                        </div>
+                                    ))}
+                                    <button
+                                        onClick={() => fileRef.current?.click()}
+                                        style={{
+                                            width: 50,
+                                            height: 50,
+                                            borderRadius: 8,
+                                            border: '2px dashed rgba(255, 255, 255, 0.2)',
+                                            background: 'rgba(255, 255, 255, 0.03)',
+                                            color: 'var(--secondary-foreground, #8696a0)',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            justifyContent: 'center',
+                                            cursor: 'pointer',
+                                            flexShrink: 0,
+                                        }}
+                                        title="Add file"
+                                    >
+                                        <div style={{ fontSize: 22, fontWeight: 300, lineHeight: 1 }}>+</div>
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Caption / Feedback message input and send button */}
+                            <div style={{ display: 'flex', alignItems: 'flex-end', gap: 10 }}>
+                                <div style={{
+                                    flex: 1,
+                                    background: 'rgba(255, 255, 255, 0.06)',
+                                    borderRadius: 14,
+                                    padding: '8px 12px',
+                                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    minHeight: 46,
+                                }}>
+                                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--primary, #818cf8)', marginBottom: 2 }}>
+                                        Feedback attached ({stagedFiles.length} file{stagedFiles.length !== 1 ? 's' : ''})
+                                    </div>
+                                    <textarea
+                                        value={message}
+                                        onChange={e => setMessage(e.target.value)}
+                                        placeholder="Add feedback or notes for coach..."
+                                        rows={2}
+                                        style={{
+                                            width: '100%',
+                                            background: 'transparent',
+                                            border: 'none',
+                                            color: '#fff',
+                                            fontSize: 13,
+                                            resize: 'none',
+                                            outline: 'none',
+                                            fontFamily: 'inherit',
+                                            lineHeight: 1.4,
+                                            maxHeight: '80px',
+                                        }}
+                                    />
+                                </div>
+                                <button
+                                    onClick={handleSend}
+                                    disabled={sending}
+                                    title="Send feedback and video to coach"
+                                    style={{
+                                        width: 48,
+                                        height: 48,
+                                        borderRadius: '50%',
+                                        background: 'linear-gradient(135deg, var(--primary, #6366f1), #8b5cf6)',
+                                        border: 'none',
+                                        color: '#fff',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        cursor: sending ? 'not-allowed' : 'pointer',
+                                        boxShadow: '0 4px 12px rgba(99, 102, 241, 0.4)',
+                                        flexShrink: 0,
+                                        opacity: sending ? 0.6 : 1,
+                                        transition: 'transform 0.15s ease',
+                                    }}
+                                >
+                                    {sending ? (
+                                        <div style={{ width: 18, height: 18, border: '2px solid rgba(255, 255, 255, 0.3)', borderTopColor: '#fff', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
+                                    ) : (
+                                        <Send size={20} />
+                                    )}
+                                </button>
                             </div>
-                            <button
-                                onClick={handleSend}
-                                disabled={sending}
-                                title="Send feedback and video to coach"
-                                style={{
-                                    width: 52, height: 52, borderRadius: '50%', background: '#6366f1',
-                                    border: 'none', color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                    cursor: 'pointer', boxShadow: '0 2px 6px rgba(99,102,241,0.4)', flexShrink: 0,
-                                }}
-                            >
-                                <Send size={22} />
-                            </button>
                         </div>
                     </div>
                 </div>
