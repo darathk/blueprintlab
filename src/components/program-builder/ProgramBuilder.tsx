@@ -105,7 +105,9 @@ const snapToNextMonday = (date: Date): string => {
 // Calculate default start date for a new program so it seamlessly follows existing programs without overlap
 const calculateDefaultStartDate = (existingPrograms: any[], initialData: any): string => {
     if (initialData?.startDate) {
-        return snapToMonday(String(initialData.startDate).split('T')[0]);
+        return typeof initialData.startDate === 'string'
+            ? initialData.startDate.split('T')[0]
+            : new Date(initialData.startDate).toISOString().split('T')[0];
     }
 
     if (Array.isArray(existingPrograms) && existingPrograms.length > 0) {
@@ -589,8 +591,7 @@ export default function ProgramBuilder({
             } else {
                 rawStartDate = new Date().toISOString().split('T')[0];
             }
-            const snappedStartDate = snapToMonday(rawStartDate);
-            setStartDate(snappedStartDate);
+            setStartDate(rawStartDate);
             let parsedWeeks = initialData.weeks;
             if (typeof parsedWeeks === 'string') {
                 try { parsedWeeks = JSON.parse(parsedWeeks); } catch(e) { parsedWeeks = []; }
@@ -1339,8 +1340,12 @@ export default function ProgramBuilder({
     };
 
     const buildPayload = useCallback(() => {
-        // Always snap startDate to Monday to ensure week alignment
-        const snappedStart = snapToMonday(startDate);
+        // Only snap to Monday for newly created programs if start date is not explicitly an existing program's start
+        const isExistingProgram = !!(initialData?.id || savedProgramIdRef.current);
+        const originalStartStr = initialData?.startDate
+            ? (typeof initialData.startDate === 'string' ? initialData.startDate.split('T')[0] : new Date(initialData.startDate).toISOString().split('T')[0])
+            : '';
+        const snappedStart = (isExistingProgram && startDate === originalStartStr) ? startDate : snapToMonday(startDate);
 
         // ── Compact weeks: trim empty leading/trailing weeks and renumber from 1 ──
         // This ensures Week 1 is always the first week with actual content,
