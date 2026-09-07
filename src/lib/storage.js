@@ -287,6 +287,7 @@ export const getLogsByAthlete = cache(async (athleteId) => {
             sessionId: true,
             date: true,
             exercises: true,
+            warmupDrills: true,
             program: { select: { athleteId: true } }
         }
     });

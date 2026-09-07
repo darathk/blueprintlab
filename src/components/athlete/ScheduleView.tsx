@@ -13,6 +13,7 @@ const ReadinessCheckin = dynamic(() => import('@/components/athlete/ReadinessChe
 const CelebrationScreen = dynamic(() => import('@/components/athlete/CelebrationScreen'), { ssr: false });
 const PRToggle = dynamic(() => import('@/components/athlete/PRToggle'), { ssr: false });
 const PlannedTopSetInput = dynamic(() => import('@/components/athlete/PlannedTopSetInput'), { ssr: false });
+const ClipCreator = dynamic(() => import('@/components/athlete/ClipCreator'), { ssr: false });
 
 /* ─────────── constants ─────────── */
 const CATEGORY_COLORS: Record<string, string> = {
@@ -161,7 +162,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
     // Celebration screen state
     const [celebration, setCelebration] = useState<{ sessionName: string } | null>(null);
     const celebratedSessionsRef = useRef<Set<string>>(new Set());
-    const sessionMetaRef = useRef<Record<string, { exercises: any[]; sessionName: string }>>({});
+    const sessionMetaRef = useRef<Record<string, { exercises: any[]; sessionName: string; scheduledDate?: string }>>({});
 
     // Readiness gating: track which sessions have completed readiness
     // Coach view bypasses readiness entirely
@@ -298,7 +299,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
             return {
                 exerciseId: ex.id,
                 name: ex.name,
-                notes: logEx?.notes || ex.notes || '',
+                notes: logEx?.notes || '',
                 unit: savedUnit,
                 sets: sets.map((s: any, i: number) => {
                     const saved = logEx?.sets?.[i];
@@ -367,11 +368,15 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                 sets: ex.sets.map((s: any) => ({ weight: s.actual.weight || '', reps: s.actual.reps, rpe: s.actual.rpe, unit: ex.unit || unit }))
             }));
 
+            const meta = sessionMetaRef.current[sKey];
+            const existingLog = Array.isArray(logs) ? logs.find((l: any) => l.sessionId === sKey && l.programId === programId) : undefined;
+            const logDate = existingLog?.date || meta?.scheduledDate || new Date().toISOString();
+
             const res = await fetch('/api/logs', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 keepalive: true,
-                body: JSON.stringify({ athleteId, programId, sessionId: sKey, date: new Date().toISOString(), exercises: cleanLogs })
+                body: JSON.stringify({ athleteId, programId, sessionId: sKey, date: logDate, exercises: cleanLogs })
             });
 
             if (res.ok) {
@@ -460,15 +465,16 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
             if (copy[sKey]?.[exIdx]) copy[sKey][exIdx].notes = value;
             return copy;
         });
-        // triggerAutoSave(sKey, programId); // Optional: if we want to save on every keystroke in notes
+        triggerAutoSave(sKey, programId);
     };
 
     const copyPrevSet = (sKey: string, exIdx: number, setIdx: number, programId: string) => {
         if (setIdx === 0) return;
         setEditState(prev => {
             const copy = JSON.parse(JSON.stringify(prev));
+            if (!copy[sKey]) return prev;
             const prevActual = copy[sKey]?.[exIdx]?.sets?.[setIdx - 1]?.actual;
-            if (prevActual && copy[sKey][exIdx].sets[setIdx]) {
+            if (prevActual && copy[sKey]?.[exIdx]?.sets?.[setIdx]) {
                 copy[sKey][exIdx].sets[setIdx].actual = { ...prevActual };
             }
             return copy;
@@ -479,12 +485,14 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
     const copyTargetToActual = (sKey: string, exIdx: number, setIdx: number, programId: string) => {
         setEditState(prev => {
             const copy = JSON.parse(JSON.stringify(prev));
+            if (!copy[sKey]) return prev;
             const target = copy[sKey]?.[exIdx]?.sets?.[setIdx]?.target;
-            if (target && copy[sKey][exIdx].sets[setIdx]) {
-                const reps = String(target.reps);
+            if (target && copy[sKey]?.[exIdx]?.sets?.[setIdx]) {
+                const reps = String(target.reps || '');
                 const cleanReps = reps.includes('-') ? reps.split('-')[0] : reps;
+                const cleanWeight = target.weight ? String(target.weight).replace(/[^0-9.]/g, '') : '';
                 copy[sKey][exIdx].sets[setIdx].actual = {
-                    weight: target.weight, reps: cleanReps, rpe: target.rpe
+                    weight: cleanWeight, reps: cleanReps, rpe: target.rpe || ''
                 };
             }
             return copy;
@@ -850,7 +858,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                 const sessionOpen = openSessions.has(sKey);
 
                                 // Register session metadata for celebration detection
-                                sessionMetaRef.current[sKey] = { exercises, sessionName: session.name || `Session ${session.day}` };
+                                sessionMetaRef.current[sKey] = { exercises, sessionName: session.name || `Session ${session.day}`, scheduledDate: selectedDate };
 
                                 return (
                                     <div key={sKey} id={`session-${sKey}`} className="glass-panel" style={{
@@ -1077,7 +1085,11 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                     const exName = (exerciseData.name || ex.name || '').toLowerCase();
                                                     const isWarmup = category === 'Warm Up' || category === 'Drills' || exName.includes('warm up') || exName.includes('warmup') || exName.includes('drill');
 
-                                                    const isLocked = !isCoachView && !readySessions.has(sKey) && !isWarmup;
+                                                    const hasExistingLogData = Boolean(
+                                                        (log?.exercises && log.exercises.length > 0) ||
+                                                        (editState[sKey]?.some((e: any) => e.sets?.some((s: any) => s.actual?.weight || s.actual?.reps)))
+                                                    );
+                                                    const isLocked = !isCoachView && !readySessions.has(sKey) && !isWarmup && !hasExistingLogData;
 
                                                     return (
                                                         <div key={exIdx} className={shakeKey === exKey ? 'readiness-shake' : ''} style={{ background: 'var(--background)', borderBottom: '1px solid var(--card-border)', opacity: isLocked ? 0.5 : 1, transition: 'opacity 0.3s' }}>
@@ -1123,18 +1135,36 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                         </div>
                                                                     </div>
 
-                                                                    {/* Coach's notes — surfaced first so the athlete reads any
-                                                                        prescribed cues/instructions before seeing the protocol. */}
+                                                                    {/* Coach's notes banner */}
+                                                                    {(ex.notes || exerciseData.coachNotes) && (
+                                                                        <div style={{
+                                                                            padding: '10px 14px',
+                                                                            marginBottom: 10,
+                                                                            borderRadius: 8,
+                                                                            background: 'rgba(99, 102, 241, 0.08)',
+                                                                            borderLeft: '3px solid #6366f1',
+                                                                            fontSize: '0.85rem',
+                                                                            color: 'var(--foreground)',
+                                                                            lineHeight: 1.4
+                                                                        }}>
+                                                                            <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#818cf8', marginBottom: 3 }}>
+                                                                                Coach Notes
+                                                                            </div>
+                                                                            <div>{linkify(ex.notes || exerciseData.coachNotes)}</div>
+                                                                        </div>
+                                                                    )}
+
+                                                                    {/* Athlete notes input */}
                                                                     <div style={{ display: 'flex', padding: '0 0 8px 0', alignItems: 'flex-start' }}>
                                                                         <textarea
                                                                             value={exerciseData.notes || ''}
                                                                             onChange={e => updateNotes(sKey, exIdx, e.target.value, program.id)}
                                                                             onBlur={() => triggerAutoSave(sKey, program.id)}
                                                                             onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
-                                                                            placeholder="Coach's notes:"
+                                                                            placeholder="Add notes / feedback for this exercise..."
                                                                             style={{
-                                                                                flex: 1, minHeight: 60, padding: '8px 12px', border: '1px solid var(--card-border)',
-                                                                                borderRadius: 4, background: 'var(--background)', fontSize: '0.9rem',
+                                                                                flex: 1, minHeight: 48, padding: '8px 12px', border: '1px solid var(--card-border)',
+                                                                                borderRadius: 6, background: 'var(--background)', fontSize: '0.85rem',
                                                                                 color: 'var(--foreground)', resize: 'vertical', outlineColor: 'var(--primary)',
                                                                             }}
                                                                         />
@@ -1251,7 +1281,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                             {['weight', 'reps', 'rpe'].map(f => {
                                                                                                 return (
                                                                                                     <div key={f} style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
-                                                                                                        <input type="number" inputMode="decimal"
+                                                                                                        <input type="number" inputMode="decimal" step="any"
                                                                                                             value={actual[f]}
                                                                                                             onChange={e => updateSet(sKey, exIdx, setIdx, f, e.target.value, program.id)}
                                                                                                             onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
@@ -1272,43 +1302,109 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                 );
                                                                                             })}
                                                                                         </div>
-
+                                                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', width: '36px', flexShrink: 0 }}>
+                                                                                            <button
+                                                                                                type="button"
+                                                                                                title="Copy prescribed target to actual"
+                                                                                                onClick={() => {
+                                                                                                    if (!editState[sKey]) initEdit(sKey, exercises, log);
+                                                                                                    copyTargetToActual(sKey, exIdx, setIdx, program.id);
+                                                                                                }}
+                                                                                                style={{
+                                                                                                    padding: '2px 0',
+                                                                                                    fontSize: '0.65rem',
+                                                                                                    fontWeight: 700,
+                                                                                                    borderRadius: '4px',
+                                                                                                    border: '1px solid rgba(125,135,210,0.3)',
+                                                                                                    background: 'rgba(125,135,210,0.1)',
+                                                                                                    color: 'var(--primary)',
+                                                                                                    cursor: 'pointer',
+                                                                                                    textAlign: 'center',
+                                                                                                    lineHeight: 1.2
+                                                                                                }}
+                                                                                            >
+                                                                                                Rx
+                                                                                            </button>
+                                                                                            {setIdx > 0 && (
+                                                                                                <button
+                                                                                                    type="button"
+                                                                                                    title="Copy previous set"
+                                                                                                    onClick={() => {
+                                                                                                        if (!editState[sKey]) initEdit(sKey, exercises, log);
+                                                                                                        copyPrevSet(sKey, exIdx, setIdx, program.id);
+                                                                                                    }}
+                                                                                                    style={{
+                                                                                                        padding: '2px 0',
+                                                                                                        fontSize: '0.65rem',
+                                                                                                        fontWeight: 600,
+                                                                                                        borderRadius: '4px',
+                                                                                                        border: '1px solid var(--card-border)',
+                                                                                                        background: 'rgba(255,255,255,0.04)',
+                                                                                                        color: 'var(--secondary-foreground)',
+                                                                                                        cursor: 'pointer',
+                                                                                                        textAlign: 'center',
+                                                                                                        lineHeight: 1.2
+                                                                                                    }}
+                                                                                                >
+                                                                                                    Prev
+                                                                                                </button>
+                                                                                            )}
+                                                                                        </div>
                                                                                     </>
                                                                                 )}
                                                                             </div>
                                                                         );
                                                                     })}
-                                                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', padding: '16px 0 8px 0', marginTop: 12, borderTop: '1px solid rgba(148,163,184,0.1)' }}>
-                                                                        {/* Actions Panel */}
-                                                                        <div style={{ border: '1px solid rgba(148,163,184,0.2)', borderRadius: '12px', padding: '16px', background: 'rgba(148,163,184,0.03)' }}>
-                                                                            <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '16px' }}>Exercise Actions</div>
-                                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                                                                <ExerciseFeedback
-                                                                                    athleteId={athleteId}
-                                                                                    coachId={coachId || ''}
-                                                                                    exerciseName={exerciseData.name || ex.name}
-                                                                                    weekNum={weekDisplayNum}
-                                                                                    dayNum={sessionNum}
-                                                                                    blockName={program.name}
-                                                                                    sessionId={sKey}
-                                                                                    unit={exerciseData.unit || unit}
-                                                                                    sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any, i: number) => ({ setNumber: i + 1, actual: s.actual || { weight: '', reps: '', rpe: '' } }))}
-                                                                                />
-                                                                                {!isCoachView && (
-                                                                                    <PRToggle
-                                                                                        athleteId={athleteId}
-                                                                                        exerciseName={exerciseData.name || ex.name}
-                                                                                        sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any) => (s.actual || { weight: '', reps: '', rpe: '' }))}
-                                                                                        unit={exerciseData.unit || unit}
-                                                                                        sessionId={sKey}
-                                                                                        programName={program.name}
-                                                                                        weekNum={weekDisplayNum}
-                                                                                        dayNum={sessionNum}
-                                                                                        date={new Date().toISOString().split('T')[0]}
-                                                                                    />
-                                                                                )}
-                                                                            </div>
-                                                                        </div>
+                                                                    {(() => {
+                                                                        const effectiveSets = (editState[sKey]?.[exIdx]?.sets || []).length > 0
+                                                                            ? (editState[sKey]?.[exIdx]?.sets || [])
+                                                                            : (log?.exercises?.find((l: any) => l.exerciseId === ex.id || l.name === ex.name)?.sets || []).map((s: any) => ({
+                                                                                actual: { weight: s.weight ? String(s.weight) : '', reps: s.reps || '', rpe: s.rpe || '' }
+                                                                            }));
+                                                                        const prDate = log?.date ? String(log.date).split('T')[0] : (sessionMetaRef.current[sKey]?.scheduledDate || selectedDate);
+
+                                                                        return (
+                                                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', padding: '16px 0 8px 0', marginTop: 12, borderTop: '1px solid rgba(148,163,184,0.1)' }}>
+                                                                                {/* Actions Panel */}
+                                                                                <div style={{ border: '1px solid rgba(148,163,184,0.2)', borderRadius: '12px', padding: '16px', background: 'rgba(148,163,184,0.03)' }}>
+                                                                                    <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '16px' }}>Exercise Actions</div>
+                                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                                                                        <ExerciseFeedback
+                                                                                            athleteId={athleteId}
+                                                                                            coachId={coachId || ''}
+                                                                                            exerciseName={exerciseData.name || ex.name}
+                                                                                            weekNum={weekDisplayNum}
+                                                                                            dayNum={sessionNum}
+                                                                                            blockName={program.name}
+                                                                                            sessionId={sKey}
+                                                                                            unit={exerciseData.unit || unit}
+                                                                                            sets={effectiveSets.map((s: any, i: number) => ({ setNumber: i + 1, actual: s.actual || { weight: '', reps: '', rpe: '' } }))}
+                                                                                        />
+                                                                                        {!isCoachView && (
+                                                                                            <PRToggle
+                                                                                                athleteId={athleteId}
+                                                                                                exerciseName={exerciseData.name || ex.name}
+                                                                                                sets={effectiveSets.map((s: any) => (s.actual || { weight: '', reps: '', rpe: '' }))}
+                                                                                                unit={exerciseData.unit || unit}
+                                                                                                sessionId={sKey}
+                                                                                                programName={program.name}
+                                                                                                weekNum={weekDisplayNum}
+                                                                                                dayNum={sessionNum}
+                                                                                                date={prDate}
+                                                                                            />
+                                                                                        )}
+                                                                                        <ClipCreator
+                                                                                            exerciseName={exerciseData.name || ex.name}
+                                                                                            sets={effectiveSets.map((s: any) => ({
+                                                                                                weight: s.actual?.weight || '',
+                                                                                                reps: s.actual?.reps || '',
+                                                                                                rpe: s.actual?.rpe || ''
+                                                                                            }))}
+                                                                                            sessionLabel={`Week ${weekDisplayNum} · ${program.name}`}
+                                                                                            athleteId={athleteId}
+                                                                                        />
+                                                                                    </div>
+                                                                                </div>
 
                                                                         {/* Stats Panel */}
                                                                         <div style={{ border: '1px solid rgba(148,163,184,0.2)', borderRadius: '12px', padding: '16px', background: 'rgba(148,163,184,0.03)' }}>
@@ -1320,7 +1416,9 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                             </div>
                                                                         </div>
                                                                     </div>
-                                                                </div>
+                                                                );
+                                                            })()}
+                                                            </div>
                                                             )}
                                                         </div>
                                                     );
@@ -1574,8 +1672,15 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                         const log = Array.isArray(logs) ? logs.find(l => (l.sessionId === sKey || l.sessionId === session.id) && l.programId === program.id) : undefined;
                                         const progress = sessionProgress(exercises, log, editState[sKey]);
 
-                                        // Register session metadata for celebration detection
-                                        sessionMetaRef.current[sKey] = { exercises, sessionName: session.name || `Session ${day}` };
+                                        // Register session metadata for celebration detection and saving
+                                        let sessDateStr: string | undefined = session.scheduledDate ? String(session.scheduledDate).split('T')[0] : undefined;
+                                        if (!sessDateStr && program.startDate) {
+                                            const start = parseLocalDate(program.startDate);
+                                            const d = new Date(start);
+                                            d.setDate(d.getDate() + (weekNum - 1) * 7 + (day - 1));
+                                            sessDateStr = toDateStr(d);
+                                        }
+                                        sessionMetaRef.current[sKey] = { exercises, sessionName: session.name || `Session ${day}`, scheduledDate: sessDateStr };
 
                                         return (
                                                 <div style={{ marginBottom: sessionOpen ? 16 : 8 }}>
@@ -1664,6 +1769,18 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                             {/* Readiness Check-In */}
                                                             {!isCoachView && <ReadinessCheckin athleteId={athleteId} sessionKey={sKey} programId={program.id} onReadinessSubmit={() => markSessionReady(sKey)} />}
 
+                                                            {/* Warmup Drills Display */}
+                                                            {(session.warmupDrills || log?.warmupDrills) && (
+                                                                <div style={{ padding: '12px 16px', background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid var(--card-border)' }}>
+                                                                    <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--primary)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                        Warm-Up & Prep Drills
+                                                                    </div>
+                                                                    <div style={{ fontSize: '0.9rem', color: 'var(--foreground)', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>
+                                                                        {linkify(session.warmupDrills || log?.warmupDrills)}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+
                                                             {/* Readiness gate popup */}
                                                             {!isCoachView && readinessPopup === sKey && (
                                                                 <div style={{
@@ -1727,7 +1844,11 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                 const exName = (exerciseData.name || ex.name || '').toLowerCase();
                                                                 const isWarmup = category === 'Warm Up' || category === 'Drills' || exName.includes('warm up') || exName.includes('warmup') || exName.includes('drill');
                                                                 
-                                                                const isLocked = !isCoachView && !readySessions.has(sKey) && !isWarmup;
+                                                                const hasExistingLogData = Boolean(
+                                                                    (log?.exercises && log.exercises.length > 0) ||
+                                                                    (editState[sKey]?.some((e: any) => e.sets?.some((s: any) => s.actual?.weight || s.actual?.reps)))
+                                                                );
+                                                                const isLocked = !isCoachView && !readySessions.has(sKey) && !isWarmup && !hasExistingLogData;
 
                                                                 return (
                                                                     <div key={exIdx} className={shakeKey === exKey ? 'readiness-shake' : ''} style={{ background: 'var(--background)', borderBottom: '1px solid #cbd5e1', opacity: isLocked ? 0.5 : 1, transition: 'opacity 0.3s' }}>
@@ -1774,17 +1895,37 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                     </div>
                                                                                 </div>
 
-                                                                                {/* Coach's notes — surfaced first so the athlete reads any
-                                                                                    prescribed cues/instructions before seeing the protocol. */}
+                                                                                {/* Coach's notes banner */}
+                                                                                {(ex.notes || exerciseData.coachNotes) && (
+                                                                                    <div style={{
+                                                                                        padding: '10px 14px',
+                                                                                        marginBottom: 10,
+                                                                                        borderRadius: 8,
+                                                                                        background: 'rgba(99, 102, 241, 0.08)',
+                                                                                        borderLeft: '3px solid #6366f1',
+                                                                                        fontSize: '0.85rem',
+                                                                                        color: 'var(--foreground)',
+                                                                                        lineHeight: 1.4
+                                                                                    }}>
+                                                                                        <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#818cf8', marginBottom: 3 }}>
+                                                                                            Coach Notes
+                                                                                        </div>
+                                                                                        <div>{linkify(ex.notes || exerciseData.coachNotes)}</div>
+                                                                                    </div>
+                                                                                )}
+
+                                                                                {/* Athlete notes input */}
                                                                                 <div style={{ display: 'flex', padding: '0 0 8px 0', alignItems: 'flex-start' }}>
                                                                                     <textarea
                                                                                         value={exerciseData.notes || ''}
                                                                                         onChange={e => updateNotes(sKey, exIdx, e.target.value, program.id)}
                                                                                         onBlur={() => triggerAutoSave(sKey, program.id)}
                                                                                         onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
-                                                                                        placeholder="Coach's notes:"
+                                                                                        placeholder="Add notes / feedback for this exercise..."
                                                                                         style={{
-                                                                                            flex: 1, minHeight: 60, padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: 4, background: 'var(--background)', fontSize: '0.9rem', color: 'var(--foreground)', resize: 'vertical', outlineColor: 'var(--primary)'
+                                                                                            flex: 1, minHeight: 48, padding: '8px 12px', border: '1px solid var(--card-border)',
+                                                                                            borderRadius: 6, background: 'var(--background)', fontSize: '0.85rem',
+                                                                                            color: 'var(--foreground)', resize: 'vertical', outlineColor: 'var(--primary)',
                                                                                         }}
                                                                                     />
                                                                                 </div>
@@ -1897,79 +2038,150 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                 </div>
                                                                                             )}
                                                                                             {currentTab === 'actual' && (
-                                                                                                <div style={{ display: 'flex', flex: 1, gap: '8px' }}>
-                                                                                                    {['weight', 'reps', 'rpe'].map(f => {
-                                                                                                        return (
-                                                                                                            <div key={f} style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
-                                                                                                                <input type="number" inputMode="decimal"
-                                                                                                                    value={actual[f]}
-                                                                                                                    onChange={e => updateSet(sKey, exIdx, setIdx, f, e.target.value, program.id)}
-                                                                                                                    onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
-                                                                                                                    placeholder={f === 'weight' ? (target[f] || '') : ''}
-                                                                                                                    style={{
-                                                                                                                        flex: 1, padding: '8px', border: '1px solid rgba(148,163,184,0.3)', borderRadius: '6px',
-                                                                                                                        background: 'var(--background)', textAlign: 'center', fontSize: '1rem',
-                                                                                                                        color: 'var(--foreground)', width: '100%', outlineColor: 'var(--primary)',
-                                                                                                                        paddingRight: f === 'weight' ? '30px' : '8px'
-                                                                                                                    }}
-                                                                                                                />
-                                                                                                                {f === 'weight' && (
-                                                                                                                    <span style={{ position: 'absolute', right: '10px', fontSize: '0.75rem', color: 'var(--secondary-foreground)', opacity: 0.6, pointerEvents: 'none' }}>
-                                                                                                                        {exerciseData.unit || unit}
-                                                                                                                    </span>
-                                                                                                                )}
-                                                                                                            </div>
-                                                                                                        );
-                                                                                                    })}
-                                                                                                </div>
+                                                                                                <>
+                                                                                                    <div style={{ display: 'flex', flex: 1, gap: '8px' }}>
+                                                                                                        {['weight', 'reps', 'rpe'].map(f => {
+                                                                                                            return (
+                                                                                                                <div key={f} style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
+                                                                                                                    <input type="number" inputMode="decimal" step="any"
+                                                                                                                        value={actual[f]}
+                                                                                                                        onChange={e => updateSet(sKey, exIdx, setIdx, f, e.target.value, program.id)}
+                                                                                                                        onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
+                                                                                                                        placeholder={f === 'weight' ? (target[f] || '') : ''}
+                                                                                                                        style={{
+                                                                                                                            flex: 1, padding: '8px', border: '1px solid rgba(148,163,184,0.3)', borderRadius: '6px',
+                                                                                                                            background: 'var(--background)', textAlign: 'center', fontSize: '1rem',
+                                                                                                                            color: 'var(--foreground)', width: '100%', outlineColor: 'var(--primary)',
+                                                                                                                            paddingRight: f === 'weight' ? '30px' : '8px'
+                                                                                                                        }}
+                                                                                                                    />
+                                                                                                                    {f === 'weight' && (
+                                                                                                                        <span style={{ position: 'absolute', right: '10px', fontSize: '0.75rem', color: 'var(--secondary-foreground)', opacity: 0.6, pointerEvents: 'none' }}>
+                                                                                                                            {exerciseData.unit || unit}
+                                                                                                                        </span>
+                                                                                                                    )}
+                                                                                                                </div>
+                                                                                                            );
+                                                                                                        })}
+                                                                                                    </div>
+                                                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', width: '36px', flexShrink: 0 }}>
+                                                                                                        <button
+                                                                                                            type="button"
+                                                                                                            title="Copy prescribed target to actual"
+                                                                                                            onClick={() => {
+                                                                                                                if (!editState[sKey]) initEdit(sKey, exercises, log);
+                                                                                                                copyTargetToActual(sKey, exIdx, setIdx, program.id);
+                                                                                                            }}
+                                                                                                            style={{
+                                                                                                                padding: '2px 0',
+                                                                                                                fontSize: '0.65rem',
+                                                                                                                fontWeight: 700,
+                                                                                                                borderRadius: '4px',
+                                                                                                                border: '1px solid rgba(125,135,210,0.3)',
+                                                                                                                background: 'rgba(125,135,210,0.1)',
+                                                                                                                color: 'var(--primary)',
+                                                                                                                cursor: 'pointer',
+                                                                                                                textAlign: 'center',
+                                                                                                                lineHeight: 1.2
+                                                                                                            }}
+                                                                                                        >
+                                                                                                            Rx
+                                                                                                        </button>
+                                                                                                        {setIdx > 0 && (
+                                                                                                            <button
+                                                                                                                type="button"
+                                                                                                                title="Copy previous set"
+                                                                                                                onClick={() => {
+                                                                                                                    if (!editState[sKey]) initEdit(sKey, exercises, log);
+                                                                                                                    copyPrevSet(sKey, exIdx, setIdx, program.id);
+                                                                                                                }}
+                                                                                                                style={{
+                                                                                                                    padding: '2px 0',
+                                                                                                                    fontSize: '0.65rem',
+                                                                                                                    fontWeight: 600,
+                                                                                                                    borderRadius: '4px',
+                                                                                                                    border: '1px solid var(--card-border)',
+                                                                                                                    background: 'rgba(255,255,255,0.04)',
+                                                                                                                    color: 'var(--secondary-foreground)',
+                                                                                                                    cursor: 'pointer',
+                                                                                                                    textAlign: 'center',
+                                                                                                                    lineHeight: 1.2
+                                                                                                                }}
+                                                                                                            >
+                                                                                                                Prev
+                                                                                                            </button>
+                                                                                                        )}
+                                                                                                    </div>
+                                                                                                </>
                                                                                             )}
                                                                                         </div>
                                                                                     );
                                                                                 })}
 
                                                                                 {/* Stats and Actions Grid */}
-                                                                                <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: '16px', padding: '16px 0 8px 0', marginTop: 12, borderTop: '1px solid rgba(148,163,184,0.1)' }}>
-                                                                                    {/* Actions Panel */}
-                                                                                    <div style={{ border: '1px solid rgba(148,163,184,0.2)', borderRadius: '12px', padding: '16px', background: 'rgba(148,163,184,0.03)' }}>
-                                                                                        <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '16px' }}>Exercise Actions</div>
-                                                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                                                                            <ExerciseFeedback
-                                                                                                athleteId={athleteId}
-                                                                                                coachId={coachId || ''}
-                                                                                                exerciseName={exerciseData.name || ex.name}
-                                                                                                weekNum={weekDisplayNum}
-                                                                                                dayNum={sessionNum}
-                                                                                                blockName={program.name}
-                                                                                                sessionId={sKey}
-                                                                                                unit={exerciseData.unit || unit}
-                                                                                                sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any, i: number) => ({ setNumber: i + 1, actual: s.actual || { weight: '', reps: '', rpe: '' } }))}
-                                                                                            />
-                                                                                            {!isCoachView && (
-                                                                                                <PRToggle
-                                                                                                    athleteId={athleteId}
-                                                                                                    exerciseName={exerciseData.name || ex.name}
-                                                                                                    sets={(editState[sKey]?.[exIdx]?.sets || []).map((s: any) => (s.actual || { weight: '', reps: '', rpe: '' }))}
-                                                                                                    unit={exerciseData.unit || unit}
-                                                                                                    sessionId={sKey}
-                                                                                                    programName={program.name}
-                                                                                                    weekNum={weekDisplayNum}
-                                                                                                    dayNum={sessionNum}
-                                                                                                    date={new Date().toISOString().split('T')[0]}
-                                                                                                />
-                                                                                            )}
-                                                                                        </div>
-                                                                                    </div>
+                                                                                {(() => {
+                                                                                    const effectiveSets = (editState[sKey]?.[exIdx]?.sets || []).length > 0
+                                                                                        ? (editState[sKey]?.[exIdx]?.sets || [])
+                                                                                        : (log?.exercises?.find((l: any) => l.exerciseId === ex.id || l.name === ex.name)?.sets || []).map((s: any) => ({
+                                                                                            actual: { weight: s.weight ? String(s.weight) : '', reps: s.reps || '', rpe: s.rpe || '' }
+                                                                                        }));
+                                                                                    const prDate = log?.date ? String(log.date).split('T')[0] : (sessionMetaRef.current[sKey]?.scheduledDate || new Date().toISOString().split('T')[0]);
 
-                                                                                    {/* Stats Panel */}
-                                                                                    <div style={{ border: '1px solid rgba(148,163,184,0.2)', borderRadius: '12px', padding: '16px', background: 'rgba(148,163,184,0.03)' }}>
-                                                                                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '0.9rem' }}>
-                                                                                            <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>E1RM: {toDisplay(maxE1RM)} {exerciseData.unit || unit}</div>
-                                                                                            <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>Total SI: {exStress.total.toFixed(2)}</div>
-                                                                                            <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>Peripheral SI: {exStress.peripheral.toFixed(2)}</div>
-                                                                                            <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>Central SI: {exStress.central.toFixed(2)}</div>
+                                                                                    return (
+                                                                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', padding: '16px 0 8px 0', marginTop: 12, borderTop: '1px solid rgba(148,163,184,0.1)' }}>
+                                                                                            {/* Actions Panel */}
+                                                                                            <div style={{ border: '1px solid rgba(148,163,184,0.2)', borderRadius: '12px', padding: '16px', background: 'rgba(148,163,184,0.03)' }}>
+                                                                                                <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '16px' }}>Exercise Actions</div>
+                                                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                                                                                                    <ExerciseFeedback
+                                                                                                        athleteId={athleteId}
+                                                                                                        coachId={coachId || ''}
+                                                                                                        exerciseName={exerciseData.name || ex.name}
+                                                                                                        weekNum={weekDisplayNum}
+                                                                                                        dayNum={sessionNum}
+                                                                                                        blockName={program.name}
+                                                                                                        sessionId={sKey}
+                                                                                                        unit={exerciseData.unit || unit}
+                                                                                                        sets={effectiveSets.map((s: any, i: number) => ({ setNumber: i + 1, actual: s.actual || { weight: '', reps: '', rpe: '' } }))}
+                                                                                                    />
+                                                                                                    {!isCoachView && (
+                                                                                                        <PRToggle
+                                                                                                            athleteId={athleteId}
+                                                                                                            exerciseName={exerciseData.name || ex.name}
+                                                                                                            sets={effectiveSets.map((s: any) => (s.actual || { weight: '', reps: '', rpe: '' }))}
+                                                                                                            unit={exerciseData.unit || unit}
+                                                                                                            sessionId={sKey}
+                                                                                                            programName={program.name}
+                                                                                                            weekNum={weekDisplayNum}
+                                                                                                            dayNum={sessionNum}
+                                                                                                            date={prDate}
+                                                                                                        />
+                                                                                                    )}
+                                                                                                    <ClipCreator
+                                                                                                        exerciseName={exerciseData.name || ex.name}
+                                                                                                        sets={effectiveSets.map((s: any) => ({
+                                                                                                            weight: s.actual?.weight || '',
+                                                                                                            reps: s.actual?.reps || '',
+                                                                                                            rpe: s.actual?.rpe || ''
+                                                                                                        }))}
+                                                                                                        sessionLabel={`Week ${weekDisplayNum} · ${program.name}`}
+                                                                                                        athleteId={athleteId}
+                                                                                                    />
+                                                                                                </div>
+                                                                                            </div>
+
+                                                                                            {/* Stats Panel */}
+                                                                                            <div style={{ border: '1px solid rgba(148,163,184,0.2)', borderRadius: '12px', padding: '16px', background: 'rgba(148,163,184,0.03)' }}>
+                                                                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '0.9rem' }}>
+                                                                                                    <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>E1RM: {toDisplay(maxE1RM)} {exerciseData.unit || unit}</div>
+                                                                                                    <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>Total SI: {exStress.total.toFixed(2)}</div>
+                                                                                                    <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>Peripheral SI: {exStress.peripheral.toFixed(2)}</div>
+                                                                                                    <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>Central SI: {exStress.central.toFixed(2)}</div>
+                                                                                                </div>
+                                                                                            </div>
                                                                                         </div>
-                                                                                    </div>
-                                                                                </div>
+                                                                                    );
+                                                                                })()}
                                                                             </div>
                                                                         )}
                                                                     </div>

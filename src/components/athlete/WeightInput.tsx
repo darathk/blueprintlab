@@ -25,6 +25,7 @@ export default function WeightInput({ internalValue, unit, onChange, onFocus, pl
         <input
             type="number"
             inputMode="decimal"
+            step="any"
             value={localValue}
             onChange={handleChange}
             onFocus={(e) => {

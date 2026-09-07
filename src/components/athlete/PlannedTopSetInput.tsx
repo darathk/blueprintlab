@@ -179,6 +179,7 @@ export default function PlannedTopSetInput({
                                     <input
                                         type="number"
                                         inputMode="decimal"
+                                        step="any"
                                         placeholder={`${unit}`}
                                         value={ts.weight}
                                         onChange={e => updateField(ex.name, 'weight', e.target.value)}
@@ -205,6 +206,7 @@ export default function PlannedTopSetInput({
                                     <input
                                         type="number"
                                         inputMode="decimal"
+                                        step="any"
                                         placeholder="RPE"
                                         value={ts.rpe}
                                         onChange={e => updateField(ex.name, 'rpe', e.target.value)}

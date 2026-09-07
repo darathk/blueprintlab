@@ -1,13 +1,16 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
+import dynamic from 'next/dynamic';
 import { calculateSimpleE1RM, calculateStress } from '@/lib/stress-index';
 import { getExerciseCategory } from '@/lib/exercise-db';
 import ExerciseFeedback from '@/components/athlete/ExerciseFeedback';
 import PRToggle from '@/components/athlete/PRToggle';
 import ClipCreator from '@/components/athlete/ClipCreator';
 import WeightInput from '@/components/athlete/WeightInput';
+
+const CelebrationScreen = dynamic(() => import('@/components/athlete/CelebrationScreen'), { ssr: false });
 
 // Category-based colors for exercise names
 const CATEGORY_COLORS = {
@@ -55,7 +58,7 @@ function formatSetsSummary(sets) {
     return parts.join(', ');
 }
 
-export default function WorkoutLogger({ athleteId, coachId = '', programId, sessionId, weekNum = 1, dayNum = 1, blockName = 'Block', exercises, sessionWarmupDrills = '', initialLog, weekSessions = [], weekStartDate = '', programName = '' }) {
+export default function WorkoutLogger({ athleteId, coachId = '', programId, sessionId, weekNum = 1, dayNum = 1, blockName = 'Block', exercises, sessionWarmupDrills = '', initialLog, weekSessions = [], weekStartDate = '', scheduledDate = '', programName = '' }) {
     const router = useRouter();
     const [isSaving, setIsSaving] = useState(false);
     const [lastSaved, setLastSaved] = useState(Date.now());
@@ -64,6 +67,8 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
     const pendingSaveRef = useRef(false);
     const [warmupDrills, setWarmupDrills] = useState(initialLog?.warmupDrills || sessionWarmupDrills || '');
     const [activeTabs, setActiveTabs] = useState({});
+    const [celebration, setCelebration] = useState<{ sessionName: string } | null>(null);
+    const celebratedRef = useRef(false);
     
     const [unit, setUnit] = useState<'kg' | 'lbs'>('lbs');
 
@@ -75,15 +80,49 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
     }, [initialLog]);
 
     const toggleUnit = (u: 'kg' | 'lbs') => {
+        if (u === unit) return;
         setUnit(u);
         localStorage.setItem('athlete-unit-pref', u);
+        setExerciseLogs(prev => {
+            return prev.map(ex => ({
+                ...ex,
+                sets: ex.sets.map(s => {
+                    let actualWeight = s.actual.weight;
+                    let targetWeight = s.target.weight;
+                    if (actualWeight) {
+                        const num = parseFloat(actualWeight);
+                        if (!isNaN(num)) {
+                            actualWeight = u === 'kg'
+                                ? (num * 0.45359237).toFixed(1).replace(/\.0$/, '')
+                                : (num / 0.45359237).toFixed(1).replace(/\.0$/, '');
+                        }
+                    }
+                    if (targetWeight && !String(targetWeight).includes('%')) {
+                        const num = parseFloat(targetWeight);
+                        if (!isNaN(num)) {
+                            targetWeight = u === 'kg'
+                                ? (num * 0.45359237).toFixed(1).replace(/\.0$/, '')
+                                : (num / 0.45359237).toFixed(1).replace(/\.0$/, '');
+                        }
+                    }
+                    return {
+                        ...s,
+                        target: { ...s.target, weight: targetWeight },
+                        actual: { ...s.actual, weight: actualWeight }
+                    };
+                })
+            }));
+        });
     };
 
     // Initialize logs
     const [exerciseLogs, setExerciseLogs] = useState(() => {
         return exercises.map(ex => {
             // Find saved data for this exercise if available
-            const savedEx = initialLog?.exercises?.find(l => l.exerciseId === ex.id || l.name === ex.name);
+            const savedEx = initialLog?.exercises?.find(l => 
+                (l.exerciseId && l.exerciseId === ex.id) || 
+                (l.name && l.name.trim().toLowerCase() === ex.name?.trim().toLowerCase())
+            );
 
             // Handle both old (flat) and new (granular) data structures
             const isGranular = Array.isArray(ex.sets);
@@ -95,14 +134,14 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                     return {
                         setNumber: i + 1,
                         target: {
-                            weight: s.weight || '',
-                            reps: s.reps || '',
-                            rpe: s.rpe || ''
+                            weight: s.weight ? String(s.weight) : '',
+                            reps: s.reps ? String(s.reps) : '',
+                            rpe: s.rpe ? String(s.rpe) : ''
                         },
                         actual: {
-                            weight: savedSet?.weight || s.weight || '',
-                            reps: savedSet?.reps || '',
-                            rpe: savedSet?.rpe || ''
+                            weight: savedSet?.weight ? String(savedSet.weight) : '',
+                            reps: savedSet?.reps ? String(savedSet.reps) : '',
+                            rpe: savedSet?.rpe ? String(savedSet.rpe) : ''
                         }
                     };
                 });
@@ -115,13 +154,13 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                         setNumber: i + 1,
                         target: {
                             weight: '',
-                            reps: ex.reps || '',
+                            reps: ex.reps ? String(ex.reps) : '',
                             rpe: ex.rpeTarget || 8
                         },
                         actual: {
-                            weight: savedSet?.weight || '',
-                            reps: savedSet?.reps || '',
-                            rpe: savedSet?.rpe || ''
+                            weight: savedSet?.weight ? String(savedSet.weight) : '',
+                            reps: savedSet?.reps ? String(savedSet.reps) : '',
+                            rpe: savedSet?.rpe ? String(savedSet.rpe) : ''
                         }
                     };
                 });
@@ -133,7 +172,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                 category: ex.category || getExerciseCategory(ex.name),
                 coachNotes: ex.notes || '',
                 sets: mappedSets,
-                notes: savedEx?.notes ?? ex.notes ?? '',
+                notes: savedEx?.notes ?? '',
                 isCollapsed: false
             };
         });
@@ -155,7 +194,6 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
     }, [exerciseLogs, warmupDrills]);
 
     // Calculate Completion for Progress Bar
-    // A set counts as complete only when ALL 3 inputs are filled: weight, reps AND rpe
     const validationStats = useMemo(() => {
         let totalSets = 0;
         let completedSets = 0;
@@ -163,11 +201,9 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
         exerciseLogs.forEach(ex => {
             ex.sets.forEach(set => {
                 totalSets++;
-                // Require weight, reps, AND rpe to be filled
-                const w = String(set.actual.weight).trim();
-                const r = String(set.actual.reps).trim();
-                const rpe = String(set.actual.rpe).trim();
-                if (w && w !== '0' && r && r !== '0' && rpe && rpe !== '0') {
+                const w = String(set.actual?.weight || '').trim();
+                const r = String(set.actual?.reps || '').trim();
+                if ((r && r !== '0') || (w && w !== '0' && r)) {
                     completedSets++;
                 }
             });
@@ -222,12 +258,18 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
     const copyTargetToActual = (exIndex, setIndex) => {
         const newLogs = [...exerciseLogs];
         const set = newLogs[exIndex].sets[setIndex];
-        const targetReps = set.target.reps.toString();
+        const targetReps = String(set.target.reps || '');
         const cleanReps = targetReps.includes('-') ? targetReps.split('-')[0] : targetReps;
+        let cleanWeight = String(set.target.weight || '');
+        if (cleanWeight.includes('%')) {
+            cleanWeight = '';
+        } else {
+            cleanWeight = cleanWeight.replace(/[^0-9.]/g, '');
+        }
 
-        set.actual.weight = set.target.weight;
-        set.actual.reps = cleanReps;
-        set.actual.rpe = set.target.rpe;
+        if (cleanWeight) set.actual.weight = cleanWeight;
+        if (cleanReps) set.actual.reps = cleanReps;
+        if (set.target.rpe) set.actual.rpe = String(set.target.rpe);
         setExerciseLogs(newLogs);
     };
 
@@ -247,16 +289,15 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
         const currentSets = newLogs[exIndex].sets;
 
         if (count > currentSets.length) {
-            // Add sets
+            const baseTarget = currentSets[0]?.target ? { ...currentSets[0].target } : { weight: '', reps: '', rpe: '' };
             for (let i = currentSets.length; i < count; i++) {
                 currentSets.push({
                     setNumber: i + 1,
-                    target: { ...currentSets[0].target },
+                    target: { ...baseTarget },
                     actual: { weight: '', reps: '', rpe: '' }
                 });
             }
         } else if (count < currentSets.length) {
-            // Remove sets
             newLogs[exIndex].sets = currentSets.slice(0, count);
         }
         setExerciseLogs(newLogs);
@@ -282,13 +323,15 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                 name: ex.name,
                 unit: unit,
                 sets: ex.sets.map(s => ({
-                    weight: s.actual.weight,
-                    reps: s.actual.reps,
-                    rpe: s.actual.rpe,
+                    weight: s.actual?.weight || '',
+                    reps: s.actual?.reps || '',
+                    rpe: s.actual?.rpe || '',
                     unit: unit
                 })),
-                notes: ex.notes
+                notes: ex.notes || ''
             }));
+
+            const saveDate = initialLog?.date || scheduledDate || new Date().toISOString();
 
             const res = await fetch('/api/logs', {
                 method: 'POST',
@@ -297,7 +340,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                     athleteId,
                     programId,
                     sessionId,
-                    date: new Date().toISOString(),
+                    date: saveDate,
                     exercises: cleanLogs,
                     warmupDrills: currentDrills
                 }),
@@ -305,6 +348,11 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
 
             if (res.ok) {
                 setLastSaved(Date.now());
+                if (validationStats.percentage === 100 && !celebratedRef.current) {
+                    celebratedRef.current = true;
+                    setCelebration({ sessionName: `Session ${dayNum}` });
+                    if (redirect) return;
+                }
                 if (redirect) {
                     router.push(`/athlete/${athleteId}/dashboard`);
                     router.refresh();
@@ -507,7 +555,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                 {!ex.isCollapsed && (
                                     <div style={{ padding: '0 8px 16px 8px' }}>
                                         {/* Coach Note / Cue Callout */}
-                                        {(ex.coachNotes || session?.exercises?.[exIndex]?.notes) && (
+                                        {(ex.coachNotes || exercises?.[exIndex]?.notes) && (
                                             <div style={{
                                                 background: 'rgba(6, 182, 212, 0.08)',
                                                 border: '1px solid rgba(6, 182, 212, 0.25)',
@@ -535,7 +583,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                                     lineHeight: 1.4,
                                                     whiteSpace: 'pre-wrap',
                                                 }}>
-                                                    {ex.coachNotes || session?.exercises?.[exIndex]?.notes}
+                                                    {ex.coachNotes || exercises?.[exIndex]?.notes}
                                                 </div>
                                             </div>
                                         )}
@@ -925,7 +973,10 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                 gap: '0.5rem'
             }}>
                 <button
-                    onClick={() => router.push(`/athlete/${athleteId}/dashboard`)}
+                    onClick={async () => {
+                        await handleSave(true);
+                    }}
+                    disabled={isSaving}
                     className="glass-button glass-button-primary chat-press"
                     style={{
                         padding: '0.875rem 1.5rem',
@@ -933,9 +984,10 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                         fontWeight: 700,
                         width: '100%',
                         fontSize: '1rem',
+                        opacity: isSaving ? 0.7 : 1,
                     }}
                 >
-                    Finish Session
+                    {isSaving ? 'Saving...' : 'Finish Session'}
                 </button>
 
                 {/* Week Overview Toggle Button */}
@@ -960,6 +1012,20 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                     </button>
                 )}
             </div>
+
+            {/* Celebration Modal */}
+            {celebration && (
+                <CelebrationScreen
+                    athleteId={athleteId}
+                    coachId={coachId}
+                    sessionName={celebration.sessionName}
+                    onClose={() => {
+                        setCelebration(null);
+                        router.push(`/athlete/${athleteId}/dashboard`);
+                        router.refresh();
+                    }}
+                />
+            )}
         </div>
     );
 }

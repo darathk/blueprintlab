@@ -101,7 +101,7 @@ export default function SessionDetailsModal({ session, programName, programId, s
             sessionId: sessionKey || session.id,
             programName: programName,
             programId: programId,
-            date: new Date().toISOString(),
+            date: existingLog?.date || new Date().toISOString(),
             exercises: session.exercises.map((ex, exIndex) => ({
                 name: ex.name,
                 sets: logData[ex.id || exIndex] || []

@@ -66,13 +66,18 @@ export default async function WorkoutPage({ params }) {
     const weeksWithSessions = [...(program.weeks as any[])].filter((w: any) => Array.isArray(w?.sessions) && w.sessions.some((s: any) => Array.isArray(s.exercises) && s.exercises.length > 0)).sort((a: any, b: any) => (a?.weekNumber || 1) - (b?.weekNumber || 1));
     const weekDisplayNum = weeksWithSessions.findIndex((w: any) => (w?.weekNumber || 1) === weekNum) + 1;
 
-    // Determine the week start date for display
+    // Determine the week start date for display and scheduled session date
     const programStart = program.startDate ? parseLocalDate(program.startDate) : null;
     let weekStartDate = '';
+    let scheduledDate = '';
     if (programStart) {
         const start = new Date(programStart);
         start.setDate(start.getDate() + (weekNum - 1) * 7);
         weekStartDate = start.toLocaleDateString('en-US', { month: 'numeric', day: 'numeric', year: 'numeric' });
+
+        const sessionDate = new Date(programStart);
+        sessionDate.setDate(sessionDate.getDate() + (weekNum - 1) * 7 + (dayNum - 1));
+        scheduledDate = sessionDate.toISOString();
     }
 
     return (
@@ -95,6 +100,7 @@ export default async function WorkoutPage({ params }) {
                 initialLog={existingLog}
                 weekSessions={weekSessions}
                 weekStartDate={weekStartDate}
+                scheduledDate={scheduledDate}
                 programName={program.name}
             />
         </div>

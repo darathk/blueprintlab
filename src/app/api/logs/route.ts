@@ -20,8 +20,13 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'exercises must be an array' }, { status: 400 });
         }
 
-        if (typeof body.date !== 'string') {
-            return NextResponse.json({ error: 'date must be a string' }, { status: 400 });
+        // Validate or normalize date if provided
+        let normalizedDate: string | undefined;
+        if (typeof body.date === 'string' && body.date.trim()) {
+            const parsed = new Date(body.date);
+            if (!isNaN(parsed.getTime())) {
+                normalizedDate = parsed.toISOString();
+            }
         }
 
         // Ensure program exists and verify access
@@ -47,7 +52,7 @@ export async function POST(request: Request) {
                 }
             },
             update: {
-                date: body.date,
+                ...(normalizedDate ? { date: normalizedDate } : {}),
                 exercises: body.exercises,
                 ...(body.warmupDrills !== undefined && { warmupDrills: body.warmupDrills })
             },
@@ -55,7 +60,7 @@ export async function POST(request: Request) {
                 id: logId,
                 programId: body.programId,
                 sessionId: body.sessionId,
-                date: body.date,
+                date: normalizedDate || new Date().toISOString(),
                 exercises: body.exercises,
                 ...(body.warmupDrills !== undefined && { warmupDrills: body.warmupDrills })
             }
