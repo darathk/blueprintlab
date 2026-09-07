@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo, useEffect, useRef } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { calculateSimpleE1RM, calculateStress } from '@/lib/stress-index';
@@ -11,6 +11,7 @@ import ClipCreator from '@/components/athlete/ClipCreator';
 import WeightInput from '@/components/athlete/WeightInput';
 
 const CelebrationScreen = dynamic(() => import('@/components/athlete/CelebrationScreen'), { ssr: false });
+const PlannedTopSetInput = dynamic(() => import('@/components/athlete/PlannedTopSetInput'), { ssr: false });
 
 // Category-based colors for exercise names
 const CATEGORY_COLORS = {
@@ -71,6 +72,28 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
     const celebratedRef = useRef(false);
     
     const [unit, setUnit] = useState<'kg' | 'lbs'>('lbs');
+    const [plannedTopSets, setPlannedTopSets] = useState<Record<string, any>>({});
+
+    const fetchPlannedTopSets = useCallback(async () => {
+        if (!athleteId || !sessionId) return;
+        try {
+            const res = await fetch(`/api/top-sets?athleteId=${athleteId}&sessionId=${sessionId}`);
+            if (res.ok) {
+                const data = await res.json();
+                const mapping: Record<string, any> = {};
+                (data || []).forEach((ts: any) => {
+                    if (ts.exerciseName) mapping[ts.exerciseName] = ts;
+                });
+                setPlannedTopSets(mapping);
+            }
+        } catch (e) {
+            console.error('Failed to fetch planned top sets in workout-logger', e);
+        }
+    }, [athleteId, sessionId]);
+
+    useEffect(() => {
+        fetchPlannedTopSets();
+    }, [fetchPlannedTopSets]);
 
     useEffect(() => {
         const saved = localStorage.getItem('athlete-unit-pref');
@@ -258,18 +281,23 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
     const copyTargetToActual = (exIndex, setIndex) => {
         const newLogs = [...exerciseLogs];
         const set = newLogs[exIndex].sets[setIndex];
-        const targetReps = String(set.target.reps || '');
+        const exName = newLogs[exIndex].name;
+        const planned = setIndex === 0 && exName ? plannedTopSets[exName] : null;
+
+        const targetReps = String(set.target.reps || (setIndex === 0 && planned?.reps ? planned.reps : ''));
         const cleanReps = targetReps.includes('-') ? targetReps.split('-')[0] : targetReps;
-        let cleanWeight = String(set.target.weight || '');
+        let cleanWeight = String(set.target.weight || (setIndex === 0 && planned?.weight ? planned.weight : ''));
         if (cleanWeight.includes('%')) {
             cleanWeight = '';
         } else {
             cleanWeight = cleanWeight.replace(/[^0-9.]/g, '');
         }
 
+        const targetRpe = set.target.rpe || (setIndex === 0 && planned?.rpe ? planned.rpe : '');
+
         if (cleanWeight) set.actual.weight = cleanWeight;
         if (cleanReps) set.actual.reps = cleanReps;
-        if (set.target.rpe) set.actual.rpe = String(set.target.rpe);
+        if (targetRpe) set.actual.rpe = String(targetRpe);
         setExerciseLogs(newLogs);
     };
 
@@ -528,7 +556,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                     alignItems: 'center',
                                     borderBottom: '1px solid #e2e8f0'
                                 }}>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
                                         <button
                                             onClick={() => toggleCollapse(exIndex)}
                                             style={{
@@ -539,6 +567,26 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                             {ex.isCollapsed ? '+' : '−'}
                                         </button>
                                         <h3 style={{ fontSize: '1rem', color: 'var(--primary)', fontWeight: 500, margin: 0 }}>{ex.name}</h3>
+                                        {(() => {
+                                            const planned = plannedTopSets[ex.name];
+                                            if (!planned || (!planned.weight && !planned.reps)) return null;
+                                            return (
+                                                <span style={{
+                                                    fontSize: '0.72rem',
+                                                    padding: '2px 8px',
+                                                    borderRadius: 6,
+                                                    background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(99, 102, 241, 0.18))',
+                                                    border: '1px solid rgba(56, 189, 248, 0.4)',
+                                                    color: '#38bdf8',
+                                                    fontWeight: 600,
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: 4
+                                                }}>
+                                                    🎯 Planned: {planned.weight ? `${planned.weight} ${planned.unit || unit}` : ''}{planned.reps ? ` × ${planned.reps}` : ''}{planned.rpe ? ` @ ${planned.rpe}` : ''}
+                                                </span>
+                                            );
+                                        })()}
                                     </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.9rem', color: 'var(--foreground)', fontWeight: 600 }}>
                                         Sets
@@ -554,6 +602,60 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
 
                                 {!ex.isCollapsed && (
                                     <div style={{ padding: '0 8px 16px 8px' }}>
+                                        {/* Planned top set banner */}
+                                        {(() => {
+                                            const planned = plannedTopSets[ex.name];
+                                            if (!planned || (!planned.weight && !planned.reps)) return null;
+                                            return (
+                                                <div style={{
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'space-between',
+                                                    padding: '8px 12px',
+                                                    marginBottom: '12px',
+                                                    marginTop: '8px',
+                                                    borderRadius: '8px',
+                                                    background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(99, 102, 241, 0.06))',
+                                                    border: '1px solid rgba(56, 189, 248, 0.25)',
+                                                    fontSize: '0.82rem',
+                                                }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#38bdf8', fontWeight: 600 }}>
+                                                        <span>🎯 Planned Top Set:</span>
+                                                        <span style={{ color: 'var(--foreground)', fontWeight: 700 }}>
+                                                            {planned.weight ? `${planned.weight} ${planned.unit || unit}` : ''}{planned.reps ? ` × ${planned.reps}` : ''}{planned.rpe ? ` @ ${planned.rpe}` : ''}
+                                                        </span>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => {
+                                                            setExerciseLogs(prev => {
+                                                                const copy = JSON.parse(JSON.stringify(prev));
+                                                                if (copy[exIndex]?.sets?.[0]) {
+                                                                    copy[exIndex].sets[0].actual = {
+                                                                        weight: planned.weight ? String(planned.weight) : '',
+                                                                        reps: planned.reps ? String(planned.reps) : '',
+                                                                        rpe: planned.rpe ? String(planned.rpe) : ''
+                                                                    };
+                                                                }
+                                                                return copy;
+                                                            });
+                                                        }}
+                                                        style={{
+                                                            padding: '3px 8px',
+                                                            fontSize: '0.72rem',
+                                                            borderRadius: 6,
+                                                            border: '1px solid rgba(56, 189, 248, 0.4)',
+                                                            background: 'rgba(56, 189, 248, 0.15)',
+                                                            color: '#38bdf8',
+                                                            cursor: 'pointer',
+                                                            fontWeight: 600,
+                                                        }}
+                                                    >
+                                                        Fill Set 1
+                                                    </button>
+                                                </div>
+                                            );
+                                        })()}
                                         {/* Coach Note / Cue Callout */}
                                         {(ex.coachNotes || exercises?.[exIndex]?.notes) && (
                                             <div style={{
@@ -778,6 +880,23 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                             </div>
                         );
                     })}
+
+                    {/* Plan Next Week's Top Sets */}
+                    {exercises.length > 0 && (
+                        <div style={{ marginTop: '16px', marginBottom: '24px' }}>
+                            <PlannedTopSetInput
+                                athleteId={athleteId}
+                                sessionId={sessionId}
+                                programId={programId}
+                                weekNum={weekNum}
+                                dayNum={dayNum}
+                                exercises={exercises.map(e => ({ name: e.name }))}
+                                unit={unit}
+                                targetNextWeek={true}
+                                onSaved={fetchPlannedTopSets}
+                            />
+                        </div>
+                    )}
                 </div>
             </div>
 

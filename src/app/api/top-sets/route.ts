@@ -18,6 +18,18 @@ export async function POST(request: Request) {
         const access = await requireAccessToAthlete(body.athleteId, auth);
         if ('error' in access) return access.error;
 
+        // If athlete cleared all fields, delete the planned top set
+        if (!body.weight && !body.reps && !body.rpe) {
+            await prisma.plannedTopSet.deleteMany({
+                where: {
+                    athleteId: body.athleteId,
+                    sessionId: body.sessionId,
+                    exerciseName: body.exerciseName,
+                },
+            });
+            return NextResponse.json({ success: true, deleted: true });
+        }
+
         const topSet = await prisma.plannedTopSet.upsert({
             where: {
                 athleteId_sessionId_exerciseName: {
@@ -51,27 +63,41 @@ export async function POST(request: Request) {
             },
         });
 
-        // AUTOMATION: Update the prescribed program for the next week
+        // AUTOMATION: Update the prescribed top set for the target session in the program
         if (body.weight) {
             const program = await prisma.program.findUnique({
                 where: { id: body.programId }
             });
             if (program && program.weeks) {
                 let updated = false;
-                const nextWeekNum = (parseInt(body.weekNum) || 1) + 1;
+                // Note: body.weekNum is ALREADY the target week number (do NOT add +1 again)
+                const targetWeekNum = parseInt(body.weekNum) || 1;
+                const targetDayNum = parseInt(body.dayNum) || 1;
                 const weeks = program.weeks as any[];
                 
                 for (const w of weeks) {
-                    if (w.weekNumber === nextWeekNum && w.sessions) {
+                    if (w.weekNumber === targetWeekNum && w.sessions) {
                         for (const s of w.sessions) {
-                            if (s.exercises) {
+                            const isMatchSession = (s.day === targetDayNum) || 
+                                (s.id && s.id === body.sessionId) || 
+                                (`${program.id}_w${w.weekNumber}_d${s.day}` === body.sessionId);
+                            if (isMatchSession && s.exercises) {
                                 for (const e of s.exercises) {
-                                    if (e.name === body.exerciseName && e.sets) {
-                                        for (const set of e.sets) {
-                                            set.target = set.target || {};
-                                            set.target.weight = body.weight;
-                                            updated = true;
+                                    if (e.name === body.exerciseName && Array.isArray(e.sets) && e.sets.length > 0) {
+                                        // ONLY update Set 1 (index 0 / top set) — NEVER touch back-off sets!
+                                        const topSetObj = e.sets[0];
+                                        topSetObj.weight = String(body.weight);
+                                        topSetObj.target = topSetObj.target || {};
+                                        topSetObj.target.weight = String(body.weight);
+                                        if (body.reps) {
+                                            topSetObj.reps = String(body.reps);
+                                            topSetObj.target.reps = String(body.reps);
                                         }
+                                        if (body.rpe) {
+                                            topSetObj.rpe = String(body.rpe);
+                                            topSetObj.target.rpe = String(body.rpe);
+                                        }
+                                        updated = true;
                                     }
                                 }
                             }
@@ -143,17 +169,38 @@ export async function DELETE(request: Request) {
 
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
-    if (!id) return NextResponse.json({ error: 'id required' }, { status: 400 });
+    const athleteId = searchParams.get('athleteId');
+    const sessionId = searchParams.get('sessionId');
+    const exerciseName = searchParams.get('exerciseName');
+
+    if (!id && (!athleteId || !sessionId)) {
+        return NextResponse.json({ error: 'id or (athleteId and sessionId) required' }, { status: 400 });
+    }
 
     try {
-        const topSet = await prisma.plannedTopSet.findUnique({ where: { id } });
-        if (!topSet) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+        if (id) {
+            const topSet = await prisma.plannedTopSet.findUnique({ where: { id } });
+            if (!topSet) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
-        const access = await requireAccessToAthlete(topSet.athleteId, auth);
-        if ('error' in access) return access.error;
+            const access = await requireAccessToAthlete(topSet.athleteId, auth);
+            if ('error' in access) return access.error;
 
-        await prisma.plannedTopSet.delete({ where: { id } });
-        return NextResponse.json({ success: true });
+            await prisma.plannedTopSet.delete({ where: { id } });
+            return NextResponse.json({ success: true });
+        }
+
+        if (athleteId && sessionId) {
+            const access = await requireAccessToAthlete(athleteId, auth);
+            if ('error' in access) return access.error;
+
+            const deleteWhere: any = { athleteId, sessionId };
+            if (exerciseName) deleteWhere.exerciseName = exerciseName;
+
+            await prisma.plannedTopSet.deleteMany({ where: deleteWhere });
+            return NextResponse.json({ success: true });
+        }
+
+        return NextResponse.json({ error: 'Invalid parameters' }, { status: 400 });
     } catch (error) {
         console.error('Top set delete error:', error);
         return NextResponse.json({ error: 'Failed to delete planned top set' }, { status: 500 });

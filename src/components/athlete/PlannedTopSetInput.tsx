@@ -12,6 +12,8 @@ interface Props {
     exercises: Array<{ name: string }>;
     unit: string;
     targetNextWeek?: boolean;
+    totalWeeks?: number;
+    onSaved?: () => void;
 }
 
 interface TopSetData {
@@ -24,12 +26,18 @@ interface TopSetData {
 export default function PlannedTopSetInput({
     athleteId, sessionId, programId, weekNum, dayNum, exercises, unit,
     targetNextWeek = false,
+    totalWeeks,
+    onSaved,
 }: Props) {
     const [expanded, setExpanded] = useState(false);
     const [topSets, setTopSets] = useState<Record<string, TopSetData>>({});
+    const [initialLoadedKeys, setInitialLoadedKeys] = useState<Set<string>>(new Set());
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
     const [loaded, setLoaded] = useState(false);
+
+    // If targeting next week on the final week of a program, there is no next week
+    const isFinalWeek = targetNextWeek && typeof totalWeeks === 'number' && totalWeeks > 0 && weekNum >= totalWeeks;
 
     // When targeting next week, the record is stored under the NEXT week's sessionId
     const targetWeekNum = targetNextWeek ? weekNum + 1 : weekNum;
@@ -39,10 +47,15 @@ export default function PlannedTopSetInput({
 
     // Fetch any existing planned top sets for the target session
     useEffect(() => {
+        if (isFinalWeek) {
+            setLoaded(true);
+            return;
+        }
         fetch(`/api/top-sets?athleteId=${athleteId}&sessionId=${targetSessionId}`)
             .then(r => r.ok ? r.json() : [])
             .then(data => {
                 const existing: Record<string, TopSetData> = {};
+                const loadedKeys = new Set<string>();
                 data.forEach((ts: any) => {
                     existing[ts.exerciseName] = {
                         exerciseName: ts.exerciseName,
@@ -50,14 +63,17 @@ export default function PlannedTopSetInput({
                         reps: ts.reps || '',
                         rpe: ts.rpe || '',
                     };
+                    if (ts.weight || ts.reps || ts.rpe) {
+                        loadedKeys.add(ts.exerciseName);
+                    }
                 });
                 setTopSets(existing);
+                setInitialLoadedKeys(loadedKeys);
                 setLoaded(true);
-                // Auto-expand if there are existing entries
-                if (Object.keys(existing).length > 0) setSaved(true);
+                if (loadedKeys.size > 0) setSaved(true);
             })
             .catch(() => setLoaded(true));
-    }, [athleteId, targetSessionId]);
+    }, [athleteId, targetSessionId, isFinalWeek]);
 
     const updateField = useCallback((exName: string, field: keyof TopSetData, value: string) => {
         setTopSets(prev => ({
@@ -70,17 +86,25 @@ export default function PlannedTopSetInput({
     const handleSave = async () => {
         setSaving(true);
         try {
-            const entries = Object.values(topSets).filter(ts => ts.weight || ts.reps);
+            // Find all exercises that have entries now OR previously had saved entries (to support clearing)
+            const exercisesToSync = (exercises || []).filter(ex => {
+                const current = topSets[ex.name];
+                const hasCurrentData = current && (current.weight || current.reps || current.rpe);
+                const hadPreviousData = initialLoadedKeys.has(ex.name);
+                return hasCurrentData || hadPreviousData;
+            });
+
             await Promise.all(
-                entries.map(ts =>
-                    fetch('/api/top-sets', {
+                exercisesToSync.map(ex => {
+                    const ts = topSets[ex.name] || { exerciseName: ex.name, weight: '', reps: '', rpe: '' };
+                    return fetch('/api/top-sets', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({
                             athleteId,
                             sessionId: targetSessionId,
                             programId,
-                            exerciseName: ts.exerciseName,
+                            exerciseName: ex.name,
                             weight: ts.weight || null,
                             reps: ts.reps || null,
                             rpe: ts.rpe || null,
@@ -88,10 +112,18 @@ export default function PlannedTopSetInput({
                             weekNum: targetWeekNum,
                             dayNum,
                         }),
-                    })
-                )
+                    });
+                })
             );
+
+            // Update initialLoadedKeys to reflect current saved state
+            const newLoadedKeys = new Set<string>();
+            Object.values(topSets).forEach(ts => {
+                if (ts.weight || ts.reps || ts.rpe) newLoadedKeys.add(ts.exerciseName);
+            });
+            setInitialLoadedKeys(newLoadedKeys);
             setSaved(true);
+            if (onSaved) onSaved();
         } catch (e) {
             console.error('Top set save error:', e);
             alert('Failed to save planned top sets');
@@ -101,6 +133,10 @@ export default function PlannedTopSetInput({
     };
 
     const hasEntries = Object.values(topSets).some(ts => ts.weight || ts.reps);
+
+    if (isFinalWeek) {
+        return null;
+    }
 
     if (!loaded) return null;
 
@@ -166,7 +202,7 @@ export default function PlannedTopSetInput({
                             → Pre-fills Week {targetWeekNum} prescribed weights
                         </div>
                     )}
-                    {exercises.slice(0, 4).map((ex, i) => {
+                    {(exercises || []).map((ex, i) => {
                         const ts = topSets[ex.name] || { exerciseName: ex.name, weight: '', reps: '', rpe: '' };
                         return (
                             <div key={ex.name} style={{

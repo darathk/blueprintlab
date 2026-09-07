@@ -170,6 +170,35 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
     const [readinessPopup, setReadinessPopup] = useState<string | null>(null); // session key of popup
     const [shakeKey, setShakeKey] = useState<string | null>(null); // exercise key to shake
     const [activeTabs, setActiveTabs] = useState<Record<string, 'previous' | 'prescribed' | 'actual'>>({});
+    const [plannedTopSets, setPlannedTopSets] = useState<Record<string, Record<string, any>>>({});
+
+    const fetchPlannedTopSetsForSession = useCallback(async (sKey: string) => {
+        if (!athleteId || !sKey) return;
+        try {
+            const res = await fetch(`/api/top-sets?athleteId=${athleteId}&sessionId=${sKey}`);
+            if (res.ok) {
+                const data = await res.json();
+                const mapping: Record<string, any> = {};
+                (data || []).forEach((ts: any) => {
+                    if (ts.exerciseName) {
+                        mapping[ts.exerciseName] = ts;
+                    }
+                });
+                setPlannedTopSets(prev => ({ ...prev, [sKey]: mapping }));
+            }
+        } catch (e) {
+            console.error('Failed to fetch planned top sets for session', sKey, e);
+        }
+    }, [athleteId]);
+
+    // Automatically fetch planned top sets for open sessions
+    useEffect(() => {
+        openSessions.forEach(sKey => {
+            if (!plannedTopSets[sKey]) {
+                fetchPlannedTopSetsForSession(sKey);
+            }
+        });
+    }, [openSessions, fetchPlannedTopSetsForSession, plannedTopSets]);
 
     const markSessionReady = useCallback((sKey: string) => {
         setReadySessions(prev => {
@@ -487,12 +516,18 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
             const copy = JSON.parse(JSON.stringify(prev));
             if (!copy[sKey]) return prev;
             const target = copy[sKey]?.[exIdx]?.sets?.[setIdx]?.target;
-            if (target && copy[sKey]?.[exIdx]?.sets?.[setIdx]) {
-                const reps = String(target.reps || '');
-                const cleanReps = reps.includes('-') ? reps.split('-')[0] : reps;
-                const cleanWeight = target.weight ? String(target.weight).replace(/[^0-9.]/g, '') : '';
+            const exName = copy[sKey]?.[exIdx]?.name;
+            const planned = setIdx === 0 && exName ? plannedTopSets[sKey]?.[exName] : null;
+
+            if (copy[sKey]?.[exIdx]?.sets?.[setIdx]) {
+                const rawReps = String(target?.reps || (setIdx === 0 && planned?.reps ? planned.reps : ''));
+                const cleanReps = rawReps.includes('-') ? rawReps.split('-')[0] : rawReps;
+                const rawWeight = target?.weight || (setIdx === 0 && planned?.weight ? planned.weight : '');
+                const cleanWeight = rawWeight ? String(rawWeight).replace(/[^0-9.]/g, '') : '';
+                const cleanRpe = target?.rpe || (setIdx === 0 && planned?.rpe ? planned.rpe : '');
+
                 copy[sKey][exIdx].sets[setIdx].actual = {
-                    weight: cleanWeight, reps: cleanReps, rpe: target.rpe || ''
+                    weight: cleanWeight, reps: cleanReps, rpe: cleanRpe || ''
                 };
             }
             return copy;
@@ -1104,9 +1139,29 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                 }}
                                                                 style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'rgba(255,255,255,0.06)', cursor: 'pointer', borderTopLeftRadius: exIdx === 0 ? 8 : 0, borderTopRightRadius: exIdx === 0 ? 8 : 0, borderBottom: '1px solid var(--card-border)' }}
                                                             >
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                                                                     <div style={{ width: 3, height: 20, borderRadius: 2, background: catColor }} />
                                                                     <span style={{ fontSize: '1rem', color: '#fff', fontWeight: 600 }}>{exerciseData.name || ex.name}</span>
+                                                                    {(() => {
+                                                                        const planned = plannedTopSets[sKey]?.[exerciseData.name || ex.name];
+                                                                        if (!planned || (!planned.weight && !planned.reps)) return null;
+                                                                        return (
+                                                                            <span style={{
+                                                                                fontSize: '0.72rem',
+                                                                                padding: '2px 8px',
+                                                                                borderRadius: 6,
+                                                                                background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(99, 102, 241, 0.18))',
+                                                                                border: '1px solid rgba(56, 189, 248, 0.4)',
+                                                                                color: '#38bdf8',
+                                                                                fontWeight: 600,
+                                                                                display: 'inline-flex',
+                                                                                alignItems: 'center',
+                                                                                gap: 4
+                                                                            }}>
+                                                                                🎯 Planned: {planned.weight ? `${planned.weight} ${planned.unit || unit}` : ''}{planned.reps ? ` × ${planned.reps}` : ''}{planned.rpe ? ` @ ${planned.rpe}` : ''}
+                                                                            </span>
+                                                                        );
+                                                                    })()}
                                                                     {isLocked && <span style={{ fontSize: '0.8rem' }}>🔒</span>}
                                                                 </div>
                                                                 <span style={{
@@ -1118,6 +1173,62 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
 
                                                             {exOpen && (
                                                                 <div style={{ padding: '0 8px 16px 8px' }}>
+                                                                    {/* Planned top set banner */}
+                                                                    {(() => {
+                                                                        const planned = plannedTopSets[sKey]?.[exerciseData.name || ex.name];
+                                                                        if (!planned || (!planned.weight && !planned.reps)) return null;
+                                                                        return (
+                                                                            <div style={{
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                justifyContent: 'space-between',
+                                                                                padding: '8px 12px',
+                                                                                marginBottom: 10,
+                                                                                marginTop: 6,
+                                                                                borderRadius: 8,
+                                                                                background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(99, 102, 241, 0.06))',
+                                                                                border: '1px solid rgba(56, 189, 248, 0.25)',
+                                                                                fontSize: '0.82rem',
+                                                                            }}>
+                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#38bdf8', fontWeight: 600 }}>
+                                                                                    <span>🎯 Planned Top Set:</span>
+                                                                                    <span style={{ color: 'var(--foreground)', fontWeight: 700 }}>
+                                                                                        {planned.weight ? `${planned.weight} ${planned.unit || unit}` : ''}{planned.reps ? ` × ${planned.reps}` : ''}{planned.rpe ? ` @ ${planned.rpe}` : ''}
+                                                                                    </span>
+                                                                                </div>
+                                                                                <button
+                                                                                    type="button"
+                                                                                    onClick={() => {
+                                                                                        if (!editState[sKey]) initEdit(sKey, exercises, log);
+                                                                                        setEditState(prev => {
+                                                                                            const copy = JSON.parse(JSON.stringify(prev));
+                                                                                            if (!copy[sKey]?.[exIdx]?.sets?.[0]) return prev;
+                                                                                            copy[sKey][exIdx].sets[0].actual = {
+                                                                                                weight: planned.weight ? String(planned.weight) : '',
+                                                                                                reps: planned.reps ? String(planned.reps) : '',
+                                                                                                rpe: planned.rpe ? String(planned.rpe) : ''
+                                                                                            };
+                                                                                            return copy;
+                                                                                        });
+                                                                                        triggerAutoSave(sKey, program.id);
+                                                                                    }}
+                                                                                    style={{
+                                                                                        padding: '3px 8px',
+                                                                                        fontSize: '0.72rem',
+                                                                                        borderRadius: 6,
+                                                                                        border: '1px solid rgba(56, 189, 248, 0.4)',
+                                                                                        background: 'rgba(56, 189, 248, 0.15)',
+                                                                                        color: '#38bdf8',
+                                                                                        cursor: 'pointer',
+                                                                                        fontWeight: 600,
+                                                                                    }}
+                                                                                >
+                                                                                    Fill Set 1
+                                                                                </button>
+                                                                            </div>
+                                                                        );
+                                                                    })()}
+
                                                                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, marginTop: 12, padding: '0 8px' }}>
                                                                         <div style={{ fontSize: '0.85rem', color: '#818cf8', fontWeight: 500 }}>
                                                                             <span style={{ color: 'var(--foreground)' }}>Session: </span>
@@ -1437,6 +1548,8 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                             exercises={exercises.map((e: any) => ({ name: e.name }))}
                                                             unit={unit}
                                                             targetNextWeek={true}
+                                                            totalWeeks={program.weeks?.length || 0}
+                                                            onSaved={() => fetchPlannedTopSetsForSession(sKey)}
                                                         />
                                                     </div>
                                                 )}
@@ -1864,8 +1977,28 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                             }}
                                                                             style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'rgba(255,255,255,0.06)', cursor: 'pointer', borderTopLeftRadius: exIdx === 0 ? 8 : 0, borderTopRightRadius: exIdx === 0 ? 8 : 0, borderBottom: '1px solid var(--card-border)' }}
                                                                         >
-                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                                                                                 <span style={{ fontSize: '1rem', color: '#fff', fontWeight: 600 }}>{exerciseData.name || ex.name}</span>
+                                                                                {(() => {
+                                                                                    const planned = plannedTopSets[sKey]?.[exerciseData.name || ex.name];
+                                                                                    if (!planned || (!planned.weight && !planned.reps)) return null;
+                                                                                    return (
+                                                                                        <span style={{
+                                                                                            fontSize: '0.72rem',
+                                                                                            padding: '2px 8px',
+                                                                                            borderRadius: 6,
+                                                                                            background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(99, 102, 241, 0.18))',
+                                                                                            border: '1px solid rgba(56, 189, 248, 0.4)',
+                                                                                            color: '#38bdf8',
+                                                                                            fontWeight: 600,
+                                                                                            display: 'inline-flex',
+                                                                                            alignItems: 'center',
+                                                                                            gap: 4
+                                                                                        }}>
+                                                                                            🎯 Planned: {planned.weight ? `${planned.weight} ${planned.unit || unit}` : ''}{planned.reps ? ` × ${planned.reps}` : ''}{planned.rpe ? ` @ ${planned.rpe}` : ''}
+                                                                                        </span>
+                                                                                    );
+                                                                                })()}
                                                                                 {isLocked && <span style={{ fontSize: '0.8rem' }}>🔒</span>}
                                                                             </div>
                                                                             <span style={{
@@ -1878,6 +2011,62 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                         {/* Exercise body / Input rows */}
                                                                         {exOpen && (
                                                                             <div style={{ padding: '0 8px 16px 8px' }}>
+                                                                                {/* Planned top set banner */}
+                                                                                {(() => {
+                                                                                    const planned = plannedTopSets[sKey]?.[exerciseData.name || ex.name];
+                                                                                    if (!planned || (!planned.weight && !planned.reps)) return null;
+                                                                                    return (
+                                                                                        <div style={{
+                                                                                            display: 'flex',
+                                                                                            alignItems: 'center',
+                                                                                            justifyContent: 'space-between',
+                                                                                            padding: '8px 12px',
+                                                                                            marginBottom: 10,
+                                                                                            marginTop: 6,
+                                                                                            borderRadius: 8,
+                                                                                            background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(99, 102, 241, 0.06))',
+                                                                                            border: '1px solid rgba(56, 189, 248, 0.25)',
+                                                                                            fontSize: '0.82rem',
+                                                                                        }}>
+                                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#38bdf8', fontWeight: 600 }}>
+                                                                                                <span>🎯 Planned Top Set:</span>
+                                                                                                <span style={{ color: 'var(--foreground)', fontWeight: 700 }}>
+                                                                                                    {planned.weight ? `${planned.weight} ${planned.unit || unit}` : ''}{planned.reps ? ` × ${planned.reps}` : ''}{planned.rpe ? ` @ ${planned.rpe}` : ''}
+                                                                                                </span>
+                                                                                            </div>
+                                                                                            <button
+                                                                                                type="button"
+                                                                                                onClick={() => {
+                                                                                                    if (!editState[sKey]) initEdit(sKey, exercises, log);
+                                                                                                    setEditState(prev => {
+                                                                                                        const copy = JSON.parse(JSON.stringify(prev));
+                                                                                                        if (!copy[sKey]?.[exIdx]?.sets?.[0]) return prev;
+                                                                                                        copy[sKey][exIdx].sets[0].actual = {
+                                                                                                            weight: planned.weight ? String(planned.weight) : '',
+                                                                                                            reps: planned.reps ? String(planned.reps) : '',
+                                                                                                            rpe: planned.rpe ? String(planned.rpe) : ''
+                                                                                                        };
+                                                                                                        return copy;
+                                                                                                    });
+                                                                                                    triggerAutoSave(sKey, program.id);
+                                                                                                }}
+                                                                                                style={{
+                                                                                                    padding: '3px 8px',
+                                                                                                    fontSize: '0.72rem',
+                                                                                                    borderRadius: 6,
+                                                                                                    border: '1px solid rgba(56, 189, 248, 0.4)',
+                                                                                                    background: 'rgba(56, 189, 248, 0.15)',
+                                                                                                    color: '#38bdf8',
+                                                                                                    cursor: 'pointer',
+                                                                                                    fontWeight: 600,
+                                                                                                }}
+                                                                                            >
+                                                                                                Fill Set 1
+                                                                                            </button>
+                                                                                        </div>
+                                                                                    );
+                                                                                })()}
+
                                                                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, marginTop: 12, padding: '0 8px' }}>
                                                                                     <div style={{ fontSize: '0.85rem', color: '#818cf8', fontWeight: 500 }}>
                                                                                         <span style={{ color: 'var(--foreground)' }}>Session: </span>
@@ -2200,6 +2389,8 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                         exercises={exercises.map((e: any) => ({ name: e.name }))}
                                                                         unit={unit}
                                                                         targetNextWeek={true}
+                                                                        totalWeeks={program.weeks?.length || 0}
+                                                                        onSaved={() => fetchPlannedTopSetsForSession(sKey)}
                                                                     />
                                                                 </div>
                                                             )}
