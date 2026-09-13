@@ -5,7 +5,8 @@ function initVapid() {
     const vapidPublic = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
     const vapidPrivate = process.env.VAPID_PRIVATE_KEY;
     if (!vapidPublic || !vapidPrivate) return false;
-    webpush.setVapidDetails('mailto:darathkhon@gmail.com', vapidPublic, vapidPrivate);
+    const adminEmail = process.env.ADMIN_EMAIL || process.env.NEXT_PUBLIC_ADMIN_EMAIL || 'darathkhon@gmail.com';
+    webpush.setVapidDetails(`mailto:${adminEmail}`, vapidPublic, vapidPrivate);
     return true;
 }
 

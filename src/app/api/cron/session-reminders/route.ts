@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { sendPushToUsers } from '@/lib/push-utils';
+import { parseLocalDate } from '@/lib/date-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -128,12 +129,5 @@ export async function GET(request: Request) {
     }
 }
 
-function parseLocalDate(dateStr: any): Date | null {
-    if (!dateStr) return null;
-    const s = String(dateStr).split('T')[0];
-    const [y, m, d] = s.split('-').map(Number);
-    if (!y || !m || !d) return null;
-    const date = new Date(y, m - 1, d);
-    date.setHours(0, 0, 0, 0);
-    return date;
-}
+
+

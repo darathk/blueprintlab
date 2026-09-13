@@ -1,16 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { supabase } from '@/lib/supabase';
-
-// Helper to extract bucket path from the public Supabase URL
-function extractStoragePath(publicUrl: string): string | null {
-    if (!publicUrl) return null;
-    const marker = '/storage/v1/object/public/lift-videos/';
-    const idx = publicUrl.indexOf(marker);
-    if (idx === -1) return null;
-    // Strip media fragment URI (#t=...) if present
-    return publicUrl.substring(idx + marker.length).split('#')[0];
-}
+import { extractStoragePath } from '@/lib/storage-path';
 
 export async function GET(request: Request) {
     try {

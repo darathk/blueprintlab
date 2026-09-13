@@ -1417,11 +1417,11 @@ export default function ChatInterface({
 
         const validFiles = files.filter(f => {
             const isVid = f.type.startsWith('video/'), isImg = f.type.startsWith('image/'), isAudio = f.type.startsWith('audio/');
-            return (isVid || isImg || isAudio) && f.size <= 200 * 1024 * 1024;
+            return (isVid || isImg || isAudio) && f.size <= 500 * 1024 * 1024;
         });
 
         if (validFiles.length < files.length) {
-            alert('Some files were ignored (must be image/video under 200MB)');
+            alert('Some files were ignored (must be image/video under 500MB)');
         }
         if (validFiles.length === 0) return;
 
@@ -1498,7 +1498,7 @@ export default function ChatInterface({
                 const file = item.getAsFile();
                 if (file) {
                     const fixedFile = fixFileMimeType(file);
-                    if ((fixedFile.type.startsWith('image/') || fixedFile.type.startsWith('video/')) && fixedFile.size <= 200 * 1024 * 1024) {
+                    if ((fixedFile.type.startsWith('image/') || fixedFile.type.startsWith('video/')) && fixedFile.size <= 500 * 1024 * 1024) {
                         pastedFiles.push(fixedFile);
                     }
                 }

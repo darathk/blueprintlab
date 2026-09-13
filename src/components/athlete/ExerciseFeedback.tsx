@@ -174,11 +174,11 @@ export default function ExerciseFeedback({
             const mime = getSafeMimeType(f);
             const isVid = mime.startsWith('video/');
             const isImg = mime.startsWith('image/');
-            return (isVid || isImg) && f.size <= 200 * 1024 * 1024;
+            return (isVid || isImg) && f.size <= 500 * 1024 * 1024;
         });
 
         if (validFiles.length < files.length) {
-            alert('Some files were ignored (must be image/video under 200MB)');
+            alert('Some files were ignored (must be image/video under 500MB)');
         }
         if (validFiles.length === 0) return;
 

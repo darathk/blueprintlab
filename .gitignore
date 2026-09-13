@@ -47,4 +47,5 @@ next-env.d.ts
 
 # local dev database structure
 data/
+_archive/
 .env*.local

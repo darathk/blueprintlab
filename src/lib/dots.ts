@@ -4,6 +4,8 @@
  * Exact competition lift names per user request — no variations.
  */
 
+import { calculateSimpleE1RM } from '@/lib/stress-index';
+
 // Accepted name variants for each competition lift (lowercase, matching AthleteCharts)
 const COMPETITION_LIFT_NAMES: Record<'squat' | 'bench' | 'deadlift', string[]> = {
     squat: ['squat', 'competition squat'],
@@ -11,43 +13,7 @@ const COMPETITION_LIFT_NAMES: Record<'squat' | 'bench' | 'deadlift', string[]> =
     deadlift: ['deadlift', 'competition deadlift'],
 };
 
-// Official DOTs formula coefficients
-const DOTS_COEFFICIENTS = {
-    // [a0, a1, a2, a3, a4, a5] where denominator = a0 + a1*bw + a2*bw^2 + a3*bw^3 + a4*bw^4 + a5*bw^5
-    male: [-307.75076, 24.0900756, -0.1918759221, 0.0007391293, -0.000001093, 0],
-    female: [-57.96288, 13.6175032, -0.1126655495, 0.0005158568, -0.0000010706, 0],
-};
-
-/**
- * Official DOTs formula: Returns DOTs score.
- * @param totalKg   - SBD total in kg
- * @param bwKg      - Athlete bodyweight / weight class in kg
- * @param gender    - "male" | "female"
- */
-export function calculateDots(totalKg: number, bwKg: number, gender: 'male' | 'female'): number {
-    if (totalKg <= 0 || bwKg <= 0) return 0;
-    const [a0, a1, a2, a3, a4, a5] = DOTS_COEFFICIENTS[gender];
-    const bw = bwKg;
-    const denominator = a0 + a1 * bw + a2 * bw ** 2 + a3 * bw ** 3 + a4 * bw ** 4 + a5 * bw ** 5;
-    if (denominator <= 0) return 0;
-    return parseFloat(((500 / denominator) * totalKg).toFixed(2));
-}
-
-/** Convert lbs to kg */
-export function lbsToKg(lbs: number): number {
-    return lbs / 2.20462;
-}
-
-/**
- * E1RM formula matching the app's AthleteCharts / stress-index.js:
- * weight * (36 / (37 - (reps + (10 - RPE))))
- * RPE defaults to 10 if missing (conservative estimate).
- */
-function calcE1RM(weight: number, reps: number, rpe: number): number {
-    if (weight <= 0 || reps <= 0) return 0;
-    const safeRpe = rpe > 0 ? rpe : 10;
-    return weight * (36 / (37 - (reps + (10 - safeRpe))));
-}
+export { calculateDots, lbsToKg, kgToLbs } from '@/lib/calculators';
 
 /** Get the best E1RM for a given lift from one log entry */
 function getBestE1RMForLift(log: any, liftKey: 'squat' | 'bench' | 'deadlift'): number {
@@ -68,7 +34,7 @@ function getBestE1RMForLift(log: any, liftKey: 'squat' | 'bench' | 'deadlift'): 
             const reps = parseFloat(set.reps ?? set.actual?.reps ?? 0);
             const rpe = parseFloat(set.rpe ?? set.actual?.rpe ?? 0);
             if (weight > 0 && reps > 0) {
-                const e1 = calcE1RM(weight, reps, rpe);
+                const e1 = calculateSimpleE1RM(weight, reps, rpe);
                 if (e1 > best) best = e1;
             }
         }

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { currentUser } from '@clerk/nextjs/server';
-import webpush from 'web-push';
+import { sendPushToUser } from '@/lib/push-utils';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,9 +17,13 @@ export async function GET() {
         const athlete = await prisma.athlete.findFirst({ where: { email: { equals: email, mode: 'insensitive' } }, select: { id: true, name: true } });
         if (!athlete) return NextResponse.json({ error: 'User not in DB', email }, { status: 404 });
 
-        const subscriptions = await prisma.pushSubscription.findMany({ where: { athleteId: athlete.id } });
+        const { sent, failed } = await sendPushToUser(athlete.id, {
+            title: 'Test Notification',
+            body: 'Push notifications are working!',
+            url: '/'
+        });
 
-        if (subscriptions.length === 0) {
+        if (sent === 0 && failed === 0) {
             return NextResponse.json({
                 error: 'No push subscriptions found for your account',
                 userId: athlete.id,
@@ -28,52 +32,12 @@ export async function GET() {
             }, { status: 404 });
         }
 
-        const vapidPublic = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-        const vapidPrivate = process.env.VAPID_PRIVATE_KEY;
-
-        if (!vapidPublic || !vapidPrivate) {
-            return NextResponse.json({
-                error: 'VAPID keys not configured on server',
-                hasPublic: !!vapidPublic,
-                hasPrivate: !!vapidPrivate
-            }, { status: 500 });
-        }
-
-        webpush.setVapidDetails('mailto:darathkhon@gmail.com', vapidPublic, vapidPrivate);
-
-        const payload = JSON.stringify({
-            title: 'Test Notification',
-            body: 'Push notifications are working!',
-            url: '/'
-        });
-
-        const results = [];
-        for (const sub of subscriptions) {
-            try {
-                await webpush.sendNotification(
-                    { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
-                    payload
-                );
-                results.push({ endpoint: sub.endpoint.slice(-30), status: 'sent' });
-            } catch (err: any) {
-                results.push({
-                    endpoint: sub.endpoint.slice(-30),
-                    status: 'failed',
-                    statusCode: err.statusCode,
-                    body: err.body
-                });
-                if (err.statusCode === 410 || err.statusCode === 404) {
-                    await prisma.pushSubscription.delete({ where: { id: sub.id } }).catch(() => {});
-                }
-            }
-        }
-
         return NextResponse.json({
             success: true,
             userId: athlete.id,
             userName: athlete.name,
-            subscriptionCount: subscriptions.length,
-            results
+            sent,
+            failed
         });
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });

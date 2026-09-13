@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { v4 as uuidv4 } from 'uuid';
+import { randomUUID } from 'crypto';
 import { requireCoach } from '@/lib/api-auth';
 
 export const dynamic = 'force-dynamic';
@@ -22,7 +22,7 @@ export async function POST(request: Request) {
             return NextResponse.json({ error: 'CSV too large (max 1000 rows)' }, { status: 400 });
         }
 
-        const programId = uuidv4();
+        const programId = randomUUID();
         const weeksMap = new Map();
 
         csvData.forEach((row) => {
@@ -31,7 +31,7 @@ export async function POST(request: Request) {
 
             if (!weeksMap.has(weekNum)) {
                 weeksMap.set(weekNum, {
-                    id: uuidv4(),
+                    id: randomUUID(),
                     weekNumber: weekNum,
                     sessions: new Map()
                 });
@@ -41,7 +41,7 @@ export async function POST(request: Request) {
 
             if (!week.sessions.has(dayNum)) {
                 week.sessions.set(dayNum, {
-                    id: uuidv4(),
+                    id: randomUUID(),
                     day: dayNum,
                     name: `Day ${dayNum}`,
                     exercises: []
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
 
             if (row.exercise) {
                 session.exercises.push({
-                    id: uuidv4(),
+                    id: randomUUID(),
                     name: String(row.exercise).slice(0, 100),
                     sets: row.sets,
                     reps: row.reps,

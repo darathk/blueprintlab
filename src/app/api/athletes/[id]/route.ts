@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { currentUser } from '@clerk/nextjs/server';
 import { requireAccessToAthlete, requireCoach } from '@/lib/api-auth';
 
 export async function GET(

@@ -1,7 +1,7 @@
 import { NextResponse, after } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { supabase } from '@/lib/supabase';
-import webpush from 'web-push';
+import { sendPushToUser } from '@/lib/push-utils';
 import { requireAuth, requireAccessToAthlete } from '@/lib/api-auth';
 
 export const dynamic = 'force-dynamic';
@@ -125,71 +125,28 @@ export async function POST(request: Request) {
         // Send push notifications AFTER returning response to avoid Vercel timeouts
         after(async () => {
             try {
-                const vapidPublic = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-                const vapidPrivate = process.env.VAPID_PRIVATE_KEY;
+                const receiver = await prisma.athlete.findUnique({
+                    where: { id: receiverId },
+                    select: { role: true, email: true }
+                });
 
-                if (vapidPublic && vapidPrivate) {
-                    webpush.setVapidDetails('mailto:darathkhon@gmail.com', vapidPublic, vapidPrivate);
+                const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.ADMIN_EMAIL;
+                const isReceiverCoach = receiver?.role === 'coach' ||
+                    (adminEmail && receiver?.email.toLowerCase() === adminEmail.toLowerCase());
 
-                    const subscriptions = await prisma.pushSubscription.findMany({
-                        where: { athleteId: receiverId }
-                    });
+                const redirectUrl = isReceiverCoach
+                    ? `/dashboard/messages?athleteId=${senderId}`
+                    : `/athlete/${receiverId}/chat`;
 
-                    if (subscriptions.length > 0) {
-                        const receiver = await prisma.athlete.findUnique({
-                            where: { id: receiverId },
-                            select: { role: true, email: true }
-                        });
+                const notifBody = content && content.trim()
+                    ? (content.length > 50 ? content.substring(0, 47) + '...' : content)
+                    : mediaUrl ? (mediaType?.startsWith('video') ? 'Video' : mediaType?.startsWith('audio') ? 'Voice Message' : 'Photo') : 'New message';
 
-                        const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.ADMIN_EMAIL;
-                        const isReceiverCoach = receiver?.role === 'coach' ||
-                            (adminEmail && receiver?.email.toLowerCase() === adminEmail.toLowerCase());
-
-                        const redirectUrl = isReceiverCoach
-                            ? `/dashboard/messages?athleteId=${senderId}`
-                            : `/athlete/${receiverId}/chat`;
-
-                        const notifBody = content && content.trim()
-                            ? (content.length > 50 ? content.substring(0, 47) + '...' : content)
-                            : mediaUrl ? (mediaType?.startsWith('video') ? 'Video' : mediaType?.startsWith('audio') ? 'Voice Message' : 'Photo') : 'New message';
-
-                        const payload = JSON.stringify({
-                            title: `${message.sender.name}`,
-                            body: notifBody,
-                            url: redirectUrl
-                        });
-
-                        console.log(`[Push] Sending to ${subscriptions.length} sub(s) for ${receiverId}`);
-
-                        const results = await Promise.allSettled(
-                            subscriptions.map(async (sub) => {
-                                try {
-                                    await webpush.sendNotification(
-                                        {
-                                            endpoint: sub.endpoint,
-                                            keys: { p256dh: sub.p256dh, auth: sub.auth }
-                                        },
-                                        payload,
-                                        { TTL: 60 * 60 } // 1 hour TTL
-                                    );
-                                    console.log(`[Push] Sent to ...${sub.endpoint.slice(-20)}`);
-                                } catch (pushError: any) {
-                                    console.error(`[Push] Failed ...${sub.endpoint.slice(-20)}:`, pushError.statusCode, pushError.body);
-                                    // Clean up expired/invalid subscriptions
-                                    if (pushError.statusCode === 410 || pushError.statusCode === 404 || pushError.statusCode === 403) {
-                                        await prisma.pushSubscription.delete({ where: { id: sub.id } }).catch(() => {});
-                                        console.log(`[Push] Deleted stale subscription ${sub.id}`);
-                                    }
-                                }
-                            })
-                        );
-                        console.log(`[Push] Results: ${results.filter(r => r.status === 'fulfilled').length}/${results.length} sent`);
-                    } else {
-                        console.log(`[Push] No subscriptions for receiver ${receiverId}`);
-                    }
-                } else {
-                    console.warn('[Push] VAPID keys not configured');
-                }
+                await sendPushToUser(receiverId, {
+                    title: `${message.sender.name}`,
+                    body: notifBody,
+                    url: redirectUrl
+                });
             } catch (pushErr) {
                 console.error('[Push] Error:', pushErr);
             }

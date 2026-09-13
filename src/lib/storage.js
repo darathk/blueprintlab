@@ -44,37 +44,6 @@ export const getAthletes = cache(async (coachId) => {
     });
 });
 
-export async function saveAthlete(athlete) {
-    const { id, name, email, nextMeetName, nextMeetDate, periodization, currentProgramId, weightClass, gender, coachId } = athlete;
-
-    await prisma.athlete.upsert({
-        where: { id: id || '' },
-        update: { name, email, nextMeetName, nextMeetDate, periodization, weightClass, gender },
-        create: {
-            id: id || randomUUID(),
-            name: name || 'Unknown',
-            email: email || `${id || randomUUID()}@example.com`,
-            nextMeetName,
-            nextMeetDate,
-            periodization,
-            weightClass,
-            gender,
-            coachId
-        }
-    });
-
-    if (currentProgramId) {
-        await prisma.program.updateMany({
-            where: { athleteId: id, id: { not: currentProgramId }, status: 'active' },
-            data: { status: 'completed' }
-        });
-        await prisma.program.update({
-            where: { id: currentProgramId },
-            data: { status: 'active', athleteId: id }
-        });
-    }
-}
-
 export const getPrograms = cache(async (coachId) => {
     if (!coachId) return [];
     return prisma.program.findMany({
@@ -91,95 +60,6 @@ export const getPrograms = cache(async (coachId) => {
         }
     });
 });
-
-export async function updateProgram(program) {
-    const { id, athleteId, name, startDate, endDate, weeks, status } = program;
-    await prisma.program.upsert({
-        where: { id: id || '' },
-        update: { athleteId, name, startDate, endDate, weeks, status },
-        create: {
-            id: id || Math.random().toString(36).substring(7),
-            athleteId, name, startDate, endDate, weeks, status: status || 'active'
-        }
-    });
-}
-
-export async function deleteProgram(id) {
-    await prisma.log.deleteMany({ where: { programId: id } });
-    await prisma.readiness.updateMany({ where: { programId: id }, data: { programId: null } });
-    await prisma.program.delete({ where: { id } });
-    return true;
-}
-
-export const getLogs = cache(async (coachId) => {
-    if (!coachId) return [];
-    const logs = await prisma.log.findMany({
-        where: { program: { athlete: { coachId } } },
-        include: { program: { select: { athleteId: true } } }
-    });
-    return logs.map(l => {
-        const { program, ...rest } = l;
-        return {
-            ...rest,
-            athleteId: program ? program.athleteId : null
-        };
-    });
-});
-
-export async function saveLog(logEntry) {
-    const existing = await prisma.log.findFirst({
-        where: { sessionId: logEntry.sessionId, programId: logEntry.programId }
-    });
-
-    if (existing) {
-        await prisma.log.update({
-            where: { id: existing.id },
-            data: { exercises: logEntry.exercises, date: logEntry.date }
-        });
-    } else {
-        await prisma.log.create({
-            data: {
-                id: logEntry.id || randomUUID(),
-                programId: logEntry.programId,
-                sessionId: logEntry.sessionId,
-                date: logEntry.date || new Date().toISOString(),
-                exercises: logEntry.exercises
-            }
-        });
-    }
-
-    // Check if the program is now fully complete (auto-advance logic)
-    const program = await prisma.program.findUnique({
-        where: { id: logEntry.programId },
-        select: { id: true, status: true, weeks: true }
-    });
-
-    if (program && program.status === 'active') {
-        const weeks = typeof program.weeks === 'string' ? JSON.parse(program.weeks) : program.weeks;
-        let totalSessions = 0;
-        (weeks || []).forEach(w => {
-            totalSessions += (w.sessions?.length || 0);
-        });
-
-        if (totalSessions > 0) {
-            const logsCount = await prisma.log.groupBy({
-                by: ['sessionId'],
-                where: { programId: logEntry.programId },
-                _count: { sessionId: true }
-            });
-            
-            if (logsCount.length >= totalSessions) {
-                // All sessions are logged! Mark the program as completed.
-                // Any later-created active programs (blocks written ahead of time)
-                // will seamlessly take over as the current program.
-                await prisma.program.update({
-                    where: { id: logEntry.programId },
-                    data: { status: 'completed' }
-                });
-            }
-        }
-    }
-}
 
 export const getReadiness = cache(async (coachId) => {
     if (!coachId) return [];
@@ -613,7 +493,3 @@ export const getAthletePositions = cache(async (coachId) => {
     }
     return map;
 });
-
-// Dummy functions to prevent older unused routes from crashing during import tree parsing
-export async function readData() { return []; }
-export async function writeData() { }

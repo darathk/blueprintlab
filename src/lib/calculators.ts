@@ -38,14 +38,26 @@ export function calculateWilks(totalKg: number, bwKg: number, isMale: boolean): 
 }
 
 /**
+ * Unit conversions
+ */
+export function lbsToKg(lbs: number): number {
+    return lbs / 2.20462;
+}
+
+export function kgToLbs(kg: number): number {
+    return kg * 2.20462;
+}
+
+/**
  * calculateDots
  * Uses the exact DOTS (2020) formula coefficients.
  * Formula: SCORE = TOTAL * (500 / (a + b(BW) + c(BW^2) + d(BW^3) + e(BW^4)))
  * Where BW is purely in Kilograms.
  */
-export function calculateDots(totalKg: number, bwKg: number, isMale: boolean): number {
+export function calculateDots(totalKg: number, bwKg: number, gender: 'male' | 'female' | boolean): number {
     if (bwKg <= 0 || totalKg <= 0) return 0;
 
+    const isMale = typeof gender === 'boolean' ? gender : gender === 'male';
     const bw2 = Math.pow(bwKg, 2);
     const bw3 = Math.pow(bwKg, 3);
     const bw4 = Math.pow(bwKg, 4);
@@ -54,25 +66,25 @@ export function calculateDots(totalKg: number, bwKg: number, isMale: boolean): n
 
     if (isMale) {
         const a = -307.75076;
-        const b = 24.09007;
-        const c = -0.19187;
-        const d = 0.00073917;
+        const b = 24.0900756;
+        const c = -0.1918759221;
+        const d = 0.0007391293;
         const e = -0.000001093;
         denominator = a + (b * bwKg) + (c * bw2) + (d * bw3) + (e * bw4);
     } else {
         const a = -57.96288;
-        const b = 13.61750;
-        const c = -0.11266;
-        const d = 0.00051585;
+        const b = 13.6175032;
+        const c = -0.1126655495;
+        const d = 0.0005158568;
         const e = -0.0000010706;
         denominator = a + (b * bwKg) + (c * bw2) + (d * bw3) + (e * bw4);
     }
 
-    if (denominator === 0) return 0;
+    if (denominator <= 0) return 0;
 
     // Standard DOTS multiplier is 500 / denominator
     const multiplier = 500 / denominator;
-    return totalKg * multiplier;
+    return parseFloat((totalKg * multiplier).toFixed(2));
 }
 
 /**

@@ -3,14 +3,7 @@ export const dynamic = 'force-dynamic';
 import { prisma } from '@/lib/prisma';
 import { supabase } from '@/lib/supabase';
 import { requireAuth, requireAccessToAthlete } from '@/lib/api-auth';
-
-function extractStoragePath(publicUrl: string): string | null {
-    if (!publicUrl) return null;
-    const marker = '/storage/v1/object/public/lift-videos/';
-    const idx = publicUrl.indexOf(marker);
-    if (idx === -1) return null;
-    return publicUrl.substring(idx + marker.length).split('#')[0];
-}
+import { extractStoragePath } from '@/lib/storage-path';
 
 export async function POST(request: Request) {
     const auth = await requireAuth();

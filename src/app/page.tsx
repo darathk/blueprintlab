@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { currentUser } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
-import styles from './page.module.css';
 
 export default async function Home() {
   const user = await currentUser();
@@ -30,8 +29,8 @@ export default async function Home() {
   }
 
   return (
-    <div className={styles.page} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--background)', padding: '1.5rem' }}>
-      <main className={styles.main} style={{ textAlign: 'center', position: 'relative', zIndex: 1, width: '100%', maxWidth: '640px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: 'var(--background)', padding: '1.5rem' }}>
+      <main style={{ textAlign: 'center', position: 'relative', zIndex: 1, width: '100%', maxWidth: '640px' }}>
         <div style={{
           position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)',
           width: '600px', height: '600px', background: 'radial-gradient(circle, rgba(125, 135, 210, 0.22) 0%, rgba(168, 85, 247, 0.1) 45%, transparent 70%)',
