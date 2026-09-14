@@ -6,7 +6,7 @@ import AnnouncementBanner from '@/components/athlete/AnnouncementBanner';
 
 const ScheduleView = dynamic(() => import('@/components/athlete/ScheduleView'));
 const LeaderboardRankWidget = dynamic(
-    () => import('@/components/leaderboard/Leaderboard').then(mod => ({ default: mod.LeaderboardRankWidget }))
+    () => import('@/components/leaderboard/LeaderboardRankWidget')
 );
 
 async function AsyncSchedule({ id }: { id: string }) {

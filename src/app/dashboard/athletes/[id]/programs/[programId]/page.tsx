@@ -9,7 +9,7 @@ export default async function EditProgramPage({ params }: { params: Promise<{ id
     if ('error' in auth) return auth.error;
 
     // Server-side fetch
-    const [program, initialExercises, athlete, existingPrograms, initialCoachNotes, athleteLogs] = await Promise.all([
+    const [program, initialExercises, athlete, rawExistingPrograms, initialCoachNotes] = await Promise.all([
         prisma.program.findUnique({
             where: { id: programId },
             select: { id: true, athleteId: true, name: true, startDate: true, endDate: true, weeks: true, status: true }
@@ -27,14 +27,20 @@ export default async function EditProgramPage({ params }: { params: Promise<{ id
         prisma.coachNote.findMany({
             where: { athleteId: id },
             orderBy: [{ pinned: 'desc' }, { updatedAt: 'desc' }],
-        }),
-        prisma.log.findMany({
-            where: { program: { athleteId: id } },
-            orderBy: { date: 'desc' }
         })
     ]);
 
     if (!program) return <div style={{ padding: '2rem' }}>Program not found.</div>;
 
-    return <ProgramBuilder athleteId={id} initialData={program} initialExercises={initialExercises} athleteLiftTargets={athlete?.liftTargets} athleteTrainingSchedule={athlete?.trainingSchedule} athleteName={athlete?.name} athleteMeetData={{ nextMeetName: athlete?.nextMeetName, nextMeetDate: athlete?.nextMeetDate, meetAttempts: athlete?.meetAttempts, periodization: athlete?.periodization }} existingPrograms={existingPrograms} initialCoachNotes={initialCoachNotes as any} coachId={auth.user.id} athleteLogs={athleteLogs} />;
+    // Strip heavy exercise trees from past programs to keep payload lean
+    const existingPrograms = (rawExistingPrograms || []).map(p => ({
+        ...p,
+        weeks: Array.isArray(p.weeks) ? p.weeks.map((w: any) => ({
+            id: w.id,
+            weekNumber: w.weekNumber,
+            sessions: (Array.isArray(w.sessions) ? w.sessions : []).map((s: any) => ({ id: s.id, day: s.day, exercises: Array.isArray(s.exercises) && s.exercises.length > 0 ? [{ id: 'stub' }] : [] }))
+        })) : []
+    }));
+
+    return <ProgramBuilder athleteId={id} initialData={program} initialExercises={initialExercises} athleteLiftTargets={athlete?.liftTargets} athleteTrainingSchedule={athlete?.trainingSchedule} athleteName={athlete?.name} athleteMeetData={{ nextMeetName: athlete?.nextMeetName, nextMeetDate: athlete?.nextMeetDate, meetAttempts: athlete?.meetAttempts, periodization: athlete?.periodization }} existingPrograms={existingPrograms} initialCoachNotes={initialCoachNotes as any} coachId={auth.user.id} />;
 }

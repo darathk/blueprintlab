@@ -7,54 +7,14 @@ import TopNavigation from '@/components/dashboard/TopNavigation';
 import MobileBottomNav, { NavItem } from '@/components/navigation/MobileBottomNav';
 import { Home, MessageSquare, Hammer, Medal, Settings, ClipboardList, BookTemplate, Star, Target } from 'lucide-react';
 import { UserButton } from '@clerk/nextjs';
-
-// Cache the auth check so it only runs once per request lifecycle
-const getAuthState = cache(async () => {
-    const user = await currentUser();
-    if (!user) return { isCoach: false, user: null, athleteId: null, unreadCount: 0 };
-
-    const email = (user.primaryEmailAddress?.emailAddress || '').toLowerCase();
-
-    // Check if they exist in the DB — case-insensitive to handle legacy mixed-case emails
-    const athlete = await prisma.athlete.findFirst({
-        where: { email: { equals: email, mode: 'insensitive' } },
-        select: { id: true, role: true, email: true }
-    });
-
-    // Auto-normalize stored email to lowercase
-    if (athlete && athlete.email !== email) {
-        await prisma.athlete.update({ where: { id: athlete.id }, data: { email } });
-    }
-
-    // In multi-coach system, coaches are just Athlete records with role === 'coach'
-    const isCoach = athlete?.role === 'coach';
-    const athleteId = athlete ? athlete.id : null;
-
-    // Fallback for the original admin if they somehow got demoted
-    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.ADMIN_EMAIL;
-    if (!isCoach && adminEmail && email.toLowerCase() === adminEmail.toLowerCase()) {
-        let adminAthleteId = athlete?.id;
-        if (athlete) {
-            await prisma.athlete.update({ where: { id: athlete.id }, data: { role: 'coach', email } });
-        } else {
-            const newAdmin = await prisma.athlete.create({ data: { name: 'Admin Coach', email, role: 'coach' } });
-            adminAthleteId = newAdmin.id;
-        }
-
-        const unreadCount = adminAthleteId ? await prisma.message.count({ where: { receiverId: adminAthleteId, read: false } }) : 0;
-        return { isCoach: true, user, athleteId: adminAthleteId, unreadCount };
-    }
-
-    const unreadCount = athleteId ? await prisma.message.count({ where: { receiverId: athleteId, read: false } }) : 0;
-    return { isCoach, user, athleteId, unreadCount };
-});
+import { getCoachAuthState } from '@/lib/auth-cache';
 
 export default async function DashboardLayout({
     children,
 }: {
     children: React.ReactNode
 }) {
-    const { isCoach, user, athleteId, unreadCount } = await getAuthState();
+    const { isCoach, user, athleteId, unreadCount } = await getCoachAuthState();
 
     if (!user) redirect('/sign-in');
 

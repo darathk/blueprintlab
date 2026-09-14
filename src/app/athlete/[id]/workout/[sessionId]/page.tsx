@@ -1,4 +1,4 @@
-import { getProgramsByAthlete, getLogsByAthlete, getAthleteById } from '@/lib/storage';
+import { getAthleteById } from '@/lib/storage';
 import { prisma } from '@/lib/prisma';
 import WorkoutLogger from './workout-logger';
 
@@ -21,11 +21,12 @@ export default async function WorkoutPage({ params }) {
     const weekNum = parseInt(parts[1].substring(1));
     const dayNum = parseInt(parts[2].substring(1));
 
-    const [programs, athleteLogs, athlete] = await Promise.all([
-        getProgramsByAthlete(athleteId),
-        getLogsByAthlete(athleteId),
+    const [program, athlete] = await Promise.all([
+        prisma.program.findUnique({ where: { id: programId } }),
         getAthleteById(athleteId),
     ]);
+
+    if (!program) return <div>Program not found</div>;
 
     // Resolve coachId: prefer athlete.coachId, fall back to admin email lookup
     let coachId = athlete?.coachId || '';
@@ -39,19 +40,23 @@ export default async function WorkoutPage({ params }) {
             coachId = coach?.id || '';
         }
     }
-    const program = programs.find(p => p.id === programId);
 
-    if (!program) return <div>Program not found</div>;
-
-    const weeks = program.weeks as any[];
+    const weeks = (program.weeks as any[]) || [];
     const week = weeks.find(w => w.weekNumber === weekNum);
-    const session = week?.sessions.find((s: any) => s.day === dayNum);
+    const session = week?.sessions?.find((s: any) => s.day === dayNum);
 
     if (!session) return <div>Session not found</div>;
 
-    // Find existing log for this specific session, preferring modern session.id over legacy key
-    const existingLog = (session.id ? athleteLogs.find(l => l.programId === programId && l.sessionId === session.id) : null)
-        || athleteLogs.find(l => l.programId === programId && l.sessionId === sessionId);
+    // Fetch existing log for this specific session directly, preferring modern session.id over legacy key
+    const sessionLogs = await prisma.log.findMany({
+        where: {
+            athleteId,
+            programId,
+            sessionId: session.id ? { in: [session.id, sessionId] } : sessionId,
+        },
+        orderBy: { date: 'desc' },
+    });
+    const existingLog = (session.id ? sessionLogs.find(l => l.sessionId === session.id) : null) || sessionLogs[0] || null;
 
     // Pass all sessions in this week for the week overview drawer
     const weekSessions = (week?.sessions || []).filter((s: any) => Array.isArray(s.exercises) && s.exercises.length > 0);

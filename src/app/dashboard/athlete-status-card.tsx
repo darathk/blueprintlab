@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import Link from 'next/link';
 
 export default function AthleteStatusCard({ athlete, progress, daysSinceLastLog = null, needsUpdate = false, hasNextBlockReady = false }) {
     const router = useRouter();
@@ -50,6 +51,7 @@ export default function AthleteStatusCard({ athlete, progress, daysSinceLastLog 
 
     const handleDelete = async (e: React.MouseEvent) => {
         e.stopPropagation(); // Prevent navigating to the athlete page
+        e.preventDefault();
 
         if (!window.confirm(`Are you sure you want to delete ${athlete.name}? This will permanently remove all their programs, logs, and messages.`)) {
             return;
@@ -106,22 +108,26 @@ export default function AthleteStatusCard({ athlete, progress, daysSinceLastLog 
     }
 
     return (
-        <div
-            className="glass-panel athlete-card-inner chat-press"
-            style={{
-                padding: '1.5rem',
-                cursor: 'pointer',
-                transition: 'all 0.25s var(--ease-out)',
-                position: 'relative',
-                overflow: 'hidden',
-                borderRadius: '16px'
-            }}
-            onClick={() => router.push(`/dashboard/athletes/${athlete.id}`)}
-            onMouseEnter={(e) => {
-                e.currentTarget.style.borderColor = 'rgba(125, 135, 210, 0.4)';
-                e.currentTarget.style.boxShadow = 'var(--glass-ring), 0 12px 36px rgba(0, 0, 0, 0.45), 0 0 20px rgba(125, 135, 210, 0.18)';
-                e.currentTarget.style.transform = 'translateY(-2px)';
-            }}
+        <Link
+            href={`/dashboard/athletes/${athlete.id}`}
+            style={{ textDecoration: 'none', display: 'block', color: 'inherit' }}
+            prefetch={true}
+        >
+            <div
+                className="glass-panel athlete-card-inner chat-press"
+                style={{
+                    padding: '1.5rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.25s var(--ease-out)',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    borderRadius: '16px'
+                }}
+                onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = 'rgba(125, 135, 210, 0.4)';
+                    e.currentTarget.style.boxShadow = 'var(--glass-ring), 0 12px 36px rgba(0, 0, 0, 0.45), 0 0 20px rgba(125, 135, 210, 0.18)';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                }}
             onMouseLeave={(e) => {
                 e.currentTarget.style.borderColor = 'var(--card-border)';
                 e.currentTarget.style.boxShadow = 'var(--glass-ring), var(--glass-shadow), var(--glass-specular)';
@@ -369,5 +375,6 @@ export default function AthleteStatusCard({ athlete, progress, daysSinceLastLog 
                 </div>
             </div>
         </div>
+        </Link>
     );
 }

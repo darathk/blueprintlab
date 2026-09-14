@@ -61,6 +61,44 @@ export const getPrograms = cache(async (coachId) => {
     });
 });
 
+/**
+ * Lightweight program query for coach dashboard and assignment manager.
+ * Strips heavy nested exercise definitions, sets, and notes, keeping payload under 100KB instead of 15MB+.
+ */
+export const getDashboardPrograms = cache(async (coachId) => {
+    if (!coachId) return [];
+    const progs = await prisma.program.findMany({
+        where: { athlete: { coachId } },
+        select: {
+            id: true,
+            athleteId: true,
+            name: true,
+            startDate: true,
+            endDate: true,
+            weeks: true,
+            status: true,
+            createdAt: true
+        }
+    });
+
+    return progs.map(p => {
+        const rawWeeks = Array.isArray(p.weeks) ? p.weeks : [];
+        const strippedWeeks = rawWeeks.map(w => ({
+            id: w.id,
+            weekNumber: w.weekNumber,
+            sessions: (Array.isArray(w.sessions) ? w.sessions : []).map(s => ({
+                id: s.id,
+                day: s.day,
+                exercises: Array.isArray(s.exercises) && s.exercises.length > 0 ? [{ id: 'stub' }] : []
+            }))
+        }));
+        return {
+            ...p,
+            weeks: strippedWeeks
+        };
+    });
+});
+
 export const getReadiness = cache(async (coachId) => {
     if (!coachId) return [];
     return prisma.readiness.findMany({

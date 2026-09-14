@@ -1,14 +1,9 @@
 import { Suspense } from 'react';
 import { getAthleteById, getLogsByAthlete, getReadinessByAthlete, getProgramsByAthlete, getTravelEventsByAthlete } from '@/lib/storage';
 import Link from 'next/link';
-import ProgramList from '@/components/program-builder/ProgramList';
-import BlockOrganizer from '@/components/dashboard/BlockOrganizer';
-import MeetAttempts from '@/components/dashboard/MeetAttempts';
-import HistoricalPerformance from '@/components/dashboard/HistoricalPerformance';
+import dynamic from 'next/dynamic';
 import AthleteCalendarContainer from '@/components/dashboard/AthleteCalendarContainer';
 import CollapsibleSection from '@/components/ui/CollapsibleSection';
-import dynamic from 'next/dynamic';
-import CoachNotes from '@/components/dashboard/CoachNotes';
 
 import { MessageSquare } from 'lucide-react';
 
@@ -18,6 +13,26 @@ const DotsChart = dynamic(() => import('@/components/dashboard/DotsChart'), {
 
 const FatigueChart = dynamic(() => import('@/components/dashboard/FatigueChart'), {
     loading: () => <div style={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="pulse">Loading fatigue chart...</div>
+});
+
+const ProgramList = dynamic(() => import('@/components/program-builder/ProgramList'), {
+    loading: () => <div style={{ padding: '1rem', color: 'var(--muted)' }}>Loading programs...</div>
+});
+
+const BlockOrganizer = dynamic(() => import('@/components/dashboard/BlockOrganizer'), {
+    loading: () => <div style={{ padding: '1rem', color: 'var(--muted)' }}>Loading periodization planner...</div>
+});
+
+const MeetAttempts = dynamic(() => import('@/components/dashboard/MeetAttempts'), {
+    loading: () => <div style={{ padding: '1rem', color: 'var(--muted)' }}>Loading attempts...</div>
+});
+
+const HistoricalPerformance = dynamic(() => import('@/components/dashboard/HistoricalPerformance'), {
+    loading: () => <div style={{ padding: '1rem', color: 'var(--muted)' }}>Loading historical performance...</div>
+});
+
+const CoachNotes = dynamic(() => import('@/components/dashboard/CoachNotes'), {
+    loading: () => <div style={{ padding: '1rem', color: 'var(--muted)' }}>Loading coach notes...</div>
 });
 
 // Single data fetch — all child components receive pre-fetched data as props

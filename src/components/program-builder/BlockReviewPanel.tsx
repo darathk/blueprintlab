@@ -18,6 +18,21 @@ interface BlockReviewPanelProps {
 export default function BlockReviewPanel({ athleteId, coachId, existingPrograms, athleteLogs, onClose }: BlockReviewPanelProps) {
     const [activeTab, setActiveTab] = useState<'block' | 'reports'>('block');
     const [selectedProgramId, setSelectedProgramId] = useState<string>(existingPrograms[0]?.id || '');
+    const [localLogs, setLocalLogs] = useState<any[]>(athleteLogs || []);
+    const [fetchingLogs, setFetchingLogs] = useState(false);
+
+    useEffect(() => {
+        if (!athleteLogs || athleteLogs.length === 0) {
+            setFetchingLogs(true);
+            fetch(`/api/logs?athleteId=${athleteId}`)
+                .then(res => res.json())
+                .then(data => setLocalLogs(data || []))
+                .catch(console.error)
+                .finally(() => setFetchingLogs(false));
+        } else {
+            setLocalLogs(athleteLogs);
+        }
+    }, [athleteId, athleteLogs]);
     
     // Notes state
     const [notes, setNotes] = useState('');
@@ -75,11 +90,11 @@ export default function BlockReviewPanel({ athleteId, coachId, existingPrograms,
     }, [athleteId, selectedProgramId, activeTab]);
 
     const programLogs = useMemo(() => {
-        if (!selectedProgramId || !athleteLogs) return [];
-        return athleteLogs
+        if (!selectedProgramId || !localLogs) return [];
+        return localLogs
             .filter(l => l.programId === selectedProgramId)
             .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-    }, [selectedProgramId, athleteLogs]);
+    }, [selectedProgramId, localLogs]);
 
     const handleSaveNote = async () => {
         if (!notes.trim() && !noteId) return; // Nothing to save
@@ -300,7 +315,7 @@ export default function BlockReviewPanel({ athleteId, coachId, existingPrograms,
                             if (!report) return null;
 
                             // Filter logs for this report
-                            let filtered = athleteLogs || [];
+                            let filtered = localLogs || [];
                             const { parameters } = report;
 
                             if (parameters.dateRange === 'custom' && parameters.customStart) {

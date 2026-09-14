@@ -8,7 +8,7 @@ export default async function NewProgramPage({ params }: { params: Promise<{ id:
     const auth = await requireAuth();
     if ('error' in auth) return auth.error;
     
-    const [initialExercises, athlete, existingPrograms, initialCoachNotes, latestDraft, athleteLogs] = await Promise.all([
+    const [initialExercises, athlete, rawExistingPrograms, initialCoachNotes, latestDraft] = await Promise.all([
         getExerciseLibrary(),
         prisma.athlete.findUnique({
             where: { id },
@@ -29,12 +29,18 @@ export default async function NewProgramPage({ params }: { params: Promise<{ id:
             where: { athleteId: id, status: 'draft' },
             orderBy: { createdAt: 'desc' },
             select: { id: true, name: true, startDate: true, endDate: true, weeks: true, status: true, createdAt: true }
-        }),
-        prisma.log.findMany({
-            where: { program: { athleteId: id } },
-            orderBy: { date: 'desc' }
         })
     ]);
+
+    // Strip heavy exercise trees from past programs to keep payload lean
+    const existingPrograms = (rawExistingPrograms || []).map(p => ({
+        ...p,
+        weeks: Array.isArray(p.weeks) ? p.weeks.map((w: any) => ({
+            id: w.id,
+            weekNumber: w.weekNumber,
+            sessions: (Array.isArray(w.sessions) ? w.sessions : []).map((s: any) => ({ id: s.id, day: s.day, exercises: Array.isArray(s.exercises) && s.exercises.length > 0 ? [{ id: 'stub' }] : [] }))
+        })) : []
+    }));
 
     // Only resume a draft if it has actual content (at least one exercise).
     // Drafts with empty weeks/sessions are indistinguishable from "no draft"
@@ -70,7 +76,6 @@ export default async function NewProgramPage({ params }: { params: Promise<{ id:
             existingPrograms={existingPrograms}
             initialCoachNotes={initialCoachNotes as any}
             coachId={auth.user.id}
-            athleteLogs={athleteLogs}
         />
     );
 }

@@ -1,11 +1,14 @@
-import { getAthletes, getPrograms, getLogSummariesForDashboard } from '@/lib/storage';
+import { getAthletes, getDashboardPrograms, getLogSummariesForDashboard } from '@/lib/storage';
 import AssignmentManager from './assignment-manager';
+import { getCoachAuthState } from '@/lib/auth-cache';
 
 export default async function AthletesPage() {
+    const { athleteId: coachId } = await getCoachAuthState();
+
     const [athletes, programs, rawSummaries] = await Promise.all([
-        getAthletes(),
-        getPrograms(),
-        getLogSummariesForDashboard()
+        getAthletes(coachId || undefined),
+        getDashboardPrograms(coachId || undefined),
+        getLogSummariesForDashboard(coachId || undefined)
     ]);
 
     // Flatten to match the shape AssignmentManager expects: { athleteId, programId, sessionId }

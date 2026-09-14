@@ -1,16 +1,14 @@
 import { getAthletes, getExerciseLibrary } from '@/lib/storage';
 import ProgramBuilder from '@/components/program-builder/ProgramBuilder';
-
-import { currentUser } from '@clerk/nextjs/server';
-import { prisma } from '@/lib/prisma';
+import { getCoachAuthState } from '@/lib/auth-cache';
 
 export default async function NewProgramPage() {
-    const user = await currentUser();
-    const email = (user?.primaryEmailAddress?.emailAddress || '').toLowerCase();
-    const coach = await prisma.athlete.findFirst({ where: { email: { equals: email, mode: 'insensitive' } }, select: { id: true } });
+    const { athleteId: coachId } = await getCoachAuthState();
 
-    const athletes = await getAthletes(coach?.id);
-    const initialExercises = await getExerciseLibrary();
+    const [athletes, initialExercises] = await Promise.all([
+        getAthletes(coachId || undefined),
+        getExerciseLibrary()
+    ]);
 
     return (
         <div>

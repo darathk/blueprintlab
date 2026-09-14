@@ -1,18 +1,16 @@
-import { getAthletes, getPrograms, getLogSummariesForDashboard, getLastLogDates } from '@/lib/storage';
-import { prisma } from '@/lib/prisma';
+import { getAthletes, getDashboardPrograms, getLogSummariesForDashboard, getLastLogDates } from '@/lib/storage';
 import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
+import { getCoachAuthState } from '@/lib/auth-cache';
 
 const ActivePersonnelList = dynamic(() => import('@/components/dashboard/ActivePersonnelList'), {
     loading: () => <div style={{ textAlign: 'center', padding: '50px', color: 'var(--muted)' }}>Loading Command Center...</div>
 });
 
-import { currentUser } from '@clerk/nextjs/server';
-
 async function DashboardData({ coachId }: { coachId: string }) {
     const [athletes, programs, logSummaries, lastLogDates] = await Promise.all([
         getAthletes(coachId),
-        getPrograms(coachId),
+        getDashboardPrograms(coachId),
         getLogSummariesForDashboard(coachId),
         getLastLogDates(coachId)
     ]);
@@ -29,18 +27,9 @@ async function DashboardData({ coachId }: { coachId: string }) {
 }
 
 export default async function DashboardPage() {
-    const user = await currentUser();
-    if (!user) return null;
-
-    const email = (user.primaryEmailAddress?.emailAddress || '').toLowerCase();
-    const coach = await prisma.athlete.findFirst({
-        where: { email: { equals: email, mode: 'insensitive' } },
-        select: { id: true, role: true }
-    });
-
-    if (!coach || coach.role !== 'coach') return null;
-
-    const coachId = coach.id;
+    const { isCoach, athleteId } = await getCoachAuthState();
+    if (!isCoach || !athleteId) return null;
+    const coachId = athleteId;
 
     return (
         <div>

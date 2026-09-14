@@ -12,9 +12,19 @@ import { calculateStress } from '@/lib/stress-index';
 import { getExerciseCategory } from '@/lib/exercise-db';
 import { Trash2, Plus, ArrowRight, ArrowDown, GripVertical, Check, MessageSquare, FileText, Activity, Save, RefreshCw, Layers, Copy, CopyPlus, Scissors, ClipboardPaste, ArrowUp, Zap, ExternalLink, Menu, X, Trophy, Calendar as CalendarIcon, CalendarPlus, LayoutGrid, BookOpen, StickyNote, Pin, LayoutDashboard, ChevronDown, ChevronRight } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
-import ChatInterface from '@/components/chat/ChatInterface';
-import BlockReviewPanel from '@/components/program-builder/BlockReviewPanel';
-import PeriodizationPlanner from '@/components/dashboard/BlockOrganizer';
+
+const ChatInterface = dynamic(() => import('@/components/chat/ChatInterface'), {
+    ssr: false,
+    loading: () => <div style={{ padding: '2rem', color: 'var(--muted)' }}>Loading chat...</div>
+});
+const BlockReviewPanel = dynamic(() => import('@/components/program-builder/BlockReviewPanel'), {
+    ssr: false,
+    loading: () => <div style={{ padding: '2rem', color: 'var(--muted)' }}>Loading review panel...</div>
+});
+const PeriodizationPlanner = dynamic(() => import('@/components/dashboard/BlockOrganizer'), {
+    ssr: false,
+    loading: () => <div style={{ padding: '2rem', color: 'var(--muted)' }}>Loading planner...</div>
+});
 
 const StressMatrix = dynamic(() => import('@/components/program-builder/StressMatrix'), {
     loading: () => <div style={{ height: '300px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="pulse">Loading stress charts...</div>
