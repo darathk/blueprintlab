@@ -3,7 +3,7 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { calculateSimpleE1RM, calculateStress, classifySessionStress } from '@/lib/stress-index';
+import { calculateSimpleE1RM, calculateStress } from '@/lib/stress-index';
 import WeightInput from '@/components/athlete/WeightInput';
 import { ArrowRight, Search, ChevronDown } from 'lucide-react';
 import { getExerciseCategory } from '@/lib/exercise-db';
@@ -110,12 +110,12 @@ function weekDateRangeFromDate(programStartDate: any, weekNumber: number): strin
 }
 
 function sessionProgress(exercises: any[], log: any, editStateData?: any[]): number {
-    const totalSets = exercises.reduce((s: number, ex: any) => s + (Array.isArray(ex.sets) ? ex.sets.length : 0), 0);
+    const totalSets = exercises.reduce((s: number, ex: any) => s + (Array.isArray(ex?.sets) ? ex?.sets.length : 0), 0);
     if (!totalSets) return 0;
     let filled = 0;
     if (editStateData) {
         editStateData.forEach((ex: any) => {
-            (ex.sets || []).forEach((s: any) => {
+            (ex?.sets || []).forEach((s: any) => {
                 const a = s.actual || {};
                 if (a.weight || a.reps) filled++;
             });
@@ -244,8 +244,8 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
             const copy = JSON.parse(JSON.stringify(prev));
             for (const k in copy) {
                 copy[k].forEach((ex: any) => {
-                    ex.unit = u;
-                    ex.sets.forEach((s: any) => {
+                    if (ex) ex.unit = u;
+                    ex?.sets.forEach((s: any) => {
                         if (s.actual?.weight) {
                             const num = parseFloat(s.actual.weight);
                             if (!isNaN(num)) {
@@ -322,12 +322,12 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
         const savedPref = (typeof window !== 'undefined' ? localStorage.getItem('athlete-unit-pref') : null) as 'kg' | 'lbs' | null;
         const effectiveUnit = savedPref || unit || 'lbs';
         const state = (exercises || []).map((ex: any) => {
-            const logEx = log?.exercises?.find((l: any) => l.exerciseId === ex.id || l.name === ex.name);
-            const sets = Array.isArray(ex.sets) ? ex.sets : [];
+            const logEx = log?.exercises?.find((l: any) => l.exerciseId === ex?.id || l.name === ex?.name);
+            const sets = Array.isArray(ex?.sets) ? ex?.sets : [];
             const savedUnit = logEx?.unit || logEx?.sets?.[0]?.unit || effectiveUnit;
             return {
-                exerciseId: ex.id,
-                name: ex.name,
+                exerciseId: ex?.id,
+                name: ex?.name,
                 notes: logEx?.notes || '',
                 unit: savedUnit,
                 sets: sets.map((s: any, i: number) => {
@@ -391,10 +391,10 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
         try {
             const cleanLogs = state.map((ex: any) => ({
                 exerciseId: ex.exerciseId,
-                name: ex.name,
+                name: ex?.name,
                 notes: ex.notes || '',
-                unit: ex.unit || unit,
-                sets: ex.sets.map((s: any) => ({ weight: s.actual.weight || '', reps: s.actual.reps, rpe: s.actual.rpe, unit: ex.unit || unit }))
+                unit: ex?.unit || unit,
+                sets: ex?.sets?.map((s: any) => ({ weight: s.actual.weight || '', reps: s.actual.reps, rpe: s.actual.rpe, unit: ex?.unit || unit }))
             }));
 
             const meta = sessionMetaRef.current[sKey];
@@ -1082,7 +1082,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                     const isEdit = !!editState[sKey];
                                                     const exerciseData = isEdit ? editState[sKey][exIdx] : ex;
                                                     if (!exerciseData) return null;
-                                                    const sets = isEdit ? exerciseData.sets : (Array.isArray(ex.sets) ? ex.sets : []);
+                                                    const sets = isEdit ? exerciseData.sets : (Array.isArray(ex?.sets) ? ex?.sets : []);
                                                     const exKey = `${sKey}-ex${exIdx}`;
                                                     const exOpen = openExercises.has(exKey);
 
@@ -1114,10 +1114,10 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                         }
                                                     });
 
-                                                    const category = exerciseData.category || ex.category || getExerciseCategory(exerciseData.name || ex.name);
+                                                    const category = exerciseData.category || ex.category || getExerciseCategory(exerciseData?.name || ex?.name);
                                                     const catColor = CATEGORY_COLORS[category] || '#94A3B8';
 
-                                                    const exName = (exerciseData.name || ex.name || '').toLowerCase();
+                                                    const exName = (exerciseData?.name || ex?.name || '').toLowerCase();
                                                     const isWarmup = category === 'Warm Up' || category === 'Drills' || exName.includes('warm up') || exName.includes('warmup') || exName.includes('drill');
 
                                                     const hasExistingLogData = Boolean(
@@ -1141,9 +1141,9 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                             >
                                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                                                                     <div style={{ width: 3, height: 20, borderRadius: 2, background: catColor }} />
-                                                                    <span style={{ fontSize: '1rem', color: '#fff', fontWeight: 600 }}>{exerciseData.name || ex.name}</span>
+                                                                    <span style={{ fontSize: '1rem', color: '#fff', fontWeight: 600 }}>{exerciseData?.name || ex?.name}</span>
                                                                     {(() => {
-                                                                        const planned = plannedTopSets[sKey]?.[exerciseData.name || ex.name];
+                                                                        const planned = plannedTopSets[sKey]?.[exerciseData?.name || ex?.name];
                                                                         if (!planned || (!planned.weight && !planned.reps)) return null;
                                                                         return (
                                                                             <span style={{
@@ -1175,7 +1175,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                 <div style={{ padding: '0 8px 16px 8px' }}>
                                                                     {/* Planned top set banner */}
                                                                     {(() => {
-                                                                        const planned = plannedTopSets[sKey]?.[exerciseData.name || ex.name];
+                                                                        const planned = plannedTopSets[sKey]?.[exerciseData?.name || ex?.name];
                                                                         if (!planned || (!planned.weight && !planned.reps)) return null;
                                                                         return (
                                                                             <div style={{
@@ -1233,7 +1233,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                         <div style={{ fontSize: '0.85rem', color: '#818cf8', fontWeight: 500 }}>
                                                                             <span style={{ color: 'var(--foreground)' }}>Session: </span>
                                                                             {(() => {
-                                                                                const prevForHeader = getPrevSets(exerciseData.name || ex.name, sKey);
+                                                                                const prevForHeader = getPrevSets(exerciseData?.name || ex?.name, sKey);
                                                                                 const prevDateLabel = (() => { const raw = prevForHeader?.date; if (!raw) return null; const d = new Date(raw.slice(0, 10)); return isNaN(d.getTime()) ? null : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); })();
                                                                                 return prevDateLabel ? `${prevDateLabel} - Prev` : 'New - Prev';
                                                                             })()}
@@ -1281,7 +1281,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                         />
                                                                     </div>
                                                                     {(() => {
-                                                                        const prevForHeader = getPrevSets(exerciseData.name || ex.name, sKey);
+                                                                        const prevForHeader = getPrevSets(exerciseData?.name || ex?.name, sKey);
                                                                         const prevDateLabel = (() => { const raw = prevForHeader?.date; if (!raw) return null; const d = new Date(raw.slice(0, 10)); return isNaN(d.getTime()) ? null : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); })();
                                                                         const hasPrev = !!prevForHeader;
                                                                         const currentTab = activeTabs[exKey] || 'actual';
@@ -1337,7 +1337,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                             setTimeout(() => updateExerciseUnit(sKey, exIdx, 'lbs', program.id), 50);
                                                                                         } else updateExerciseUnit(sKey, exIdx, 'lbs', program.id);
                                                                                     }}
-                                                                                    style={{ padding: '2px 6px', fontSize: '0.65rem', borderRadius: 10, background: (exerciseData.unit || unit) === 'lbs' ? 'var(--primary)' : 'transparent', color: (exerciseData.unit || unit) === 'lbs' ? '#000' : 'var(--secondary-foreground)', fontWeight: (exerciseData.unit || unit) === 'lbs' ? 700 : 500, transition: 'all 0.2s' }}
+                                                                                    style={{ padding: '2px 6px', fontSize: '0.65rem', borderRadius: 10, background: (exerciseData?.unit || unit) === 'lbs' ? 'var(--primary)' : 'transparent', color: (exerciseData?.unit || unit) === 'lbs' ? '#000' : 'var(--secondary-foreground)', fontWeight: (exerciseData?.unit || unit) === 'lbs' ? 700 : 500, transition: 'all 0.2s' }}
                                                                                 >
                                                                                     lbs
                                                                                 </div>
@@ -1348,7 +1348,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                             setTimeout(() => updateExerciseUnit(sKey, exIdx, 'kg', program.id), 50);
                                                                                         } else updateExerciseUnit(sKey, exIdx, 'kg', program.id);
                                                                                     }}
-                                                                                    style={{ padding: '2px 6px', fontSize: '0.65rem', borderRadius: 10, background: (exerciseData.unit || unit) === 'kg' ? 'var(--primary)' : 'transparent', color: (exerciseData.unit || unit) === 'kg' ? '#000' : 'var(--secondary-foreground)', fontWeight: (exerciseData.unit || unit) === 'kg' ? 700 : 500, transition: 'all 0.2s' }}
+                                                                                    style={{ padding: '2px 6px', fontSize: '0.65rem', borderRadius: 10, background: (exerciseData?.unit || unit) === 'kg' ? 'var(--primary)' : 'transparent', color: (exerciseData?.unit || unit) === 'kg' ? '#000' : 'var(--secondary-foreground)', fontWeight: (exerciseData?.unit || unit) === 'kg' ? 700 : 500, transition: 'all 0.2s' }}
                                                                                 >
                                                                                     kg
                                                                                 </div>
@@ -1362,7 +1362,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                     {sets.map((set: any, setIdx: number) => {
                                                                         const target = isEdit ? set.target : set;
                                                                         const actual = isEdit ? set.actual : { weight: '', reps: '', rpe: '' };
-                                                                        const prev = getPrevSets(exerciseData.name || ex.name, sKey);
+                                                                        const prev = getPrevSets(exerciseData?.name || ex?.name, sKey);
                                                                         const prevSet = prev?.sets?.[setIdx];
                                                                         const currentTab = activeTabs[exKey] || 'actual';
 
@@ -1406,7 +1406,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                         />
                                                                                                         {f === 'weight' && (
                                                                                                             <span style={{ position: 'absolute', right: '10px', fontSize: '0.75rem', color: 'var(--secondary-foreground)', opacity: 0.6, pointerEvents: 'none' }}>
-                                                                                                                {exerciseData.unit || unit}
+                                                                                                                {exerciseData?.unit || unit}
                                                                                                             </span>
                                                                                                         )}
                                                                                                     </div>
@@ -1469,7 +1469,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                     {(() => {
                                                                         const effectiveSets = (editState[sKey]?.[exIdx]?.sets || []).length > 0
                                                                             ? (editState[sKey]?.[exIdx]?.sets || [])
-                                                                            : (log?.exercises?.find((l: any) => l.exerciseId === ex.id || l.name === ex.name)?.sets || []).map((s: any) => ({
+                                                                            : (log?.exercises?.find((l: any) => l.exerciseId === ex?.id || l.name === ex?.name)?.sets || []).map((s: any) => ({
                                                                                 actual: { weight: s.weight ? String(s.weight) : '', reps: s.reps || '', rpe: s.rpe || '' }
                                                                             }));
                                                                         const prDate = log?.date ? String(log.date).split('T')[0] : (sessionMetaRef.current[sKey]?.scheduledDate || selectedDate);
@@ -1483,20 +1483,20 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                         <ExerciseFeedback
                                                                                             athleteId={athleteId}
                                                                                             coachId={coachId || ''}
-                                                                                            exerciseName={exerciseData.name || ex.name}
+                                                                                            exerciseName={exerciseData?.name || ex?.name}
                                                                                             weekNum={weekDisplayNum}
                                                                                             dayNum={sessionNum}
                                                                                             blockName={program.name}
                                                                                             sessionId={sKey}
-                                                                                            unit={exerciseData.unit || unit}
+                                                                                            unit={exerciseData?.unit || unit}
                                                                                             sets={effectiveSets.map((s: any, i: number) => ({ setNumber: i + 1, actual: s.actual || { weight: '', reps: '', rpe: '' } }))}
                                                                                         />
                                                                                         {!isCoachView && (
                                                                                             <PRToggle
                                                                                                 athleteId={athleteId}
-                                                                                                exerciseName={exerciseData.name || ex.name}
+                                                                                                exerciseName={exerciseData?.name || ex?.name}
                                                                                                 sets={effectiveSets.map((s: any) => (s.actual || { weight: '', reps: '', rpe: '' }))}
-                                                                                                unit={exerciseData.unit || unit}
+                                                                                                unit={exerciseData?.unit || unit}
                                                                                                 sessionId={sKey}
                                                                                                 programName={program.name}
                                                                                                 weekNum={weekDisplayNum}
@@ -1505,7 +1505,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                             />
                                                                                         )}
                                                                                         <ClipCreator
-                                                                                            exerciseName={exerciseData.name || ex.name}
+                                                                                            exerciseName={exerciseData?.name || ex?.name}
                                                                                             sets={effectiveSets.map((s: any) => ({
                                                                                                 weight: s.actual?.weight || '',
                                                                                                 reps: s.actual?.reps || '',
@@ -1520,7 +1520,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                         {/* Stats Panel */}
                                                                         <div style={{ border: '1px solid rgba(148,163,184,0.2)', borderRadius: '12px', padding: '16px', background: 'rgba(148,163,184,0.03)' }}>
                                                                             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '0.9rem' }}>
-                                                                                <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>E1RM: {toDisplay(maxE1RM)} {exerciseData.unit || unit}</div>
+                                                                                <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>E1RM: {toDisplay(maxE1RM)} {exerciseData?.unit || unit}</div>
                                                                                 <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>Total SI: {exStress.total.toFixed(2)}</div>
                                                                                 <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>Peripheral SI: {exStress.peripheral.toFixed(2)}</div>
                                                                                 <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>Central SI: {exStress.central.toFixed(2)}</div>
@@ -1646,12 +1646,12 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                 const esData = editState[sKey];
 
                                 exData.forEach((ex: any) => {
-                                    bTotalSets += Array.isArray(ex.sets) ? ex.sets.length : 0;
+                                    bTotalSets += Array.isArray(ex?.sets) ? ex?.sets.length : 0;
                                 });
 
                                 if (esData) {
                                     esData.forEach((ex: any) => {
-                                        (ex.sets || []).forEach((set: any) => {
+                                        (ex?.sets || []).forEach((set: any) => {
                                             const a = set.actual || {};
                                             if (a.weight || a.reps) bFilledSets++;
                                         });
@@ -1920,7 +1920,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                 const isEdit = !!editState[sKey];
                                                                 const exerciseData = isEdit ? editState[sKey][exIdx] : ex;
                                                                 if (!exerciseData) return null;
-                                                                const sets = isEdit ? exerciseData.sets : (Array.isArray(ex.sets) ? ex.sets : []);
+                                                                const sets = isEdit ? exerciseData.sets : (Array.isArray(ex?.sets) ? ex?.sets : []);
                                                                 const exKey = `${sKey}-ex${exIdx}`;
                                                                 const exOpen = openExercises.has(exKey);
 
@@ -1953,8 +1953,8 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                     }
                                                                 });
 
-                                                                const category = exerciseData.category || ex.category || getExerciseCategory(exerciseData.name || ex.name);
-                                                                const exName = (exerciseData.name || ex.name || '').toLowerCase();
+                                                                const category = exerciseData.category || ex.category || getExerciseCategory(exerciseData?.name || ex?.name);
+                                                                const exName = (exerciseData?.name || ex?.name || '').toLowerCase();
                                                                 const isWarmup = category === 'Warm Up' || category === 'Drills' || exName.includes('warm up') || exName.includes('warmup') || exName.includes('drill');
                                                                 
                                                                 const hasExistingLogData = Boolean(
@@ -1978,9 +1978,9 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                             style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'rgba(255,255,255,0.06)', cursor: 'pointer', borderTopLeftRadius: exIdx === 0 ? 8 : 0, borderTopRightRadius: exIdx === 0 ? 8 : 0, borderBottom: '1px solid var(--card-border)' }}
                                                                         >
                                                                             <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                                                                                <span style={{ fontSize: '1rem', color: '#fff', fontWeight: 600 }}>{exerciseData.name || ex.name}</span>
+                                                                                <span style={{ fontSize: '1rem', color: '#fff', fontWeight: 600 }}>{exerciseData?.name || ex?.name}</span>
                                                                                 {(() => {
-                                                                                    const planned = plannedTopSets[sKey]?.[exerciseData.name || ex.name];
+                                                                                    const planned = plannedTopSets[sKey]?.[exerciseData?.name || ex?.name];
                                                                                     if (!planned || (!planned.weight && !planned.reps)) return null;
                                                                                     return (
                                                                                         <span style={{
@@ -2013,7 +2013,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                             <div style={{ padding: '0 8px 16px 8px' }}>
                                                                                 {/* Planned top set banner */}
                                                                                 {(() => {
-                                                                                    const planned = plannedTopSets[sKey]?.[exerciseData.name || ex.name];
+                                                                                    const planned = plannedTopSets[sKey]?.[exerciseData?.name || ex?.name];
                                                                                     if (!planned || (!planned.weight && !planned.reps)) return null;
                                                                                     return (
                                                                                         <div style={{
@@ -2071,7 +2071,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                     <div style={{ fontSize: '0.85rem', color: '#818cf8', fontWeight: 500 }}>
                                                                                         <span style={{ color: 'var(--foreground)' }}>Session: </span>
                                                                                         {(() => {
-                                                                                            const prevForHeader = getPrevSets(exerciseData.name || ex.name, sKey);
+                                                                                            const prevForHeader = getPrevSets(exerciseData?.name || ex?.name, sKey);
                                                                                             const prevDateLabel = (() => { const raw = prevForHeader?.date; if (!raw) return null; const d = new Date(raw.slice(0, 10)); return isNaN(d.getTime()) ? null : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); })();
                                                                                             return prevDateLabel ? `${prevDateLabel} - Prev` : 'New - Prev';
                                                                                         })()}
@@ -2120,7 +2120,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                 </div>
                                                                                 {/* TAB BAR */}
                                                                                 {(() => {
-                                                                                    const prevForHeader = getPrevSets(exerciseData.name || ex.name, sKey);
+                                                                                    const prevForHeader = getPrevSets(exerciseData?.name || ex?.name, sKey);
                                                                                     const prevDateLabel = (() => { const raw = prevForHeader?.date; if (!raw) return null; const d = new Date(raw.slice(0, 10)); return isNaN(d.getTime()) ? null : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); })();
                                                                                     const hasPrev = !!prevForHeader;
                                                                                     const currentTab = activeTabs[exKey] || 'actual';
@@ -2176,7 +2176,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                         setTimeout(() => updateExerciseUnit(sKey, exIdx, 'lbs', program.id), 50);
                                                                                                     } else updateExerciseUnit(sKey, exIdx, 'lbs', program.id);
                                                                                                 }}
-                                                                                                style={{ padding: '2px 6px', fontSize: '0.65rem', borderRadius: 10, background: (exerciseData.unit || unit) === 'lbs' ? 'var(--primary)' : 'transparent', color: (exerciseData.unit || unit) === 'lbs' ? '#000' : 'var(--secondary-foreground)', fontWeight: (exerciseData.unit || unit) === 'lbs' ? 700 : 500, transition: 'all 0.2s' }}
+                                                                                                style={{ padding: '2px 6px', fontSize: '0.65rem', borderRadius: 10, background: (exerciseData?.unit || unit) === 'lbs' ? 'var(--primary)' : 'transparent', color: (exerciseData?.unit || unit) === 'lbs' ? '#000' : 'var(--secondary-foreground)', fontWeight: (exerciseData?.unit || unit) === 'lbs' ? 700 : 500, transition: 'all 0.2s' }}
                                                                                             >
                                                                                                 lbs
                                                                                             </div>
@@ -2187,7 +2187,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                         setTimeout(() => updateExerciseUnit(sKey, exIdx, 'kg', program.id), 50);
                                                                                                     } else updateExerciseUnit(sKey, exIdx, 'kg', program.id);
                                                                                                 }}
-                                                                                                style={{ padding: '2px 6px', fontSize: '0.65rem', borderRadius: 10, background: (exerciseData.unit || unit) === 'kg' ? 'var(--primary)' : 'transparent', color: (exerciseData.unit || unit) === 'kg' ? '#000' : 'var(--secondary-foreground)', fontWeight: (exerciseData.unit || unit) === 'kg' ? 700 : 500, transition: 'all 0.2s' }}
+                                                                                                style={{ padding: '2px 6px', fontSize: '0.65rem', borderRadius: 10, background: (exerciseData?.unit || unit) === 'kg' ? 'var(--primary)' : 'transparent', color: (exerciseData?.unit || unit) === 'kg' ? '#000' : 'var(--secondary-foreground)', fontWeight: (exerciseData?.unit || unit) === 'kg' ? 700 : 500, transition: 'all 0.2s' }}
                                                                                             >
                                                                                                 kg
                                                                                             </div>
@@ -2202,7 +2202,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                 {sets.map((set: any, setIdx: number) => {
                                                                                     const target = isEdit ? set.target : set;
                                                                                     const actual = isEdit ? set.actual : { weight: '', reps: '', rpe: '' };
-                                                                                    const prev = getPrevSets(exerciseData.name || ex.name, sKey);
+                                                                                    const prev = getPrevSets(exerciseData?.name || ex?.name, sKey);
                                                                                     const prevSet = prev?.sets?.[setIdx];
                                                                                     const currentTab = activeTabs[exKey] || 'actual';
 
@@ -2246,7 +2246,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                                     />
                                                                                                                     {f === 'weight' && (
                                                                                                                         <span style={{ position: 'absolute', right: '10px', fontSize: '0.75rem', color: 'var(--secondary-foreground)', opacity: 0.6, pointerEvents: 'none' }}>
-                                                                                                                            {exerciseData.unit || unit}
+                                                                                                                            {exerciseData?.unit || unit}
                                                                                                                         </span>
                                                                                                                     )}
                                                                                                                 </div>
@@ -2311,7 +2311,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                 {(() => {
                                                                                     const effectiveSets = (editState[sKey]?.[exIdx]?.sets || []).length > 0
                                                                                         ? (editState[sKey]?.[exIdx]?.sets || [])
-                                                                                        : (log?.exercises?.find((l: any) => l.exerciseId === ex.id || l.name === ex.name)?.sets || []).map((s: any) => ({
+                                                                                        : (log?.exercises?.find((l: any) => l.exerciseId === ex?.id || l.name === ex?.name)?.sets || []).map((s: any) => ({
                                                                                             actual: { weight: s.weight ? String(s.weight) : '', reps: s.reps || '', rpe: s.rpe || '' }
                                                                                         }));
                                                                                     const prDate = log?.date ? String(log.date).split('T')[0] : (sessionMetaRef.current[sKey]?.scheduledDate || new Date().toISOString().split('T')[0]);
@@ -2325,20 +2325,20 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                     <ExerciseFeedback
                                                                                                         athleteId={athleteId}
                                                                                                         coachId={coachId || ''}
-                                                                                                        exerciseName={exerciseData.name || ex.name}
+                                                                                                        exerciseName={exerciseData?.name || ex?.name}
                                                                                                         weekNum={weekDisplayNum}
                                                                                                         dayNum={sessionNum}
                                                                                                         blockName={program.name}
                                                                                                         sessionId={sKey}
-                                                                                                        unit={exerciseData.unit || unit}
+                                                                                                        unit={exerciseData?.unit || unit}
                                                                                                         sets={effectiveSets.map((s: any, i: number) => ({ setNumber: i + 1, actual: s.actual || { weight: '', reps: '', rpe: '' } }))}
                                                                                                     />
                                                                                                     {!isCoachView && (
                                                                                                         <PRToggle
                                                                                                             athleteId={athleteId}
-                                                                                                            exerciseName={exerciseData.name || ex.name}
+                                                                                                            exerciseName={exerciseData?.name || ex?.name}
                                                                                                             sets={effectiveSets.map((s: any) => (s.actual || { weight: '', reps: '', rpe: '' }))}
-                                                                                                            unit={exerciseData.unit || unit}
+                                                                                                            unit={exerciseData?.unit || unit}
                                                                                                             sessionId={sKey}
                                                                                                             programName={program.name}
                                                                                                             weekNum={weekDisplayNum}
@@ -2347,7 +2347,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                         />
                                                                                                     )}
                                                                                                     <ClipCreator
-                                                                                                        exerciseName={exerciseData.name || ex.name}
+                                                                                                        exerciseName={exerciseData?.name || ex?.name}
                                                                                                         sets={effectiveSets.map((s: any) => ({
                                                                                                             weight: s.actual?.weight || '',
                                                                                                             reps: s.actual?.reps || '',
@@ -2362,7 +2362,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                             {/* Stats Panel */}
                                                                                             <div style={{ border: '1px solid rgba(148,163,184,0.2)', borderRadius: '12px', padding: '16px', background: 'rgba(148,163,184,0.03)' }}>
                                                                                                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '0.9rem' }}>
-                                                                                                    <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>E1RM: {toDisplay(maxE1RM)} {exerciseData.unit || unit}</div>
+                                                                                                    <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>E1RM: {toDisplay(maxE1RM)} {exerciseData?.unit || unit}</div>
                                                                                                     <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>Total SI: {exStress.total.toFixed(2)}</div>
                                                                                                     <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>Peripheral SI: {exStress.peripheral.toFixed(2)}</div>
                                                                                                     <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>Central SI: {exStress.central.toFixed(2)}</div>
@@ -2505,14 +2505,14 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                             {/* Exercise Cards */}
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                                                 {(sess.exercises || []).map((ex: any, exIdx: number) => {
-                                                    const category = ex.category || getExerciseCategory(ex.name);
+                                                    const category = ex.category || getExerciseCategory(ex?.name);
                                                     const color = CATEGORY_COLORS[category] || '#94A3B8';
-                                                    const setsSummary = formatSetsSummary(ex.sets);
+                                                    const setsSummary = formatSetsSummary(ex?.sets);
                                                     const targetSessionId = `${weekDrawer.programId}_w${weekDrawer.weekNum}_d${sess.day}`;
 
                                                     return (
                                                         <div
-                                                            key={ex.id || exIdx}
+                                                            key={ex?.id || exIdx}
                                                             onClick={() => {
                                                                 setWeekDrawer(null);
                                                                 // Open the session in ScheduleView
@@ -2546,7 +2546,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                     color: color,
                                                                     marginBottom: '2px'
                                                                 }}>
-                                                                    {ex.name}
+                                                                    {ex?.name}
                                                                 </div>
                                                                 <div style={{
                                                                     fontSize: '0.8rem',
