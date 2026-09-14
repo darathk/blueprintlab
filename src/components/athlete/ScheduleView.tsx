@@ -269,7 +269,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
 
     // Filter and sort programs
     const filteredPrograms = useMemo(() => {
-        let result = [...programs];
+        let result = [...(programs || [])];
 
         // Search filter
         if (searchQuery.trim()) {
@@ -1082,7 +1082,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                     const isEdit = !!editState[sKey];
                                                     const exerciseData = isEdit ? editState[sKey][exIdx] : ex;
                                                     if (!exerciseData) return null;
-                                                    const sets = isEdit ? exerciseData.sets : (Array.isArray(ex?.sets) ? ex?.sets : []);
+                                                    const sets = isEdit ? (exerciseData?.sets || []) : (Array.isArray(ex?.sets) ? ex?.sets : []);
                                                     const exKey = `${sKey}-ex${exIdx}`;
                                                     const exOpen = openExercises.has(exKey);
 
@@ -1114,7 +1114,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                         }
                                                     });
 
-                                                    const category = exerciseData.category || ex.category || getExerciseCategory(exerciseData?.name || ex?.name);
+                                                    const category = exerciseData?.category || ex?.category || getExerciseCategory(exerciseData?.name || ex?.name);
                                                     const catColor = CATEGORY_COLORS[category] || '#94A3B8';
 
                                                     const exName = (exerciseData?.name || ex?.name || '').toLowerCase();
@@ -1247,7 +1247,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                     </div>
 
                                                                     {/* Coach's notes banner */}
-                                                                    {(ex.notes || exerciseData.coachNotes) && (
+                                                                    {(ex?.notes || exerciseData?.coachNotes) && (
                                                                         <div style={{
                                                                             padding: '10px 14px',
                                                                             marginBottom: 10,
@@ -1261,14 +1261,14 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                             <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#818cf8', marginBottom: 3 }}>
                                                                                 Coach Notes
                                                                             </div>
-                                                                            <div>{linkify(ex.notes || exerciseData.coachNotes)}</div>
+                                                                            <div>{linkify(ex?.notes || exerciseData?.coachNotes)}</div>
                                                                         </div>
                                                                     )}
 
                                                                     {/* Athlete notes input */}
                                                                     <div style={{ display: 'flex', padding: '0 0 8px 0', alignItems: 'flex-start' }}>
                                                                         <textarea
-                                                                            value={exerciseData.notes || ''}
+                                                                            value={exerciseData?.notes || ''}
                                                                             onChange={e => updateNotes(sKey, exIdx, e.target.value, program.id)}
                                                                             onBlur={() => triggerAutoSave(sKey, program.id)}
                                                                             onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
@@ -1920,7 +1920,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                 const isEdit = !!editState[sKey];
                                                                 const exerciseData = isEdit ? editState[sKey][exIdx] : ex;
                                                                 if (!exerciseData) return null;
-                                                                const sets = isEdit ? exerciseData.sets : (Array.isArray(ex?.sets) ? ex?.sets : []);
+                                                                const sets = isEdit ? (exerciseData?.sets || []) : (Array.isArray(ex?.sets) ? ex?.sets : []);
                                                                 const exKey = `${sKey}-ex${exIdx}`;
                                                                 const exOpen = openExercises.has(exKey);
 
@@ -1953,7 +1953,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                     }
                                                                 });
 
-                                                                const category = exerciseData.category || ex.category || getExerciseCategory(exerciseData?.name || ex?.name);
+                                                                const category = exerciseData?.category || ex?.category || getExerciseCategory(exerciseData?.name || ex?.name);
                                                                 const exName = (exerciseData?.name || ex?.name || '').toLowerCase();
                                                                 const isWarmup = category === 'Warm Up' || category === 'Drills' || exName.includes('warm up') || exName.includes('warmup') || exName.includes('drill');
                                                                 
@@ -2085,7 +2085,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                 </div>
 
                                                                                 {/* Coach's notes banner */}
-                                                                                {(ex.notes || exerciseData.coachNotes) && (
+                                                                                {(ex?.notes || exerciseData?.coachNotes) && (
                                                                                     <div style={{
                                                                                         padding: '10px 14px',
                                                                                         marginBottom: 10,
@@ -2099,14 +2099,14 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                         <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#818cf8', marginBottom: 3 }}>
                                                                                             Coach Notes
                                                                                         </div>
-                                                                                        <div>{linkify(ex.notes || exerciseData.coachNotes)}</div>
+                                                                                        <div>{linkify(ex?.notes || exerciseData?.coachNotes)}</div>
                                                                                     </div>
                                                                                 )}
 
                                                                                 {/* Athlete notes input */}
                                                                                 <div style={{ display: 'flex', padding: '0 0 8px 0', alignItems: 'flex-start' }}>
                                                                                     <textarea
-                                                                                        value={exerciseData.notes || ''}
+                                                                                        value={exerciseData?.notes || ''}
                                                                                         onChange={e => updateNotes(sKey, exIdx, e.target.value, program.id)}
                                                                                         onBlur={() => triggerAutoSave(sKey, program.id)}
                                                                                         onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
@@ -2479,7 +2479,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                         const sDate = parseLocalDate(sess.scheduledDate);
                                         dayName = sDate.toLocaleDateString('en-US', { weekday: 'long' });
                                     } else if (weekDrawer.programId) {
-                                        const prog = programs.find(p => p.id === weekDrawer.programId);
+                                        const prog = (programs || []).find((p: any) => p.id === weekDrawer.programId);
                                         if (prog?.startDate) {
                                             const start = parseLocalDate(prog.startDate);
                                             const sessionDate = new Date(start);
@@ -2505,7 +2505,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                             {/* Exercise Cards */}
                                             <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
                                                 {(sess.exercises || []).map((ex: any, exIdx: number) => {
-                                                    const category = ex.category || getExerciseCategory(ex?.name);
+                                                    const category = ex?.category || getExerciseCategory(ex?.name);
                                                     const color = CATEGORY_COLORS[category] || '#94A3B8';
                                                     const setsSummary = formatSetsSummary(ex?.sets);
                                                     const targetSessionId = `${weekDrawer.programId}_w${weekDrawer.weekNum}_d${sess.day}`;

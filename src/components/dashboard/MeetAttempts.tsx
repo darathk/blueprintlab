@@ -244,11 +244,11 @@ export default function MeetAttempts({
     
     // Determine the database IDs based on who is viewing (athlete vs coach)
     const isAthleteView = pathname?.startsWith('/athlete');
-    const dbCurrentUserId = isAthleteView ? athlete.id : athlete.coachId;
-    const dbOtherUserId = isAthleteView ? athlete.coachId : athlete.id;
+    const dbCurrentUserId = isAthleteView ? athlete?.id : athlete?.coachId;
+    const dbOtherUserId = isAthleteView ? athlete?.coachId : athlete?.id;
 
     const [chatOpen, setChatOpen] = useState(false);
-    const [data, setData] = useState<MeetData>(() => migrateData(athlete.meetAttempts));
+    const [data, setData] = useState<MeetData>(() => migrateData(athlete?.meetAttempts));
     const [saving, setSaving] = useState(false);
     const [saved, setSaved] = useState(false);
     const [savingHistory, setSavingHistory] = useState(false);
@@ -256,10 +256,10 @@ export default function MeetAttempts({
 
     // Meet day meta
     const [meetMeta, setMeetMeta] = useState<MeetDayMeta>(() => ({
-        meetName: data.meetDay?.meetName || athlete.nextMeetName || '',
-        meetDate: data.meetDay?.meetDate || athlete.nextMeetDate || '',
+        meetName: data.meetDay?.meetName || athlete?.nextMeetName || '',
+        meetDate: data.meetDay?.meetDate || athlete?.nextMeetDate || '',
         bodyweight: data.meetDay?.bodyweight || '',
-        federation: data.meetDay?.federation || athlete.federation || 'IPF',
+        federation: data.meetDay?.federation || athlete?.federation || 'IPF',
     }));
 
     const [activeTab, setActiveTab] = useState<'attempts' | 'scout'>('attempts');

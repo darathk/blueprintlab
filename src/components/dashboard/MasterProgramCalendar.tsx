@@ -39,8 +39,9 @@ export default function MasterProgramCalendar({
 
     // Filter programs for this athlete if athleteId is provided
     const athletePrograms = useMemo(() => {
-        if (!athleteId) return programs;
-        const filtered = programs.filter(p => p.athleteId === athleteId);
+        const safePrograms = Array.isArray(programs) ? programs : [];
+        if (!athleteId) return safePrograms;
+        const filtered = safePrograms.filter(p => p?.athleteId === athleteId);
 
         // Prioritize current/active program first, then by start date descending
         return filtered.sort((a, b) => {

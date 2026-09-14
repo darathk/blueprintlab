@@ -75,7 +75,7 @@ function getAllTimePRs(pastMeets: any[]): AllTimePRs | null {
 
 export default function HistoricalPerformance({ athlete }) {
     const router = useRouter();
-    const [pastMeets, setPastMeets] = useState<PastMeet[]>(athlete.pastMeets || []);
+    const [pastMeets, setPastMeets] = useState<PastMeet[]>(Array.isArray(athlete?.pastMeets) ? athlete.pastMeets : []);
     const [isUploading, setIsUploading] = useState(false);
     const [error, setError] = useState('');
 
@@ -92,7 +92,7 @@ export default function HistoricalPerformance({ athlete }) {
     // Chart toggles & units
     const [activeLines, setActiveLines] = useState({ squat: true, bench: true, deadlift: true, total: true, dots: true });
     const [unit, setUnit] = useState<'kg' | 'lbs'>('kg');
-    const allTimePRs = useMemo(() => getAllTimePRs(pastMeets), [pastMeets]);
+    const allTimePRs = useMemo(() => getAllTimePRs(Array.isArray(pastMeets) ? pastMeets : []), [pastMeets]);
 
     const CHART_COLORS = {
         squat: '#7d87d2',
@@ -104,7 +104,8 @@ export default function HistoricalPerformance({ athlete }) {
 
     const chartData = useMemo(() => {
         const mult = unit === 'lbs' ? 2.20462 : 1;
-        return [...pastMeets].reverse().map(m => ({
+        const safeMeets = Array.isArray(pastMeets) ? pastMeets : [];
+        return [...safeMeets].reverse().map(m => ({
             ...m,
             // Convert to display unit
             squatDisp: Math.round((m.squat || 0) * mult * 10) / 10,
@@ -135,7 +136,7 @@ export default function HistoricalPerformance({ athlete }) {
 
         // athlete.gender might be needed for perfect DOTs 
         // default to 'male' if unspecified in athlete object for calculation fallback
-        const gender = athlete.gender === 'female' ? 'female' : 'male';
+        const gender = athlete?.gender === 'female' ? 'female' : 'male';
         const dots = total > 0 && bw > 0 ? calculateDots(total, bw, gender) : 0;
 
         const meetEntry: PastMeet = {

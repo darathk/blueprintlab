@@ -7,16 +7,16 @@ import SessionDetailsModal from './SessionDetailsModal';
 
 export default function AthleteCalendarContainer({ programs, athleteId, currentProgramId, logs = [], travelEvents = [], nextMeetDate = null }) {
     const [selectedSession, setSelectedSession] = useState(null);
-    const [localLogs, setLocalLogs] = useState(logs);
-    const [localTravelDates, setLocalTravelDates] = useState(travelEvents.map(e => e.date));
+    const [localLogs, setLocalLogs] = useState(logs || []);
+    const [localTravelDates, setLocalTravelDates] = useState((travelEvents || []).map(e => e.date));
     const router = useRouter();
 
     useEffect(() => {
-        setLocalLogs(logs);
+        setLocalLogs(logs || []);
     }, [logs]);
 
     useEffect(() => {
-        setLocalTravelDates(travelEvents.map(e => e.date));
+        setLocalTravelDates((travelEvents || []).map(e => e.date));
     }, [travelEvents]);
 
     const handleToggleTravel = async (date) => {

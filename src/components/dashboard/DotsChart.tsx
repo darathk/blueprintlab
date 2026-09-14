@@ -322,7 +322,7 @@ export default function DotsChart({ athleteId, logs, programs = [], initialGende
                                     onChange={(e) => setSelectedProgramId(e.target.value)}
                                 >
                                     <option value="ALL">All Missions</option>
-                                    {programs && [...programs].sort((a, b) => {
+                                    {Array.isArray(programs) && [...programs].sort((a, b) => {
                                         const dateA = new Date(a.startDate || a.createdAt || 0).getTime();
                                         const dateB = new Date(b.startDate || b.createdAt || 0).getTime();
                                         return dateB - dateA;

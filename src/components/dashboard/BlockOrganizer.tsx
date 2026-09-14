@@ -12,9 +12,9 @@ export default function PeriodizationPlanner({ athlete }) {
     const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
     // Merged Competition Tracker State
-    const [meetName, setMeetName] = useState(athlete.nextMeetName || '');
+    const [meetName, setMeetName] = useState(athlete?.nextMeetName || '');
     const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
-    const [meetDate, setMeetDate] = useState(athlete.nextMeetDate || '');
+    const [meetDate, setMeetDate] = useState(athlete?.nextMeetDate || '');
 
     // Sync if athlete prop updates
     useEffect(() => {

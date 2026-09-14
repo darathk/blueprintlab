@@ -31,6 +31,22 @@ async function AthleteData({ id }: { id: string }) {
         getTravelEventsByAthlete(id),
     ]);
 
+    if (!athlete) {
+        return (
+            <div style={{ padding: '3rem 1.5rem', textAlign: 'center', color: 'var(--secondary-foreground)' }}>
+                <h2 style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '0.5rem' }}>
+                    Athlete Not Found
+                </h2>
+                <p style={{ fontSize: '0.9rem', marginBottom: '1.5rem' }}>
+                    This athlete record may have been removed or does not exist.
+                </p>
+                <Link href="/dashboard" className="glass-button glass-button-primary chat-press" style={{ textDecoration: 'none', display: 'inline-block' }}>
+                    ← Back to Command Center
+                </Link>
+            </div>
+        );
+    }
+
     return (
         <>
             {/* Header */}
