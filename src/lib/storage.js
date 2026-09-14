@@ -161,6 +161,7 @@ export const getProgramsByAthlete = cache(async (athleteId) => {
 export const getLogsByAthlete = cache(async (athleteId) => {
     const logs = await prisma.log.findMany({
         where: { program: { athleteId } },
+        orderBy: { date: 'desc' },
         select: {
             id: true,
             programId: true,

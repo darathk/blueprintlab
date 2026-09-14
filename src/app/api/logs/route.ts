@@ -32,7 +32,7 @@ export async function POST(request: Request) {
         // Ensure program exists and verify access
         const programRecord = await prisma.program.findUnique({
             where: { id: body.programId },
-            select: { id: true, athleteId: true }
+            select: { id: true, athleteId: true, weeks: true }
         });
 
         if (!programRecord) {
@@ -43,12 +43,35 @@ export async function POST(request: Request) {
         const access = await requireAccessToAthlete(programRecord.athleteId, auth);
         if ('error' in access) return access.error;
 
+        // Resolve canonical sessionId and legacyKey to prevent dual log divergence
+        let targetSessionId = body.sessionId;
+        let alternateKey: string | null = null;
+
+        if (Array.isArray(programRecord.weeks)) {
+            for (const w of (programRecord.weeks as any[])) {
+                for (const s of (w.sessions || [])) {
+                    const legacyKey = `${body.programId}_w${w.weekNumber}_d${s.day}`;
+                    if (s.id === body.sessionId) {
+                        // Saving with modern sKey; track legacyKey to clean up duplicate
+                        alternateKey = legacyKey !== s.id ? legacyKey : null;
+                        break;
+                    } else if (legacyKey === body.sessionId && s.id) {
+                        // Saving with legacyKey; redirect to modern sKey
+                        targetSessionId = s.id;
+                        alternateKey = legacyKey;
+                        break;
+                    }
+                }
+                if (alternateKey) break;
+            }
+        }
+
         const logId = body.id || randomUUID();
         await prisma.log.upsert({
             where: {
                 programId_sessionId: {
                     programId: body.programId,
-                    sessionId: body.sessionId
+                    sessionId: targetSessionId
                 }
             },
             update: {
@@ -59,16 +82,32 @@ export async function POST(request: Request) {
             create: {
                 id: logId,
                 programId: body.programId,
-                sessionId: body.sessionId,
+                sessionId: targetSessionId,
                 date: normalizedDate || new Date().toISOString(),
                 exercises: body.exercises,
                 ...(body.warmupDrills !== undefined && { warmupDrills: body.warmupDrills })
             }
         });
 
-        // Revalidate coach dashboard paths so updates reflect instantly
+        // Clean up any stale duplicate log stored under alternate key
+        if (alternateKey && alternateKey !== targetSessionId) {
+            await prisma.log.deleteMany({
+                where: {
+                    programId: body.programId,
+                    sessionId: alternateKey
+                }
+            }).catch(() => {});
+        }
+
+        // Revalidate coach dashboard and athlete dashboard paths
         revalidatePath(`/dashboard/athletes/${programRecord.athleteId}`);
         revalidatePath(`/dashboard`);
+        revalidatePath(`/athlete/${programRecord.athleteId}/dashboard`);
+        revalidatePath(`/athlete/${programRecord.athleteId}`);
+        revalidatePath(`/athlete/${programRecord.athleteId}/workout/${body.sessionId}`);
+        if (targetSessionId !== body.sessionId) {
+            revalidatePath(`/athlete/${programRecord.athleteId}/workout/${targetSessionId}`);
+        }
 
         return NextResponse.json({ success: true });
     } catch (error) {

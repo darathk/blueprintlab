@@ -197,7 +197,19 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
     // Celebration screen state
     const [celebration, setCelebration] = useState<{ sessionName: string } | null>(null);
     const celebratedSessionsRef = useRef<Set<string>>(new Set());
-    const sessionMetaRef = useRef<Record<string, { exercises: any[]; sessionName: string; scheduledDate?: string }>>({});
+    const sessionMetaRef = useRef<Record<string, { exercises: any[]; sessionName: string; scheduledDate?: string; legacyKey?: string }>>({});
+
+    // Robust session log lookup: checks both session.id and legacyKey, preferring the populated record
+    const findSessionLog = useCallback((sId?: string, legKey?: string, progId?: string) => {
+        if (!Array.isArray(logs) || !progId) return undefined;
+        const l1 = sId ? logs.find(l => l.sessionId === sId && l.programId === progId) : undefined;
+        const l2 = legKey && legKey !== sId ? logs.find(l => l.sessionId === legKey && l.programId === progId) : undefined;
+        if (l1 && l2) {
+            const countSets = (lg: any) => (lg?.exercises || []).reduce((acc: number, ex: any) => acc + (ex?.sets || []).filter((st: any) => st?.weight || st?.reps).length, 0);
+            return countSets(l1) >= countSets(l2) ? l1 : l2;
+        }
+        return l1 || l2;
+    }, [logs]);
 
     // Readiness gating: track which sessions have completed readiness
     // Coach view bypasses readiness entirely
@@ -433,7 +445,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
             }));
 
             const meta = sessionMetaRef.current[sKey];
-            const existingLog = Array.isArray(logs) ? logs.find((l: any) => l.sessionId === sKey && l.programId === programId) : undefined;
+            const existingLog = findSessionLog(sKey, meta?.legacyKey, programId);
             const logDate = existingLog?.date || meta?.scheduledDate || new Date().toISOString();
 
             const res = await fetch('/api/logs', {
@@ -909,12 +921,12 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                             {selectedDateSessions.map(({ program, weekNum, weekDisplayNum, session, sKey, legacyKey, isActive, isCurrent, sessionNum }) => {
                                 const exercises: any[] = Array.isArray(session.exercises) ? session.exercises : [];
-                                const log = Array.isArray(logs) ? logs.find(l => (l.sessionId === sKey || l.sessionId === legacyKey) && l.programId === program.id) : undefined;
+                                const log = findSessionLog(sKey, legacyKey, program.id);
                                 const progress = sessionProgress(exercises, log, editState[sKey]);
                                 const sessionOpen = openSessions.has(sKey);
 
                                 // Register session metadata for celebration detection
-                                sessionMetaRef.current[sKey] = { exercises, sessionName: session.name || `Session ${session.day}`, scheduledDate: selectedDate };
+                                sessionMetaRef.current[sKey] = { exercises, sessionName: session.name || `Session ${session.day}`, scheduledDate: selectedDate, legacyKey };
 
                                 return (
                                     <div key={sKey} id={`session-${sKey}`} className="glass-panel" style={{
@@ -1663,7 +1675,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                             wSessions.forEach((s: any) => {
                                 const sKey = sessionKey(program.id, w.weekNumber || 1, s.day || 1);
                                 const exData: any[] = Array.isArray(s.exercises) ? s.exercises : [];
-                                const log = Array.isArray(logs) ? logs.find(l => (l.sessionId === sKey || l.sessionId === s.id) && l.programId === program.id) : undefined;
+                                const log = findSessionLog(s.id, sKey, program.id);
                                 const esData = editState[sKey];
 
                                 exData.forEach((ex: any) => {
@@ -1800,15 +1812,16 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                         if (!session) return null;
                                         const day = session.day || 1;
                                         const sessionNum = sessionIndex + 1; // 1-based sequential session number
-                                        const sKey = sessionKey(program.id, weekNum, day);
+                                        const legacyKey = sessionKey(program.id, weekNum, day);
+                                        const sKey = session.id || legacyKey;
                                         const sessionOpen = openSessions.has(sKey);
                                         const exercises: any[] = Array.isArray(session.exercises) ? session.exercises : [];
-                                        const log = Array.isArray(logs) ? logs.find(l => (l.sessionId === sKey || l.sessionId === session.id) && l.programId === program.id) : undefined;
+                                        const log = findSessionLog(session.id, legacyKey, program.id);
                                         const progress = sessionProgress(exercises, log, editState[sKey]);
 
                                         // Register session metadata for celebration detection and saving
                                         const sessDateStr = resolveSessionDate(program.startDate, weekNum, day, session.scheduledDate);
-                                        sessionMetaRef.current[sKey] = { exercises, sessionName: session.name || `Session ${day}`, scheduledDate: sessDateStr };
+                                        sessionMetaRef.current[sKey] = { exercises, sessionName: session.name || `Session ${day}`, scheduledDate: sessDateStr, legacyKey };
 
                                         return (
                                                 <div style={{ marginBottom: sessionOpen ? 16 : 8 }}>

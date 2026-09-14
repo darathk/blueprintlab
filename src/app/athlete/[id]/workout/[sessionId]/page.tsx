@@ -49,11 +49,9 @@ export default async function WorkoutPage({ params }) {
 
     if (!session) return <div>Session not found</div>;
 
-    // Find existing log for this specific session
-    const existingLog = athleteLogs.find(l =>
-        l.programId === programId &&
-        l.sessionId === sessionId
-    );
+    // Find existing log for this specific session, preferring modern session.id over legacy key
+    const existingLog = (session.id ? athleteLogs.find(l => l.programId === programId && l.sessionId === session.id) : null)
+        || athleteLogs.find(l => l.programId === programId && l.sessionId === sessionId);
 
     // Pass all sessions in this week for the week overview drawer
     const weekSessions = (week?.sessions || []).filter((s: any) => Array.isArray(s.exercises) && s.exercises.length > 0);
@@ -91,7 +89,7 @@ export default async function WorkoutPage({ params }) {
                 athleteId={athleteId}
                 coachId={coachId}
                 programId={programId}
-                sessionId={sessionId}
+                sessionId={session.id || sessionId}
                 weekNum={weekDisplayNum}
                 dayNum={sessionNum}
                 blockName={program.name}
