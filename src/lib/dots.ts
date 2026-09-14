@@ -13,7 +13,8 @@ const COMPETITION_LIFT_NAMES: Record<'squat' | 'bench' | 'deadlift', string[]> =
     deadlift: ['deadlift', 'competition deadlift'],
 };
 
-export { calculateDots, lbsToKg, kgToLbs } from '@/lib/calculators';
+import { calculateDots, lbsToKg, kgToLbs } from '@/lib/calculators';
+export { calculateDots, lbsToKg, kgToLbs };
 
 /** Get the best E1RM for a given lift from one log entry */
 function getBestE1RMForLift(log: any, liftKey: 'squat' | 'bench' | 'deadlift'): number {
