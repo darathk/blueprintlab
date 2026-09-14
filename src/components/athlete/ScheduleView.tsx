@@ -109,6 +109,41 @@ function weekDateRangeFromDate(programStartDate: any, weekNumber: number): strin
     return `${fmt(weekStart)} – ${fmt(weekEnd)}`;
 }
 
+/** Safely resolves a session's date, falling back to weekNumber + day if scheduledDate is outside the week's boundaries */
+function resolveSessionDate(programStartDate: any, weekNumber: number, day: number, scheduledDate?: string): string {
+    if (!programStartDate) {
+        if (scheduledDate) return String(scheduledDate).split('T')[0];
+        return toDateStr(new Date());
+    }
+
+    const start = parseLocalDate(programStartDate);
+    const expected = new Date(start);
+    expected.setDate(expected.getDate() + (weekNumber - 1) * 7 + (day - 1));
+    const expectedStr = toDateStr(expected);
+
+    if (!scheduledDate) return expectedStr;
+
+    const candStr = String(scheduledDate).split('T')[0];
+    const candParts = candStr.split('-').map(Number);
+    if (candParts.length !== 3 || candParts.some(isNaN)) return expectedStr;
+
+    const candDate = new Date(candParts[0], candParts[1] - 1, candParts[2]);
+    candDate.setHours(0, 0, 0, 0);
+
+    const weekStart = new Date(start);
+    weekStart.setDate(weekStart.getDate() + (weekNumber - 1) * 7);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+
+    // If candidate date is within this week's window, use it
+    if (candDate >= weekStart && candDate <= weekEnd) {
+        return candStr;
+    }
+
+    // scheduledDate is outside this week's bounds (e.g. stale from duplicating week or shifted start date)
+    return expectedStr;
+}
+
 function sessionProgress(exercises: any[], log: any, editStateData?: any[]): number {
     const totalSets = exercises.reduce((s: number, ex: any) => s + (Array.isArray(ex?.sets) ? ex?.sets.length : 0), 0);
     if (!totalSets) return 0;
@@ -590,14 +625,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                     .filter((s: any) => Array.isArray(s.exercises) && s.exercises.length > 0);
                 sessions.forEach((session: any) => {
                     const day = session.day || 1;
-                    let ds: string;
-                    if (session.scheduledDate) {
-                        ds = String(session.scheduledDate).split('T')[0];
-                    } else {
-                        const d = new Date(start);
-                        d.setDate(d.getDate() + (wn - 1) * 7 + (day - 1));
-                        ds = toDateStr(d);
-                    }
+                    const ds = resolveSessionDate(program.startDate, wn, day, session.scheduledDate);
                     const [sy, sm, sd] = ds.split('-').map(Number);
                     const sessionDateObj = new Date(sy, sm - 1, sd);
                     sessionDateObj.setHours(0, 0, 0, 0);
@@ -620,14 +648,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                 const sortedSessions = [...sessions].sort((a: any, b: any) => (a?.day || 1) - (b?.day || 1));
                 sessions.forEach((session: any) => {
                     const day = session.day || 1;
-                    let ds: string;
-                    if (session.scheduledDate) {
-                        ds = String(session.scheduledDate).split('T')[0];
-                    } else {
-                        const d = new Date(start);
-                        d.setDate(d.getDate() + (wn - 1) * 7 + (day - 1));
-                        ds = toDateStr(d);
-                    }
+                    const ds = resolveSessionDate(program.startDate, wn, day, session.scheduledDate);
                     const legacyKey = sessionKey(program.id, wn, day);
                     const sKey = session.id || legacyKey;
                     // Compute calendar-week display number (1-based, only counting weeks with sessions)
@@ -1786,13 +1807,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                         const progress = sessionProgress(exercises, log, editState[sKey]);
 
                                         // Register session metadata for celebration detection and saving
-                                        let sessDateStr: string | undefined = session.scheduledDate ? String(session.scheduledDate).split('T')[0] : undefined;
-                                        if (!sessDateStr && program.startDate) {
-                                            const start = parseLocalDate(program.startDate);
-                                            const d = new Date(start);
-                                            d.setDate(d.getDate() + (weekNum - 1) * 7 + (day - 1));
-                                            sessDateStr = toDateStr(d);
-                                        }
+                                        const sessDateStr = resolveSessionDate(program.startDate, weekNum, day, session.scheduledDate);
                                         sessionMetaRef.current[sKey] = { exercises, sessionName: session.name || `Session ${day}`, scheduledDate: sessDateStr };
 
                                         return (
@@ -2474,19 +2489,10 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                 .filter((sess: any) => Array.isArray(sess.exercises) && sess.exercises.length > 0)
                                 .sort((a: any, b: any) => (a.day || 1) - (b.day || 1))
                                 .map((sess: any) => {
-                                    let dayName = DAY_NAMES[((sess.day || 1) - 1) % 7] || `Day ${sess.day}`;
-                                    if (sess.scheduledDate) {
-                                        const sDate = parseLocalDate(sess.scheduledDate);
-                                        dayName = sDate.toLocaleDateString('en-US', { weekday: 'long' });
-                                    } else if (weekDrawer.programId) {
-                                        const prog = (programs || []).find((p: any) => p.id === weekDrawer.programId);
-                                        if (prog?.startDate) {
-                                            const start = parseLocalDate(prog.startDate);
-                                            const sessionDate = new Date(start);
-                                            sessionDate.setDate(sessionDate.getDate() + (weekDrawer.weekNum - 1) * 7 + ((sess.day || 1) - 1));
-                                            dayName = sessionDate.toLocaleDateString('en-US', { weekday: 'long' });
-                                        }
-                                    }
+                                    const prog = (programs || []).find((p: any) => p.id === weekDrawer.programId);
+                                    const sessDateStr = resolveSessionDate(prog?.startDate, weekDrawer.weekNum, sess.day || 1, sess.scheduledDate);
+                                    const sDate = parseLocalDate(sessDateStr);
+                                    const dayName = sDate.toLocaleDateString('en-US', { weekday: 'long' });
                                     const fullLabel = sess.name ? `${dayName} — ${sess.name}` : dayName;
                                     return (
                                         <div key={sess.day} style={{ marginBottom: '1.25rem' }}>

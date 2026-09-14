@@ -44,6 +44,41 @@ export async function GET(request: Request) {
     }
 }
 
+function sanitizeProgramWeeks(weeks: any[], startDateStr?: string) {
+    if (!Array.isArray(weeks) || !startDateStr) return weeks;
+    const [sy, sm, sd] = startDateStr.split('T')[0].split('-').map(Number);
+    if (!sy || !sm || !sd) return weeks;
+    const start = new Date(sy, sm - 1, sd);
+    start.setHours(0, 0, 0, 0);
+
+    return weeks.map((w, wIdx) => {
+        const wn = w.weekNumber || (wIdx + 1);
+        const weekStart = new Date(start);
+        weekStart.setDate(weekStart.getDate() + (wn - 1) * 7);
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekEnd.getDate() + 6);
+
+        const sanitizedSessions = (w.sessions || []).map((s: any) => {
+            if (!s.scheduledDate) return s;
+            const candStr = String(s.scheduledDate).split('T')[0];
+            const [cy, cm, cd] = candStr.split('-').map(Number);
+            const candDate = new Date(cy, cm - 1, cd);
+            candDate.setHours(0, 0, 0, 0);
+
+            if (candDate < weekStart || candDate > weekEnd) {
+                // Out of bounds for this week! Realign to this week and day
+                const exp = new Date(start);
+                exp.setDate(exp.getDate() + (wn - 1) * 7 + (Number(s.day || 1) - 1));
+                const newDateStr = `${exp.getFullYear()}-${String(exp.getMonth() + 1).padStart(2, '0')}-${String(exp.getDate()).padStart(2, '0')}`;
+                return { ...s, scheduledDate: newDateStr };
+            }
+            return s;
+        });
+
+        return { ...w, sessions: sanitizedSessions };
+    });
+}
+
 export async function POST(request: Request) {
     const auth = await requireCoach();
     if ('error' in auth) return auth.error;
@@ -68,13 +103,14 @@ export async function POST(request: Request) {
         // for the same athlete in the same transaction so we never have two actives
         // or leave the athlete with zero active programs on partial failure.
         const status = program.status || 'active';
+        const rawStartDate = program.startDate || new Date().toISOString();
         const createData = {
             id: program.id || undefined, // Prisma auto-generates uuid if undefined
             athleteId: program.athleteId,
             name: program.name,
-            startDate: program.startDate || new Date().toISOString(),
+            startDate: rawStartDate,
             endDate: program.endDate || null,
-            weeks: program.weeks,
+            weeks: sanitizeProgramWeeks(program.weeks, rawStartDate),
             status
         };
 
@@ -107,6 +143,8 @@ export async function POST(request: Request) {
         // Invalidate the athlete's dashboard so a redirect after Save & Assign
         // gets fresh program data without needing a client-side router.refresh().
         revalidatePath(`/dashboard/athletes/${program.athleteId}`);
+        revalidatePath(`/athlete/${program.athleteId}/dashboard`);
+        revalidatePath(`/athlete/${program.athleteId}`);
 
         return NextResponse.json(newProgram, { status: 201 });
     } catch (error) {
@@ -129,7 +167,7 @@ export async function PUT(request: Request) {
         // Verify coach owns the program's athlete
         const existing = await prisma.program.findUnique({
             where: { id: program.id },
-            select: { athleteId: true }
+            select: { athleteId: true, startDate: true }
         });
         if (!existing) {
             return NextResponse.json({ error: 'Program not found' }, { status: 404 });
@@ -164,13 +202,16 @@ export async function PUT(request: Request) {
                 }));
             }
         }
+        const rawStartDate = program.startDate !== undefined ? program.startDate : existing.startDate;
+        const sanitizedWeeks = program.weeks !== undefined ? sanitizeProgramWeeks(program.weeks, rawStartDate) : undefined;
+
         ops.push(prisma.program.update({
             where: { id: program.id },
             data: {
                 name: program.name !== undefined ? program.name : undefined,
                 startDate: program.startDate !== undefined ? program.startDate : undefined,
                 endDate: program.endDate !== undefined ? program.endDate : undefined,
-                weeks: program.weeks !== undefined ? program.weeks : undefined,
+                weeks: sanitizedWeeks,
                 status: program.status !== undefined ? program.status : undefined,
             }
         }));
@@ -181,6 +222,8 @@ export async function PUT(request: Request) {
         // Invalidate the athlete dashboard cache so post-edit redirects don't
         // need a client-side router.refresh() to see the latest program state.
         revalidatePath(`/dashboard/athletes/${existing.athleteId}`);
+        revalidatePath(`/athlete/${existing.athleteId}/dashboard`);
+        revalidatePath(`/athlete/${existing.athleteId}`);
 
         return NextResponse.json(updatedProgram, { status: 200 });
     } catch (error) {

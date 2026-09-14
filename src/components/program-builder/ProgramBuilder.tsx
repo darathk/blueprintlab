@@ -953,16 +953,27 @@ export default function ProgramBuilder({
             newWeeks[targetWeekIdx].sessions.splice(existingIdx, 1);
         }
 
+        let newScheduledDate = '';
+        if (startDate) {
+            const [sy, sm, sd] = startDate.split('-').map(Number);
+            const start = new Date(sy, sm - 1, sd);
+            start.setHours(0, 0, 0, 0);
+            const d = new Date(start);
+            d.setDate(d.getDate() + (targetWeekNum - 1) * 7 + (targetDayNum - 1));
+            newScheduledDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+        } else if (sourceSession.scheduledDate) {
+            const [y, m, d] = String(sourceSession.scheduledDate).split('T')[0].split('-').map(Number);
+            const date = new Date(y, m - 1, d);
+            date.setDate(date.getDate() + 7);
+            newScheduledDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+        }
+
         const clonedSession = {
             ...sourceSession,
             id: generateId(),
             day: targetDayNum,
             name: sourceSession.name,
-            scheduledDate: sourceSession.scheduledDate ? (() => {
-                 const d = new Date(sourceSession.scheduledDate);
-                 d.setDate(d.getDate() + 7);
-                 return d.toISOString().split('T')[0];
-            })() : '',
+            scheduledDate: newScheduledDate,
             exercises: (sourceSession.exercises || []).map(e => ({
                 ...e,
                 id: generateId(),
@@ -1048,20 +1059,34 @@ export default function ProgramBuilder({
         }
 
         const weekOffset = targetWeekNum - weekNum;
-        const clonedSessions = sourceWeek.sessions.map(sourceSession => ({
-            ...sourceSession,
-            id: generateId(),
-            scheduledDate: sourceSession.scheduledDate ? (() => {
-                 const d = new Date(sourceSession.scheduledDate);
-                 d.setDate(d.getDate() + weekOffset * 7);
-                 return d.toISOString().split('T')[0];
-            })() : '',
-            exercises: (sourceSession.exercises || []).map(e => ({
-                ...e,
+        const clonedSessions = sourceWeek.sessions.map(sourceSession => {
+            let newScheduledDate = '';
+            const dayNum = Number(sourceSession.day || 1);
+            if (startDate) {
+                const [sy, sm, sd] = startDate.split('-').map(Number);
+                const start = new Date(sy, sm - 1, sd);
+                start.setHours(0, 0, 0, 0);
+                const d = new Date(start);
+                d.setDate(d.getDate() + (targetWeekNum - 1) * 7 + (dayNum - 1));
+                newScheduledDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            } else if (sourceSession.scheduledDate) {
+                const [y, m, d] = String(sourceSession.scheduledDate).split('T')[0].split('-').map(Number);
+                const date = new Date(y, m - 1, d);
+                date.setDate(date.getDate() + weekOffset * 7);
+                newScheduledDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+            }
+
+            return {
+                ...sourceSession,
                 id: generateId(),
-                sets: (e.sets || []).map(s => ({ ...s, id: generateId() }))
-            }))
-        }));
+                scheduledDate: newScheduledDate,
+                exercises: (sourceSession.exercises || []).map(e => ({
+                    ...e,
+                    id: generateId(),
+                    sets: (e.sets || []).map(s => ({ ...s, id: generateId() }))
+                }))
+            };
+        });
 
         newWeeks[targetWeekIdx].sessions.push(...clonedSessions);
         setWeeks(newWeeks);
@@ -1100,10 +1125,19 @@ export default function ProgramBuilder({
             weekNumber: targetWeekNum,
             sessions: originalWeek.sessions.map(s => {
                 let newDate = '';
-                if (s.scheduledDate) {
-                    const date = new Date(s.scheduledDate);
+                const dayNum = Number(s.day || 1);
+                if (startDate) {
+                    const [sy, sm, sd] = startDate.split('-').map(Number);
+                    const start = new Date(sy, sm - 1, sd);
+                    start.setHours(0, 0, 0, 0);
+                    const d = new Date(start);
+                    d.setDate(d.getDate() + (targetWeekNum - 1) * 7 + (dayNum - 1));
+                    newDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                } else if (s.scheduledDate) {
+                    const [y, m, d] = String(s.scheduledDate).split('T')[0].split('-').map(Number);
+                    const date = new Date(y, m - 1, d);
                     date.setDate(date.getDate() + weekOffset * 7);
-                    newDate = date.toISOString().split('T')[0];
+                    newDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
                 }
 
                 return {

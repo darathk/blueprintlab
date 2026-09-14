@@ -539,22 +539,42 @@ export default function ProgramWeeklyView({
             if (existing && (existing.sessions || []).length > 0) {
                 if (!confirm(`Week ${targetNum} already has sessions. Replace?`)) return prev;
             }
-            const clonedSessions = (srcWeek.sessions || []).map((s: any) => ({
-                ...s,
-                id: generateId(),
-                exercises: (s.exercises || []).map((e: any) => ({
-                    ...e,
+            const weekOffset = targetNum - currentWeekNum;
+            const clonedSessions = (srcWeek.sessions || []).map((s: any) => {
+                let newScheduledDate = '';
+                const dayNum = Number(s.day || 1);
+                if (startDate) {
+                    const [sy, sm, sd] = startDate.split('-').map(Number);
+                    const start = new Date(sy, sm - 1, sd);
+                    start.setHours(0, 0, 0, 0);
+                    const d = new Date(start);
+                    d.setDate(d.getDate() + (targetNum - 1) * 7 + (dayNum - 1));
+                    newScheduledDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                } else if (s.scheduledDate) {
+                    const [y, m, d] = String(s.scheduledDate).split('T')[0].split('-').map(Number);
+                    const date = new Date(y, m - 1, d);
+                    date.setDate(date.getDate() + weekOffset * 7);
+                    newScheduledDate = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+                }
+
+                return {
+                    ...s,
                     id: generateId(),
-                    sets: (e.sets || []).map((set: any) => ({ ...set, id: generateId() })),
-                })),
-            }));
+                    scheduledDate: newScheduledDate,
+                    exercises: (s.exercises || []).map((e: any) => ({
+                        ...e,
+                        id: generateId(),
+                        sets: (e.sets || []).map((set: any) => ({ ...set, id: generateId() })),
+                    })),
+                };
+            });
             if (existing) {
                 return prev.map(w => w.weekNumber === targetNum ? { ...w, sessions: clonedSessions } : w);
             }
             const newWeeks = [...prev, { id: generateId(), weekNumber: targetNum, sessions: clonedSessions }];
             return newWeeks.sort((a, b) => a.weekNumber - b.weekNumber);
         });
-    }, [currentWeekNum, setWeeks]);
+    }, [currentWeekNum, setWeeks, startDate]);
 
     const deleteCurrentWeek = useCallback(() => {
         if (!confirm(`Are you sure you want to delete Week ${currentWeekNum}? This will remove all its sessions.`)) {
