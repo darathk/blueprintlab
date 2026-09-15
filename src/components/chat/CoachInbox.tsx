@@ -187,7 +187,7 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
         <div className={isMobile && selectedId ? 'chat-full-screen' : 'glass-panel'} style={{ display: 'flex', height: isMobile && selectedId ? undefined : (isMobile ? 'calc(100dvh - 120px)' : 874), overflow: 'hidden', borderRadius: isMobile && selectedId ? 0 : 12 }}>
             {/* Sidebar */}
             <div style={{
-                width: isMobile ? '100%' : 260, flexShrink: 0,
+                width: isMobile ? '100%' : 280, flexShrink: 0,
                 borderRight: isMobile ? 'none' : '1px solid rgba(255,255,255,0.08)',
                 borderTop: '1px solid var(--glass-specular)',
                 display: isMobile && selectedId ? 'none' : 'flex', flexDirection: 'column',
@@ -232,59 +232,134 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                 </div>
 
                 {/* Filter Toggle — Apple-style Segmented Control with Sliding Active Pill */}
-                <div style={{ padding: '8px 16px', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
+                <div style={{ padding: '8px 12px', borderBottom: '1px solid rgba(255,255,255,0.03)' }}>
                     <div style={{
-                        display: 'flex', position: 'relative', background: 'rgba(255,255,255,0.04)',
-                        borderRadius: 8, padding: 2, border: '1px solid rgba(255,255,255,0.06)'
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(3, 1fr)',
+                        position: 'relative',
+                        background: 'rgba(255,255,255,0.04)',
+                        borderRadius: 8,
+                        padding: 2,
+                        border: '1px solid rgba(255,255,255,0.06)'
                     }}>
                         {/* Sliding active pill indicator */}
                         <div style={{
-                            position: 'absolute', top: 2, bottom: 2,
-                            left: filterType === 'all' ? 2 : filterType === 'unread' ? 'calc(33.333% + 1px)' : 'calc(66.666% + 0px)',
-                            width: 'calc(33.333% - 2px)',
+                            position: 'absolute',
+                            top: 2,
+                            bottom: 2,
+                            left: 2,
+                            width: 'calc((100% - 4px) / 3)',
+                            transform: `translateX(${filterType === 'all' ? 0 : filterType === 'unread' ? 100 : 200}%)`,
                             background: 'rgba(125,135,210,0.18)',
                             border: '1px solid rgba(125,135,210,0.3)',
                             borderRadius: 6,
-                            transition: 'left 250ms var(--ease-out)',
+                            transition: 'transform 250ms cubic-bezier(0.16, 1, 0.3, 1)',
                             pointerEvents: 'none'
                         }} />
                         <button
                             onClick={() => setFilterType('all')}
                             className="chat-press"
                             style={{
-                                flex: 1, padding: '6px 0', borderRadius: 6, fontSize: 12, fontWeight: 600,
-                                border: 'none', cursor: 'pointer', background: 'transparent',
-                                color: filterType === 'all' ? 'var(--primary)' : 'rgba(255,255,255,0.4)',
-                                transition: 'color 200ms var(--ease-out)', position: 'relative', zIndex: 1
+                                padding: '6px 2px',
+                                borderRadius: 6,
+                                fontSize: 12,
+                                fontWeight: 600,
+                                border: 'none',
+                                cursor: 'pointer',
+                                background: 'transparent',
+                                color: filterType === 'all' ? 'var(--primary)' : 'rgba(255,255,255,0.45)',
+                                transition: 'color 200ms ease',
+                                position: 'relative',
+                                zIndex: 1,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 4,
+                                minWidth: 0,
+                                whiteSpace: 'nowrap',
                             }}
                         >
-                            All
+                            <span>All</span>
                         </button>
                         <button
                             onClick={() => setFilterType('unread')}
                             className="chat-press"
                             style={{
-                                flex: 1, padding: '6px 0', borderRadius: 6, fontSize: 12, fontWeight: 600,
-                                border: 'none', cursor: 'pointer', background: 'transparent',
-                                color: filterType === 'unread' ? 'var(--primary)' : 'rgba(255,255,255,0.4)',
-                                transition: 'color 200ms var(--ease-out)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                                position: 'relative', zIndex: 1
+                                padding: '6px 2px',
+                                borderRadius: 6,
+                                fontSize: 12,
+                                fontWeight: 600,
+                                border: 'none',
+                                cursor: 'pointer',
+                                background: 'transparent',
+                                color: filterType === 'unread' ? 'var(--primary)' : 'rgba(255,255,255,0.45)',
+                                transition: 'color 200ms ease',
+                                position: 'relative',
+                                zIndex: 1,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 4,
+                                minWidth: 0,
+                                whiteSpace: 'nowrap',
                             }}
                         >
-                            Unread {totalUnread > 0 && <span style={{ background: filterType === 'unread' ? 'var(--primary)' : 'rgba(255,255,255,0.2)', color: '#fff', fontSize: 10, padding: '1px 6px', borderRadius: 10, fontWeight: 700 }}>{totalUnread}</span>}
+                            <span>Unread</span>
+                            {totalUnread > 0 && (
+                                <span style={{
+                                    background: filterType === 'unread' ? 'var(--primary)' : 'rgba(255,255,255,0.18)',
+                                    color: '#fff',
+                                    fontSize: 10,
+                                    padding: '0 5px',
+                                    height: 16,
+                                    lineHeight: '16px',
+                                    borderRadius: 10,
+                                    fontWeight: 700,
+                                    flexShrink: 0
+                                }}>
+                                    {totalUnread}
+                                </span>
+                            )}
                         </button>
                         <button
                             onClick={() => setFilterType('archived')}
                             className="chat-press"
                             style={{
-                                flex: 1, padding: '6px 0', borderRadius: 6, fontSize: 12, fontWeight: 600,
-                                border: 'none', cursor: 'pointer', background: 'transparent',
-                                color: filterType === 'archived' ? 'var(--primary)' : 'rgba(255,255,255,0.4)',
-                                transition: 'color 200ms var(--ease-out)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                                position: 'relative', zIndex: 1
+                                padding: '6px 2px',
+                                borderRadius: 6,
+                                fontSize: 12,
+                                fontWeight: 600,
+                                border: 'none',
+                                cursor: 'pointer',
+                                background: 'transparent',
+                                color: filterType === 'archived' ? 'var(--primary)' : 'rgba(255,255,255,0.45)',
+                                transition: 'color 200ms ease',
+                                position: 'relative',
+                                zIndex: 1,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: 4,
+                                minWidth: 0,
+                                whiteSpace: 'nowrap',
                             }}
                         >
-                            Archived {archivedCount > 0 && <span style={{ background: filterType === 'archived' ? 'var(--primary)' : 'rgba(255,255,255,0.15)', color: filterType === 'archived' ? '#000' : 'var(--secondary-foreground)', fontSize: 10, padding: '1px 5px', borderRadius: 10, fontWeight: 700 }}>{archivedCount}</span>}
+                            <span>Archive</span>
+                            {archivedCount > 0 && (
+                                <span style={{
+                                    background: filterType === 'archived' ? 'var(--primary)' : 'rgba(255,255,255,0.12)',
+                                    color: filterType === 'archived' ? '#000' : 'rgba(255,255,255,0.7)',
+                                    fontSize: 10,
+                                    padding: '0 5px',
+                                    height: 16,
+                                    lineHeight: '16px',
+                                    borderRadius: 10,
+                                    fontWeight: 700,
+                                    flexShrink: 0
+                                }}>
+                                    {archivedCount}
+                                </span>
+                            )}
                         </button>
                     </div>
                 </div>
