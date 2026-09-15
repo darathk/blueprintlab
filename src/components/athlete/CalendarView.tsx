@@ -178,6 +178,19 @@ export default function CalendarView({ program, athleteId }) {
         }
     };
 
+    const getReadinessForDate = (dayNum: number) => {
+        const dateStr = new Date(year, month, dayNum).toISOString().split('T')[0];
+        return (readinessLogs as any[]).find((l: any) => l.date === dateStr);
+    };
+
+    const getScoreColor = (score?: number) => {
+        if (!score) return 'var(--muted)';
+        if (score >= 20) return '#10b981';
+        if (score >= 15) return '#3b82f6';
+        if (score >= 10) return '#f59e0b';
+        return '#ef4444';
+    };
+
     return (
         <div className="glass-panel" style={{ padding: 0, overflow: 'hidden', position: 'relative', borderRadius: 16 }}>
             {/* Header */}

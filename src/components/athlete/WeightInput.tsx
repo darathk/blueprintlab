@@ -5,7 +5,16 @@ const toDisplay = (val: any) => {
     return val.toString();
 };
 
-export default function WeightInput({ internalValue, unit, onChange, onFocus, placeholder, style }) {
+interface WeightInputProps {
+    internalValue: any;
+    unit?: any;
+    onChange: (val: any) => void;
+    onFocus?: (e: any) => void;
+    placeholder?: any;
+    style?: any;
+}
+
+export default function WeightInput({ internalValue, unit, onChange, onFocus, placeholder, style }: WeightInputProps) {
     const [localValue, setLocalValue] = useState(() => toDisplay(internalValue));
     const [isFocused, setIsFocused] = useState(false);
 

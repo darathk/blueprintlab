@@ -50,7 +50,6 @@ export default async function WorkoutPage({ params }) {
     // Fetch existing log for this specific session directly, preferring modern session.id over legacy key
     const sessionLogs = await prisma.log.findMany({
         where: {
-            athleteId,
             programId,
             sessionId: session.id ? { in: [session.id, sessionId] } : sessionId,
         },

@@ -611,7 +611,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
     // Uses same logic as MasterProgramCalendar: Day 1 = program startDate,
     // Day 2 = startDate+1, etc. Week boundaries every 7 days from startDate.
     const sessionsByDate = useMemo(() => {
-        const map: Record<string, { program: any; weekNum: number; weekDisplayNum: number; session: any; sKey: string; isActive: boolean; isCurrent: boolean; sessionNum: number }[]> = {};
+        const map: Record<string, { program: any; weekNum: number; weekDisplayNum: number; session: any; sKey: string; legacyKey?: string; isActive: boolean; isCurrent: boolean; sessionNum: number }[]> = {};
         if (!Array.isArray(programs)) return map;
 
         programs.forEach(program => {

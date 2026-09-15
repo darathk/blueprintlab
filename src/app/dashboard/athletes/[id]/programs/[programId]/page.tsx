@@ -1,12 +1,13 @@
 import ProgramBuilder from '@/components/program-builder/ProgramBuilder';
 import { prisma } from '@/lib/prisma';
 import { getExerciseLibrary } from '@/lib/storage';
-import { requireAuth } from '@/lib/api-auth';
+import { redirect } from 'next/navigation';
+import { getCoachAuthState } from '@/lib/auth-cache';
 
 export default async function EditProgramPage({ params }: { params: Promise<{ id: string; programId: string }> }) {
     const { id, programId } = await params;
-    const auth = await requireAuth();
-    if ('error' in auth) return auth.error;
+    const auth = await getCoachAuthState();
+    if (!auth.isCoach) redirect('/sign-in');
 
     // Server-side fetch
     const [program, initialExercises, athlete, rawExistingPrograms, initialCoachNotes] = await Promise.all([
@@ -42,5 +43,5 @@ export default async function EditProgramPage({ params }: { params: Promise<{ id
         })) : []
     }));
 
-    return <ProgramBuilder athleteId={id} initialData={program} initialExercises={initialExercises} athleteLiftTargets={athlete?.liftTargets} athleteTrainingSchedule={athlete?.trainingSchedule} athleteName={athlete?.name} athleteMeetData={{ nextMeetName: athlete?.nextMeetName, nextMeetDate: athlete?.nextMeetDate, meetAttempts: athlete?.meetAttempts, periodization: athlete?.periodization }} existingPrograms={existingPrograms} initialCoachNotes={initialCoachNotes as any} coachId={auth.user.id} />;
+    return <ProgramBuilder athleteId={id} initialData={program} initialExercises={initialExercises} athleteLiftTargets={athlete?.liftTargets} athleteTrainingSchedule={athlete?.trainingSchedule} athleteName={athlete?.name} athleteMeetData={{ nextMeetName: athlete?.nextMeetName, nextMeetDate: athlete?.nextMeetDate, meetAttempts: athlete?.meetAttempts, periodization: athlete?.periodization }} existingPrograms={existingPrograms} initialCoachNotes={initialCoachNotes as any} coachId={auth.athleteId || auth.user?.id || undefined} />;
 }

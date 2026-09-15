@@ -409,7 +409,7 @@ export default function ProgramBuilder({
 }: {
     athleteId?: string;
     initialData?: any;
-    initialExercises?: any[];
+    initialExercises?: any;
     athleteLiftTargets?: any;
     athleteTrainingSchedule?: string;
     athleteName?: string;
@@ -643,9 +643,9 @@ export default function ProgramBuilder({
                 normalizedWeeks.sort((a, b) => (a.weekNumber || 0) - (b.weekNumber || 0));
 
                 const firstPopulatedIdx = normalizedWeeks.findIndex(w => Array.isArray(w.sessions) && w.sessions.some((s: any) => Array.isArray(s.exercises) && s.exercises.length > 0));
-                if (firstPopulatedIdx > 0) {
+                if (firstPopulatedIdx > 0 && rawStartDate) {
                     // Shift start date forward by the number of empty weeks so session calendar dates align
-                    const [sy, sm, sd] = snappedStartDate.split('-').map(Number);
+                    const [sy, sm, sd] = rawStartDate.split('-').map(Number);
                     const adjDate = new Date(sy, sm - 1, sd);
                     adjDate.setDate(adjDate.getDate() + firstPopulatedIdx * 7);
                     const adjStr = `${adjDate.getFullYear()}-${String(adjDate.getMonth() + 1).padStart(2, '0')}-${String(adjDate.getDate()).padStart(2, '0')}`;

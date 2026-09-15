@@ -1,12 +1,13 @@
 import ProgramBuilder from '@/components/program-builder/ProgramBuilder';
 import { getExerciseLibrary } from '@/lib/storage';
 import { prisma } from '@/lib/prisma';
-import { requireAuth } from '@/lib/api-auth';
+import { redirect } from 'next/navigation';
+import { getCoachAuthState } from '@/lib/auth-cache';
 
 export default async function NewProgramPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
-    const auth = await requireAuth();
-    if ('error' in auth) return auth.error;
+    const auth = await getCoachAuthState();
+    if (!auth.isCoach) redirect('/sign-in');
     
     const [initialExercises, athlete, rawExistingPrograms, initialCoachNotes, latestDraft] = await Promise.all([
         getExerciseLibrary(),
@@ -75,7 +76,7 @@ export default async function NewProgramPage({ params }: { params: Promise<{ id:
             athleteMeetData={{ nextMeetName: athlete?.nextMeetName, nextMeetDate: athlete?.nextMeetDate, meetAttempts: athlete?.meetAttempts, periodization: athlete?.periodization }}
             existingPrograms={existingPrograms}
             initialCoachNotes={initialCoachNotes as any}
-            coachId={auth.user.id}
+            coachId={auth.athleteId || auth.user?.id || undefined}
         />
     );
 }

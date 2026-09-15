@@ -264,7 +264,7 @@ export default function PlannedTopSetInput({
                             onClick={handleSave}
                             disabled={saving || saved}
                             style={{
-                                width: '100%', padding: '9px', borderRadius: 8, border: 'none',
+                                width: '100%', padding: '9px', borderRadius: 8,
                                 cursor: saving || saved ? 'default' : 'pointer', marginTop: 8,
                                 background: saved ? 'rgba(16,185,129,0.15)' : 'linear-gradient(135deg, #38bdf8, #6366f1)',
                                 color: saved ? '#10b981' : '#fff', fontSize: 13, fontWeight: 700,

@@ -589,7 +589,7 @@ export default function ProgramWeeklyView({
                 .sort((a, b) => a.weekNumber - b.weekNumber)
                 .map((w, idx) => ({ ...w, weekNumber: idx + 1 }));
         });
-        setCurrentWeekNum(prev => Math.max(1, prev - 1));
+        setCurrentWeekNum(Math.max(1, currentWeekNum - 1));
     }, [currentWeekNum, setWeeks, setCurrentWeekNum]);
 
     // ──── Drag & Drop ────
@@ -1379,7 +1379,6 @@ export default function ProgramWeeklyView({
                                 <textarea
                                     value={session?.warmupDrills || ''}
                                     onChange={e => setDayWarmupDrills(dayNum, e.target.value)}
-                                    onFocus={() => onSelectDay(dayNum)}
                                     placeholder="Warm-up drills & prep notes..."
                                     rows={session?.warmupDrills ? 2 : 1}
                                     style={{
@@ -1398,6 +1397,7 @@ export default function ProgramWeeklyView({
                                         transition: 'border-color 0.15s, min-height 0.15s',
                                     }}
                                     onFocus={e => {
+                                        onSelectDay(dayNum);
                                         e.currentTarget.style.borderColor = 'var(--primary)';
                                         if (!session?.warmupDrills) e.currentTarget.style.minHeight = '46px';
                                     }}

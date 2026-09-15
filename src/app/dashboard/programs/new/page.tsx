@@ -12,7 +12,7 @@ export default async function NewProgramPage() {
 
     return (
         <div>
-            <ProgramBuilder athletes={athletes} initialExercises={initialExercises} coachId={coach?.id} />
+            <ProgramBuilder athletes={athletes} initialExercises={initialExercises} coachId={coachId || undefined} />
         </div>
     );
 }
