@@ -19,7 +19,7 @@ interface Message {
     sender: { id: string; name: string; email: string }; receiver: { id: string; name: string; email: string };
 }
 
-interface ConvSummary { athleteId: string; athleteName: string; lastMessage: string; lastMessageAt: string; unreadCount: number; }
+interface ConvSummary { athleteId: string; athleteName: string; status?: string; lastMessage: string; lastMessageAt: string; unreadCount: number; }
 
 interface Props { coachId: string; coachName: string; initialConvos?: ConvSummary[]; initialAthleteId?: string; initialMessages?: Message[]; athletePositions?: Record<string, { blockName: string; weekNum: number | null; dayNum: number | null; totalWeeks?: number; isFinished?: boolean; lastLogDate: string }>; }
 
@@ -41,7 +41,15 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
     const [activeSidebar, setActiveSidebar] = useState<'view' | 'edit' | 'notes' | null>(null);
     const [builderActive, setBuilderActive] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
-    const [filterType, setFilterType] = useState<'all' | 'unread'>('all');
+    const [filterType, setFilterType] = useState<'all' | 'unread' | 'archived'>(() => {
+        if (initialAthleteId) {
+            const initialMatch = initialConvos.find(c => c.athleteId === initialAthleteId);
+            if (initialMatch && initialMatch.status === 'archived') {
+                return 'archived';
+            }
+        }
+        return 'all';
+    });
     const [actionsMenuOpen, setActionsMenuOpen] = useState(false);
 
     // Ensure full-screen builder mode is instantly disabled if we leave the edit sidebar
@@ -64,11 +72,14 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
     const filteredConvos = sortedConvos.filter(c => {
         const matchesSearch = c.athleteName.toLowerCase().includes(searchTerm.toLowerCase());
         if (!matchesSearch) return false;
-        if (filterType === 'unread') return c.unreadCount > 0;
-        return true;
+        if (filterType === 'unread') return c.unreadCount > 0 && c.status !== 'archived';
+        if (filterType === 'archived') return c.status === 'archived';
+        // 'all' tab: hide archived athletes from the active dashboard inbox
+        return c.status !== 'archived';
     });
 
-    const totalUnread = convos.reduce((s, c) => s + c.unreadCount, 0);
+    const totalUnread = convos.filter(c => c.status !== 'archived').reduce((s, c) => s + c.unreadCount, 0);
+    const archivedCount = convos.filter(c => c.status === 'archived').length;
 
     const markAsUnread = async (athleteId: string, e: React.MouseEvent) => {
         e.stopPropagation();
@@ -229,8 +240,8 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                         {/* Sliding active pill indicator */}
                         <div style={{
                             position: 'absolute', top: 2, bottom: 2,
-                            left: filterType === 'all' ? 2 : '50%',
-                            width: 'calc(50% - 2px)',
+                            left: filterType === 'all' ? 2 : filterType === 'unread' ? 'calc(33.333% + 1px)' : 'calc(66.666% + 0px)',
+                            width: 'calc(33.333% - 2px)',
                             background: 'rgba(125,135,210,0.18)',
                             border: '1px solid rgba(125,135,210,0.3)',
                             borderRadius: 6,
@@ -262,11 +273,28 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                         >
                             Unread {totalUnread > 0 && <span style={{ background: filterType === 'unread' ? 'var(--primary)' : 'rgba(255,255,255,0.2)', color: '#fff', fontSize: 10, padding: '1px 6px', borderRadius: 10, fontWeight: 700 }}>{totalUnread}</span>}
                         </button>
+                        <button
+                            onClick={() => setFilterType('archived')}
+                            className="chat-press"
+                            style={{
+                                flex: 1, padding: '6px 0', borderRadius: 6, fontSize: 12, fontWeight: 600,
+                                border: 'none', cursor: 'pointer', background: 'transparent',
+                                color: filterType === 'archived' ? 'var(--primary)' : 'rgba(255,255,255,0.4)',
+                                transition: 'color 200ms var(--ease-out)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                                position: 'relative', zIndex: 1
+                            }}
+                        >
+                            Archived {archivedCount > 0 && <span style={{ background: filterType === 'archived' ? 'var(--primary)' : 'rgba(255,255,255,0.15)', color: filterType === 'archived' ? '#000' : 'var(--secondary-foreground)', fontSize: 10, padding: '1px 5px', borderRadius: 10, fontWeight: 700 }}>{archivedCount}</span>}
+                        </button>
                     </div>
                 </div>
 
                 <div style={{ flex: 1, overflowY: 'auto' }}>
-                    {filteredConvos.length === 0 && <div style={{ textAlign: 'center', padding: 32, fontSize: 12, color: 'var(--secondary-foreground)' }}>{searchTerm ? 'No athletes match your search' : 'No conversations'}</div>}
+                    {filteredConvos.length === 0 && (
+                        <div style={{ textAlign: 'center', padding: 32, fontSize: 12, color: 'var(--secondary-foreground)' }}>
+                            {searchTerm ? 'No athletes match your search' : filterType === 'archived' ? 'No archived athlete messages' : 'No conversations'}
+                        </div>
+                    )}
                     {filteredConvos.map(c => (
                         <div key={c.athleteId} role="button" tabIndex={0} onClick={(e) => {
                             if ((e.target as HTMLElement).closest('.mark-unread-btn')) return;
@@ -296,7 +324,14 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                             </div>
                             <div style={{ flex: 1, minWidth: 0 }}>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                    <span style={{ fontSize: 13, fontWeight: c.unreadCount > 0 ? 700 : 400, color: c.unreadCount > 0 ? 'var(--foreground)' : 'var(--secondary-foreground)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{c.athleteName}</span>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                                        <span style={{ fontSize: 13, fontWeight: c.unreadCount > 0 ? 700 : 400, color: c.unreadCount > 0 ? 'var(--foreground)' : 'var(--secondary-foreground)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' as const }}>{c.athleteName}</span>
+                                        {c.status === 'archived' && (
+                                            <span style={{ fontSize: 9, fontWeight: 700, background: 'rgba(255,255,255,0.08)', color: 'var(--secondary-foreground)', padding: '1px 5px', borderRadius: 4, textTransform: 'uppercase', letterSpacing: '0.04em', flexShrink: 0 }}>
+                                                Archived
+                                            </span>
+                                        )}
+                                    </div>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexShrink: 0, marginLeft: 6 }}>
                                         {c.unreadCount === 0 && (
                                             <button

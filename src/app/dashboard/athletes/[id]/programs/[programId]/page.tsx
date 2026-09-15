@@ -33,15 +33,8 @@ export default async function EditProgramPage({ params }: { params: Promise<{ id
 
     if (!program) return <div style={{ padding: '2rem' }}>Program not found.</div>;
 
-    // Strip heavy exercise trees from past programs to keep payload lean
-    const existingPrograms = (rawExistingPrograms || []).map(p => ({
-        ...p,
-        weeks: Array.isArray(p.weeks) ? p.weeks.map((w: any) => ({
-            id: w.id,
-            weekNumber: w.weekNumber,
-            sessions: (Array.isArray(w.sessions) ? w.sessions : []).map((s: any) => ({ id: s.id, day: s.day, exercises: Array.isArray(s.exercises) && s.exercises.length > 0 ? [{ id: 'stub' }] : [] }))
-        })) : []
-    }));
+    // Pass full existing programs so the Program History tab in Program Builder can display previous sessions & exercises
+    const existingPrograms = rawExistingPrograms || [];
 
     return <ProgramBuilder athleteId={id} initialData={program} initialExercises={initialExercises} athleteLiftTargets={athlete?.liftTargets} athleteTrainingSchedule={athlete?.trainingSchedule} athleteName={athlete?.name} athleteMeetData={{ nextMeetName: athlete?.nextMeetName, nextMeetDate: athlete?.nextMeetDate, meetAttempts: athlete?.meetAttempts, periodization: athlete?.periodization }} existingPrograms={existingPrograms} initialCoachNotes={initialCoachNotes as any} coachId={auth.athleteId || auth.user?.id || undefined} />;
 }

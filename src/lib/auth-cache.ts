@@ -45,7 +45,13 @@ export const getCoachAuthState = cache(async (): Promise<CoachAuthState> => {
             adminAthleteId = newAdmin.id;
         }
 
-        const unreadCount = adminAthleteId ? await prisma.message.count({ where: { receiverId: adminAthleteId, read: false } }) : 0;
+        const unreadCount = adminAthleteId ? await prisma.message.count({
+            where: {
+                receiverId: adminAthleteId,
+                read: false,
+                sender: { status: { not: 'archived' } },
+            }
+        }) : 0;
         return { isCoach: true, user, athleteId: adminAthleteId, unreadCount };
     }
 

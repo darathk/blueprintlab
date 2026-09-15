@@ -41,7 +41,10 @@ export async function GET(request: Request) {
                 where: {
                     receiverId: userId,
                     read: false,
-                    sender: { coachId: userId }
+                    sender: {
+                        coachId: userId,
+                        status: { not: 'archived' }
+                    }
                 }
             });
         } else {

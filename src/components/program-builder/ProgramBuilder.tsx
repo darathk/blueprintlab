@@ -72,6 +72,15 @@ function formatSetsSummary(sets: any[]) {
     return parts.join(', ');
 }
 
+function getProgramWeeks(prog: any): any[] {
+    if (!prog || !prog.weeks) return [];
+    let w = prog.weeks;
+    if (typeof w === 'string') {
+        try { w = JSON.parse(w); } catch { return []; }
+    }
+    return Array.isArray(w) ? w : [];
+}
+
 // Snap an arbitrary date string to Monday.
 // If already Monday -> returns same date.
 // If Sunday (day 0) -> in training calendars, Sunday begins the upcoming training week,
@@ -1354,27 +1363,28 @@ export default function ProgramBuilder({
     // --- Clipboard System ---
     const [clipboard, setClipboard] = useState<{ type: 'week' | 'session', data: any } | null>(null);
 
-    const copyWeek = (weekIndex) => {
+    const copyWeek = (weekIndex: number) => {
         const weekData = weeks[weekIndex];
+        if (!weekData) return;
         setClipboard({ type: 'week', data: weekData });
         showToast(`Copied Week ${weekIndex + 1} to clipboard`);
     };
 
-    const pasteWeek = (targetWeekIndex) => {
+    const pasteWeek = (targetWeekIndex: number) => {
         if (!clipboard || clipboard.type !== 'week') return;
 
         const sourceWeek = clipboard.data;
         const newWeeks = [...weeks];
 
         // Deep clone sessions from source
-        const clonedSessions = sourceWeek.sessions.map(s => ({
+        const clonedSessions = (sourceWeek.sessions || []).map((s: any) => ({
             ...s,
             id: generateId(), // New ID
             scheduledDate: '', // Clear date to avoid conflicts/logic issues
-            exercises: s.exercises.map(e => ({
+            exercises: (s.exercises || []).map((e: any) => ({
                 ...e,
                 id: generateId(),
-                sets: e.sets.map(set => ({ ...set, id: generateId() }))
+                sets: (e.sets || []).map((set: any) => ({ ...set, id: generateId() }))
             }))
         }));
 
@@ -1383,6 +1393,53 @@ export default function ProgramBuilder({
         setWeeks(newWeeks);
         showToast(`Pasted week into Week ${targetWeekIndex + 1}`);
     };
+
+    const copySessionDirect = useCallback((sessionData: any) => {
+        if (!sessionData) return;
+        const cloned = {
+            ...sessionData,
+            exercises: (sessionData.exercises || []).map((e: any) => ({
+                ...e,
+                id: generateId(),
+                sets: (e.sets || []).map((s: any) => ({ ...s, id: generateId() }))
+            }))
+        };
+        setClipboard({ type: 'session', data: cloned });
+        showToast(`Copied session "${sessionData.name || 'Session'}" to clipboard`);
+    }, []);
+
+    const copySession = useCallback((weekIndex: number, sessionIndex: number) => {
+        const sessionData = weeks[weekIndex]?.sessions[sessionIndex];
+        if (!sessionData) return;
+        copySessionDirect(sessionData);
+    }, [weeks, copySessionDirect]);
+
+    const pasteSession = useCallback((targetWeekIndex: number, targetDay?: number) => {
+        if (!clipboard || clipboard.type !== 'session') return;
+        const sourceSession = clipboard.data;
+        const newWeeks = [...weeks];
+        const dayToUse = targetDay !== undefined ? targetDay : (sourceSession.day || 1);
+
+        const newSession = {
+            ...sourceSession,
+            id: generateId(),
+            day: dayToUse,
+            scheduledDate: '',
+            exercises: (sourceSession.exercises || []).map((e: any) => ({
+                ...e,
+                id: generateId(),
+                sets: (e.sets || []).map((s: any) => ({ ...s, id: generateId() }))
+            }))
+        };
+
+        if (targetDay !== undefined) {
+            newWeeks[targetWeekIndex].sessions = (newWeeks[targetWeekIndex].sessions || []).filter((s: any) => Number(s.day) !== Number(targetDay));
+        }
+        newWeeks[targetWeekIndex].sessions.push(newSession);
+        newWeeks[targetWeekIndex].sessions.sort((a: any, b: any) => (a.day || 0) - (b.day || 0));
+        setWeeks(newWeeks);
+        showToast(`Pasted session into Week ${targetWeekIndex + 1}`);
+    }, [clipboard, weeks]);
 
     const buildPayload = useCallback(() => {
         // Only snap to Monday for newly created programs if start date is not explicitly an existing program's start
@@ -2367,6 +2424,8 @@ export default function ProgramBuilder({
                                     onSelectDay={setSelectedWeeklyDay}
                                     currentWeekNum={weeklyActiveWeekNum}
                                     setCurrentWeekNum={setWeeklyActiveWeekNum}
+                                    sessionClipboard={clipboard?.type === 'session' ? clipboard.data : null}
+                                    onCopySession={copySessionDirect}
                                 />
                             )}
                         </div>
@@ -2381,85 +2440,153 @@ export default function ProgramBuilder({
                                         </div>
                                     ) : (
                                         <div style={{ display: 'grid', gap: '1rem', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}>
-                                            {existingPrograms.map((prog: any) => (
-                                                <div 
-                                                    key={prog.id} 
-                                                    onClick={() => setSelectedHistoryProgram(prog)}
-                                                    style={{ 
-                                                        background: 'var(--card-bg)', 
-                                                        border: '1px solid var(--card-border)', 
-                                                        borderRadius: 'var(--radius)', 
-                                                        padding: '1rem',
-                                                        cursor: 'pointer',
-                                                        transition: 'all 0.2s',
-                                                    }}
-                                                    onMouseOver={e => e.currentTarget.style.borderColor = 'var(--primary)'}
-                                                    onMouseOut={e => e.currentTarget.style.borderColor = 'var(--card-border)'}
-                                                >
-                                                    <div style={{ fontWeight: 600, color: 'var(--foreground)', marginBottom: '0.25rem', fontSize: '1rem' }}>{prog.name || 'Untitled Program'}</div>
-                                                    <div style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', marginBottom: '0.5rem' }}>
-                                                        {prog.weeks?.length || 0} Weeks
-                                                    </div>
-                                                    <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>
-                                                        Created: {new Date(prog.createdAt).toLocaleDateString()}
-                                                    </div>
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </div>
-                            ) : (
-                                <div>
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
-                                        <button 
-                                            onClick={() => setSelectedHistoryProgram(null)}
-                                            style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}
-                                        >
-                                            ← Back to List
-                                        </button>
-                                        <h3 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0, color: 'var(--primary)' }}>
-                                            {selectedHistoryProgram.name || 'Untitled Program'}
-                                        </h3>
-                                    </div>
-                                    
-                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-                                        {(selectedHistoryProgram.weeks || []).map((week: any, weekIndex: number) => (
-                                            <div key={week.id} style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
-                                                <div style={{ padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid var(--card-border)', fontWeight: 700, color: 'var(--foreground)' }}>
-                                                    <h3 style={{ fontSize: '1.2rem', fontWeight: 700, margin: 0 }}>
-                                                        Week {weekIndex + 1}
-                                                    </h3>
-                                                </div>
-                                                <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                                                    {(!week.sessions || week.sessions.length === 0) ? (
-                                                        <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', fontStyle: 'italic' }}>No sessions in this week.</div>
-                                                    ) : (
-                                                        [...week.sessions].sort((a, b) => a.day - b.day).map((session: any) => (
-                                                            <div key={session.id} style={{ borderLeft: '2px solid var(--primary)', paddingLeft: '1rem' }}>
-                                                                <div style={{ fontWeight: 600, color: 'var(--foreground)', fontSize: '0.9rem', marginBottom: '0.5rem' }}>
-                                                                    {session.name}
-                                                                </div>
-                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                                                                    {(session.exercises || []).map((ex: any) => (
-                                                                        <div key={ex.id} style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)' }}>
-                                                                            <span style={{ fontWeight: 600, color: 'var(--foreground)' }}>{ex.name}</span>
-                                                                            {ex.sets && ex.sets.length > 0 && (
-                                                                                <span style={{ marginLeft: '0.5rem' }}>
-                                                                                    ({ex.sets.length} sets: {ex.sets.map((s: any) => `${s.weight ? s.weight + 'x' : ''}${s.reps}@${s.rpe}`).join(', ')})
-                                                                                </span>
-                                                                            )}
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            </div>
-                                                        ))
-                                                    )}
-                                                </div>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </div>
-                            )}
+                                             {existingPrograms.map((prog: any) => {
+                                                 const pWeeks = getProgramWeeks(prog);
+                                                 return (
+                                                     <div 
+                                                         key={prog.id} 
+                                                         onClick={() => setSelectedHistoryProgram(prog)}
+                                                         style={{ 
+                                                             background: 'var(--card-bg)', 
+                                                             border: '1px solid var(--card-border)', 
+                                                             borderRadius: 'var(--radius)', 
+                                                             padding: '1rem',
+                                                             cursor: 'pointer',
+                                                             transition: 'all 0.2s',
+                                                         }}
+                                                         onMouseOver={e => e.currentTarget.style.borderColor = 'var(--primary)'}
+                                                         onMouseOut={e => e.currentTarget.style.borderColor = 'var(--card-border)'}
+                                                     >
+                                                         <div style={{ fontWeight: 600, color: 'var(--foreground)', marginBottom: '0.25rem', fontSize: '1rem' }}>{prog.name || 'Untitled Program'}</div>
+                                                         <div style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', marginBottom: '0.5rem' }}>
+                                                             {pWeeks.length} {pWeeks.length === 1 ? 'Week' : 'Weeks'}
+                                                         </div>
+                                                         <div style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.4)' }}>
+                                                             Created: {prog.createdAt ? new Date(prog.createdAt).toLocaleDateString() : 'N/A'}
+                                                         </div>
+                                                     </div>
+                                                 );
+                                             })}
+                                         </div>
+                                     )}
+                                 </div>
+                             ) : (
+                                 <div>
+                                     <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem' }}>
+                                         <button 
+                                             onClick={() => setSelectedHistoryProgram(null)}
+                                             style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', color: 'var(--foreground)', padding: '6px 12px', borderRadius: '4px', cursor: 'pointer', fontSize: '0.8rem', fontWeight: 600 }}
+                                         >
+                                             ← Back to List
+                                         </button>
+                                         <h3 style={{ fontSize: '1.1rem', fontWeight: 600, margin: 0, color: 'var(--primary)' }}>
+                                             {selectedHistoryProgram.name || 'Untitled Program'}
+                                         </h3>
+                                     </div>
+                                     
+                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                                         {getProgramWeeks(selectedHistoryProgram).map((week: any, weekIndex: number) => {
+                                             const sessions = Array.isArray(week.sessions) ? week.sessions : [];
+                                             return (
+                                                 <div key={week.id || `hist-w-${weekIndex}`} style={{ background: 'var(--card-bg)', border: '1px solid var(--card-border)', borderRadius: 'var(--radius)', overflow: 'hidden' }}>
+                                                     <div style={{ padding: '0.75rem 1rem', background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid var(--card-border)', fontWeight: 700, color: 'var(--foreground)', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                                         <h3 style={{ fontSize: '1.1rem', fontWeight: 700, margin: 0 }}>
+                                                             Week {week.weekNumber || weekIndex + 1}
+                                                         </h3>
+                                                         <button
+                                                             type="button"
+                                                             onClick={() => {
+                                                                 setClipboard({ type: 'week', data: week });
+                                                                 showToast(`Copied Week ${week.weekNumber || weekIndex + 1} to clipboard`);
+                                                             }}
+                                                             style={{
+                                                                 display: 'inline-flex',
+                                                                 alignItems: 'center',
+                                                                 gap: '5px',
+                                                                 background: 'rgba(255, 255, 255, 0.06)',
+                                                                 border: '1px solid rgba(255, 255, 255, 0.15)',
+                                                                 color: 'var(--foreground)',
+                                                                 cursor: 'pointer',
+                                                                 padding: '4px 9px',
+                                                                 borderRadius: '5px',
+                                                                 fontSize: '0.75rem',
+                                                                 fontWeight: 600
+                                                             }}
+                                                         >
+                                                             <Copy size={12} />
+                                                             Copy Week
+                                                         </button>
+                                                     </div>
+                                                     <div style={{ padding: '1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                                                         {sessions.length === 0 ? (
+                                                             <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', fontStyle: 'italic' }}>No sessions in this week.</div>
+                                                         ) : (
+                                                             [...sessions].sort((a: any, b: any) => (a.day || 0) - (b.day || 0)).map((session: any, sIdx: number) => {
+                                                                 const exercises = Array.isArray(session.exercises) ? session.exercises : [];
+                                                                 return (
+                                                                     <div key={session.id || `hist-s-${sIdx}`} style={{ borderLeft: '3px solid var(--primary)', paddingLeft: '1rem', paddingBottom: '0.5rem' }}>
+                                                                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem', flexWrap: 'wrap', gap: '8px' }}>
+                                                                             <div style={{ fontWeight: 600, color: 'var(--foreground)', fontSize: '0.92rem' }}>
+                                                                                 {session.name || `Session ${session.day || sIdx + 1}`}
+                                                                                 <span style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', fontWeight: 400, marginLeft: '0.5rem' }}>
+                                                                                     (Day {session.day || sIdx + 1}) • {exercises.length} {exercises.length === 1 ? 'exercise' : 'exercises'}
+                                                                                 </span>
+                                                                             </div>
+                                                                             <button
+                                                                                 type="button"
+                                                                                 onClick={() => copySessionDirect(session)}
+                                                                                 style={{
+                                                                                     display: 'inline-flex',
+                                                                                     alignItems: 'center',
+                                                                                     gap: '5px',
+                                                                                     background: 'rgba(56, 189, 248, 0.12)',
+                                                                                     border: '1px solid rgba(56, 189, 248, 0.3)',
+                                                                                     color: 'var(--primary)',
+                                                                                     cursor: 'pointer',
+                                                                                     padding: '4px 10px',
+                                                                                     borderRadius: '6px',
+                                                                                     fontSize: '0.75rem',
+                                                                                     fontWeight: 600,
+                                                                                     transition: 'all 0.15s ease'
+                                                                                 }}
+                                                                                 onMouseOver={e => e.currentTarget.style.background = 'rgba(56, 189, 248, 0.22)'}
+                                                                                 onMouseOut={e => e.currentTarget.style.background = 'rgba(56, 189, 248, 0.12)'}
+                                                                             >
+                                                                                 <Copy size={13} />
+                                                                                 Copy Session
+                                                                             </button>
+                                                                         </div>
+                                                                         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.45rem' }}>
+                                                                             {exercises.map((ex: any, exIdx: number) => {
+                                                                                 const sets = Array.isArray(ex.sets) ? ex.sets : [];
+                                                                                 return (
+                                                                                     <div key={ex.id || `hist-ex-${exIdx}`} style={{ fontSize: '0.82rem', color: 'var(--secondary-foreground)' }}>
+                                                                                         <span style={{ fontWeight: 600, color: 'var(--foreground)' }}>{ex.name}</span>
+                                                                                         {sets.length > 0 && (
+                                                                                             <span style={{ marginLeft: '0.5rem', color: 'var(--secondary-foreground)' }}>
+                                                                                                 ({sets.length} sets: {sets.map((s: any) => `${s.weight ? s.weight + 'x' : ''}${s.reps || '-'}${s.rpe ? '@' + s.rpe : ''}`).join(', ')})
+                                                                                             </span>
+                                                                                         )}
+                                                                                         {ex.notes && (
+                                                                                             <span style={{ marginLeft: '0.5rem', fontStyle: 'italic', fontSize: '0.75rem', color: 'rgba(255,255,255,0.45)' }}>
+                                                                                                 — {ex.notes}
+                                                                                             </span>
+                                                                                         )}
+                                                                                     </div>
+                                                                                 );
+                                                                             })}
+                                                                         </div>
+                                                                     </div>
+                                                                 );
+                                                             })
+                                                         )}
+                                                     </div>
+                                                 </div>
+                                             );
+                                         })}
+                                     </div>
+                                 </div>
+                             )}
                         </div>
                     )}
                 </div>
@@ -2499,11 +2626,41 @@ export default function ProgramBuilder({
                                 Progression
                             </button>
                             <button
+                                onClick={() => { copySession(editingSession.w, editingSession.s); }}
+                                title="Copy Session to Clipboard"
+                                style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(56, 189, 248, 0.12)', border: '1px solid rgba(56, 189, 248, 0.35)', color: 'var(--primary)', cursor: 'pointer', padding: '4px 9px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600 }}
+                            >
+                                <Copy size={13} />
+                                Copy
+                            </button>
+                            {clipboard?.type === 'session' && (
+                                <button
+                                    onClick={() => {
+                                        if (confirm(`Replace exercises in this session with exercises from copied "${clipboard.data.name || 'session'}"?`)) {
+                                            const newWeeks = [...weeks];
+                                            const curS = newWeeks[editingSession.w].sessions[editingSession.s];
+                                            curS.exercises = (clipboard.data.exercises || []).map((e: any) => ({
+                                                ...e,
+                                                id: generateId(),
+                                                sets: (e.sets || []).map((st: any) => ({ ...st, id: generateId() }))
+                                            }));
+                                            setWeeks(newWeeks);
+                                            showToast(`Pasted exercises into "${curS.name}"`);
+                                        }
+                                    }}
+                                    title={`Paste exercises from copied session "${clipboard.data.name || ''}"`}
+                                    style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.4)', color: '#10b981', cursor: 'pointer', padding: '4px 9px', borderRadius: '6px', fontSize: '0.8rem', fontWeight: 600 }}
+                                >
+                                    <ClipboardPaste size={13} />
+                                    Paste
+                                </button>
+                            )}
+                            <button
                                 onClick={() => { duplicateSession(editingSession.w, editingSession.s); }}
                                 title="Duplicate Session"
                                 style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--secondary-foreground)', padding: 6, display: 'flex', alignItems: 'center' }}
                             >
-                                <Copy size={16} />
+                                <CopyPlus size={16} />
                             </button>
                             <button
                                 onClick={() => { setDuplicateSource({ weekIndex: editingSession.w, sessionIndex: editingSession.s }); setDuplicateTargetDate(''); }}

@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { calculateStress } from '@/lib/stress-index';
 import { getExerciseCategory } from '@/lib/exercise-db';
-import { Plus, Trash2, Copy, ChevronLeft, ChevronRight, CopyPlus, CheckCircle2, StickyNote, Activity, Calendar, GripVertical } from 'lucide-react';
+import { Plus, Trash2, Copy, ChevronLeft, ChevronRight, CopyPlus, CheckCircle2, StickyNote, Activity, Calendar, GripVertical, ClipboardPaste } from 'lucide-react';
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
@@ -56,6 +56,8 @@ interface WeeklyViewProps {
     onSelectDay?: (dayNum: number) => void;
     currentWeekNum?: number;
     setCurrentWeekNum?: (weekNum: number) => void;
+    sessionClipboard?: any;
+    onCopySession?: (session: any) => void;
 }
 
 export default function ProgramWeeklyView({
@@ -70,6 +72,8 @@ export default function ProgramWeeklyView({
     onSelectDay: controlledOnSelectDay,
     currentWeekNum: controlledWeekNum,
     setCurrentWeekNum: controlledSetWeekNum,
+    sessionClipboard,
+    onCopySession,
 }: WeeklyViewProps) {
     // Week number state (controlled or internal)
     const [internalWeekNum, setInternalWeekNum] = useState(() => {
@@ -90,13 +94,53 @@ export default function ProgramWeeklyView({
     const [dropTargetDay, setDropTargetDay] = useState<number | null>(null);
     const [dropTargetExIdx, setDropTargetExIdx] = useState<number | null>(null);
 
+    // Toast feedback state
+    const [toastMessage, setToastMessage] = useState<string | null>(null);
+    const showToast = useCallback((msg: string) => {
+        setToastMessage(msg);
+        setTimeout(() => setToastMessage(null), 2500);
+    }, []);
+
+    // Session clipboard state (internal or controlled via props)
+    const [internalClipboard, setInternalClipboard] = useState<any>(null);
+    const activeClipboard = sessionClipboard !== undefined ? sessionClipboard : internalClipboard;
+
     // Current week object
     const currentWeek = useMemo(() => weeks.find(w => w.weekNumber === currentWeekNum), [weeks, currentWeekNum]);
     const maxWeekNum = useMemo(() => weeks.reduce((m, w) => Math.max(m, w.weekNumber || 0), 0), [weeks]);
 
-    // Build sessions by day (1=Mon, 2=Tue, ... 7=Sun in the Monday-start data model)
-    const DISPLAY_ORDER = [1, 2, 3, 4, 5, 6, 7]; // dayNum values in Mon-Sun order
+    // Check if the program was configured to start on Sunday (0=Sun, 1=Mon)
+    const isSundayStart = useMemo(() => {
+        if (!startDate) return false;
+        const [sy, sm, sd] = startDate.split('-').map(Number);
+        const dt = new Date(sy, sm - 1, sd);
+        return dt.getDay() === 0;
+    }, [startDate]);
+
+    // Columns are always displayed in Monday-Sunday order
     const DISPLAY_DAY_NAMES = ['MONDAY', 'TUESDAY', 'WEDNESDAY', 'THURSDAY', 'FRIDAY', 'SATURDAY', 'SUNDAY'];
+
+    // Map column index (0=Mon, 1=Tue, ..., 6=Sun) to session.day
+    // In Sunday-start data model: Sunday=1, Monday=2, Tuesday=3, Wednesday=4, Thursday=5, Friday=6, Saturday=7
+    // In Monday-start data model: Monday=1, Tuesday=2, Wednesday=3, Thursday=4, Friday=5, Saturday=6, Sunday=7
+    const colToDayNum = useCallback((colIdx: number) => {
+        if (isSundayStart) {
+            return colIdx === 6 ? 1 : colIdx + 2;
+        }
+        return colIdx + 1;
+    }, [isSundayStart]);
+
+    // Reverse: map session.day to column index (0..6)
+    const dayNumToCol = useCallback((dayNum: number) => {
+        if (isSundayStart) {
+            return dayNum === 1 ? 6 : dayNum - 2;
+        }
+        return dayNum - 1;
+    }, [isSundayStart]);
+
+    const DISPLAY_ORDER = useMemo(() => {
+        return [0, 1, 2, 3, 4, 5, 6].map(colIdx => colToDayNum(colIdx));
+    }, [colToDayNum]);
 
     const sessionsByDay = useMemo(() => {
         const map: Record<number, any> = {};
@@ -114,12 +158,12 @@ export default function ProgramWeeklyView({
         const start = new Date(sy, sm - 1, sd);
         start.setHours(0, 0, 0, 0);
         const weekStart = new Date(start);
-        weekStart.setDate(weekStart.getDate() + (currentWeekNum - 1) * 7);
-        const weekEnd = new Date(weekStart);
-        weekEnd.setDate(weekEnd.getDate() + 6);
+        weekStart.setDate(weekStart.getDate() + (currentWeekNum - 1) * 7 + (isSundayStart ? 1 : 0));
+        const weekEnd = new Date(start);
+        weekEnd.setDate(weekEnd.getDate() + (currentWeekNum - 1) * 7 + (isSundayStart ? 7 : 6));
         const fmt = (d: Date) => `${SHORT_MONTHS[d.getMonth()]} ${d.getDate()}`;
         return `${fmt(weekStart)} – ${fmt(weekEnd)}`;
-    }, [startDate, currentWeekNum]);
+    }, [startDate, currentWeekNum, isSundayStart]);
 
     // Build a lookup of existing program sessions by date string to detect overlaps
     const existingSessionsByDate = useMemo(() => {
@@ -530,6 +574,63 @@ export default function ProgramWeeklyView({
         }));
     }, [currentWeekNum, setWeeks]);
 
+    const handleCopySession = useCallback((sessionToCopy: any, dayLabel: string) => {
+        if (!sessionToCopy) return;
+        const payload = {
+            ...sessionToCopy,
+            exercises: (sessionToCopy.exercises || []).map((ex: any) => ({
+                ...ex,
+                id: generateId(),
+                sets: (ex.sets || []).map((set: any) => ({ ...set, id: generateId() }))
+            }))
+        };
+        setInternalClipboard(payload);
+        if (onCopySession) {
+            onCopySession(payload);
+        }
+        showToast(`Copied "${sessionToCopy.name || 'Session'}" (${dayLabel})`);
+    }, [onCopySession, showToast]);
+
+    const handlePasteSession = useCallback((targetDayNum: number, dayLabel: string) => {
+        if (!activeClipboard) return;
+        const currentWeekSessions = currentWeek?.sessions || [];
+        const existingSession = currentWeekSessions.find((s: any) => Number(s.day) === Number(targetDayNum));
+        if (existingSession && (existingSession.exercises || []).length > 0) {
+            if (!confirm(`Replace session on ${dayLabel} with "${activeClipboard.name || 'copied session'}"?`)) {
+                return;
+            }
+        }
+
+        const cloned: any = {
+            ...activeClipboard,
+            id: generateId(),
+            day: targetDayNum,
+            scheduledDate: getDateStringForDay(targetDayNum),
+            exercises: (activeClipboard.exercises || []).map((ex: any) => ({
+                ...ex,
+                id: generateId(),
+                sets: (ex.sets || []).map((st: any) => ({
+                    ...st,
+                    id: generateId(),
+                }))
+            }))
+        };
+
+        setWeeks((prev: any[]) => {
+            return prev.map(w => {
+                if (w.weekNumber !== currentWeekNum) return w;
+                const filtered = (w.sessions || []).filter((s: any) => Number(s.day) !== Number(targetDayNum));
+                return {
+                    ...w,
+                    sessions: [...filtered, cloned].sort((a: any, b: any) => (a.day || 0) - (b.day || 0))
+                };
+            });
+        });
+
+        onSelectDay(targetDayNum);
+        showToast(`Pasted session into ${dayLabel}`);
+    }, [activeClipboard, currentWeek, currentWeekNum, getDateStringForDay, onSelectDay, setWeeks, showToast]);
+
     const duplicateWeekToNext = useCallback(() => {
         setWeeks((prev: any[]) => {
             const srcWeek = prev.find(w => w.weekNumber === currentWeekNum);
@@ -905,6 +1006,16 @@ export default function ProgramWeeklyView({
                                         const offset = (dayOfWeek + 6) % 7;
                                         dt.setDate(dt.getDate() - offset);
                                         const snapped = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
+                                        if (isSundayStart) {
+                                            // Program was previously Sunday-start; convert sessions to Monday-start
+                                            setWeeks((prevWeeks: any[]) => prevWeeks.map(w => ({
+                                                ...w,
+                                                sessions: (w.sessions || []).map((s: any) => ({
+                                                    ...s,
+                                                    day: Number(s.day) === 1 ? 7 : Number(s.day) - 1,
+                                                }))
+                                            })));
+                                        }
                                         setStartDate(snapped);
                                     }
                                 }}
@@ -1244,7 +1355,37 @@ export default function ProgramWeeklyView({
                                         {dateLabel}
                                     </div>
                                 </div>
-                                <div style={{ display: 'flex', gap: '4px' }} onClick={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()}>
+                                <div style={{ display: 'flex', gap: '4px', alignItems: 'center' }} onClick={e => e.stopPropagation()} onMouseDown={e => e.stopPropagation()}>
+                                    {session && (
+                                        <button
+                                            onClick={() => handleCopySession(session, dayLabel)}
+                                            title={`Copy ${session.name || 'Session'} to clipboard`}
+                                            style={{
+                                                background: 'transparent', border: 'none',
+                                                color: 'var(--secondary-foreground)', cursor: 'pointer',
+                                                padding: '4px', fontSize: '0.7rem', opacity: 0.7,
+                                                display: 'flex', alignItems: 'center',
+                                            }}
+                                            onMouseOver={e => { e.currentTarget.style.color = 'var(--primary)'; e.currentTarget.style.opacity = '1'; }}
+                                            onMouseOut={e => { e.currentTarget.style.color = 'var(--secondary-foreground)'; e.currentTarget.style.opacity = '0.7'; }}
+                                        >
+                                            <Copy size={13} />
+                                        </button>
+                                    )}
+                                    {activeClipboard && (
+                                        <button
+                                            onClick={() => handlePasteSession(dayNum, dayLabel)}
+                                            title={session ? `Replace session on ${dayLabel} with "${activeClipboard.name || 'Session'}"` : `Paste "${activeClipboard.name || 'Session'}" onto ${dayLabel}`}
+                                            style={{
+                                                background: 'rgba(6, 182, 212, 0.15)', border: '1px solid rgba(6, 182, 212, 0.4)',
+                                                color: 'var(--primary)', cursor: 'pointer',
+                                                padding: '2px 6px', borderRadius: '4px', fontSize: '0.66rem', fontWeight: 700,
+                                                display: 'flex', alignItems: 'center', gap: 3,
+                                            }}
+                                        >
+                                            <ClipboardPaste size={11} /> {session ? 'Replace' : 'Paste'}
+                                        </button>
+                                    )}
                                     {session && (
                                         <button
                                             onClick={() => clearDay(dayNum)}
@@ -1254,8 +1395,10 @@ export default function ProgramWeeklyView({
                                                 color: 'var(--secondary-foreground)', cursor: 'pointer',
                                                 padding: '4px', fontSize: '0.7rem', opacity: 0.6,
                                             }}
+                                            onMouseOver={e => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.opacity = '1'; }}
+                                            onMouseOut={e => { e.currentTarget.style.color = 'var(--secondary-foreground)'; e.currentTarget.style.opacity = '0.6'; }}
                                         >
-                                            <Trash2 size={14} />
+                                            <Trash2 size={13} />
                                         </button>
                                     )}
                                 </div>
@@ -1441,13 +1584,38 @@ export default function ProgramWeeklyView({
                                         onDragOver={(e) => handleDayDragOver(e, dayNum)}
                                         onDrop={(e) => handleDayDrop(e, dayNum)}
                                         style={{
-                                            flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                            flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                                             color: 'rgba(255,255,255,0.25)', fontSize: '0.72rem', textAlign: 'center',
                                             border: '1px dashed rgba(255,255,255,0.1)', borderRadius: '8px',
-                                            minHeight: '100px', margin: '4px 0', padding: '12px',
+                                            minHeight: '100px', margin: '4px 0', padding: '12px', gap: '8px',
                                         }}
                                     >
-                                        Drop an exercise here or click to select this session.
+                                        <div>Drop an exercise here or click to select this session.</div>
+                                        {activeClipboard && (
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    handlePasteSession(dayNum, dayLabel);
+                                                }}
+                                                style={{
+                                                    background: 'rgba(6, 182, 212, 0.15)',
+                                                    border: '1px solid var(--primary)',
+                                                    color: 'var(--primary)',
+                                                    padding: '5px 10px',
+                                                    borderRadius: '6px',
+                                                    cursor: 'pointer',
+                                                    fontSize: '0.74rem',
+                                                    fontWeight: 700,
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    gap: 5,
+                                                    boxShadow: '0 0 10px rgba(6, 182, 212, 0.2)',
+                                                    marginTop: '4px',
+                                                }}
+                                            >
+                                                <ClipboardPaste size={13} /> Paste &quot;{activeClipboard.name || 'Session'}&quot;
+                                            </button>
+                                        )}
                                     </div>
                                 )}
 
@@ -1693,6 +1861,29 @@ export default function ProgramWeeklyView({
                     );
                 })}
             </div>
+            {toastMessage && (
+                <div style={{
+                    position: 'fixed',
+                    bottom: '24px',
+                    right: '24px',
+                    backgroundColor: 'rgba(16, 185, 129, 0.95)',
+                    color: '#fff',
+                    padding: '10px 18px',
+                    borderRadius: '8px',
+                    boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+                    fontSize: '0.85rem',
+                    fontWeight: 600,
+                    zIndex: 9999,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    backdropFilter: 'blur(8px)',
+                    border: '1px solid rgba(255, 255, 255, 0.2)',
+                }}>
+                    <span style={{ fontSize: '1rem' }}>✓</span>
+                    <span>{toastMessage}</span>
+                </div>
+            )}
         </div>
     );
 }

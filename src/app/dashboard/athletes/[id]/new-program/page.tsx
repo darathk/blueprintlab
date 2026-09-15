@@ -33,15 +33,8 @@ export default async function NewProgramPage({ params }: { params: Promise<{ id:
         })
     ]);
 
-    // Strip heavy exercise trees from past programs to keep payload lean
-    const existingPrograms = (rawExistingPrograms || []).map(p => ({
-        ...p,
-        weeks: Array.isArray(p.weeks) ? p.weeks.map((w: any) => ({
-            id: w.id,
-            weekNumber: w.weekNumber,
-            sessions: (Array.isArray(w.sessions) ? w.sessions : []).map((s: any) => ({ id: s.id, day: s.day, exercises: Array.isArray(s.exercises) && s.exercises.length > 0 ? [{ id: 'stub' }] : [] }))
-        })) : []
-    }));
+    // Pass full existing programs so the Program History tab in Program Builder can display previous sessions & exercises
+    const existingPrograms = rawExistingPrograms || [];
 
     // Only resume a draft if it has actual content (at least one exercise).
     // Drafts with empty weeks/sessions are indistinguishable from "no draft"

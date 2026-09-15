@@ -84,7 +84,7 @@ export async function POST(request: Request) {
                 if (!p.startDate) return true;    // no date on old → treat as older
                 
                 // If the newly assigned program starts in the future, don't deactivate anything yet
-                const assignedDateStr = (typeof assignedStart === 'string') ? assignedStart.split('T')[0] : assignedStart.toISOString().split('T')[0];
+                const assignedDateStr = ((assignedStart as any) instanceof Date) ? (assignedStart as any).toISOString().split('T')[0] : String(assignedStart).split('T')[0];
                 const todayStr = new Date().toISOString().split('T')[0];
                 if (assignedDateStr > todayStr) return false; 
                 

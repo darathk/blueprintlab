@@ -28,6 +28,7 @@ export async function GET(request: Request) {
             SELECT
                 a.id AS "athleteId",
                 a.name AS "athleteName",
+                COALESCE(a.status, 'active') AS "status",
                 latest_msg.content AS "lastMessage",
                 COALESCE(latest_msg."createdAt", '1970-01-01T00:00:00Z') AS "lastMessageAt",
                 (COALESCE(unread_count.count, 0) + CASE WHEN COALESCE(a."coachMarkedUnread", false) THEN 1 ELSE 0 END)::int AS "unreadCount"

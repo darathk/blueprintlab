@@ -31,6 +31,15 @@ export async function POST(request: Request) {
 
         const isDuplicate = program.athleteId === targetAthleteId;
 
+        // Detect source program start weekday (0=Sun, 1=Mon, ..., 6=Sat)
+        let sourceStartDay = 1;
+        if (program.startDate) {
+            const raw = ((program.startDate as any) instanceof Date) ? (program.startDate as any).toISOString() : String(program.startDate);
+            const [sy, sm, sd] = raw.slice(0, 10).split('-').map(Number);
+            const sDate = new Date(sy, sm - 1, sd);
+            sourceStartDay = sDate.getDay();
+        }
+
         // Deep-clone weeks with fresh UUIDs for all nested objects
         let rawWeeks = Array.isArray(program.weeks) ? (program.weeks as any[]).map(week => ({
             ...week,
@@ -41,6 +50,10 @@ export async function POST(request: Request) {
                 exercises: Array.isArray(session.exercises) ? session.exercises.map(ex => ({
                     ...ex,
                     id: randomUUID(),
+                    sets: Array.isArray(ex.sets) ? ex.sets.map((set: any) => ({
+                        ...set,
+                        id: randomUUID(),
+                    })) : [],
                 })) : [],
             })) : [],
         })) : [];
@@ -54,12 +67,6 @@ export async function POST(request: Request) {
             rawWeeks = rawWeeks.slice(firstPopulatedIdx);
         }
 
-        // Renumber weeks sequentially 1, 2, 3...
-        const clonedWeeks = rawWeeks.map((week, idx) => ({
-            ...week,
-            weekNumber: idx + 1,
-        }));
-
         let targetStartDate = new Date().toISOString().split('T')[0];
         if (isDuplicate) {
             const existingPrograms = await prisma.program.findMany({
@@ -72,7 +79,7 @@ export async function POST(request: Request) {
 
             for (const p of existingPrograms) {
                 if (p.startDate) {
-                    const raw = typeof p.startDate === 'string' ? p.startDate : p.startDate.toISOString();
+                    const raw = ((p.startDate as any) instanceof Date) ? (p.startDate as any).toISOString() : String(p.startDate);
                     const [y, m, d] = raw.slice(0, 10).split('-').map(Number);
                     const start = new Date(y, m - 1, d);
                     const weekCount = Array.isArray(p.weeks) ? Math.max(1, p.weeks.length) : 1;
@@ -91,7 +98,7 @@ export async function POST(request: Request) {
             targetStartDate = `${maxEndDate.getFullYear()}-${String(maxEndDate.getMonth() + 1).padStart(2, '0')}-${String(maxEndDate.getDate()).padStart(2, '0')}`;
         } else {
             if (program.startDate) {
-                const raw = typeof program.startDate === 'string' ? program.startDate : program.startDate.toISOString();
+                const raw = ((program.startDate as any) instanceof Date) ? (program.startDate as any).toISOString() : String(program.startDate);
                 const [y, m, d] = raw.slice(0, 10).split('-').map(Number);
                 const dt = new Date(y, m - 1, d);
                 const dayOfWeek = dt.getDay();
@@ -100,6 +107,40 @@ export async function POST(request: Request) {
                 targetStartDate = `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2, '0')}-${String(dt.getDate()).padStart(2, '0')}`;
             }
         }
+
+        // Target start date starts on Monday (day 1).
+        // If source program was Sunday-start (day 0), convert session days:
+        // Sunday (1) -> 7, Monday (2) -> 1, Tuesday (3) -> 2, etc.
+        const shouldRemapSundayDays = sourceStartDay === 0;
+
+        const [ty, tm, td] = targetStartDate.split('-').map(Number);
+        const tStart = new Date(ty, tm - 1, td);
+        tStart.setHours(0, 0, 0, 0);
+
+        // Renumber weeks sequentially 1, 2, 3... and update session days & scheduled dates
+        const clonedWeeks = rawWeeks.map((week, idx) => {
+            const weekNumber = idx + 1;
+            const updatedSessions = (week.sessions || []).map((s: any) => {
+                const rawDay = Number(s.day || 1);
+                const dayNum = shouldRemapSundayDays ? (rawDay === 1 ? 7 : rawDay - 1) : rawDay;
+
+                const sessDate = new Date(tStart);
+                sessDate.setDate(sessDate.getDate() + (weekNumber - 1) * 7 + (dayNum - 1));
+                const scheduledDate = `${sessDate.getFullYear()}-${String(sessDate.getMonth() + 1).padStart(2, '0')}-${String(sessDate.getDate()).padStart(2, '0')}`;
+
+                return {
+                    ...s,
+                    day: dayNum,
+                    scheduledDate,
+                };
+            });
+
+            return {
+                ...week,
+                weekNumber,
+                sessions: updatedSessions,
+            };
+        });
 
         const newProgram = await prisma.program.create({
             data: {
