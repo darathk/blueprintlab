@@ -146,7 +146,10 @@ export default function ProgramWeeklyView({
         const map: Record<number, any> = {};
         if (!currentWeek) return map;
         (currentWeek.sessions || []).forEach((s: any) => {
-            map[s.day] = s;
+            const dayKey = Number(s.day);
+            if (!map[dayKey] || ((s.exercises || []).length > 0 && (map[dayKey].exercises || []).length === 0)) {
+                map[dayKey] = s;
+            }
         });
         return map;
     }, [currentWeek]);

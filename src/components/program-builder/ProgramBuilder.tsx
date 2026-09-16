@@ -1809,7 +1809,10 @@ export default function ProgramBuilder({
             weekIndex = newWeeks.findIndex(w => w.weekNumber === weekNum);
         }
 
-        const sessionIndex = newWeeks[weekIndex].sessions.findIndex(s => s.day === dayNum);
+        const sessionIndex = newWeeks[weekIndex].sessions.findIndex(s =>
+            (s.scheduledDate && dateStr && s.scheduledDate === dateStr) ||
+            Number(s.day) === Number(dayNum)
+        );
 
         if (sessionIndex === -1) {
             const totalSessions = newWeeks.reduce((sum, w) => sum + w.sessions.length, 0);
@@ -1818,7 +1821,7 @@ export default function ProgramBuilder({
                 day: dayNum,
                 name: `Session ${totalSessions + 1}`,
                 exercises: [],
-                scheduledDate: ''
+                scheduledDate: dateStr || ''
             });
             setWeeks(newWeeks);
             setEditingSession({ w: weekIndex, s: newWeeks[weekIndex].sessions.length - 1 });
@@ -2388,7 +2391,7 @@ export default function ProgramBuilder({
                                     onDuplicateSession={(weekNum, dayNum) => {
                                         const wIdx = weeks.findIndex(w => w.weekNumber === weekNum);
                                         if (wIdx === -1) return;
-                                        const sIdx = weeks[wIdx].sessions.findIndex(s => s.day === dayNum);
+                                        const sIdx = weeks[wIdx].sessions.findIndex(s => Number(s.day) === Number(dayNum));
                                         if (sIdx === -1) return;
                                         setDuplicateSource({ weekIndex: wIdx, sessionIndex: sIdx });
                                         setDuplicateTargetDate('');
@@ -2670,7 +2673,7 @@ export default function ProgramBuilder({
                                 <CalendarPlus size={16} />
                             </button>
                             <button
-                                onClick={() => { const w = editingSession.w; const s = editingSession.s; closeEditor(); removeSession(w, s); }}
+                                onClick={() => { const w = editingSession.w; const s = editingSession.s; removeSession(w, s); }}
                                 title="Delete Session"
                                 style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--error)', padding: 6, display: 'flex', alignItems: 'center' }}
                             >

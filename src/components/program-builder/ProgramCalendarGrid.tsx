@@ -102,13 +102,18 @@ export default function ProgramCalendarGrid({ weeks, startDate, onSelectDate, on
             const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
             const weekNum = Math.floor(diffDays / 7) + 1;
-            const dayNum = (diffDays % 7) + 1; // 1=Monday (startDate weekday), 7=Sunday
+            const dayNum = ((diffDays % 7) + 7) % 7 + 1; // 1=Monday (startDate weekday), 7=Sunday
 
             const isBeforeProgram = date.getTime() < progStart.getTime();
 
-            // Find existing session
+            // Find existing session — match by scheduledDate or day number (number-safe)
             const week = weeks.find(w => w.weekNumber === weekNum);
-            const session = week?.sessions?.find(s => s.day === dayNum);
+            const daySessions = week?.sessions?.filter(s =>
+                (s.scheduledDate && dateStr && s.scheduledDate === dateStr) ||
+                Number(s.day) === Number(dayNum)
+            ) || [];
+            // If multiple sessions exist on this day, prefer the one with exercises so empty placeholders don't mask filled sessions
+            const session = daySessions.find(s => Array.isArray(s.exercises) && s.exercises.length > 0) || daySessions[0];
 
             // Find ghost sessions from existing programs
             const ghostSessions = existingSessionsByDate[dateStr] || [];
