@@ -28,13 +28,19 @@ interface AthleteBilling {
     id: string;
     name: string;
     email: string;
+    customerEmail?: string | null;
+    customerName?: string | null;
     hasSubscription: boolean;
     status: string; // active, past_due, canceled, trialing, unpaid, none
+    rawAmount?: number;
+    billingInterval?: string;
+    interval?: string;
+    intervalCount?: number;
     monthlyAmount: number;
     currency: string;
     currentPeriodEnd: number | null;
     cancelAtPeriodEnd: boolean;
-    stripeSubscriptionId: string | null;
+    stripeSubscriptionId?: string | null;
     productName?: string | null;
 }
 
@@ -43,6 +49,8 @@ interface UnmatchedSubscriber {
     email: string;
     name: string;
     status: string;
+    rawAmount?: number;
+    billingInterval?: string;
     monthlyAmount: number;
     currency: string;
     currentPeriodEnd: number | null;
@@ -70,6 +78,7 @@ interface StripeProductItem {
 
 interface RevenueData {
     connected: boolean;
+    cycleRevenue?: number;
     mrr: number;
     activeSubscribers: number;
     pastDueCount: number;
@@ -96,8 +105,7 @@ export default function CoachRevenuePage() {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
-    const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'unpaid' | 'past_due'>('all');
-    const [selectedProduct, setSelectedProduct] = useState<string>('all');
+    const [filterStatus, setFilterStatus] = useState<'all' | 'past_due'>('all');
 
     // Stripe Billing Settings Drawer / Form State
     const [showSettings, setShowSettings] = useState(false);
@@ -136,24 +144,15 @@ export default function CoachRevenuePage() {
         }
     };
 
-    const fetchRevenue = async (isRefresh = false, prodId?: string) => {
+    const fetchRevenue = async (isRefresh = false) => {
         if (isRefresh) setRefreshing(true);
         else setLoading(true);
 
-        const currentProd = prodId !== undefined ? prodId : selectedProduct;
-
         try {
-            const url = currentProd && currentProd !== 'all' 
-                ? `/api/coach/revenue?productId=${encodeURIComponent(currentProd)}`
-                : '/api/coach/revenue?productId=all';
-
-            const res = await fetch(url);
+            const res = await fetch('/api/coach/revenue');
             if (res.ok) {
                 const json: RevenueData = await res.json();
                 setData(json);
-                if (json.selectedProductId && prodId === undefined) {
-                    setSelectedProduct(json.selectedProductId);
-                }
                 if (json.config?.stripeProductId) {
                     setFormProductId(json.config.stripeProductId);
                 }
@@ -164,6 +163,7 @@ export default function CoachRevenuePage() {
                 setData({
                     connected: false,
                     error: `Failed to load revenue data (HTTP ${res.status})`,
+                    cycleRevenue: 0,
                     mrr: 0,
                     activeSubscribers: 0,
                     pastDueCount: 0,
@@ -176,6 +176,7 @@ export default function CoachRevenuePage() {
             setData({
                 connected: false,
                 error: err.message || 'Network error fetching revenue',
+                cycleRevenue: 0,
                 mrr: 0,
                 activeSubscribers: 0,
                 pastDueCount: 0,
@@ -193,28 +194,19 @@ export default function CoachRevenuePage() {
         fetchRevenue();
     }, []);
 
-    const handleProductChange = (prodId: string) => {
-        setSelectedProduct(prodId);
-        fetchRevenue(true, prodId);
-    };
-
     const filteredAthletes = useMemo(() => {
         if (!data?.athletes) return [];
         return data.athletes.filter((athlete) => {
-            const matchesQuery = 
-                athlete.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                athlete.email.toLowerCase().includes(searchQuery.toLowerCase());
+            const query = searchQuery.toLowerCase().trim();
+            const matchesQuery = !query ||
+                athlete.name.toLowerCase().includes(query) ||
+                athlete.email.toLowerCase().includes(query) ||
+                (athlete.customerEmail && athlete.customerEmail.toLowerCase().includes(query));
             
             if (!matchesQuery) return false;
 
-            if (filterStatus === 'active') {
-                return athlete.status === 'active' || athlete.status === 'trialing';
-            }
             if (filterStatus === 'past_due') {
                 return athlete.status === 'past_due' || athlete.status === 'unpaid';
-            }
-            if (filterStatus === 'unpaid') {
-                return !athlete.hasSubscription || athlete.status === 'canceled' || athlete.status === 'none';
             }
             return true;
         });
@@ -238,11 +230,7 @@ export default function CoachRevenuePage() {
         });
     };
 
-    const activeProductName = useMemo(() => {
-        if (selectedProduct === 'all') return 'All Coaching Products';
-        const found = data?.availableProducts?.find(p => p.id === selectedProduct);
-        return found ? found.name : selectedProduct;
-    }, [selectedProduct, data?.availableProducts]);
+    const activeProductName = '[BPS] Coach Darath';
 
     const renderSettingsForm = (showCloseButton = false) => (
         <div className="glass-panel" style={{
@@ -474,58 +462,22 @@ export default function CoachRevenuePage() {
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                        {/* Product / Coach Filter Dropdown */}
-                        {data?.connected && data.availableProducts && data.availableProducts.length > 0 && (
-                            <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
-                                <div style={{
-                                    position: 'absolute',
-                                    left: 12,
-                                    pointerEvents: 'none',
-                                    color: 'var(--primary)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                }}>
-                                    <Tag size={14} />
-                                </div>
-                                <select
-                                    value={selectedProduct}
-                                    onChange={(e) => handleProductChange(e.target.value)}
-                                    className="glass-button chat-press"
-                                    style={{
-                                        padding: '8px 32px 8px 32px',
-                                        fontSize: '0.85rem',
-                                        fontWeight: 600,
-                                        cursor: 'pointer',
-                                        appearance: 'none',
-                                        WebkitAppearance: 'none',
-                                        borderRadius: '12px',
-                                        color: 'var(--foreground)',
-                                        background: 'rgba(125, 135, 210, 0.12)',
-                                        border: '1px solid rgba(125, 135, 210, 0.3)',
-                                        outline: 'none',
-                                    }}
-                                >
-                                    <option value="all" style={{ background: '#12121a', color: '#fff' }}>
-                                        All Products (Organization)
-                                    </option>
-                                    {data.availableProducts.map((p) => (
-                                        <option key={p.id} value={p.id} style={{ background: '#12121a', color: '#fff' }}>
-                                            {p.name} ({p.activeSubs} active)
-                                        </option>
-                                    ))}
-                                </select>
-                                <div style={{
-                                    position: 'absolute',
-                                    right: 10,
-                                    pointerEvents: 'none',
-                                    color: 'var(--secondary-foreground)',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                }}>
-                                    <ChevronDown size={14} />
-                                </div>
-                            </div>
-                        )}
+                        {/* Dedicated Coach Product Badge */}
+                        <div style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '8px 16px',
+                            fontSize: '0.85rem',
+                            fontWeight: 700,
+                            borderRadius: '12px',
+                            color: 'var(--foreground)',
+                            background: 'rgba(125, 135, 210, 0.12)',
+                            border: '1px solid rgba(125, 135, 210, 0.3)',
+                        }}>
+                            <Tag size={14} style={{ color: 'var(--primary)' }} />
+                            <span>[BPS] Coach Darath</span>
+                        </div>
 
                         <button
                             onClick={() => setShowSettings(!showSettings)}
@@ -584,26 +536,6 @@ export default function CoachRevenuePage() {
                         </a>
                     </div>
                 </div>
-
-                {/* Sub-header Active Product Badge */}
-                {data?.connected && selectedProduct !== 'all' && (
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        fontSize: '0.82rem',
-                        color: 'var(--secondary-foreground)',
-                        background: 'rgba(255, 255, 255, 0.03)',
-                        padding: '6px 14px',
-                        borderRadius: '10px',
-                        border: '1px solid var(--card-border)',
-                        width: 'fit-content',
-                    }}>
-                        <span>Filtering revenue exclusively for:</span>
-                        <span style={{ color: 'var(--primary)', fontWeight: 700 }}>{activeProductName}</span>
-                        <code style={{ fontSize: '0.75rem', opacity: 0.7 }}>({selectedProduct})</code>
-                    </div>
-                )}
             </div>
 
             {/* Collapsible Stripe Settings Panel (for Connected State) */}
@@ -765,7 +697,7 @@ export default function CoachRevenuePage() {
                         gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
                         gap: '16px',
                     }}>
-                        {/* MRR Card */}
+                        {/* Billing Cycle Volume Card */}
                         <div className="glass-panel" style={{
                             padding: '22px',
                             borderRadius: '20px',
@@ -777,7 +709,7 @@ export default function CoachRevenuePage() {
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
                                 <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                    Monthly Recurring (MRR)
+                                    Billing Cycle Volume
                                 </span>
                                 <div style={{ width: 34, height: 34, borderRadius: '10px', background: 'rgba(125, 135, 210, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
                                     <DollarSign size={18} />
@@ -785,10 +717,10 @@ export default function CoachRevenuePage() {
                             </div>
                             <div>
                                 <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#fff', letterSpacing: '-0.03em' }}>
-                                    {formatMoney(data.mrr, data.currency)}
+                                    {formatMoney(data.cycleRevenue || data.mrr, data.currency)}
                                 </div>
                                 <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginTop: '4px' }}>
-                                    Active monthly run-rate {selectedProduct !== 'all' ? `(${activeProductName})` : ''}
+                                    Per 4-wk cycle • {formatMoney(data.mrr, data.currency)}/mo normalized MRR
                                 </div>
                             </div>
                         </div>
@@ -814,7 +746,7 @@ export default function CoachRevenuePage() {
                                     {data.activeSubscribers}
                                 </div>
                                 <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginTop: '4px' }}>
-                                    Paying athletes in Stripe
+                                    Paying athletes for Coach Darath
                                 </div>
                             </div>
                         </div>
@@ -900,7 +832,7 @@ export default function CoachRevenuePage() {
                                     Athlete Subscriptions
                                 </h2>
                                 <p style={{ fontSize: '0.82rem', color: 'var(--secondary-foreground)', margin: 0 }}>
-                                    Matching athlete emails to active Stripe subscriptions {selectedProduct !== 'all' ? `for ${activeProductName}` : ''}
+                                    Active paying subscriptions for [BPS] Coach Darath ({data.athletes.length} active athletes)
                                 </p>
                             </div>
 
@@ -908,7 +840,7 @@ export default function CoachRevenuePage() {
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                                 <div style={{
                                     position: 'relative',
-                                    minWidth: 200,
+                                    minWidth: 220,
                                 }}>
                                     <Search size={14} style={{
                                         position: 'absolute',
@@ -919,7 +851,7 @@ export default function CoachRevenuePage() {
                                     }} />
                                     <input
                                         type="text"
-                                        placeholder="Search athletes..."
+                                        placeholder="Search athletes or email..."
                                         value={searchQuery}
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         style={{
@@ -942,26 +874,40 @@ export default function CoachRevenuePage() {
                                     borderRadius: '12px',
                                     border: '1px solid var(--card-border)',
                                 }}>
-                                    {(['all', 'active', 'unpaid', 'past_due'] as const).map((tab) => (
+                                    <button
+                                        onClick={() => setFilterStatus('all')}
+                                        style={{
+                                            padding: '5px 12px',
+                                            borderRadius: '9px',
+                                            fontSize: '0.78rem',
+                                            fontWeight: 600,
+                                            border: 'none',
+                                            background: filterStatus === 'all' ? 'var(--primary)' : 'transparent',
+                                            color: filterStatus === 'all' ? '#fff' : 'var(--secondary-foreground)',
+                                            cursor: 'pointer',
+                                            transition: 'all 0.15s ease',
+                                        }}
+                                    >
+                                        Active ({data.athletes.length})
+                                    </button>
+                                    {data.pastDueCount > 0 && (
                                         <button
-                                            key={tab}
-                                            onClick={() => setFilterStatus(tab)}
+                                            onClick={() => setFilterStatus('past_due')}
                                             style={{
                                                 padding: '5px 12px',
                                                 borderRadius: '9px',
                                                 fontSize: '0.78rem',
                                                 fontWeight: 600,
                                                 border: 'none',
-                                                background: filterStatus === tab ? 'var(--primary)' : 'transparent',
-                                                color: filterStatus === tab ? '#fff' : 'var(--secondary-foreground)',
+                                                background: filterStatus === 'past_due' ? 'rgba(239, 68, 68, 0.2)' : 'transparent',
+                                                color: filterStatus === 'past_due' ? '#f87171' : 'var(--secondary-foreground)',
                                                 cursor: 'pointer',
-                                                textTransform: 'capitalize',
                                                 transition: 'all 0.15s ease',
                                             }}
                                         >
-                                            {tab === 'past_due' ? 'Past Due' : tab}
+                                            Past Due ({data.pastDueCount})
                                         </button>
-                                    ))}
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -981,16 +927,13 @@ export default function CoachRevenuePage() {
                                     }}>
                                         <th style={{ padding: '12px 14px', fontWeight: 600 }}>Athlete</th>
                                         <th style={{ padding: '12px 14px', fontWeight: 600 }}>Status</th>
-                                        <th style={{ padding: '12px 14px', fontWeight: 600 }}>Plan Amount</th>
+                                        <th style={{ padding: '12px 14px', fontWeight: 600 }}>Plan / Billing</th>
                                         <th style={{ padding: '12px 14px', fontWeight: 600 }}>Next Billing</th>
                                         <th style={{ padding: '12px 14px', fontWeight: 600, textAlign: 'right' }}>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {filteredAthletes.map((athlete) => {
-                                        const isActive = athlete.status === 'active' || athlete.status === 'trialing';
-                                        const isPastDue = athlete.status === 'past_due' || athlete.status === 'unpaid';
-
                                         return (
                                             <tr
                                                 key={athlete.id}
@@ -1007,15 +950,14 @@ export default function CoachRevenuePage() {
                                                     <div style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', opacity: 0.8 }}>
                                                         {athlete.email}
                                                     </div>
-                                                    {athlete.productName && (
+                                                    {athlete.customerEmail && (
                                                         <div style={{ fontSize: '0.7rem', color: 'var(--primary)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                                                            <Tag size={10} />
-                                                            <span>{athlete.productName}</span>
+                                                            <span>Stripe: {athlete.customerEmail}</span>
                                                         </div>
                                                     )}
                                                 </td>
                                                 <td style={{ padding: '14px' }}>
-                                                    {isActive ? (
+                                                    {athlete.status === 'active' ? (
                                                         <span style={{
                                                             fontSize: '0.72rem',
                                                             fontWeight: 700,
@@ -1031,7 +973,23 @@ export default function CoachRevenuePage() {
                                                             <CheckCircle2 size={12} />
                                                             Active
                                                         </span>
-                                                    ) : isPastDue ? (
+                                                    ) : athlete.status === 'trialing' ? (
+                                                        <span style={{
+                                                            fontSize: '0.72rem',
+                                                            fontWeight: 700,
+                                                            padding: '3px 9px',
+                                                            borderRadius: '12px',
+                                                            background: 'rgba(125, 135, 210, 0.15)',
+                                                            color: 'var(--primary)',
+                                                            border: '1px solid rgba(125, 135, 210, 0.3)',
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: '4px',
+                                                        }}>
+                                                            <Clock size={12} />
+                                                            Trialing
+                                                        </span>
+                                                    ) : (
                                                         <span style={{
                                                             fontSize: '0.72rem',
                                                             fontWeight: 700,
@@ -1047,40 +1005,12 @@ export default function CoachRevenuePage() {
                                                             <AlertCircle size={12} />
                                                             Past Due
                                                         </span>
-                                                    ) : athlete.status === 'canceled' ? (
-                                                        <span style={{
-                                                            fontSize: '0.72rem',
-                                                            fontWeight: 600,
-                                                            padding: '3px 9px',
-                                                            borderRadius: '12px',
-                                                            background: 'rgba(255, 255, 255, 0.06)',
-                                                            color: 'var(--secondary-foreground)',
-                                                        }}>
-                                                            Canceled
-                                                        </span>
-                                                    ) : (
-                                                        <span style={{
-                                                            fontSize: '0.72rem',
-                                                            fontWeight: 500,
-                                                            padding: '3px 9px',
-                                                            borderRadius: '12px',
-                                                            background: 'rgba(255, 255, 255, 0.04)',
-                                                            color: 'var(--secondary-foreground)',
-                                                            opacity: 0.6,
-                                                        }}>
-                                                            No Stripe Sub
-                                                        </span>
                                                     )}
                                                 </td>
-                                                <td style={{ padding: '14px', fontWeight: 600 }}>
-                                                    {athlete.monthlyAmount > 0 ? (
-                                                        <span style={{ color: 'var(--foreground)' }}>
-                                                            {formatMoney(athlete.monthlyAmount, athlete.currency)}
-                                                            <span style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', fontWeight: 400 }}> / mo</span>
-                                                        </span>
-                                                    ) : (
-                                                        <span style={{ color: 'var(--secondary-foreground)', opacity: 0.5 }}>—</span>
-                                                    )}
+                                                <td style={{ padding: '14px', fontWeight: 700 }}>
+                                                    <span style={{ color: 'var(--foreground)', fontSize: '0.92rem' }}>
+                                                        {athlete.billingInterval || (athlete.rawAmount ? `$${athlete.rawAmount}` : formatMoney(athlete.monthlyAmount, athlete.currency))}
+                                                    </span>
                                                 </td>
                                                 <td style={{ padding: '14px', color: 'var(--secondary-foreground)', fontSize: '0.8rem' }}>
                                                     {athlete.currentPeriodEnd ? (
@@ -1120,7 +1050,7 @@ export default function CoachRevenuePage() {
                                     {filteredAthletes.length === 0 && (
                                         <tr>
                                             <td colSpan={5} style={{ padding: '36px', textAlign: 'center', color: 'var(--secondary-foreground)' }}>
-                                                No athletes found matching this filter.
+                                                No athletes found matching this search.
                                             </td>
                                         </tr>
                                     )}

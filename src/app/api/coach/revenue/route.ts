@@ -141,16 +141,15 @@ export async function GET(req: Request) {
 
     const envProductId = process.env.STRIPE_PRODUCT_ID || dbConfig?.stripeProductId;
     
-    // Default to coach's product ID if set
-    const targetProductId = queryProductId === 'all' 
-        ? null 
-        : (queryProductId || envProductId || 'prod_PcfIQXv2L5xYid');
+    // Exclusively lock to Coach Darath's product ID
+    const targetProductId = 'prod_PcfIQXv2L5xYid';
 
     const stripeKey = process.env.STRIPE_SECRET_KEY || process.env.STRIPE_RESTRICTED_KEY || dbConfig?.stripeSecretKey;
 
     if (!stripeKey) {
         return secureJsonResponse({
             connected: false,
+            cycleRevenue: 0,
             mrr: 0,
             activeSubscribers: 0,
             pastDueCount: 0,
@@ -158,8 +157,10 @@ export async function GET(req: Request) {
             athletes: [],
             unmatchedSubscribers: [],
             recentCharges: [],
-            availableProducts: [],
-            selectedProductId: targetProductId || null,
+            availableProducts: [
+                { id: targetProductId, name: '[BPS] Coach Darath', activeSubs: 0 }
+            ],
+            selectedProductId: targetProductId,
             currency: 'USD',
             message: 'Stripe API key is not configured. Connect your key below or in settings.',
         });
@@ -210,11 +211,12 @@ export async function GET(req: Request) {
                     return secureJsonResponse({
                         connected: false,
                         error: errorMsg,
+                        cycleRevenue: 0,
                         mrr: 0,
                         activeSubscribers: 0,
                         athletes: [],
                         availableProducts: [],
-                        selectedProductId: null,
+                        selectedProductId: targetProductId,
                     });
                 }
 
@@ -226,8 +228,8 @@ export async function GET(req: Request) {
                 startingAfter = pageSubs[pageSubs.length - 1].id;
             }
 
-            // 5. Fetch recent charges from Stripe (limit 50)
-            const chargesRes = await fetch('https://api.stripe.com/v1/charges?limit=50', {
+            // 5. Fetch recent charges from Stripe (limit 100)
+            const chargesRes = await fetch('https://api.stripe.com/v1/charges?limit=100', {
                 headers: stripeHeaders,
             });
 
@@ -243,34 +245,52 @@ export async function GET(req: Request) {
             };
         }
 
-        // 6. Discover all Products from subscriptions & count active subscribers
-        const productStats = new Map<string, { id: string; name: string; activeSubs: number }>();
+        // Helper functions for matching and display
+        const KNOWN_EMAIL_ALIASES: Record<string, string> = {
+            'tasker.hannah@yahoo.com': 'hannahtasker09@gmail.com',
+            'gbaezanevarez@icloud.com': 'gilbaezanevarez@gmail.com',
+            'sdiaz_7@outlook.com': 'fruitsnackclan@gmail.com',
+            'josecoolblue@gmail.com': 'jose.j.vargas04@gmail.com',
+            'raylabelle178@gmail.com': 'thejokerlabelle@gmail.com',
+            'marcello.chicko@icloud.com': 'marcello.chicko@icloud.com',
+        };
 
-        allSubscriptions.forEach((sub) => {
-            const items = sub.items?.data || [];
-            items.forEach((item) => {
-                const prodId = item.price?.product || item.plan?.product;
+        const normalizeString = (str: string): string => {
+            return (str || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        };
 
-                if (prodId && typeof prodId === 'string') {
-                    const existing = productStats.get(prodId) || {
-                        id: prodId,
-                        name: productsMap.get(prodId) || prodId,
-                        activeSubs: 0,
-                    };
-                    if (sub.status === 'active' || sub.status === 'trialing') {
-                        existing.activeSubs += 1;
-                    }
-                    productStats.set(prodId, existing);
-                }
-            });
-        });
+        const normalizeGmail = (email: string): string => {
+            if (!email) return '';
+            const [user, domain] = email.toLowerCase().trim().split('@');
+            if (domain === 'gmail.com' || domain === 'googlemail.com') {
+                const cleanUser = user.split('+')[0].replace(/\./g, '');
+                return `${cleanUser}@gmail.com`;
+            }
+            return `${user}@${domain}`;
+        };
 
-        // Sort products by active subscriber count
-        const availableProducts = Array.from(productStats.values()).sort((a, b) => b.activeSubs - a.activeSubs);
+        const formatPlanBillingInterval = (amount: number, interval: string, intervalCount: number): string => {
+            const formattedAmount = `$${amount}`;
+            if (interval === 'week') {
+                if (intervalCount === 4) return `${formattedAmount} / 4 wks`;
+                if (intervalCount === 1) return `${formattedAmount} / wk`;
+                return `${formattedAmount} / ${intervalCount} wks`;
+            }
+            if (interval === 'month') {
+                if (intervalCount === 1) return `${formattedAmount} / mo`;
+                return `${formattedAmount} / ${intervalCount} mos`;
+            }
+            if (interval === 'year') {
+                return `${formattedAmount} / yr`;
+            }
+            return `${formattedAmount} / ${interval}`;
+        };
 
-        // 7. Filter Subscriptions by Coach Product if targetProductId is specified
-        const subscriptions = allSubscriptions.filter((sub) => {
-            if (!targetProductId) return true; // Include all if no product filter
+        // 6. Filter strictly for Coach Darath's product and only active / trialing / past_due
+        // Exclude all cancelled, incomplete, and past subscriptions
+        const coachDarathSubs = allSubscriptions.filter((sub) => {
+            if (sub.status === 'canceled' || sub.status === 'incomplete_expired') return false;
+            if (sub.status !== 'active' && sub.status !== 'trialing' && sub.status !== 'past_due') return false;
             const items = sub.items?.data || [];
             return items.some((item) => {
                 const prodId = item.price?.product || item.plan?.product;
@@ -278,7 +298,7 @@ export async function GET(req: Request) {
             });
         });
 
-        // 8. Fetch all active athletes from database
+        // 7. Fetch all active athletes from database
         const dbAthletes = await prisma.athlete.findMany({
             where: {
                 role: { not: 'coach' },
@@ -292,167 +312,151 @@ export async function GET(req: Request) {
             orderBy: { name: 'asc' },
         });
 
-        // 9. Compute MRR and Metrics for the filtered subscriptions
-        let totalMrrCents = 0;
+        // 8. Compute Run-rate, MRR, and Matched Athletes
+        let cycleRevenueTotal = 0;
+        let annualizedMrrTotal = 0;
         let activeCount = 0;
         let pastDueCount = 0;
-        let primaryCurrency = 'usd';
+        let primaryCurrency = 'USD';
 
-        // Map filtered subscriptions by customer email
-        const subMapByEmail = new Map<string, {
-            sub: StripeSubscription;
-            amountMonthly: number;
-            currency: string;
-            customerName?: string;
-            productName?: string;
-        }>();
+        const coachCustomerEmails = new Set<string>();
+        const matchedAthletes: any[] = [];
+        const unmatchedSubscribers: any[] = [];
+        const usedAthleteIds = new Set<string>();
 
-        const activeSubEmails = new Set<string>();
-
-        subscriptions.forEach((sub) => {
+        coachDarathSubs.forEach((sub) => {
             const customerObj = typeof sub.customer === 'object' ? sub.customer : null;
-            const email = customerObj?.email?.toLowerCase()?.trim();
+            const customerEmail = customerObj?.email?.toLowerCase()?.trim() || '';
             const customerName = customerObj?.name || undefined;
+            if (customerEmail) coachCustomerEmails.add(customerEmail);
 
-            // Find item corresponding to the target product (or the first item)
-            let matchingItem = sub.items?.data?.[0];
-            if (targetProductId && sub.items?.data) {
-                const found = sub.items.data.find((it) => {
-                    const pid = it.price?.product || it.plan?.product;
-                    return pid === targetProductId;
-                });
-                if (found) matchingItem = found;
-            }
+            // Find item corresponding to Coach Darath's product
+            const matchingItem = sub.items?.data?.find((it) => {
+                const pid = it.price?.product || it.plan?.product;
+                return pid === targetProductId;
+            }) || sub.items?.data?.[0];
 
-            const rawAmount = matchingItem?.price?.unit_amount ?? matchingItem?.plan?.amount ?? 0;
+            const rawAmountCents = matchingItem?.price?.unit_amount ?? matchingItem?.plan?.amount ?? 0;
+            const rawAmountDollars = rawAmountCents / 100;
             const quantity = matchingItem?.quantity ?? 1;
             const interval = matchingItem?.price?.recurring?.interval ?? matchingItem?.plan?.interval ?? 'month';
             const intervalCount = matchingItem?.price?.recurring?.interval_count ?? matchingItem?.plan?.interval_count ?? 1;
-            const currency = matchingItem?.price?.currency ?? matchingItem?.plan?.currency ?? 'usd';
+            const currency = (matchingItem?.price?.currency ?? matchingItem?.plan?.currency ?? 'usd').toUpperCase();
             primaryCurrency = currency;
 
-            const prodId = matchingItem?.price?.product || matchingItem?.plan?.product;
-            const productName = prodId ? (productsMap.get(prodId) || productStats.get(prodId)?.name || prodId) : '';
+            const planDisplay = formatPlanBillingInterval(rawAmountDollars, interval, intervalCount);
 
-            let normalizedMonthlyCents = rawAmount * quantity;
-            const count = intervalCount || 1;
+            let monthlyNormalizedDollars = rawAmountDollars * quantity;
             if (interval === 'week') {
-                normalizedMonthlyCents = Math.round((rawAmount * quantity * 52.143) / (count * 12));
-            } else if (interval === 'year') {
-                normalizedMonthlyCents = Math.round((rawAmount * quantity) / (12 * count));
+                monthlyNormalizedDollars = Math.round((rawAmountDollars * quantity * 52.143) / (intervalCount * 12));
             } else if (interval === 'month') {
-                normalizedMonthlyCents = Math.round((rawAmount * quantity) / count);
-            } else if (interval === 'day') {
-                normalizedMonthlyCents = Math.round((rawAmount * quantity * 30.416) / count);
+                monthlyNormalizedDollars = Math.round((rawAmountDollars * quantity) / intervalCount);
             }
 
             if (sub.status === 'active' || sub.status === 'trialing') {
-                totalMrrCents += normalizedMonthlyCents;
+                cycleRevenueTotal += rawAmountDollars * quantity;
+                annualizedMrrTotal += monthlyNormalizedDollars;
                 activeCount++;
-                if (email) activeSubEmails.add(email);
-            } else if (sub.status === 'past_due' || sub.status === 'unpaid') {
+            } else if (sub.status === 'past_due') {
                 pastDueCount++;
             }
 
-            if (email) {
-                const existing = subMapByEmail.get(email);
-                if (!existing || (sub.status === 'active' && existing.sub.status !== 'active')) {
-                    subMapByEmail.set(email, {
-                        sub,
-                        amountMonthly: normalizedMonthlyCents / 100,
-                        currency: currency.toUpperCase(),
-                        customerName,
-                        productName,
+            // Smart Matching: 4-Layer Matcher
+            const cNormEmail = normalizeGmail(customerEmail);
+            const cNormName = normalizeString(customerName || '');
+
+            // 1. Exact Email Match (prefer active profile)
+            let matched = dbAthletes.find(a => !usedAthleteIds.has(a.id) && a.email.toLowerCase().trim() === customerEmail && a.status === 'active');
+            if (!matched) {
+                matched = dbAthletes.find(a => !usedAthleteIds.has(a.id) && a.email.toLowerCase().trim() === customerEmail);
+            }
+
+            // 2. Known Alias Mapping
+            if (!matched && customerEmail && KNOWN_EMAIL_ALIASES[customerEmail]) {
+                const targetEmail = KNOWN_EMAIL_ALIASES[customerEmail].toLowerCase().trim();
+                matched = dbAthletes.find(a => !usedAthleteIds.has(a.id) && a.email.toLowerCase().trim() === targetEmail && a.status === 'active');
+                if (!matched) {
+                    matched = dbAthletes.find(a => !usedAthleteIds.has(a.id) && a.email.toLowerCase().trim() === targetEmail);
+                }
+            }
+
+            // 3. Normalized Gmail Match
+            if (!matched && cNormEmail) {
+                matched = dbAthletes.find(a => !usedAthleteIds.has(a.id) && normalizeGmail(a.email) === cNormEmail && a.status === 'active');
+                if (!matched) {
+                    matched = dbAthletes.find(a => !usedAthleteIds.has(a.id) && normalizeGmail(a.email) === cNormEmail);
+                }
+            }
+
+            // 4. Normalized Full Name Match
+            if (!matched && cNormName && cNormName.length >= 3) {
+                matched = dbAthletes.find(a => {
+                    if (usedAthleteIds.has(a.id) || a.status !== 'active') return false;
+                    const aNorm = normalizeString(a.name);
+                    return aNorm === cNormName || (aNorm.length >= 4 && (cNormName.includes(aNorm) || aNorm.includes(cNormName)));
+                });
+                if (!matched) {
+                    matched = dbAthletes.find(a => {
+                        if (usedAthleteIds.has(a.id)) return false;
+                        const aNorm = normalizeString(a.name);
+                        return aNorm === cNormName || (aNorm.length >= 4 && (cNormName.includes(aNorm) || aNorm.includes(cNormName)));
                     });
                 }
             }
-        });
 
-        // 10. Calculate Gross Revenue This Month
-        const allowedCustomerEmails = targetProductId ? new Set(Array.from(subMapByEmail.keys())) : null;
-
-        const nowDate = new Date();
-        const startOfMonthTimestamp = Math.floor(new Date(nowDate.getFullYear(), nowDate.getMonth(), 1).getTime() / 1000);
-        let grossThisMonthCents = 0;
-
-        charges.forEach((ch) => {
-            const chEmail = ch.billing_details?.email?.toLowerCase()?.trim();
-            if (ch.status === 'succeeded' && ch.paid && !ch.refunded && ch.created >= startOfMonthTimestamp) {
-                if (!allowedCustomerEmails || (chEmail && allowedCustomerEmails.has(chEmail))) {
-                    grossThisMonthCents += ch.amount;
-                }
-            }
-        });
-
-        // 11. Match DB Athletes with Stripe Status (Sanitized: NO internal Stripe IDs leaked)
-        const matchedAthletes = dbAthletes.map((athlete) => {
-            const athleteEmail = athlete.email.toLowerCase().trim();
-            const subInfo = subMapByEmail.get(athleteEmail);
-
-            if (subInfo) {
-                const s = subInfo.sub;
-                return {
-                    id: athlete.id,
-                    name: athlete.name,
-                    email: athlete.email,
+            if (matched) {
+                usedAthleteIds.add(matched.id);
+                matchedAthletes.push({
+                    id: matched.id,
+                    name: matched.name,
+                    email: matched.email,
+                    customerEmail: customerEmail && customerEmail !== matched.email.toLowerCase() ? customerEmail : null,
+                    customerName: customerName || null,
                     hasSubscription: true,
-                    status: s.status, // active, past_due, canceled, trialing, unpaid
-                    monthlyAmount: subInfo.amountMonthly,
-                    currency: subInfo.currency,
-                    currentPeriodEnd: s.current_period_end ? s.current_period_end * 1000 : null,
-                    cancelAtPeriodEnd: s.cancel_at_period_end,
-                    productName: subInfo.productName || null,
-                };
-            }
-
-            return {
-                id: athlete.id,
-                name: athlete.name,
-                email: athlete.email,
-                hasSubscription: false,
-                status: 'none',
-                monthlyAmount: 0,
-                currency: primaryCurrency.toUpperCase(),
-                currentPeriodEnd: null,
-                cancelAtPeriodEnd: false,
-                productName: null,
-            };
-        });
-
-        // 12. Find any Stripe subscriptions not in DB (Sanitized: synthetic IDs only)
-        const dbEmailSet = new Set(dbAthletes.map(a => a.email.toLowerCase().trim()));
-        const unmatchedSubscribers: Array<{
-            id: string;
-            email: string;
-            name: string;
-            status: string;
-            monthlyAmount: number;
-            currency: string;
-            currentPeriodEnd: number | null;
-            productName?: string;
-        }> = [];
-
-        let unmatchedIdx = 0;
-        subMapByEmail.forEach((info, email) => {
-            if (!dbEmailSet.has(email)) {
+                    status: sub.status,
+                    rawAmount: rawAmountDollars,
+                    billingInterval: planDisplay,
+                    interval,
+                    intervalCount,
+                    monthlyAmount: monthlyNormalizedDollars,
+                    currency,
+                    currentPeriodEnd: sub.current_period_end ? sub.current_period_end * 1000 : null,
+                    cancelAtPeriodEnd: sub.cancel_at_period_end,
+                    productName: '[BPS] Coach Darath',
+                });
+            } else {
                 unmatchedSubscribers.push({
-                    id: `ext-${unmatchedIdx++}`,
-                    email: email,
-                    name: info.customerName || email.split('@')[0],
-                    status: info.sub.status,
-                    monthlyAmount: info.amountMonthly,
-                    currency: info.currency,
-                    currentPeriodEnd: info.sub.current_period_end ? info.sub.current_period_end * 1000 : null,
-                    productName: info.productName,
+                    id: `ext-${unmatchedSubscribers.length}`,
+                    email: customerEmail,
+                    name: customerName || customerEmail.split('@')[0],
+                    status: sub.status,
+                    rawAmount: rawAmountDollars,
+                    billingInterval: planDisplay,
+                    monthlyAmount: monthlyNormalizedDollars,
+                    currency,
+                    currentPeriodEnd: sub.current_period_end ? sub.current_period_end * 1000 : null,
+                    productName: '[BPS] Coach Darath',
                 });
             }
         });
 
-        // 13. Filter Recent Charges (Sanitized: synthetic IDs, no internal Stripe tokens)
-        const filteredCharges = charges.filter((ch) => {
-            if (!allowedCustomerEmails) return true;
+        // Sort matched athletes alphabetically by name
+        matchedAthletes.sort((a, b) => a.name.localeCompare(b.name));
+
+        // 9. Calculate Gross Revenue This Month for Coach Darath's active customers
+        const nowDate = new Date();
+        const startOfMonthTimestamp = Math.floor(new Date(nowDate.getFullYear(), nowDate.getMonth(), 1).getTime() / 1000);
+        let grossThisMonthCents = 0;
+        const filteredCharges: any[] = [];
+
+        charges.forEach((ch) => {
             const chEmail = ch.billing_details?.email?.toLowerCase()?.trim();
-            return chEmail && allowedCustomerEmails.has(chEmail);
+            if (chEmail && coachCustomerEmails.has(chEmail)) {
+                filteredCharges.push(ch);
+                if (ch.status === 'succeeded' && ch.paid && !ch.refunded && ch.created >= startOfMonthTimestamp) {
+                    grossThisMonthCents += ch.amount;
+                }
+            }
         });
 
         const formattedCharges = filteredCharges.slice(0, 15).map((ch, idx) => ({
@@ -468,9 +472,18 @@ export async function GET(req: Request) {
             receiptUrl: ch.receipt_url || null,
         }));
 
+        const availableProducts = [
+            {
+                id: targetProductId,
+                name: '[BPS] Coach Darath',
+                activeSubs: activeCount,
+            },
+        ];
+
         return secureJsonResponse({
             connected: true,
-            mrr: Math.round(totalMrrCents / 100),
+            cycleRevenue: cycleRevenueTotal,
+            mrr: annualizedMrrTotal,
             activeSubscribers: activeCount,
             pastDueCount,
             grossThisMonth: Math.round(grossThisMonthCents / 100),
@@ -479,11 +492,11 @@ export async function GET(req: Request) {
             recentCharges: formattedCharges,
             availableProducts,
             selectedProductId: targetProductId,
-            currency: primaryCurrency.toUpperCase(),
+            currency: primaryCurrency,
             totalAthleteRosterCount: dbAthletes.length,
             config: {
                 hasDbConfig: !!dbConfig,
-                stripeProductId: dbConfig?.stripeProductId || targetProductId,
+                stripeProductId: targetProductId,
                 portalUrl: dbConfig?.portalUrl || null,
             },
         });
