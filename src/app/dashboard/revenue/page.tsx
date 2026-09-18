@@ -16,7 +16,9 @@ import {
     Search,
     ArrowUpRight,
     Filter,
-    FileText
+    FileText,
+    Tag,
+    ChevronDown
 } from 'lucide-react';
 
 interface AthleteBilling {
@@ -30,6 +32,7 @@ interface AthleteBilling {
     currentPeriodEnd: number | null;
     cancelAtPeriodEnd: boolean;
     stripeSubscriptionId: string | null;
+    productName?: string | null;
 }
 
 interface UnmatchedSubscriber {
@@ -40,6 +43,7 @@ interface UnmatchedSubscriber {
     monthlyAmount: number;
     currency: string;
     currentPeriodEnd: number | null;
+    productName?: string;
 }
 
 interface RecentCharge {
@@ -55,6 +59,12 @@ interface RecentCharge {
     receiptUrl: string | null;
 }
 
+interface StripeProductItem {
+    id: string;
+    name: string;
+    activeSubs: number;
+}
+
 interface RevenueData {
     connected: boolean;
     mrr: number;
@@ -64,6 +74,8 @@ interface RevenueData {
     athletes: AthleteBilling[];
     unmatchedSubscribers?: UnmatchedSubscriber[];
     recentCharges?: RecentCharge[];
+    availableProducts?: StripeProductItem[];
+    selectedProductId?: string | null;
     currency: string;
     totalAthleteRosterCount?: number;
     error?: string;
@@ -77,16 +89,26 @@ export default function CoachRevenuePage() {
     const [refreshing, setRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'unpaid' | 'past_due'>('all');
+    const [selectedProduct, setSelectedProduct] = useState<string>('all');
 
-    const fetchRevenue = async (isRefresh = false) => {
+    const fetchRevenue = async (isRefresh = false, prodId?: string) => {
         if (isRefresh) setRefreshing(true);
         else setLoading(true);
 
+        const currentProd = prodId !== undefined ? prodId : selectedProduct;
+
         try {
-            const res = await fetch('/api/coach/revenue');
+            const url = currentProd && currentProd !== 'all' 
+                ? `/api/coach/revenue?productId=${encodeURIComponent(currentProd)}`
+                : '/api/coach/revenue?productId=all';
+
+            const res = await fetch(url);
             if (res.ok) {
-                const json = await res.json();
+                const json: RevenueData = await res.json();
                 setData(json);
+                if (json.selectedProductId && prodId === undefined) {
+                    setSelectedProduct(json.selectedProductId);
+                }
             } else {
                 setData({
                     connected: false,
@@ -119,6 +141,11 @@ export default function CoachRevenuePage() {
     useEffect(() => {
         fetchRevenue();
     }, []);
+
+    const handleProductChange = (prodId: string) => {
+        setSelectedProduct(prodId);
+        fetchRevenue(true, prodId);
+    };
 
     const filteredAthletes = useMemo(() => {
         if (!data?.athletes) return [];
@@ -160,6 +187,12 @@ export default function CoachRevenuePage() {
         });
     };
 
+    const activeProductName = useMemo(() => {
+        if (selectedProduct === 'all') return 'All Coaching Products';
+        const found = data?.availableProducts?.find(p => p.id === selectedProduct);
+        return found ? found.name : selectedProduct;
+    }, [selectedProduct, data?.availableProducts]);
+
     return (
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 16px 120px' }}>
             {/* Header */}
@@ -193,6 +226,7 @@ export default function CoachRevenuePage() {
                             display: 'flex',
                             alignItems: 'center',
                             gap: '10px',
+                            flexWrap: 'wrap',
                         }}>
                             <span>Revenue & Subscriptions</span>
                             {data?.connected && (
@@ -215,7 +249,60 @@ export default function CoachRevenuePage() {
                         </h1>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                        {/* Product / Coach Filter Dropdown */}
+                        {data?.connected && data.availableProducts && data.availableProducts.length > 0 && (
+                            <div style={{ position: 'relative', display: 'inline-flex', alignItems: 'center' }}>
+                                <div style={{
+                                    position: 'absolute',
+                                    left: 12,
+                                    pointerEvents: 'none',
+                                    color: 'var(--primary)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                }}>
+                                    <Tag size={14} />
+                                </div>
+                                <select
+                                    value={selectedProduct}
+                                    onChange={(e) => handleProductChange(e.target.value)}
+                                    className="glass-button chat-press"
+                                    style={{
+                                        padding: '8px 32px 8px 32px',
+                                        fontSize: '0.85rem',
+                                        fontWeight: 600,
+                                        cursor: 'pointer',
+                                        appearance: 'none',
+                                        WebkitAppearance: 'none',
+                                        borderRadius: '12px',
+                                        color: 'var(--foreground)',
+                                        background: 'rgba(125, 135, 210, 0.12)',
+                                        border: '1px solid rgba(125, 135, 210, 0.3)',
+                                        outline: 'none',
+                                    }}
+                                >
+                                    <option value="all" style={{ background: '#12121a', color: '#fff' }}>
+                                        All Products (Organization)
+                                    </option>
+                                    {data.availableProducts.map((p) => (
+                                        <option key={p.id} value={p.id} style={{ background: '#12121a', color: '#fff' }}>
+                                            {p.name} ({p.activeSubs} active)
+                                        </option>
+                                    ))}
+                                </select>
+                                <div style={{
+                                    position: 'absolute',
+                                    right: 10,
+                                    pointerEvents: 'none',
+                                    color: 'var(--secondary-foreground)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                }}>
+                                    <ChevronDown size={14} />
+                                </div>
+                            </div>
+                        )}
+
                         <button
                             onClick={() => fetchRevenue(true)}
                             disabled={loading || refreshing}
@@ -255,6 +342,26 @@ export default function CoachRevenuePage() {
                         </a>
                     </div>
                 </div>
+
+                {/* Sub-header Active Product Badge */}
+                {data?.connected && selectedProduct !== 'all' && (
+                    <div style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '8px',
+                        fontSize: '0.82rem',
+                        color: 'var(--secondary-foreground)',
+                        background: 'rgba(255, 255, 255, 0.03)',
+                        padding: '6px 14px',
+                        borderRadius: '10px',
+                        border: '1px solid var(--card-border)',
+                        width: 'fit-content',
+                    }}>
+                        <span>Filtering revenue exclusively for:</span>
+                        <span style={{ color: 'var(--primary)', fontWeight: 700 }}>{activeProductName}</span>
+                        <code style={{ fontSize: '0.75rem', opacity: 0.7 }}>({selectedProduct})</code>
+                    </div>
+                )}
             </div>
 
             {/* Loading Skeleton */}
@@ -349,7 +456,7 @@ export default function CoachRevenuePage() {
                             padding: '20px',
                         }}>
                             <h3 style={{ fontSize: '1rem', fontWeight: 700, margin: '0 0 16px 0', color: 'var(--foreground)' }}>
-                                How to provide your Stripe Key:
+                                How to connect your Stripe account & product:
                             </h3>
 
                             <ol style={{
@@ -360,7 +467,7 @@ export default function CoachRevenuePage() {
                                 lineHeight: 1.7,
                                 display: 'flex',
                                 flexDirection: 'column',
-                                gap: '10px',
+                                gap: '12px',
                             }}>
                                 <li>
                                     Log in to your <a href="https://dashboard.stripe.com/apikeys" target="_blank" rel="noopener noreferrer" style={{ color: 'var(--primary)', textDecoration: 'underline' }}>Stripe Dashboard &gt; Developers &gt; API Keys</a>.
@@ -378,6 +485,7 @@ export default function CoachRevenuePage() {
                                         marginLeft: '4px'
                                     }}>
                                         <span style={codeBadge}>Subscriptions: Read</span>
+                                        <span style={codeBadge}>Products: Read</span>
                                         <span style={codeBadge}>Customers: Read</span>
                                         <span style={codeBadge}>Charges: Read</span>
                                         <span style={codeBadge}>Balance: Read</span>
@@ -387,7 +495,10 @@ export default function CoachRevenuePage() {
                                     Copy your new key (starts with <code>rk_live_...</code>).
                                 </li>
                                 <li>
-                                    Paste your key directly in our chat, or add it to your <code>.env.local</code> file as <code>STRIPE_SECRET_KEY=rk_live_...</code>.
+                                    <strong>Find your Product ID</strong>: In your Stripe Dashboard, go to <strong>Product catalog</strong> (or <strong>Products</strong>), click on your coaching product, and copy the <strong>Product ID</strong> (starts with <code>prod_...</code>, e.g. <code>prod_R123456789</code>).
+                                </li>
+                                <li>
+                                    Paste your <strong>Restricted Key</strong> and <strong>Product ID</strong> in chat, and we will hook them in so only your product's revenue is tracked!
                                 </li>
                             </ol>
                         </div>
@@ -427,7 +538,7 @@ export default function CoachRevenuePage() {
                                     {formatMoney(data.mrr, data.currency)}
                                 </div>
                                 <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginTop: '4px' }}>
-                                    Active monthly run-rate
+                                    Active monthly run-rate {selectedProduct !== 'all' ? `(${activeProductName})` : ''}
                                 </div>
                             </div>
                         </div>
@@ -539,7 +650,7 @@ export default function CoachRevenuePage() {
                                     Athlete Subscriptions
                                 </h2>
                                 <p style={{ fontSize: '0.82rem', color: 'var(--secondary-foreground)', margin: 0 }}>
-                                    Matching athlete emails to active Stripe subscriptions
+                                    Matching athlete emails to active Stripe subscriptions {selectedProduct !== 'all' ? `for ${activeProductName}` : ''}
                                 </p>
                             </div>
 
@@ -646,6 +757,12 @@ export default function CoachRevenuePage() {
                                                     <div style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', opacity: 0.8 }}>
                                                         {athlete.email}
                                                     </div>
+                                                    {athlete.productName && (
+                                                        <div style={{ fontSize: '0.7rem', color: 'var(--primary)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                                            <Tag size={10} />
+                                                            <span>{athlete.productName}</span>
+                                                        </div>
+                                                    )}
                                                 </td>
                                                 <td style={{ padding: '14px' }}>
                                                     {isActive ? (
@@ -804,6 +921,11 @@ export default function CoachRevenuePage() {
                                                 Renews {formatDate(unmatched.currentPeriodEnd)}
                                             </span>
                                         </div>
+                                        {unmatched.productName && (
+                                            <div style={{ fontSize: '0.7rem', color: 'var(--primary)', marginTop: '4px' }}>
+                                                Product: {unmatched.productName}
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
                             </div>
@@ -817,7 +939,7 @@ export default function CoachRevenuePage() {
                             borderRadius: '24px',
                         }}>
                             <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 16px 0' }}>
-                                Recent Stripe Payments
+                                Recent Stripe Payments {selectedProduct !== 'all' ? `(${activeProductName})` : ''}
                             </h2>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
