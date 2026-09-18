@@ -66,8 +66,8 @@ export default function TopNavigation({
     const primaryLinks = [
         { href: '/dashboard', label: 'Command Center' },
         { href: '/dashboard/messages', label: 'Messages', isMessages: true },
-        { href: '/dashboard/tutorials', label: 'Tutorials' },
         { href: '/dashboard/revenue', label: 'Revenue' },
+        { href: '/dashboard/tutorials', label: 'Tutorials' },
     ];
 
     const meetsItems = [
