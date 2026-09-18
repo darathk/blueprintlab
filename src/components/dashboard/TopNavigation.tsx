@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation';
 import { UserButton } from '@clerk/nextjs';
 import { useUnreadCount } from '@/components/notifications/UnreadBadge';
 
-export default function TopNavigation({ unreadCount = 0, userId }: { unreadCount?: number; userId?: string }) {
+export default function TopNavigation({ unreadCount = 0, userId, isOwner = false }: { unreadCount?: number; userId?: string; isOwner?: boolean }) {
     const pathname = usePathname();
     const liveUnread = useUnreadCount(userId || '', unreadCount);
     const displayUnread = userId ? liveUnread : unreadCount;
@@ -16,19 +16,21 @@ export default function TopNavigation({ unreadCount = 0, userId }: { unreadCount
         return false;
     };
 
+    const navLinks = [
+        { href: '/dashboard', label: 'Command Center' },
+        { href: '/dashboard/messages', label: 'Messages', isMessages: true },
+        { href: '/dashboard/tutorials', label: 'Tutorials' },
+        ...(isOwner ? [{ href: '/dashboard/revenue', label: 'Revenue' }] : []),
+        { href: '/dashboard/leaderboard', label: 'Leaderboard' },
+        { href: '/dashboard/highlights', label: 'Highlights' },
+        { href: '/dashboard/meet-data', label: 'Meet Data' },
+        { href: '/dashboard/meet-day', label: 'Meet Day' },
+    ];
+
     return (
         <nav className="dashboard-nav flex w-full items-center justify-between md:justify-end" style={{ gap: '1.5rem' }}>
             <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                {[
-                    { href: '/dashboard', label: 'Command Center' },
-                    { href: '/dashboard/messages', label: 'Messages', isMessages: true },
-                    { href: '/dashboard/tutorials', label: 'Tutorials' },
-                    { href: '/dashboard/revenue', label: 'Revenue' },
-                    { href: '/dashboard/leaderboard', label: 'Leaderboard' },
-                    { href: '/dashboard/highlights', label: 'Highlights' },
-                    { href: '/dashboard/meet-data', label: 'Meet Data' },
-                    { href: '/dashboard/meet-day', label: 'Meet Day' },
-                ].map((link) => {
+                {navLinks.map((link) => {
                     const active = isActive(link.href);
                     return (
                         <Link

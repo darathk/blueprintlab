@@ -4,6 +4,7 @@ import { cache } from 'react';
 
 export interface CoachAuthState {
     isCoach: boolean;
+    isOwner: boolean;
     user: any;
     athleteId: string | null;
     unreadCount: number;
@@ -14,9 +15,10 @@ export interface CoachAuthState {
  */
 export const getCoachAuthState = cache(async (): Promise<CoachAuthState> => {
     const user = await currentUser();
-    if (!user) return { isCoach: false, user: null, athleteId: null, unreadCount: 0 };
+    if (!user) return { isCoach: false, isOwner: false, user: null, athleteId: null, unreadCount: 0 };
 
-    const email = (user.primaryEmailAddress?.emailAddress || '').toLowerCase();
+    const email = (user.primaryEmailAddress?.emailAddress || '').toLowerCase().trim();
+    const adminEmail = (process.env.ADMIN_EMAIL || process.env.NEXT_PUBLIC_ADMIN_EMAIL || '').toLowerCase().trim();
 
     // Check if they exist in the DB — case-insensitive to handle legacy mixed-case emails
     let athlete = await prisma.athlete.findFirst({
@@ -32,11 +34,11 @@ export const getCoachAuthState = cache(async (): Promise<CoachAuthState> => {
 
     // In multi-coach system, coaches are just Athlete records with role === 'coach'
     const isCoach = athlete?.role === 'coach';
+    const isOwner = Boolean(isCoach && adminEmail && email === adminEmail);
     const athleteId = athlete ? athlete.id : null;
 
     // Fallback for the original admin if they somehow got demoted
-    const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || process.env.ADMIN_EMAIL;
-    if (!isCoach && adminEmail && email.toLowerCase() === adminEmail.toLowerCase()) {
+    if (!isCoach && adminEmail && email === adminEmail) {
         let adminAthleteId = athlete?.id;
         if (athlete) {
             await prisma.athlete.update({ where: { id: athlete.id }, data: { role: 'coach', email } });
@@ -52,9 +54,9 @@ export const getCoachAuthState = cache(async (): Promise<CoachAuthState> => {
                 sender: { status: { not: 'archived' } },
             }
         }) : 0;
-        return { isCoach: true, user, athleteId: adminAthleteId, unreadCount };
+        return { isCoach: true, isOwner: true, user, athleteId: adminAthleteId, unreadCount };
     }
 
     const unreadCount = athleteId ? await prisma.message.count({ where: { receiverId: athleteId, read: false } }) : 0;
-    return { isCoach, user, athleteId, unreadCount };
+    return { isCoach, isOwner, user, athleteId, unreadCount };
 });

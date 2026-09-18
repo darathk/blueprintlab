@@ -46,6 +46,33 @@ export async function requireCoach() {
 }
 
 /**
+ * Strict Master Coach / Owner Authorization Guard.
+ * Only the owner account matching ADMIN_EMAIL with coach role can access financial data.
+ * All athletes, sub-coaches, and unauthenticated callers are strictly blocked and audited.
+ */
+export async function requireMasterCoach() {
+    const result = await requireAuth();
+    if ('error' in result) return result;
+
+    const adminEmail = (process.env.ADMIN_EMAIL || process.env.NEXT_PUBLIC_ADMIN_EMAIL || '').toLowerCase().trim();
+    const userEmail = (result.user.email || '').toLowerCase().trim();
+
+    // 1. Role verification
+    if (!result.isCoach) {
+        console.warn(`[SECURITY ALERT] Non-coach (${userEmail}, ID: ${result.user.id}) attempted to access financial revenue endpoint.`);
+        return { error: NextResponse.json({ error: 'Access Denied: Forbidden.' }, { status: 403 }) };
+    }
+
+    // 2. Exact Owner Identity verification
+    if (!adminEmail || userEmail !== adminEmail) {
+        console.warn(`[SECURITY ALERT] Sub-coach (${userEmail}, ID: ${result.user.id}) attempted to access owner financial revenue endpoint.`);
+        return { error: NextResponse.json({ error: 'Access Denied: Forbidden.' }, { status: 403 }) };
+    }
+
+    return result;
+}
+
+/**
  * Checks if the authenticated user can access data for the given athleteId.
  * Coaches can access their own athletes; athletes can only access themselves.
  *

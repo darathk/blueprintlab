@@ -1,6 +1,11 @@
 import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
 
-const isPublicRoute = createRouteMatcher(['/sign-in(.*)', '/sign-up(.*)', '/api(.*)']);
+// Public routes — all /api/coach routes are strictly excluded to enforce edge auth
+const isPublicRoute = createRouteMatcher([
+    '/sign-in(.*)', 
+    '/sign-up(.*)', 
+    '/api((?!/coach).*)'
+]);
 
 export default clerkMiddleware(async (auth, request) => {
     if (!isPublicRoute(request)) {

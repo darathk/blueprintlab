@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { requireCoach } from '@/lib/api-auth';
+import { requireMasterCoach } from '@/lib/api-auth';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -65,19 +65,59 @@ interface StripeCharge {
     receipt_url?: string | null;
 }
 
-// In-memory cache for 60 seconds to prevent hitting Stripe rate limits on multi-page fetching
+// In-memory cache for 60 seconds to prevent hitting Stripe rate limits
 let memoryCache: {
     data: any;
     timestamp: number;
 } | null = null;
 const CACHE_TTL_MS = 60 * 1000;
 
+// Rate limiting map: max 25 requests per 60 seconds per user
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+function checkRateLimit(key: string, limit = 25, windowMs = 60 * 1000): boolean {
+    const now = Date.now();
+    const record = rateLimitMap.get(key);
+    if (!record || now > record.resetTime) {
+        rateLimitMap.set(key, { count: 1, resetTime: now + windowMs });
+        return true;
+    }
+    if (record.count >= limit) {
+        return false;
+    }
+    record.count += 1;
+    return true;
+}
+
+// Helper: inject strict security headers preventing caching, sniffing, or embedding
+function secureJsonResponse(data: any, status = 200) {
+    const res = NextResponse.json(data, { status });
+    res.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, private, max-age=0');
+    res.headers.set('Pragma', 'no-cache');
+    res.headers.set('Expires', '0');
+    res.headers.set('X-Content-Type-Options', 'nosniff');
+    res.headers.set('X-Frame-Options', 'DENY');
+    res.headers.set('Referrer-Policy', 'no-referrer');
+    res.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+    return res;
+}
+
 export async function GET(req: Request) {
-    // 1. Strict Coach Authorization check
-    const auth = await requireCoach();
+    // 1. Strict Master Coach Authorization Guard
+    // Blocks all athletes, sub-coaches, and unauthenticated callers
+    const auth = await requireMasterCoach();
     if ('error' in auth) {
         return auth.error;
     }
+
+    // 2. Sliding-window Rate Limiting per user ID
+    const userId = auth.user.id;
+    if (!checkRateLimit(userId)) {
+        console.warn(`[SECURITY RATE LIMIT] Rate limit exceeded on revenue endpoint for user: ${auth.user.email}`);
+        return secureJsonResponse({ error: 'Too many requests. Please try again in a moment.' }, 429);
+    }
+
+    // Audit Log Access
+    console.info(`[SECURITY AUDIT] Revenue data successfully accessed by owner: ${auth.user.email} at ${new Date().toISOString()}`);
 
     const { searchParams } = new URL(req.url);
     const queryProductId = searchParams.get('productId');
@@ -91,7 +131,7 @@ export async function GET(req: Request) {
     const stripeKey = process.env.STRIPE_SECRET_KEY || process.env.STRIPE_RESTRICTED_KEY;
 
     if (!stripeKey) {
-        return NextResponse.json({
+        return secureJsonResponse({
             connected: false,
             mrr: 0,
             activeSubscribers: 0,
@@ -104,7 +144,6 @@ export async function GET(req: Request) {
             selectedProductId: null,
             currency: 'USD',
             message: 'Stripe API key is not configured.',
-            instructions: 'Add your Stripe Restricted API Key (starts with rk_live_...) to your environment variables as STRIPE_SECRET_KEY.',
         });
     }
 
@@ -124,7 +163,7 @@ export async function GET(req: Request) {
             charges = memoryCache.data.charges;
             productsMap = memoryCache.data.productsMap;
         } else {
-            // 2. Fetch products map (up to 100 products)
+            // 3. Fetch products map (up to 100 products)
             try {
                 const prodRes = await fetch('https://api.stripe.com/v1/products?limit=100', {
                     headers: stripeHeaders,
@@ -139,7 +178,7 @@ export async function GET(req: Request) {
                 // Products read permission may not be present on restricted key
             }
 
-            // 3. Paginate subscriptions from Stripe (retrieve all subscriptions)
+            // 4. Paginate subscriptions from Stripe (retrieve all subscriptions)
             let startingAfter: string | undefined = undefined;
             while (true) {
                 const subUrl = 'https://api.stripe.com/v1/subscriptions?limit=100&status=all&expand[]=data.customer' 
@@ -150,7 +189,7 @@ export async function GET(req: Request) {
                 if (!subRes.ok) {
                     const errData = await subRes.json().catch(() => ({}));
                     const errorMsg = errData?.error?.message || `Stripe API error (${subRes.status})`;
-                    return NextResponse.json({
+                    return secureJsonResponse({
                         connected: false,
                         error: errorMsg,
                         mrr: 0,
@@ -158,7 +197,7 @@ export async function GET(req: Request) {
                         athletes: [],
                         availableProducts: [],
                         selectedProductId: null,
-                    }, { status: 200 });
+                    });
                 }
 
                 const subData = await subRes.json();
@@ -169,7 +208,7 @@ export async function GET(req: Request) {
                 startingAfter = pageSubs[pageSubs.length - 1].id;
             }
 
-            // 4. Fetch recent charges from Stripe (limit 50)
+            // 5. Fetch recent charges from Stripe (limit 50)
             const chargesRes = await fetch('https://api.stripe.com/v1/charges?limit=50', {
                 headers: stripeHeaders,
             });
@@ -186,7 +225,7 @@ export async function GET(req: Request) {
             };
         }
 
-        // 5. Discover all Products from subscriptions & count active subscribers
+        // 6. Discover all Products from subscriptions & count active subscribers
         const productStats = new Map<string, { id: string; name: string; activeSubs: number }>();
 
         allSubscriptions.forEach((sub) => {
@@ -211,7 +250,7 @@ export async function GET(req: Request) {
         // Sort products by active subscriber count
         const availableProducts = Array.from(productStats.values()).sort((a, b) => b.activeSubs - a.activeSubs);
 
-        // 6. Filter Subscriptions by Coach Product if targetProductId is specified
+        // 7. Filter Subscriptions by Coach Product if targetProductId is specified
         const subscriptions = allSubscriptions.filter((sub) => {
             if (!targetProductId) return true; // Include all if no product filter
             const items = sub.items?.data || [];
@@ -221,7 +260,7 @@ export async function GET(req: Request) {
             });
         });
 
-        // 7. Fetch all active athletes from database
+        // 8. Fetch all active athletes from database
         const dbAthletes = await prisma.athlete.findMany({
             where: {
                 role: { not: 'coach' },
@@ -236,7 +275,7 @@ export async function GET(req: Request) {
             orderBy: { name: 'asc' },
         });
 
-        // 8. Compute MRR and Metrics for the filtered subscriptions
+        // 9. Compute MRR and Metrics for the filtered subscriptions
         let totalMrrCents = 0;
         let activeCount = 0;
         let pastDueCount = 0;
@@ -312,7 +351,7 @@ export async function GET(req: Request) {
             }
         });
 
-        // 9. Calculate Gross Revenue This Month
+        // 10. Calculate Gross Revenue This Month
         const allowedCustomerEmails = targetProductId ? new Set(Array.from(subMapByEmail.keys())) : null;
 
         const nowDate = new Date();
@@ -328,7 +367,7 @@ export async function GET(req: Request) {
             }
         });
 
-        // 10. Match DB Athletes with Stripe Status
+        // 11. Match DB Athletes with Stripe Status (Sanitized: NO internal Stripe IDs leaked)
         const matchedAthletes = dbAthletes.map((athlete) => {
             const athleteEmail = athlete.email.toLowerCase().trim();
             const subInfo = subMapByEmail.get(athleteEmail);
@@ -345,7 +384,6 @@ export async function GET(req: Request) {
                     currency: subInfo.currency,
                     currentPeriodEnd: s.current_period_end ? s.current_period_end * 1000 : null,
                     cancelAtPeriodEnd: s.cancel_at_period_end,
-                    stripeSubscriptionId: s.id,
                     productName: subInfo.productName || null,
                 };
             }
@@ -360,12 +398,11 @@ export async function GET(req: Request) {
                 currency: primaryCurrency.toUpperCase(),
                 currentPeriodEnd: null,
                 cancelAtPeriodEnd: false,
-                stripeSubscriptionId: null,
                 productName: null,
             };
         });
 
-        // 11. Find any Stripe subscriptions that aren't in the DB (external/unmatched)
+        // 12. Find any Stripe subscriptions not in DB (Sanitized: synthetic IDs only)
         const dbEmailSet = new Set(dbAthletes.map(a => a.email.toLowerCase().trim()));
         const unmatchedSubscribers: Array<{
             id: string;
@@ -378,10 +415,11 @@ export async function GET(req: Request) {
             productName?: string;
         }> = [];
 
+        let unmatchedIdx = 0;
         subMapByEmail.forEach((info, email) => {
             if (!dbEmailSet.has(email)) {
                 unmatchedSubscribers.push({
-                    id: info.sub.id,
+                    id: `ext-${unmatchedIdx++}`,
                     email: email,
                     name: info.customerName || email.split('@')[0],
                     status: info.sub.status,
@@ -393,15 +431,15 @@ export async function GET(req: Request) {
             }
         });
 
-        // 12. Filter Recent Charges
+        // 13. Filter Recent Charges (Sanitized: synthetic IDs, no internal Stripe tokens)
         const filteredCharges = charges.filter((ch) => {
             if (!allowedCustomerEmails) return true;
             const chEmail = ch.billing_details?.email?.toLowerCase()?.trim();
             return chEmail && allowedCustomerEmails.has(chEmail);
         });
 
-        const formattedCharges = filteredCharges.slice(0, 15).map((ch) => ({
-            id: ch.id,
+        const formattedCharges = filteredCharges.slice(0, 15).map((ch, idx) => ({
+            id: `ch-${idx}`,
             amount: ch.amount / 100,
             currency: ch.currency.toUpperCase(),
             created: ch.created * 1000,
@@ -413,7 +451,7 @@ export async function GET(req: Request) {
             receiptUrl: ch.receipt_url || null,
         }));
 
-        return NextResponse.json({
+        return secureJsonResponse({
             connected: true,
             mrr: Math.round(totalMrrCents / 100),
             activeSubscribers: activeCount,
@@ -429,15 +467,15 @@ export async function GET(req: Request) {
         });
 
     } catch (err: any) {
-        console.error('Error fetching Stripe revenue:', err);
-        return NextResponse.json({
+        console.error('[SECURITY ALERT] Error executing Stripe revenue query:', err.message);
+        return secureJsonResponse({
             connected: false,
-            error: err.message || 'Failed to fetch revenue data from Stripe.',
+            error: 'Failed to securely fetch revenue data from Stripe.',
             mrr: 0,
             activeSubscribers: 0,
             athletes: [],
             availableProducts: [],
             selectedProductId: null,
-        }, { status: 500 });
+        }, 500);
     }
 }

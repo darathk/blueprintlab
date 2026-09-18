@@ -14,7 +14,7 @@ export default async function DashboardLayout({
 }: {
     children: React.ReactNode
 }) {
-    const { isCoach, user, athleteId, unreadCount } = await getCoachAuthState();
+    const { isCoach, isOwner, user, athleteId, unreadCount } = await getCoachAuthState();
 
     if (!user) redirect('/sign-in');
 
@@ -30,7 +30,7 @@ export default async function DashboardLayout({
         { label: 'Home', href: '/dashboard', icon: <Home size={26} /> },
         { label: 'Messages', href: '/dashboard/messages', icon: <MessageSquare size={26} />, unreadCount },
         { label: 'Tutorials', href: '/dashboard/tutorials', icon: <Video size={26} /> },
-        { label: 'Revenue', href: '/dashboard/revenue', icon: <DollarSign size={26} /> },
+        ...(isOwner ? [{ label: 'Revenue', href: '/dashboard/revenue', icon: <DollarSign size={26} /> }] : []),
         { label: 'Highlights', href: '/dashboard/highlights', icon: <Star size={26} /> },
         { label: 'Board', href: '/dashboard/leaderboard', icon: <Medal size={26} /> },
         { label: 'Meet Data', href: '/dashboard/meet-data', icon: <ClipboardList size={26} /> },
@@ -63,7 +63,7 @@ export default async function DashboardLayout({
                     </Link>
 
                     <div className="hidden md:flex items-center gap-4">
-                        <TopNavigation unreadCount={unreadCount} userId={athleteId || undefined} />
+                        <TopNavigation isOwner={isOwner} unreadCount={unreadCount} userId={athleteId || undefined} />
                     </div>
 
                     <div className="md:hidden flex items-center">
