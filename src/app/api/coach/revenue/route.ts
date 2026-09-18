@@ -121,14 +121,32 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url);
     const queryProductId = searchParams.get('productId');
-    const envProductId = process.env.STRIPE_PRODUCT_ID;
+
+    // 2. Fetch coach billing credentials from Database (enables live Vercel connection without manual env vars)
+    let dbConfig: any = null;
+    try {
+        if (auth.user.email) {
+            dbConfig = await prisma.coachBillingConfig.findUnique({
+                where: { coachEmail: auth.user.email.toLowerCase() },
+            });
+        }
+        if (!dbConfig) {
+            dbConfig = await prisma.coachBillingConfig.findFirst({
+                orderBy: { updatedAt: 'desc' },
+            });
+        }
+    } catch (e) {
+        console.error('Error fetching CoachBillingConfig from DB:', e);
+    }
+
+    const envProductId = process.env.STRIPE_PRODUCT_ID || dbConfig?.stripeProductId;
     
     // Default to coach's product ID if set
     const targetProductId = queryProductId === 'all' 
         ? null 
         : (queryProductId || envProductId || 'prod_PcfIQXv2L5xYid');
 
-    const stripeKey = process.env.STRIPE_SECRET_KEY || process.env.STRIPE_RESTRICTED_KEY;
+    const stripeKey = process.env.STRIPE_SECRET_KEY || process.env.STRIPE_RESTRICTED_KEY || dbConfig?.stripeSecretKey;
 
     if (!stripeKey) {
         return secureJsonResponse({
@@ -141,9 +159,9 @@ export async function GET(req: Request) {
             unmatchedSubscribers: [],
             recentCharges: [],
             availableProducts: [],
-            selectedProductId: null,
+            selectedProductId: targetProductId || null,
             currency: 'USD',
-            message: 'Stripe API key is not configured.',
+            message: 'Stripe API key is not configured. Connect your key below or in settings.',
         });
     }
 
@@ -464,6 +482,11 @@ export async function GET(req: Request) {
             selectedProductId: targetProductId,
             currency: primaryCurrency.toUpperCase(),
             totalAthleteRosterCount: dbAthletes.length,
+            config: {
+                hasDbConfig: !!dbConfig,
+                stripeProductId: dbConfig?.stripeProductId || targetProductId,
+                portalUrl: dbConfig?.portalUrl || null,
+            },
         });
 
     } catch (err: any) {
@@ -479,3 +502,81 @@ export async function GET(req: Request) {
         }, 500);
     }
 }
+
+/**
+ * POST /api/coach/revenue
+ * Allows authorized coach/owner to configure or update Stripe credentials directly.
+ * Tests restricted API key before saving.
+ */
+export async function POST(req: Request) {
+    const auth = await requireCoach();
+    if ('error' in auth) {
+        return auth.error;
+    }
+
+    try {
+        const body = await req.json();
+        const { stripeSecretKey, stripeProductId, portalUrl } = body;
+
+        // If key provided, test it first against Stripe
+        if (stripeSecretKey) {
+            const trimmedKey = stripeSecretKey.trim();
+            const testRes = await fetch('https://api.stripe.com/v1/subscriptions?limit=1', {
+                headers: {
+                    Authorization: `Bearer ${trimmedKey}`,
+                },
+            });
+
+            if (!testRes.ok) {
+                const errData = await testRes.json().catch(() => ({}));
+                return secureJsonResponse({
+                    error: errData?.error?.message || 'Invalid Stripe API Key. Verification failed.',
+                }, 400);
+            }
+        }
+
+        const email = auth.user.email?.toLowerCase() || 'darathkhon@gmail.com';
+
+        // Check if config exists for this coach or any coach
+        const existing = await prisma.coachBillingConfig.findFirst({
+            where: { coachEmail: email },
+        }) || await prisma.coachBillingConfig.findFirst({
+            orderBy: { updatedAt: 'desc' },
+        });
+
+        const targetEmail = existing ? existing.coachEmail : email;
+
+        const updated = await prisma.coachBillingConfig.upsert({
+            where: { coachEmail: targetEmail },
+            create: {
+                coachEmail: targetEmail,
+                stripeSecretKey: stripeSecretKey ? stripeSecretKey.trim() : (existing?.stripeSecretKey || null),
+                stripeProductId: stripeProductId !== undefined ? (stripeProductId ? stripeProductId.trim() : null) : (existing?.stripeProductId || 'prod_PcfIQXv2L5xYid'),
+                portalUrl: portalUrl !== undefined ? (portalUrl ? portalUrl.trim() : null) : (existing?.portalUrl || null),
+            },
+            update: {
+                ...(stripeSecretKey ? { stripeSecretKey: stripeSecretKey.trim() } : {}),
+                ...(stripeProductId !== undefined ? { stripeProductId: stripeProductId ? stripeProductId.trim() : null } : {}),
+                ...(portalUrl !== undefined ? { portalUrl: portalUrl ? portalUrl.trim() : null } : {}),
+            },
+        });
+
+        // Invalidate in-memory cache so fresh revenue data is fetched immediately
+        memoryCache = null;
+
+        return secureJsonResponse({
+            success: true,
+            message: 'Stripe configuration saved and verified successfully.',
+            config: {
+                coachEmail: updated.coachEmail,
+                stripeProductId: updated.stripeProductId,
+                portalUrl: updated.portalUrl,
+                hasKey: !!updated.stripeSecretKey,
+            },
+        });
+    } catch (err: any) {
+        console.error('Error saving billing config:', err);
+        return secureJsonResponse({ error: err.message || 'Failed to save configuration' }, 500);
+    }
+}
+

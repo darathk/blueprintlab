@@ -18,7 +18,10 @@ import {
     Filter,
     FileText,
     Tag,
-    ChevronDown
+    ChevronDown,
+    Settings,
+    Key,
+    Save
 } from 'lucide-react';
 
 interface AthleteBilling {
@@ -81,6 +84,11 @@ interface RevenueData {
     error?: string;
     message?: string;
     instructions?: string;
+    config?: {
+        hasDbConfig?: boolean;
+        stripeProductId?: string | null;
+        portalUrl?: string | null;
+    };
 }
 
 export default function CoachRevenuePage() {
@@ -90,6 +98,43 @@ export default function CoachRevenuePage() {
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'unpaid' | 'past_due'>('all');
     const [selectedProduct, setSelectedProduct] = useState<string>('all');
+
+    // Stripe Billing Settings Drawer / Form State
+    const [showSettings, setShowSettings] = useState(false);
+    const [formKey, setFormKey] = useState('');
+    const [formProductId, setFormProductId] = useState('prod_PcfIQXv2L5xYid');
+    const [formPortalUrl, setFormPortalUrl] = useState('https://billing.stripe.com/p/login/3cI7sL30jevG1f6frI2B200');
+    const [savingConfig, setSavingConfig] = useState(false);
+    const [configFeedback, setConfigFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+
+    const handleSaveConfig = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
+        setSavingConfig(true);
+        setConfigFeedback(null);
+        try {
+            const res = await fetch('/api/coach/revenue', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    stripeSecretKey: formKey || undefined,
+                    stripeProductId: formProductId || undefined,
+                    portalUrl: formPortalUrl || undefined,
+                }),
+            });
+            const resJson = await res.json();
+            if (res.ok) {
+                setConfigFeedback({ type: 'success', message: 'Stripe credentials successfully connected & verified!' });
+                setFormKey('');
+                await fetchRevenue(true);
+            } else {
+                setConfigFeedback({ type: 'error', message: resJson.error || 'Failed to verify or save credentials' });
+            }
+        } catch (err: any) {
+            setConfigFeedback({ type: 'error', message: err.message || 'Network error saving config' });
+        } finally {
+            setSavingConfig(false);
+        }
+    };
 
     const fetchRevenue = async (isRefresh = false, prodId?: string) => {
         if (isRefresh) setRefreshing(true);
@@ -108,6 +153,12 @@ export default function CoachRevenuePage() {
                 setData(json);
                 if (json.selectedProductId && prodId === undefined) {
                     setSelectedProduct(json.selectedProductId);
+                }
+                if (json.config?.stripeProductId) {
+                    setFormProductId(json.config.stripeProductId);
+                }
+                if (json.config?.portalUrl) {
+                    setFormPortalUrl(json.config.portalUrl);
                 }
             } else {
                 setData({
@@ -192,6 +243,179 @@ export default function CoachRevenuePage() {
         const found = data?.availableProducts?.find(p => p.id === selectedProduct);
         return found ? found.name : selectedProduct;
     }, [selectedProduct, data?.availableProducts]);
+
+    const renderSettingsForm = (showCloseButton = false) => (
+        <div className="glass-panel" style={{
+            padding: '24px',
+            borderRadius: '20px',
+            background: 'linear-gradient(145deg, rgba(24, 24, 38, 0.95), rgba(16, 16, 26, 0.98))',
+            border: '1px solid rgba(125, 135, 210, 0.3)',
+            marginBottom: '24px',
+        }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{
+                        width: 36,
+                        height: 36,
+                        borderRadius: '10px',
+                        background: 'rgba(125, 135, 210, 0.15)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        color: 'var(--primary)',
+                    }}>
+                        <Key size={18} />
+                    </div>
+                    <div>
+                        <h3 style={{ fontSize: '1.05rem', fontWeight: 700, margin: 0, color: 'var(--foreground)' }}>
+                            Stripe Connection Credentials
+                        </h3>
+                        <p style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', margin: 0 }}>
+                            Configure your Restricted Key and Product ID to isolate coaching revenue.
+                        </p>
+                    </div>
+                </div>
+                {showCloseButton && (
+                    <button
+                        type="button"
+                        onClick={() => setShowSettings(false)}
+                        className="glass-button chat-press"
+                        style={{
+                            padding: '4px 10px',
+                            fontSize: '0.78rem',
+                            cursor: 'pointer',
+                        }}
+                    >
+                        ✕ Close
+                    </button>
+                )}
+            </div>
+
+            {configFeedback && (
+                <div style={{
+                    padding: '10px 14px',
+                    borderRadius: '10px',
+                    background: configFeedback.type === 'success' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(239, 68, 68, 0.15)',
+                    border: `1px solid ${configFeedback.type === 'success' ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                    color: configFeedback.type === 'success' ? '#10b981' : '#f87171',
+                    fontSize: '0.85rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    marginBottom: '16px',
+                }}>
+                    {configFeedback.type === 'success' ? <CheckCircle2 size={16} /> : <AlertCircle size={16} />}
+                    <span>{configFeedback.message}</span>
+                </div>
+            )}
+
+            <form onSubmit={handleSaveConfig} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px' }}>
+                    <div>
+                        <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: 'var(--foreground)', marginBottom: '6px' }}>
+                            Restricted Stripe Key
+                        </label>
+                        <input
+                            type="password"
+                            value={formKey}
+                            onChange={(e) => setFormKey(e.target.value)}
+                            placeholder="rk_live_... (leave empty if already configured)"
+                            className="glass-input"
+                            style={{
+                                width: '100%',
+                                padding: '10px 14px',
+                                fontSize: '0.85rem',
+                                borderRadius: '10px',
+                                background: 'rgba(0, 0, 0, 0.3)',
+                                border: '1px solid var(--card-border)',
+                                color: 'var(--foreground)',
+                                outline: 'none',
+                            }}
+                        />
+                        <span style={{ fontSize: '0.73rem', color: 'var(--secondary-foreground)', display: 'block', marginTop: '4px' }}>
+                            Encrypted in database. Never exposed to browser or athlete clients.
+                        </span>
+                    </div>
+
+                    <div>
+                        <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: 'var(--foreground)', marginBottom: '6px' }}>
+                            Coach Product ID
+                        </label>
+                        <input
+                            type="text"
+                            value={formProductId}
+                            onChange={(e) => setFormProductId(e.target.value)}
+                            placeholder="e.g. prod_PcfIQXv2L5xYid"
+                            className="glass-input"
+                            style={{
+                                width: '100%',
+                                padding: '10px 14px',
+                                fontSize: '0.85rem',
+                                borderRadius: '10px',
+                                background: 'rgba(0, 0, 0, 0.3)',
+                                border: '1px solid var(--card-border)',
+                                color: 'var(--foreground)',
+                                outline: 'none',
+                            }}
+                        />
+                        <span style={{ fontSize: '0.73rem', color: 'var(--secondary-foreground)', display: 'block', marginTop: '4px' }}>
+                            Isolates calculations strictly to subscriptions for your coaching product.
+                        </span>
+                    </div>
+                </div>
+
+                <div>
+                    <label style={{ display: 'block', fontSize: '0.82rem', fontWeight: 600, color: 'var(--foreground)', marginBottom: '6px' }}>
+                        Stripe Customer Billing Portal URL
+                    </label>
+                    <input
+                        type="url"
+                        value={formPortalUrl}
+                        onChange={(e) => setFormPortalUrl(e.target.value)}
+                        placeholder="https://billing.stripe.com/p/login/..."
+                        className="glass-input"
+                        style={{
+                            width: '100%',
+                            padding: '10px 14px',
+                            fontSize: '0.85rem',
+                            borderRadius: '10px',
+                            background: 'rgba(0, 0, 0, 0.3)',
+                            border: '1px solid var(--card-border)',
+                            color: 'var(--foreground)',
+                            outline: 'none',
+                        }}
+                    />
+                    <span style={{ fontSize: '0.73rem', color: 'var(--secondary-foreground)', display: 'block', marginTop: '4px' }}>
+                        Used by athletes in their Settings page to self-manage payment cards and cancellations.
+                    </span>
+                </div>
+
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '10px', marginTop: '6px' }}>
+                    <button
+                        type="submit"
+                        disabled={savingConfig}
+                        className="glass-button chat-press"
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '10px 20px',
+                            fontSize: '0.85rem',
+                            fontWeight: 700,
+                            borderRadius: '12px',
+                            background: 'linear-gradient(135deg, var(--primary), #4f46e5)',
+                            color: '#fff',
+                            border: 'none',
+                            cursor: 'pointer',
+                        }}
+                    >
+                        <Save size={15} className={savingConfig ? 'animate-spin' : ''} />
+                        <span>{savingConfig ? 'Verifying with Stripe...' : 'Save & Sync Live Revenue'}</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    );
 
     return (
         <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 16px 120px' }}>
@@ -304,6 +528,24 @@ export default function CoachRevenuePage() {
                         )}
 
                         <button
+                            onClick={() => setShowSettings(!showSettings)}
+                            className="glass-button chat-press"
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                padding: '8px 14px',
+                                fontSize: '0.85rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                background: showSettings ? 'rgba(125, 135, 210, 0.25)' : undefined,
+                            }}
+                        >
+                            <Settings size={15} />
+                            <span>Settings</span>
+                        </button>
+
+                        <button
                             onClick={() => fetchRevenue(true)}
                             disabled={loading || refreshing}
                             className="glass-button chat-press"
@@ -363,6 +605,9 @@ export default function CoachRevenuePage() {
                     </div>
                 )}
             </div>
+
+            {/* Collapsible Stripe Settings Panel (for Connected State) */}
+            {data?.connected && showSettings && renderSettingsForm(true)}
 
             {/* Loading Skeleton */}
             {loading && !data && (
@@ -498,9 +743,14 @@ export default function CoachRevenuePage() {
                                     <strong>Find your Product ID</strong>: In your Stripe Dashboard, go to <strong>Product catalog</strong> (or <strong>Products</strong>), click on your coaching product, and copy the <strong>Product ID</strong> (starts with <code>prod_...</code>, e.g. <code>prod_R123456789</code>).
                                 </li>
                                 <li>
-                                    Paste your <strong>Restricted Key</strong> and <strong>Product ID</strong> in chat, and we will hook them in so only your product's revenue is tracked!
+                                    Paste your <strong>Restricted Key</strong> and <strong>Product ID</strong> below to instantly connect and verify your live Stripe metrics:
                                 </li>
                             </ol>
+                        </div>
+
+                        {/* Interactive Direct Connect Form */}
+                        <div style={{ marginTop: '24px' }}>
+                            {renderSettingsForm(false)}
                         </div>
                     </div>
                 </div>
