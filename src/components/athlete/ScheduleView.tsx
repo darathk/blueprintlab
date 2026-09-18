@@ -13,7 +13,6 @@ const ReadinessCheckin = dynamic(() => import('@/components/athlete/ReadinessChe
 const CelebrationScreen = dynamic(() => import('@/components/athlete/CelebrationScreen'), { ssr: false });
 const PRToggle = dynamic(() => import('@/components/athlete/PRToggle'), { ssr: false });
 const PlannedTopSetInput = dynamic(() => import('@/components/athlete/PlannedTopSetInput'), { ssr: false });
-const ClipCreator = dynamic(() => import('@/components/athlete/ClipCreator'), { ssr: false });
 
 /* ─────────── constants ─────────── */
 const CATEGORY_COLORS: Record<string, string> = {
@@ -1537,16 +1536,6 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                 date={prDate}
                                                                                             />
                                                                                         )}
-                                                                                        <ClipCreator
-                                                                                            exerciseName={exerciseData?.name || ex?.name}
-                                                                                            sets={effectiveSets.map((s: any) => ({
-                                                                                                weight: s.actual?.weight || '',
-                                                                                                reps: s.actual?.reps || '',
-                                                                                                rpe: s.actual?.rpe || ''
-                                                                                            }))}
-                                                                                            sessionLabel={`Week ${weekDisplayNum} · ${program.name}`}
-                                                                                            athleteId={athleteId}
-                                                                                        />
                                                                                     </div>
                                                                                 </div>
 
@@ -2374,16 +2363,6 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                             date={prDate}
                                                                                                         />
                                                                                                     )}
-                                                                                                    <ClipCreator
-                                                                                                        exerciseName={exerciseData?.name || ex?.name}
-                                                                                                        sets={effectiveSets.map((s: any) => ({
-                                                                                                            weight: s.actual?.weight || '',
-                                                                                                            reps: s.actual?.reps || '',
-                                                                                                            rpe: s.actual?.rpe || ''
-                                                                                                        }))}
-                                                                                                        sessionLabel={`Week ${weekDisplayNum} · ${program.name}`}
-                                                                                                        athleteId={athleteId}
-                                                                                                    />
                                                                                                 </div>
                                                                                             </div>
 
