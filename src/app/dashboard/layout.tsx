@@ -30,7 +30,7 @@ export default async function DashboardLayout({
         { label: 'Home', href: '/dashboard', icon: <Home size={26} /> },
         { label: 'Messages', href: '/dashboard/messages', icon: <MessageSquare size={26} />, unreadCount },
         { label: 'Tutorials', href: '/dashboard/tutorials', icon: <Video size={26} /> },
-        ...(isOwner ? [{ label: 'Revenue', href: '/dashboard/revenue', icon: <DollarSign size={26} /> }] : []),
+        { label: 'Revenue', href: '/dashboard/revenue', icon: <DollarSign size={26} /> },
         { label: 'Highlights', href: '/dashboard/highlights', icon: <Star size={26} /> },
         { label: 'Board', href: '/dashboard/leaderboard', icon: <Medal size={26} /> },
         { label: 'Meet Data', href: '/dashboard/meet-data', icon: <ClipboardList size={26} /> },

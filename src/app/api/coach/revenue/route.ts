@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { requireMasterCoach } from '@/lib/api-auth';
+import { requireCoach } from '@/lib/api-auth';
 import { prisma } from '@/lib/prisma';
 
 export const dynamic = 'force-dynamic';
@@ -102,9 +102,9 @@ function secureJsonResponse(data: any, status = 200) {
 }
 
 export async function GET(req: Request) {
-    // 1. Strict Master Coach Authorization Guard
-    // Blocks all athletes, sub-coaches, and unauthenticated callers
-    const auth = await requireMasterCoach();
+    // 1. Strict Coach Authorization Guard
+    // Blocks all athletes and unauthenticated callers
+    const auth = await requireCoach();
     if ('error' in auth) {
         return auth.error;
     }
