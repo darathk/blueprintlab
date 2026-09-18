@@ -357,7 +357,7 @@ export default function CoachRevenuePage() {
 
         if (selectedYear === 'all') {
             const gross = history.allTimeGross;
-            const fees = history.allTimeFee !== undefined ? history.allTimeFee : 4225.84;
+            const fees = history.allTimeFee !== undefined ? history.allTimeFee : calculateStripeFee(gross);
             const net = history.allTimeNet !== undefined ? history.allTimeNet : Math.round((gross - fees) * 100) / 100;
             const count = history.allTimeCount;
             return {
