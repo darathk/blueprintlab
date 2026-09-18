@@ -62,7 +62,7 @@ export default async function DashboardLayout({
                         </div>
                     </Link>
 
-                    <div className="hidden md:flex items-center gap-4">
+                    <div className="hidden md:flex items-center">
                         <TopNavigation isOwner={isOwner} unreadCount={unreadCount} userId={athleteId || undefined} />
                     </div>
 

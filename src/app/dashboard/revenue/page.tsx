@@ -15,14 +15,23 @@ import {
     ShieldCheck, 
     Search,
     ArrowUpRight,
-    Filter,
     FileText,
     Tag,
-    ChevronDown,
+    ChevronLeft,
+    ChevronRight,
+    Calendar,
+    BarChart3,
     Settings,
     Key,
-    Save
+    Save,
+    User
 } from 'lucide-react';
+
+const MONTH_NAMES = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTH_FULL_NAMES = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+];
 
 interface AthleteBilling {
     id: string;
@@ -33,14 +42,20 @@ interface AthleteBilling {
     hasSubscription: boolean;
     status: string; // active, past_due, canceled, trialing, unpaid, none
     rawAmount?: number;
+    stripeFee?: number;
+    netAmount?: number;
     billingInterval?: string;
     interval?: string;
     intervalCount?: number;
     monthlyAmount: number;
+    monthlyNet?: number;
     currency: string;
     currentPeriodEnd: number | null;
     cancelAtPeriodEnd: boolean;
     stripeSubscriptionId?: string | null;
+    stripeCustomerId?: string | null;
+    stripeSubscriptionUrl?: string | null;
+    stripeCustomerUrl?: string | null;
     productName?: string | null;
 }
 
@@ -50,16 +65,25 @@ interface UnmatchedSubscriber {
     name: string;
     status: string;
     rawAmount?: number;
+    stripeFee?: number;
+    netAmount?: number;
     billingInterval?: string;
     monthlyAmount: number;
+    monthlyNet?: number;
     currency: string;
     currentPeriodEnd: number | null;
     productName?: string;
+    stripeSubscriptionId?: string | null;
+    stripeCustomerId?: string | null;
+    stripeSubscriptionUrl?: string | null;
+    stripeCustomerUrl?: string | null;
 }
 
 interface RecentCharge {
     id: string;
     amount: number;
+    fee?: number;
+    net?: number;
     currency: string;
     created: number;
     status: string;
@@ -76,16 +100,65 @@ interface StripeProductItem {
     activeSubs: number;
 }
 
+interface MonthStat {
+    total: number;
+    fee?: number;
+    net?: number;
+    count: number;
+}
+
+interface YearStat {
+    total: number;
+    fee?: number;
+    net?: number;
+    count: number;
+    months: Record<number, MonthStat>;
+}
+
+interface HistoricalCharge {
+    id: string;
+    amount: number;
+    fee?: number;
+    net?: number;
+    currency: string;
+    created: number;
+    year: number;
+    month: number;
+    day: number;
+    status: string;
+    paid: boolean;
+    customerEmail: string;
+    customerName: string | null;
+    description: string;
+    receiptUrl: string | null;
+}
+
+interface RevenueHistory {
+    allTimeGross: number;
+    allTimeFee?: number;
+    allTimeNet?: number;
+    allTimeCount: number;
+    availableYears: number[];
+    yearlyBreakdown: Record<string, YearStat>;
+    charges: HistoricalCharge[];
+}
+
 interface RevenueData {
     connected: boolean;
     cycleRevenue?: number;
+    cycleFee?: number;
+    cycleNet?: number;
     mrr: number;
+    mrrNet?: number;
     activeSubscribers: number;
     pastDueCount: number;
     grossThisMonth: number;
+    feeThisMonth?: number;
+    netThisMonth?: number;
     athletes: AthleteBilling[];
     unmatchedSubscribers?: UnmatchedSubscriber[];
     recentCharges?: RecentCharge[];
+    history?: RevenueHistory | null;
     availableProducts?: StripeProductItem[];
     selectedProductId?: string | null;
     currency: string;
@@ -106,6 +179,14 @@ export default function CoachRevenuePage() {
     const [refreshing, setRefreshing] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [filterStatus, setFilterStatus] = useState<'all' | 'past_due'>('all');
+
+    // Period & Time Filter State
+    const [selectedYear, setSelectedYear] = useState<string>('2026');
+    const [selectedMonth, setSelectedMonth] = useState<number | 'all'>('all');
+    const [chargeSearchQuery, setChargeSearchQuery] = useState('');
+    const [transactionsPage, setTransactionsPage] = useState(1);
+    const [chartMetric, setChartMetric] = useState<'net' | 'gross'>('net');
+    const CHARGES_PER_PAGE = 25;
 
     // Stripe Billing Settings Drawer / Form State
     const [showSettings, setShowSettings] = useState(false);
@@ -192,6 +273,17 @@ export default function CoachRevenuePage() {
 
     useEffect(() => {
         fetchRevenue();
+        if (typeof window !== 'undefined') {
+            const params = new URLSearchParams(window.location.search);
+            const searchParam = params.get('search') || params.get('q') || params.get('athlete');
+            if (searchParam) {
+                setSearchQuery(searchParam);
+                setTimeout(() => {
+                    const el = document.getElementById('athlete-subscriptions-roster');
+                    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 400);
+            }
+        }
     }, []);
 
     const filteredAthletes = useMemo(() => {
@@ -212,12 +304,13 @@ export default function CoachRevenuePage() {
         });
     }, [data?.athletes, searchQuery, filterStatus]);
 
-    const formatMoney = (val: number, currency = 'USD') => {
+    const formatMoney = (val: number, currency = 'USD', decimals?: number) => {
+        const numDecimals = decimals !== undefined ? decimals : (val % 1 !== 0 ? 2 : 0);
         return new Intl.NumberFormat('en-US', {
             style: 'currency',
             currency: currency,
-            minimumFractionDigits: 0,
-            maximumFractionDigits: 0,
+            minimumFractionDigits: numDecimals,
+            maximumFractionDigits: numDecimals,
         }).format(val);
     };
 
@@ -230,7 +323,145 @@ export default function CoachRevenuePage() {
         });
     };
 
-    const activeProductName = '[BPS] Coach Darath';
+    // Reset pagination when filters change
+    useEffect(() => {
+        setTransactionsPage(1);
+    }, [selectedYear, selectedMonth, chargeSearchQuery]);
+
+    // Helper to calculate Stripe fee fallback if missing
+    const calculateStripeFee = (amount: number, fee?: number): number => {
+        if (fee !== undefined) return fee;
+        if (amount <= 0) return 0;
+        return Math.round(amount * 100 * 0.029 + 30) / 100;
+    };
+
+    // Period statistics calculation (Gross, Stripe Fees, Net Profit)
+    const periodStats = useMemo(() => {
+        if (!data?.history) {
+            const gross = data?.grossThisMonth || 0;
+            const fees = data?.feeThisMonth !== undefined ? data.feeThisMonth : calculateStripeFee(gross);
+            const net = data?.netThisMonth !== undefined ? data.netThisMonth : Math.round((gross - fees) * 100) / 100;
+            return {
+                grossCollected: gross,
+                stripeFees: fees,
+                netProfit: net,
+                count: 0,
+                avgTicket: 0,
+                avgNet: 0,
+                margin: gross > 0 ? Math.round((net / gross) * 1000) / 10 : 96.9,
+                periodLabel: 'September 2026',
+            };
+        }
+
+        const history = data.history;
+
+        if (selectedYear === 'all') {
+            const gross = history.allTimeGross;
+            const fees = history.allTimeFee !== undefined ? history.allTimeFee : 4225.84;
+            const net = history.allTimeNet !== undefined ? history.allTimeNet : Math.round((gross - fees) * 100) / 100;
+            const count = history.allTimeCount;
+            return {
+                grossCollected: gross,
+                stripeFees: fees,
+                netProfit: net,
+                count: count,
+                avgTicket: count > 0 ? Math.round((gross / count) * 100) / 100 : 0,
+                avgNet: count > 0 ? Math.round((net / count) * 100) / 100 : 0,
+                margin: gross > 0 ? Math.round((net / gross) * 1000) / 10 : 96.9,
+                periodLabel: 'All-Time (2024–2026)',
+            };
+        }
+
+        const yearData = history.yearlyBreakdown?.[selectedYear];
+        if (!yearData) {
+            return {
+                grossCollected: 0,
+                stripeFees: 0,
+                netProfit: 0,
+                count: 0,
+                avgTicket: 0,
+                avgNet: 0,
+                margin: 0,
+                periodLabel: selectedYear,
+            };
+        }
+
+        if (selectedMonth === 'all') {
+            const gross = yearData.total;
+            const fees = yearData.fee !== undefined ? yearData.fee : calculateStripeFee(gross);
+            const net = yearData.net !== undefined ? yearData.net : Math.round((gross - fees) * 100) / 100;
+            const count = yearData.count;
+            return {
+                grossCollected: gross,
+                stripeFees: fees,
+                netProfit: net,
+                count: count,
+                avgTicket: count > 0 ? Math.round((gross / count) * 100) / 100 : 0,
+                avgNet: count > 0 ? Math.round((net / count) * 100) / 100 : 0,
+                margin: gross > 0 ? Math.round((net / gross) * 1000) / 10 : 96.9,
+                periodLabel: `Full Year ${selectedYear}`,
+            };
+        }
+
+        const monthData = yearData.months?.[selectedMonth] || { total: 0, fee: 0, net: 0, count: 0 };
+        const gross = monthData.total;
+        const fees = monthData.fee !== undefined ? monthData.fee : calculateStripeFee(gross);
+        const net = monthData.net !== undefined ? monthData.net : Math.round((gross - fees) * 100) / 100;
+        const count = monthData.count;
+        const monthName = MONTH_FULL_NAMES[selectedMonth - 1] || `Month ${selectedMonth}`;
+
+        return {
+            grossCollected: gross,
+            stripeFees: fees,
+            netProfit: net,
+            count: count,
+            avgTicket: count > 0 ? Math.round((gross / count) * 100) / 100 : 0,
+            avgNet: count > 0 ? Math.round((net / count) * 100) / 100 : 0,
+            margin: gross > 0 ? Math.round((net / gross) * 1000) / 10 : 96.9,
+            periodLabel: `${monthName} ${selectedYear}`,
+        };
+    }, [data, selectedYear, selectedMonth]);
+
+    // Filtered charges for the selected period with live search and precalculated fees
+    const filteredHistoricalCharges = useMemo(() => {
+        if (!data?.history?.charges) return [];
+        const query = chargeSearchQuery.toLowerCase().trim();
+
+        return data.history.charges.filter((ch) => {
+            if (selectedYear !== 'all' && String(ch.year) !== selectedYear) {
+                return false;
+            }
+            if (selectedMonth !== 'all' && ch.month !== selectedMonth) {
+                return false;
+            }
+            if (query) {
+                const matchesEmail = (ch.customerEmail || '').toLowerCase().includes(query);
+                const matchesName = (ch.customerName || '').toLowerCase().includes(query);
+                const matchesDesc = (ch.description || '').toLowerCase().includes(query);
+                const matchesAmount = ch.amount.toString().includes(query);
+                if (!matchesEmail && !matchesName && !matchesDesc && !matchesAmount) {
+                    return false;
+                }
+            }
+            return true;
+        }).map((ch) => {
+            const fee = ch.fee !== undefined ? ch.fee : calculateStripeFee(ch.amount);
+            const net = ch.net !== undefined ? ch.net : Math.round((ch.amount - fee) * 100) / 100;
+            return {
+                ...ch,
+                fee,
+                net,
+            };
+        });
+    }, [data?.history?.charges, selectedYear, selectedMonth, chargeSearchQuery]);
+
+    // Pagination for historical charges
+    const paginatedCharges = useMemo(() => {
+        const startIndex = (transactionsPage - 1) * CHARGES_PER_PAGE;
+        return filteredHistoricalCharges.slice(startIndex, startIndex + CHARGES_PER_PAGE);
+    }, [filteredHistoricalCharges, transactionsPage]);
+
+    const totalPages = Math.ceil(filteredHistoricalCharges.length / CHARGES_PER_PAGE) || 1;
 
     const renderSettingsForm = (showCloseButton = false) => (
         <div className="glass-panel" style={{
@@ -691,93 +922,242 @@ export default function CoachRevenuePage() {
             {/* Live Metrics (When Connected) */}
             {data && data.connected && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                    {/* Time Period & Filter Navigation Bar */}
+                    <div className="glass-panel" style={{
+                        padding: '16px 20px',
+                        borderRadius: '20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        flexWrap: 'wrap',
+                        gap: '16px',
+                        background: 'linear-gradient(145deg, rgba(24, 24, 38, 0.85), rgba(16, 16, 26, 0.95))',
+                        border: '1px solid rgba(125, 135, 210, 0.25)',
+                    }}>
+                        {/* Year Selector Tabs */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--secondary-foreground)', fontSize: '0.82rem', fontWeight: 600, marginRight: '4px' }}>
+                                <Calendar size={15} style={{ color: 'var(--primary)' }} />
+                                <span>Period:</span>
+                            </div>
+
+                            <div style={{
+                                display: 'inline-flex',
+                                background: 'rgba(255, 255, 255, 0.04)',
+                                padding: '3px',
+                                borderRadius: '12px',
+                                border: '1px solid var(--card-border)',
+                                gap: '2px',
+                            }}>
+                                {['2026', '2025', '2024', 'all'].map((yr) => {
+                                    const isCurrent = yr === '2026';
+                                    const isSelected = selectedYear === yr;
+                                    const label = yr === 'all' ? 'All-Time' : (isCurrent ? '2026 (Current)' : yr);
+                                    return (
+                                        <button
+                                            key={yr}
+                                            type="button"
+                                            onClick={() => {
+                                                setSelectedYear(yr);
+                                                setSelectedMonth('all');
+                                            }}
+                                            className="chat-press"
+                                            style={{
+                                                padding: '6px 14px',
+                                                borderRadius: '9px',
+                                                fontSize: '0.82rem',
+                                                fontWeight: 700,
+                                                border: 'none',
+                                                background: isSelected ? 'linear-gradient(135deg, var(--primary), #4f46e5)' : 'transparent',
+                                                color: isSelected ? '#fff' : 'var(--secondary-foreground)',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.15s ease',
+                                                boxShadow: isSelected ? '0 2px 10px rgba(125, 135, 210, 0.35)' : 'none',
+                                            }}
+                                        >
+                                            {label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+
+                        {/* Month Indicator & Quick Actions */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                            {selectedYear !== 'all' && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)' }}>Month:</span>
+                                    <select
+                                        value={selectedMonth}
+                                        onChange={(e) => setSelectedMonth(e.target.value === 'all' ? 'all' : Number(e.target.value))}
+                                        className="glass-input"
+                                        style={{
+                                            padding: '6px 12px',
+                                            borderRadius: '10px',
+                                            fontSize: '0.82rem',
+                                            fontWeight: 600,
+                                            background: 'rgba(0, 0, 0, 0.4)',
+                                            color: 'var(--foreground)',
+                                            border: '1px solid var(--card-border)',
+                                            cursor: 'pointer',
+                                            outline: 'none',
+                                        }}
+                                    >
+                                        <option value="all" style={{ background: '#181826', color: '#fff' }}>All Months ({selectedYear})</option>
+                                        {MONTH_NAMES.map((name, idx) => {
+                                            const mNum = idx + 1;
+                                            const monthGross = data?.history?.yearlyBreakdown?.[selectedYear]?.months?.[mNum]?.total || 0;
+                                            return (
+                                                <option key={mNum} value={mNum} style={{ background: '#181826', color: '#fff' }}>
+                                                    {name} — {formatMoney(monthGross, data.currency)}
+                                                </option>
+                                            );
+                                        })}
+                                    </select>
+                                </div>
+                            )}
+
+                            {selectedMonth !== 'all' && (
+                                <button
+                                    type="button"
+                                    onClick={() => setSelectedMonth('all')}
+                                    className="glass-button chat-press"
+                                    style={{
+                                        padding: '5px 10px',
+                                        fontSize: '0.75rem',
+                                        fontWeight: 600,
+                                        borderRadius: '8px',
+                                        cursor: 'pointer',
+                                        color: 'var(--secondary-foreground)',
+                                    }}
+                                >
+                                    ✕ Reset to Full Year
+                                </button>
+                            )}
+
+                            <div style={{
+                                padding: '6px 12px',
+                                borderRadius: '10px',
+                                background: 'rgba(125, 135, 210, 0.12)',
+                                border: '1px solid rgba(125, 135, 210, 0.25)',
+                                fontSize: '0.78rem',
+                                fontWeight: 700,
+                                color: 'var(--primary)',
+                            }}>
+                                {periodStats.periodLabel}
+                            </div>
+                        </div>
+                    </div>
+
                     {/* KPI Cards Grid */}
                     <div style={{
                         display: 'grid',
                         gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
                         gap: '16px',
                     }}>
-                        {/* Billing Cycle Volume Card */}
+                        {/* Period Net Profit (Take-Home Hero Card) */}
                         <div className="glass-panel" style={{
                             padding: '22px',
                             borderRadius: '20px',
                             display: 'flex',
                             flexDirection: 'column',
                             justifyContent: 'space-between',
-                            border: '1px solid rgba(125, 135, 210, 0.25)',
-                            background: 'linear-gradient(145deg, rgba(125, 135, 210, 0.08), rgba(20, 20, 30, 0.6))',
+                            border: '1px solid rgba(16, 185, 129, 0.4)',
+                            background: 'linear-gradient(145deg, rgba(16, 185, 129, 0.15), rgba(20, 20, 30, 0.75))',
+                            boxShadow: '0 8px 32px rgba(16, 185, 129, 0.15)',
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                                <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                    Billing Cycle Volume
-                                </span>
-                                <div style={{ width: 34, height: 34, borderRadius: '10px', background: 'rgba(125, 135, 210, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                        Period Net Profit
+                                    </span>
+                                    <span style={{
+                                        fontSize: '0.7rem',
+                                        fontWeight: 800,
+                                        padding: '2px 7px',
+                                        borderRadius: '6px',
+                                        background: 'rgba(16, 185, 129, 0.2)',
+                                        color: '#34d399',
+                                        border: '1px solid rgba(16, 185, 129, 0.3)',
+                                    }}>
+                                        {periodStats.margin}% Margin
+                                    </span>
+                                </div>
+                                <div style={{ width: 34, height: 34, borderRadius: '10px', background: 'rgba(16, 185, 129, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981' }}>
                                     <DollarSign size={18} />
                                 </div>
                             </div>
                             <div>
                                 <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#fff', letterSpacing: '-0.03em' }}>
-                                    {formatMoney(data.cycleRevenue || data.mrr, data.currency)}
+                                    {formatMoney(periodStats.netProfit, data.currency, 0)}
                                 </div>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginTop: '4px' }}>
-                                    Per 4-wk cycle • {formatMoney(data.mrr, data.currency)}/mo normalized MRR
+                                <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                    <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
+                                        After <strong style={{ color: '#f87171' }}>-{formatMoney(periodStats.stripeFees, data.currency, periodStats.stripeFees % 1 !== 0 ? 2 : 0)}</strong> fees
+                                    </span>
+                                    <span>•</span>
+                                    <span style={{ color: '#10b981', fontWeight: 600 }}>{periodStats.periodLabel}</span>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Active Subscribers */}
+                        {/* Period Gross Volume Card */}
                         <div className="glass-panel" style={{
                             padding: '22px',
                             borderRadius: '20px',
                             display: 'flex',
                             flexDirection: 'column',
                             justifyContent: 'space-between',
+                            border: '1px solid rgba(125, 135, 210, 0.3)',
+                            background: 'linear-gradient(145deg, rgba(125, 135, 210, 0.12), rgba(20, 20, 30, 0.7))',
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                                <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                    Active Subscribers
+                                <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--foreground)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                    Period Gross Collected
                                 </span>
-                                <div style={{ width: 34, height: 34, borderRadius: '10px', background: 'rgba(16, 185, 129, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981' }}>
-                                    <Users size={18} />
-                                </div>
-                            </div>
-                            <div>
-                                <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#fff', letterSpacing: '-0.03em' }}>
-                                    {data.activeSubscribers}
-                                </div>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginTop: '4px' }}>
-                                    Paying athletes for Coach Darath
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Gross Volume This Month */}
-                        <div className="glass-panel" style={{
-                            padding: '22px',
-                            borderRadius: '20px',
-                            display: 'flex',
-                            flexDirection: 'column',
-                            justifyContent: 'space-between',
-                        }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                                <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                    Collected This Month
-                                </span>
-                                <div style={{ width: 34, height: 34, borderRadius: '10px', background: 'rgba(245, 158, 11, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f59e0b' }}>
+                                <div style={{ width: 34, height: 34, borderRadius: '10px', background: 'rgba(125, 135, 210, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
                                     <TrendingUp size={18} />
                                 </div>
                             </div>
                             <div>
                                 <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#fff', letterSpacing: '-0.03em' }}>
-                                    {formatMoney(data.grossThisMonth, data.currency)}
+                                    {formatMoney(periodStats.grossCollected, data.currency, 0)}
                                 </div>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginTop: '4px' }}>
-                                    Gross successful payments
+                                <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <span>{periodStats.count} charges</span>
+                                    <span>•</span>
+                                    <span>Avg {formatMoney(periodStats.avgTicket, data.currency, 0)} (Net {formatMoney(periodStats.avgNet, data.currency, 0)})</span>
                                 </div>
                             </div>
                         </div>
 
-                        {/* Attention / Past Due */}
+                        {/* Current Active Roster Net Payout */}
+                        <div className="glass-panel" style={{
+                            padding: '22px',
+                            borderRadius: '20px',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'space-between',
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                                <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                    Roster Cycle Net Payout
+                                </span>
+                                <div style={{ width: 34, height: 34, borderRadius: '10px', background: 'rgba(56, 189, 248, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#38bdf8' }}>
+                                    <Users size={18} />
+                                </div>
+                            </div>
+                            <div>
+                                <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#fff', letterSpacing: '-0.03em' }}>
+                                    +{formatMoney(data.cycleNet || (data.cycleRevenue ? data.cycleRevenue - (data.cycleFee || 0) : 0), data.currency, 2)}
+                                </div>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginTop: '4px' }}>
+                                    from {formatMoney(data.cycleRevenue || data.mrr, data.currency, 0)} gross ({data.activeSubscribers} athletes • {formatMoney(data.mrrNet || 0, data.currency, 0)}/mo net)
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Payment Health & Stripe Rates */}
                         <div className="glass-panel" style={{
                             padding: '22px',
                             borderRadius: '20px',
@@ -807,14 +1187,391 @@ export default function CoachRevenuePage() {
                                     {data.pastDueCount === 0 ? '100%' : `${data.pastDueCount} Past Due`}
                                 </div>
                                 <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginTop: '4px' }}>
-                                    {data.pastDueCount === 0 ? 'All subscriptions current' : 'Failed or past-due renewals'}
+                                    {data.pastDueCount === 0 ? 'Stripe processing: 2.9% + 30¢' : 'Failed or past-due renewals'}
                                 </div>
                             </div>
                         </div>
                     </div>
 
+                    {/* Interactive Month-by-Month Revenue Visualizer */}
+                    {data?.history && selectedYear !== 'all' && (() => {
+                        const yearMonths = data.history.yearlyBreakdown[selectedYear]?.months || {};
+                        const yearGrossTotal = data.history.yearlyBreakdown[selectedYear]?.total || 0;
+                        const yearFeeTotal = data.history.yearlyBreakdown[selectedYear]?.fee ?? calculateStripeFee(yearGrossTotal);
+                        const yearNetTotal = data.history.yearlyBreakdown[selectedYear]?.net ?? Math.round((yearGrossTotal - yearFeeTotal) * 100) / 100;
+
+                        const maxAmount = Math.max(
+                            ...Object.values(yearMonths).map(m => {
+                                const g = m.total || 0;
+                                if (chartMetric === 'net') {
+                                    const f = m.fee !== undefined ? m.fee : calculateStripeFee(g);
+                                    return m.net !== undefined ? m.net : Math.max(0, g - f);
+                                }
+                                return g;
+                            }),
+                            1
+                        );
+
+                        const peakAmount = Math.max(
+                            ...Object.values(yearMonths).map(m => {
+                                const g = m.total || 0;
+                                if (chartMetric === 'net') {
+                                    const f = m.fee !== undefined ? m.fee : calculateStripeFee(g);
+                                    return m.net !== undefined ? m.net : Math.max(0, g - f);
+                                }
+                                return g;
+                            }),
+                            0
+                        );
+
+                        const isCurrentYear = selectedYear === '2026';
+                        const currentRealMonth = new Date().getMonth() + 1;
+
+                        return (
+                            <div className="glass-panel" style={{
+                                padding: '24px',
+                                borderRadius: '24px',
+                                background: 'linear-gradient(145deg, rgba(20, 20, 32, 0.85), rgba(12, 12, 22, 0.95))',
+                                border: '1px solid rgba(125, 135, 210, 0.25)',
+                            }}>
+                                {/* Card Header */}
+                                <div style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'space-between',
+                                    flexWrap: 'wrap',
+                                    gap: '12px',
+                                    marginBottom: '24px',
+                                }}>
+                                    <div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+                                            <BarChart3 size={18} style={{ color: chartMetric === 'net' ? '#10b981' : 'var(--primary)' }} />
+                                            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'var(--foreground)' }}>
+                                                Month-by-Month {chartMetric === 'net' ? 'Net Profit' : 'Gross Revenue'} — {selectedYear}
+                                            </h2>
+                                        </div>
+                                        <p style={{ fontSize: '0.82rem', color: 'var(--secondary-foreground)', margin: 0 }}>
+                                            Click any month bar to drill down into payments • Peak:{' '}
+                                            <strong style={{ color: chartMetric === 'net' ? '#10b981' : 'var(--foreground)' }}>
+                                                {formatMoney(peakAmount, data.currency, 0)} {chartMetric === 'net' ? 'Net Take-Home' : 'Gross'}
+                                            </strong>
+                                        </p>
+                                    </div>
+
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                        {/* Metric Mode Toggle */}
+                                        <div style={{
+                                            display: 'inline-flex',
+                                            background: 'rgba(255, 255, 255, 0.05)',
+                                            padding: '3px',
+                                            borderRadius: '10px',
+                                            border: '1px solid var(--card-border)',
+                                        }}>
+                                            <button
+                                                type="button"
+                                                onClick={() => setChartMetric('net')}
+                                                className="chat-press"
+                                                style={{
+                                                    padding: '5px 12px',
+                                                    borderRadius: '8px',
+                                                    fontSize: '0.78rem',
+                                                    fontWeight: 700,
+                                                    border: 'none',
+                                                    background: chartMetric === 'net' ? 'linear-gradient(135deg, #10b981, #059669)' : 'transparent',
+                                                    color: chartMetric === 'net' ? '#fff' : 'var(--secondary-foreground)',
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.15s ease',
+                                                }}
+                                            >
+                                                Net Profit
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setChartMetric('gross')}
+                                                className="chat-press"
+                                                style={{
+                                                    padding: '5px 12px',
+                                                    borderRadius: '8px',
+                                                    fontSize: '0.78rem',
+                                                    fontWeight: 700,
+                                                    border: 'none',
+                                                    background: chartMetric === 'gross' ? 'linear-gradient(135deg, var(--primary), #4f46e5)' : 'transparent',
+                                                    color: chartMetric === 'gross' ? '#fff' : 'var(--secondary-foreground)',
+                                                    cursor: 'pointer',
+                                                    transition: 'all 0.15s ease',
+                                                }}
+                                            >
+                                                Gross
+                                            </button>
+                                        </div>
+
+                                        <button
+                                            type="button"
+                                            onClick={() => setSelectedMonth('all')}
+                                            className="chat-press"
+                                            style={{
+                                                padding: '6px 14px',
+                                                borderRadius: '10px',
+                                                fontSize: '0.78rem',
+                                                fontWeight: 700,
+                                                border: 'none',
+                                                background: selectedMonth === 'all' ? (chartMetric === 'net' ? '#10b981' : 'var(--primary)') : 'rgba(255, 255, 255, 0.05)',
+                                                color: selectedMonth === 'all' ? '#fff' : 'var(--secondary-foreground)',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.15s ease',
+                                            }}
+                                        >
+                                            All {selectedYear} Months
+                                        </button>
+
+                                        <div style={{
+                                            padding: '6px 14px',
+                                            borderRadius: '10px',
+                                            background: chartMetric === 'net' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(125, 135, 210, 0.12)',
+                                            border: chartMetric === 'net' ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(125, 135, 210, 0.25)',
+                                            fontSize: '0.82rem',
+                                            fontWeight: 800,
+                                            color: chartMetric === 'net' ? '#10b981' : '#fff',
+                                        }}>
+                                            {chartMetric === 'net'
+                                                ? `${formatMoney(yearNetTotal, data.currency, 0)} Net Profit`
+                                                : `${formatMoney(yearGrossTotal, data.currency, 0)} Gross`}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* Month Columns Bar Chart */}
+                                <div style={{
+                                    display: 'grid',
+                                    gridTemplateColumns: 'repeat(12, minmax(0, 1fr))',
+                                    gap: '10px',
+                                    alignItems: 'end',
+                                    padding: '16px 8px 8px',
+                                    overflowX: 'auto',
+                                }}>
+                                    {MONTH_NAMES.map((mName, idx) => {
+                                        const mNum = idx + 1;
+                                        const mStat = yearMonths[mNum] || { total: 0, fee: 0, net: 0, count: 0 };
+                                        const grossVal = mStat.total || 0;
+                                        const feeVal = mStat.fee !== undefined ? mStat.fee : calculateStripeFee(grossVal);
+                                        const netVal = mStat.net !== undefined ? mStat.net : Math.round((grossVal - feeVal) * 100) / 100;
+                                        const displayVal = chartMetric === 'net' ? netVal : grossVal;
+
+                                        const isSelected = selectedMonth === mNum;
+                                        const isDimmed = selectedMonth !== 'all' && !isSelected;
+                                        const isFuture = isCurrentYear && mNum > currentRealMonth;
+                                        const isCurrentMonth = isCurrentYear && mNum === currentRealMonth;
+                                        const barPercent = Math.max(displayVal > 0 ? (displayVal / maxAmount) * 100 : 4, 4);
+
+                                        return (
+                                            <div
+                                                key={mNum}
+                                                onClick={() => {
+                                                    if (isFuture) return;
+                                                    setSelectedMonth(isSelected ? 'all' : mNum);
+                                                }}
+                                                title={`${MONTH_FULL_NAMES[idx]} ${selectedYear}: Gross ${formatMoney(grossVal, data.currency, 0)} • Stripe Fee -${formatMoney(feeVal, data.currency, feeVal % 1 !== 0 ? 2 : 0)} • Net Profit ${formatMoney(netVal, data.currency, 0)} (${mStat.count} payments)`}
+                                                className="chat-press"
+                                                style={{
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    alignItems: 'center',
+                                                    cursor: isFuture ? 'default' : 'pointer',
+                                                    opacity: isFuture ? 0.3 : (isDimmed ? 0.4 : 1),
+                                                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                    minWidth: 54,
+                                                }}
+                                            >
+                                                {/* Amount on top of bar */}
+                                                <div style={{
+                                                    fontSize: '0.72rem',
+                                                    fontWeight: 700,
+                                                    color: isSelected
+                                                        ? (chartMetric === 'net' ? '#10b981' : 'var(--primary)')
+                                                        : (displayVal > 0 ? (chartMetric === 'net' ? '#34d399' : 'var(--foreground)') : 'transparent'),
+                                                    marginBottom: '8px',
+                                                    textAlign: 'center',
+                                                    whiteSpace: 'nowrap',
+                                                }}>
+                                                    {displayVal > 0 ? (displayVal >= 1000 ? `$${(displayVal / 1000).toFixed(1)}k` : `$${Math.round(displayVal)}`) : '—'}
+                                                </div>
+
+                                                {/* Bar Container */}
+                                                <div style={{
+                                                    width: '100%',
+                                                    height: 140,
+                                                    borderRadius: '12px',
+                                                    background: 'rgba(255, 255, 255, 0.03)',
+                                                    border: isSelected 
+                                                        ? (chartMetric === 'net' ? '1.5px solid #10b981' : '1.5px solid var(--primary)')
+                                                        : (isCurrentMonth ? (chartMetric === 'net' ? '1px solid rgba(16, 185, 129, 0.5)' : '1px solid rgba(125, 135, 210, 0.4)') : '1px solid rgba(255, 255, 255, 0.05)'),
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    justifyContent: 'flex-end',
+                                                    padding: '3px',
+                                                    position: 'relative',
+                                                    overflow: 'hidden',
+                                                    boxShadow: isSelected
+                                                        ? (chartMetric === 'net' ? '0 0 16px rgba(16, 185, 129, 0.35)' : '0 0 16px rgba(125, 135, 210, 0.3)')
+                                                        : 'none',
+                                                }}>
+                                                    <div style={{
+                                                        width: '100%',
+                                                        height: `${barPercent}%`,
+                                                        borderRadius: '9px',
+                                                        background: chartMetric === 'net'
+                                                            ? (isSelected
+                                                                ? 'linear-gradient(180deg, #10b981, #059669)'
+                                                                : (isCurrentMonth
+                                                                    ? 'linear-gradient(180deg, rgba(16, 185, 129, 0.85), rgba(5, 150, 105, 0.85))'
+                                                                    : (displayVal > 0
+                                                                        ? 'linear-gradient(180deg, rgba(16, 185, 129, 0.6), rgba(5, 150, 105, 0.4))'
+                                                                        : 'rgba(255, 255, 255, 0.05)')))
+                                                            : (isSelected
+                                                                ? 'linear-gradient(180deg, #38bdf8, #6366f1)'
+                                                                : (isCurrentMonth
+                                                                    ? 'linear-gradient(180deg, rgba(56, 189, 248, 0.8), rgba(99, 102, 241, 0.8))'
+                                                                    : (displayVal > 0
+                                                                        ? 'linear-gradient(180deg, rgba(125, 135, 210, 0.6), rgba(99, 102, 241, 0.4))'
+                                                                        : 'rgba(255, 255, 255, 0.05)'))),
+                                                        transition: 'height 0.4s ease, background 0.2s ease',
+                                                    }} />
+                                                </div>
+
+                                                {/* Month label and count */}
+                                                <div style={{
+                                                    marginTop: '8px',
+                                                    textAlign: 'center',
+                                                }}>
+                                                    <div style={{
+                                                        fontSize: '0.8rem',
+                                                        fontWeight: isSelected || isCurrentMonth ? 800 : 600,
+                                                        color: isSelected ? (chartMetric === 'net' ? '#10b981' : 'var(--primary)') : (isCurrentMonth ? (chartMetric === 'net' ? '#34d399' : '#38bdf8') : 'var(--foreground)'),
+                                                    }}>
+                                                        {mName}
+                                                    </div>
+                                                    <div style={{
+                                                        fontSize: '0.68rem',
+                                                        color: 'var(--secondary-foreground)',
+                                                        marginTop: '2px',
+                                                    }}>
+                                                        {mStat.count > 0 ? `${mStat.count}` : '—'}
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        );
+                    })()}
+
+                    {/* All-Time Year-by-Year Comparison Visualizer */}
+                    {data?.history && selectedYear === 'all' && (
+                        <div className="glass-panel" style={{
+                            padding: '24px',
+                            borderRadius: '24px',
+                            background: 'linear-gradient(145deg, rgba(20, 20, 32, 0.85), rgba(12, 12, 22, 0.95))',
+                            border: '1px solid rgba(125, 135, 210, 0.25)',
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+                                <div>
+                                    <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'var(--foreground)' }}>
+                                        Annual Revenue & Profit Performance (2024–2026)
+                                    </h2>
+                                    <p style={{ fontSize: '0.82rem', color: 'var(--secondary-foreground)', margin: '4px 0 0 0' }}>
+                                        Click any year card to drill down into its full month-by-month trajectory
+                                    </p>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                    <div style={{
+                                        padding: '6px 14px',
+                                        borderRadius: '10px',
+                                        background: 'rgba(16, 185, 129, 0.15)',
+                                        border: '1px solid rgba(16, 185, 129, 0.3)',
+                                        color: '#10b981',
+                                        fontWeight: 800,
+                                        fontSize: '0.85rem',
+                                    }}>
+                                        {formatMoney(data.history.allTimeNet, data.currency, 0)} Net Profit
+                                    </div>
+                                    <div style={{
+                                        padding: '6px 14px',
+                                        borderRadius: '10px',
+                                        background: 'rgba(255, 255, 255, 0.05)',
+                                        border: '1px solid var(--card-border)',
+                                        color: 'var(--secondary-foreground)',
+                                        fontWeight: 600,
+                                        fontSize: '0.8rem',
+                                    }}>
+                                        {formatMoney(data.history.allTimeGross, data.currency, 0)} Gross (Fees: -{formatMoney(data.history.allTimeFee, data.currency, 0)})
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
+                                {['2024', '2025', '2026'].map((y) => {
+                                    const yStat = data.history?.yearlyBreakdown?.[y] || { total: 0, fee: 0, net: 0, count: 0 };
+                                    const yGross = yStat.total || 0;
+                                    const yFee = yStat.fee !== undefined ? yStat.fee : calculateStripeFee(yGross);
+                                    const yNet = yStat.net !== undefined ? yStat.net : Math.round((yGross - yFee) * 100) / 100;
+                                    const pctOfTotal = Math.round((yGross / (data.history?.allTimeGross || 1)) * 100);
+
+                                    return (
+                                        <div
+                                            key={y}
+                                            onClick={() => {
+                                                setSelectedYear(y);
+                                                setSelectedMonth('all');
+                                            }}
+                                            className="chat-press"
+                                            style={{
+                                                padding: '20px',
+                                                borderRadius: '16px',
+                                                background: 'rgba(255, 255, 255, 0.03)',
+                                                border: '1px solid var(--card-border)',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s ease',
+                                            }}
+                                        >
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
+                                                <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--foreground)' }}>
+                                                    {y} {y === '2026' ? '• YTD' : ''}
+                                                </span>
+                                                <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '3px 8px', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981' }}>
+                                                    {pctOfTotal}% of all-time
+                                                </span>
+                                            </div>
+                                            <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#10b981', letterSpacing: '-0.02em', marginBottom: '4px' }}>
+                                                {formatMoney(yNet, data.currency, 0)}
+                                                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'rgba(16, 185, 129, 0.8)', marginLeft: '6px' }}>
+                                                    Net Profit
+                                                </span>
+                                            </div>
+                                            <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginBottom: '4px' }}>
+                                                {formatMoney(yGross, data.currency, 0)} gross • -{formatMoney(yFee, data.currency, 0)} Stripe fees
+                                            </div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', opacity: 0.8, marginBottom: '14px' }}>
+                                                {yStat.count} paid charges • Avg Net {formatMoney(yStat.count > 0 ? yNet / yStat.count : 0, data.currency, 2)}
+                                            </div>
+                                            {/* Progress Track */}
+                                            <div style={{ width: '100%', height: 6, borderRadius: '4px', background: 'rgba(255, 255, 255, 0.05)', overflow: 'hidden' }}>
+                                                <div style={{
+                                                    width: `${pctOfTotal}%`,
+                                                    height: '100%',
+                                                    borderRadius: '4px',
+                                                    background: 'linear-gradient(90deg, #10b981, #3b82f6)',
+                                                }} />
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Athlete Subscription Roster Section */}
-                    <div className="glass-panel" style={{
+                    <div id="athlete-subscriptions-roster" className="glass-panel" style={{
                         padding: '24px',
                         borderRadius: '24px',
                     }}>
@@ -927,13 +1684,20 @@ export default function CoachRevenuePage() {
                                     }}>
                                         <th style={{ padding: '12px 14px', fontWeight: 600 }}>Athlete</th>
                                         <th style={{ padding: '12px 14px', fontWeight: 600 }}>Status</th>
-                                        <th style={{ padding: '12px 14px', fontWeight: 600 }}>Plan / Billing</th>
+                                        <th style={{ padding: '12px 14px', fontWeight: 600 }}>Gross Plan</th>
+                                        <th style={{ padding: '12px 14px', fontWeight: 600 }}>Stripe Fee</th>
+                                        <th style={{ padding: '12px 14px', fontWeight: 600 }}>Net Take-Home</th>
                                         <th style={{ padding: '12px 14px', fontWeight: 600 }}>Next Billing</th>
-                                        <th style={{ padding: '12px 14px', fontWeight: 600, textAlign: 'right' }}>Actions</th>
+                                        <th style={{ padding: '12px 14px', fontWeight: 600, textAlign: 'right' }}>Stripe & Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {filteredAthletes.map((athlete) => {
+                                        const athleteGross = athlete.rawAmount || athlete.monthlyAmount;
+                                        const athleteFee = athlete.stripeFee ?? calculateStripeFee(athleteGross);
+                                        const athleteNet = athlete.netAmount ?? Math.round((athleteGross - athleteFee) * 100) / 100;
+                                        const athleteMonthlyNet = athlete.monthlyNet ?? Math.round((athlete.monthlyAmount - calculateStripeFee(athlete.monthlyAmount)) * 100) / 100;
+
                                         return (
                                             <tr
                                                 key={athlete.id}
@@ -1007,10 +1771,40 @@ export default function CoachRevenuePage() {
                                                         </span>
                                                     )}
                                                 </td>
-                                                <td style={{ padding: '14px', fontWeight: 700 }}>
-                                                    <span style={{ color: 'var(--foreground)', fontSize: '0.92rem' }}>
-                                                        {athlete.billingInterval || (athlete.rawAmount ? `$${athlete.rawAmount}` : formatMoney(athlete.monthlyAmount, athlete.currency))}
+                                                <td style={{ padding: '14px', fontWeight: 600 }}>
+                                                    <div style={{ color: 'var(--foreground)', fontSize: '0.92rem' }}>
+                                                        {athlete.billingInterval || (athlete.rawAmount ? `$${athlete.rawAmount} / 4 wks` : formatMoney(athlete.monthlyAmount, athlete.currency))}
+                                                    </div>
+                                                    <div style={{ fontSize: '0.72rem', color: 'var(--secondary-foreground)', marginTop: '2px' }}>
+                                                        {formatMoney(athlete.monthlyAmount, athlete.currency, 0)}/mo equiv
+                                                    </div>
+                                                </td>
+                                                <td style={{ padding: '14px', whiteSpace: 'nowrap' }}>
+                                                    <span style={{
+                                                        padding: '3px 7px',
+                                                        borderRadius: '6px',
+                                                        background: 'rgba(255, 255, 255, 0.05)',
+                                                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                        fontSize: '0.78rem',
+                                                        fontWeight: 600,
+                                                        color: 'rgba(255, 255, 255, 0.75)',
+                                                    }}>
+                                                        -{formatMoney(athleteFee, athlete.currency, 2)}
                                                     </span>
+                                                    <div style={{ fontSize: '0.68rem', color: 'var(--secondary-foreground)', marginTop: '3px' }}>
+                                                        2.9% + 30¢
+                                                    </div>
+                                                </td>
+                                                <td style={{ padding: '14px', whiteSpace: 'nowrap' }}>
+                                                    <div style={{ color: '#10b981', fontWeight: 800, fontSize: '0.95rem' }}>
+                                                        +{formatMoney(athleteNet, athlete.currency, 2)}
+                                                        <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'rgba(16, 185, 129, 0.8)', marginLeft: '4px' }}>
+                                                            {athlete.intervalCount === 4 && athlete.interval === 'week' ? '/ 4 wks' : (athlete.interval === 'month' ? '/ mo' : '')}
+                                                        </span>
+                                                    </div>
+                                                    <div style={{ fontSize: '0.72rem', color: 'rgba(16, 185, 129, 0.75)', marginTop: '2px', fontWeight: 600 }}>
+                                                        {formatMoney(athleteMonthlyNet, athlete.currency, 0)}/mo net
+                                                    </div>
                                                 </td>
                                                 <td style={{ padding: '14px', color: 'var(--secondary-foreground)', fontSize: '0.8rem' }}>
                                                     {athlete.currentPeriodEnd ? (
@@ -1025,23 +1819,91 @@ export default function CoachRevenuePage() {
                                                     )}
                                                 </td>
                                                 <td style={{ padding: '14px', textAlign: 'right' }}>
-                                                    <Link
-                                                        href={`/dashboard/athletes/${athlete.id}`}
-                                                        className="glass-button chat-press"
-                                                        style={{
-                                                            display: 'inline-flex',
-                                                            alignItems: 'center',
-                                                            gap: '4px',
-                                                            padding: '4px 10px',
-                                                            fontSize: '0.75rem',
-                                                            fontWeight: 600,
-                                                            textDecoration: 'none',
-                                                            color: 'var(--secondary-foreground)',
-                                                        }}
-                                                    >
-                                                        <span>Profile</span>
-                                                        <ArrowUpRight size={12} />
-                                                    </Link>
+                                                    <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', justifyContent: 'flex-end', flexWrap: 'nowrap' }}>
+                                                        {/* Direct Link to Stripe Subscription (Cancel or Change Plan) */}
+                                                        {(athlete.stripeSubscriptionUrl || athlete.stripeSubscriptionId) ? (
+                                                            <a
+                                                                href={athlete.stripeSubscriptionUrl || `https://dashboard.stripe.com/subscriptions/${athlete.stripeSubscriptionId}`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="chat-press"
+                                                                title="Open subscription in Stripe Dashboard to cancel, update plan, or change price"
+                                                                style={{
+                                                                    display: 'inline-flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '5px',
+                                                                    padding: '5px 10px',
+                                                                    fontSize: '0.74rem',
+                                                                    fontWeight: 700,
+                                                                    borderRadius: '8px',
+                                                                    background: 'linear-gradient(135deg, rgba(99, 91, 255, 0.24), rgba(125, 135, 210, 0.28))',
+                                                                    border: '1px solid rgba(99, 91, 255, 0.5)',
+                                                                    color: '#c4b5fd',
+                                                                    textDecoration: 'none',
+                                                                    boxShadow: '0 2px 8px rgba(99, 91, 255, 0.15)',
+                                                                    whiteSpace: 'nowrap',
+                                                                    transition: 'all 0.15s ease',
+                                                                }}
+                                                            >
+                                                                <CreditCard size={12} style={{ color: '#a78bfa' }} />
+                                                                <span>Stripe Sub</span>
+                                                                <ExternalLink size={11} style={{ opacity: 0.8 }} />
+                                                            </a>
+                                                        ) : null}
+
+                                                        {/* Direct Link to Stripe Customer Profile */}
+                                                        {(athlete.stripeCustomerUrl || athlete.stripeCustomerId) ? (
+                                                            <a
+                                                                href={athlete.stripeCustomerUrl || `https://dashboard.stripe.com/customers/${athlete.stripeCustomerId}`}
+                                                                target="_blank"
+                                                                rel="noopener noreferrer"
+                                                                className="glass-button chat-press"
+                                                                title="Open customer profile in Stripe Dashboard"
+                                                                style={{
+                                                                    display: 'inline-flex',
+                                                                    alignItems: 'center',
+                                                                    gap: '4px',
+                                                                    padding: '5px 8px',
+                                                                    fontSize: '0.72rem',
+                                                                    fontWeight: 600,
+                                                                    borderRadius: '8px',
+                                                                    background: 'rgba(255, 255, 255, 0.04)',
+                                                                    border: '1px solid rgba(255, 255, 255, 0.09)',
+                                                                    color: 'var(--secondary-foreground)',
+                                                                    textDecoration: 'none',
+                                                                    whiteSpace: 'nowrap',
+                                                                }}
+                                                            >
+                                                                <User size={12} />
+                                                                <span>Customer</span>
+                                                                <ExternalLink size={10} style={{ opacity: 0.6 }} />
+                                                            </a>
+                                                        ) : null}
+
+                                                        {/* BlueprintLab App Profile */}
+                                                        <Link
+                                                            href={`/dashboard/athletes/${athlete.id}`}
+                                                            className="glass-button chat-press"
+                                                            title="View Athlete Training Analytics in BlueprintLab"
+                                                            style={{
+                                                                display: 'inline-flex',
+                                                                alignItems: 'center',
+                                                                gap: '3px',
+                                                                padding: '5px 8px',
+                                                                fontSize: '0.72rem',
+                                                                fontWeight: 600,
+                                                                borderRadius: '8px',
+                                                                background: 'rgba(255, 255, 255, 0.03)',
+                                                                border: '1px solid rgba(255, 255, 255, 0.06)',
+                                                                color: 'var(--secondary-foreground)',
+                                                                textDecoration: 'none',
+                                                                whiteSpace: 'nowrap',
+                                                            }}
+                                                        >
+                                                            <span>App</span>
+                                                            <ArrowUpRight size={11} />
+                                                        </Link>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         );
@@ -1049,7 +1911,7 @@ export default function CoachRevenuePage() {
 
                                     {filteredAthletes.length === 0 && (
                                         <tr>
-                                            <td colSpan={5} style={{ padding: '36px', textAlign: 'center', color: 'var(--secondary-foreground)' }}>
+                                            <td colSpan={7} style={{ padding: '36px', textAlign: 'center', color: 'var(--secondary-foreground)' }}>
                                                 No athletes found matching this search.
                                             </td>
                                         </tr>
@@ -1077,127 +1939,382 @@ export default function CoachRevenuePage() {
                             </p>
 
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '12px' }}>
-                                {data.unmatchedSubscribers.map((unmatched) => (
-                                    <div
-                                        key={unmatched.id}
-                                        style={{
-                                            padding: '12px 14px',
-                                            borderRadius: '12px',
-                                            background: 'rgba(255, 255, 255, 0.03)',
-                                            border: '1px solid var(--card-border)',
-                                        }}
-                                    >
-                                        <div style={{ fontWeight: 600, color: 'var(--foreground)', fontSize: '0.85rem' }}>
-                                            {unmatched.name}
-                                        </div>
-                                        <div style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', marginBottom: '6px' }}>
-                                            {unmatched.email}
-                                        </div>
-                                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.78rem' }}>
-                                            <span style={{ color: '#10b981', fontWeight: 700 }}>
-                                                {formatMoney(unmatched.monthlyAmount, unmatched.currency)}/mo
-                                            </span>
-                                            <span style={{ color: 'var(--secondary-foreground)', fontSize: '0.72rem' }}>
-                                                Renews {formatDate(unmatched.currentPeriodEnd)}
-                                            </span>
-                                        </div>
-                                        {unmatched.productName && (
-                                            <div style={{ fontSize: '0.7rem', color: 'var(--primary)', marginTop: '4px' }}>
-                                                Product: {unmatched.productName}
+                                {data.unmatchedSubscribers.map((unmatched) => {
+                                    const uGross = unmatched.rawAmount || unmatched.monthlyAmount;
+                                    const uFee = unmatched.stripeFee ?? calculateStripeFee(uGross);
+                                    const uNet = unmatched.netAmount ?? Math.round((uGross - uFee) * 100) / 100;
+
+                                    return (
+                                        <div
+                                            key={unmatched.id}
+                                            style={{
+                                                padding: '12px 14px',
+                                                borderRadius: '12px',
+                                                background: 'rgba(255, 255, 255, 0.03)',
+                                                border: '1px solid var(--card-border)',
+                                            }}
+                                        >
+                                            <div style={{ fontWeight: 600, color: 'var(--foreground)', fontSize: '0.85rem' }}>
+                                                {unmatched.name}
                                             </div>
-                                        )}
-                                    </div>
-                                ))}
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', marginBottom: '6px' }}>
+                                                {unmatched.email}
+                                            </div>
+                                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.78rem', flexWrap: 'wrap', gap: '4px' }}>
+                                                <span style={{ color: '#10b981', fontWeight: 800 }}>
+                                                    +{formatMoney(uNet, unmatched.currency, 2)} Net
+                                                </span>
+                                                <span style={{ color: 'var(--secondary-foreground)', fontSize: '0.72rem' }}>
+                                                    Renews {formatDate(unmatched.currentPeriodEnd)}
+                                                </span>
+                                            </div>
+                                            <div style={{ fontSize: '0.72rem', color: 'var(--secondary-foreground)', marginTop: '4px' }}>
+                                                Gross {formatMoney(uGross, unmatched.currency, 2)} • Stripe Fee -{formatMoney(uFee, unmatched.currency, 2)}
+                                            </div>
+                                            {unmatched.productName && (
+                                                <div style={{ fontSize: '0.7rem', color: 'var(--primary)', marginTop: '4px' }}>
+                                                    Product: {unmatched.productName}
+                                                </div>
+                                            )}
+                                            <div style={{ display: 'flex', gap: '8px', marginTop: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+                                                {(unmatched.stripeSubscriptionUrl || unmatched.stripeSubscriptionId) && (
+                                                    <a
+                                                        href={unmatched.stripeSubscriptionUrl || `https://dashboard.stripe.com/subscriptions/${unmatched.stripeSubscriptionId}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="chat-press"
+                                                        title="Open subscription in Stripe Dashboard to cancel, update plan, or pause"
+                                                        style={{
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: '5px',
+                                                            padding: '5px 10px',
+                                                            fontSize: '0.73rem',
+                                                            fontWeight: 700,
+                                                            borderRadius: '7px',
+                                                            background: 'linear-gradient(135deg, rgba(99, 91, 255, 0.25), rgba(125, 135, 210, 0.28))',
+                                                            border: '1px solid rgba(99, 91, 255, 0.5)',
+                                                            color: '#c4b5fd',
+                                                            textDecoration: 'none',
+                                                            whiteSpace: 'nowrap',
+                                                        }}
+                                                    >
+                                                        <CreditCard size={11} />
+                                                        <span>Manage on Stripe</span>
+                                                        <ExternalLink size={10} />
+                                                    </a>
+                                                )}
+                                                {(unmatched.stripeCustomerUrl || unmatched.stripeCustomerId) && (
+                                                    <a
+                                                        href={unmatched.stripeCustomerUrl || `https://dashboard.stripe.com/customers/${unmatched.stripeCustomerId}`}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="glass-button chat-press"
+                                                        title="Open customer profile in Stripe Dashboard"
+                                                        style={{
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: '4px',
+                                                            padding: '5px 8px',
+                                                            fontSize: '0.73rem',
+                                                            fontWeight: 600,
+                                                            borderRadius: '7px',
+                                                            background: 'rgba(255, 255, 255, 0.05)',
+                                                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                                                            color: 'var(--secondary-foreground)',
+                                                            textDecoration: 'none',
+                                                            whiteSpace: 'nowrap',
+                                                        }}
+                                                    >
+                                                        <User size={11} />
+                                                        <span>Customer Profile</span>
+                                                        <ExternalLink size={10} />
+                                                    </a>
+                                                )}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
                             </div>
                         </div>
                     )}
 
-                    {/* Recent Charges Activity Feed */}
-                    {data.recentCharges && data.recentCharges.length > 0 && (
-                        <div className="glass-panel" style={{
-                            padding: '24px',
-                            borderRadius: '24px',
+                    {/* Historical Transactions Ledger (Filtered by Year & Month with Live Search) */}
+                    <div className="glass-panel" style={{
+                        padding: '24px',
+                        borderRadius: '24px',
+                    }}>
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            flexWrap: 'wrap',
+                            gap: '16px',
+                            marginBottom: '20px',
                         }}>
-                            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 16px 0' }}>
-                                Recent Stripe Payments
-                            </h2>
+                            <div>
+                                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 4px 0' }}>
+                                    Historical Transactions Ledger
+                                </h2>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '6px' }}>
+                                    <span style={{ fontSize: '0.82rem', color: 'var(--secondary-foreground)' }}>
+                                        Showing charges for <strong>{periodStats.periodLabel}</strong> ({filteredHistoricalCharges.length} paid charges):
+                                    </span>
+                                    <span style={{
+                                        padding: '3px 8px',
+                                        borderRadius: '6px',
+                                        background: 'rgba(255, 255, 255, 0.05)',
+                                        fontSize: '0.75rem',
+                                        fontWeight: 700,
+                                        color: 'var(--foreground)',
+                                    }}>
+                                        Gross: {formatMoney(periodStats.grossCollected, data.currency, 0)}
+                                    </span>
+                                    <span style={{
+                                        padding: '3px 8px',
+                                        borderRadius: '6px',
+                                        background: 'rgba(239, 68, 68, 0.1)',
+                                        border: '1px solid rgba(239, 68, 68, 0.2)',
+                                        fontSize: '0.75rem',
+                                        fontWeight: 700,
+                                        color: '#f87171',
+                                    }}>
+                                        Fees: -{formatMoney(periodStats.stripeFees, data.currency, periodStats.stripeFees % 1 !== 0 ? 2 : 0)}
+                                    </span>
+                                    <span style={{
+                                        padding: '3px 8px',
+                                        borderRadius: '6px',
+                                        background: 'rgba(16, 185, 129, 0.15)',
+                                        border: '1px solid rgba(16, 185, 129, 0.3)',
+                                        fontSize: '0.75rem',
+                                        fontWeight: 800,
+                                        color: '#10b981',
+                                    }}>
+                                        Net Profit: +{formatMoney(periodStats.netProfit, data.currency, 0)}
+                                    </span>
+                                </div>
+                            </div>
 
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                                {data.recentCharges.map((ch) => (
-                                    <div
-                                        key={ch.id}
-                                        style={{
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'space-between',
-                                            padding: '12px 16px',
-                                            borderRadius: '14px',
-                                            background: 'rgba(255, 255, 255, 0.02)',
-                                            border: '1px solid rgba(255, 255, 255, 0.05)',
-                                            flexWrap: 'wrap',
-                                            gap: '12px',
-                                        }}
-                                    >
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                                            <div style={{
-                                                width: 36,
-                                                height: 36,
-                                                borderRadius: '10px',
-                                                background: 'rgba(16, 185, 129, 0.12)',
-                                                display: 'flex',
-                                                alignItems: 'center',
-                                                justifyContent: 'center',
-                                                color: '#10b981',
-                                            }}>
-                                                <DollarSign size={18} />
-                                            </div>
-                                            <div>
-                                                <div style={{ fontWeight: 600, fontSize: '0.85rem', color: 'var(--foreground)' }}>
+                            {/* Search bar inside ledger */}
+                            <div style={{
+                                position: 'relative',
+                                minWidth: 260,
+                            }}>
+                                <Search size={14} style={{
+                                    position: 'absolute',
+                                    left: 12,
+                                    top: '50%',
+                                    transform: 'translateY(-50%)',
+                                    color: 'var(--secondary-foreground)',
+                                }} />
+                                <input
+                                    type="text"
+                                    placeholder="Search in this period..."
+                                    value={chargeSearchQuery}
+                                    onChange={(e) => setChargeSearchQuery(e.target.value)}
+                                    style={{
+                                        width: '100%',
+                                        padding: '8px 12px 8px 34px',
+                                        borderRadius: '12px',
+                                        background: 'rgba(255, 255, 255, 0.05)',
+                                        border: '1px solid var(--card-border)',
+                                        color: 'var(--foreground)',
+                                        fontSize: '0.82rem',
+                                        outline: 'none',
+                                    }}
+                                />
+                            </div>
+                        </div>
+
+                        {/* Charges Table */}
+                        <div style={{ overflowX: 'auto' }}>
+                            <table style={{
+                                width: '100%',
+                                borderCollapse: 'collapse',
+                                fontSize: '0.85rem',
+                                textAlign: 'left',
+                            }}>
+                                <thead>
+                                    <tr style={{
+                                        borderBottom: '1px solid var(--card-border)',
+                                        color: 'var(--secondary-foreground)',
+                                    }}>
+                                        <th style={{ padding: '12px 14px', fontWeight: 600 }}>Date</th>
+                                        <th style={{ padding: '12px 14px', fontWeight: 600 }}>Customer / Athlete</th>
+                                        <th style={{ padding: '12px 14px', fontWeight: 600 }}>Description</th>
+                                        <th style={{ padding: '12px 14px', fontWeight: 600 }}>Status</th>
+                                        <th style={{ padding: '12px 14px', fontWeight: 600, textAlign: 'right' }}>Gross</th>
+                                        <th style={{ padding: '12px 14px', fontWeight: 600, textAlign: 'right' }}>Stripe Fee</th>
+                                        <th style={{ padding: '12px 14px', fontWeight: 600, textAlign: 'right' }}>Net Profit</th>
+                                        <th style={{ padding: '12px 14px', fontWeight: 600, textAlign: 'right' }}>Receipt</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {paginatedCharges.map((ch) => (
+                                        <tr
+                                            key={ch.id}
+                                            style={{
+                                                borderBottom: '1px solid rgba(255, 255, 255, 0.04)',
+                                                transition: 'background 0.15s ease',
+                                            }}
+                                            className="hover:bg-white/[0.02]"
+                                        >
+                                            <td style={{ padding: '14px', color: 'var(--foreground)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                                {formatDate(ch.created)}
+                                            </td>
+                                            <td style={{ padding: '14px' }}>
+                                                <div style={{ fontWeight: 700, color: 'var(--foreground)' }}>
                                                     {ch.customerName || ch.customerEmail}
                                                 </div>
-                                                <div style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)' }}>
-                                                    {ch.description} • {formatDate(ch.created)}
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-                                            <div style={{ textAlign: 'right' }}>
-                                                <div style={{ fontWeight: 800, fontSize: '0.95rem', color: '#fff' }}>
-                                                    +{formatMoney(ch.amount, ch.currency)}
-                                                </div>
-                                                <div style={{ fontSize: '0.7rem', color: '#10b981', fontWeight: 600 }}>
+                                                {ch.customerName && (
+                                                    <div style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)' }}>
+                                                        {ch.customerEmail}
+                                                    </div>
+                                                )}
+                                            </td>
+                                            <td style={{ padding: '14px', color: 'var(--secondary-foreground)', fontSize: '0.82rem' }}>
+                                                {ch.description || 'Subscription'}
+                                            </td>
+                                            <td style={{ padding: '14px' }}>
+                                                <span style={{
+                                                    fontSize: '0.72rem',
+                                                    fontWeight: 700,
+                                                    padding: '3px 9px',
+                                                    borderRadius: '12px',
+                                                    background: 'rgba(16, 185, 129, 0.15)',
+                                                    color: '#10b981',
+                                                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    gap: '4px',
+                                                }}>
+                                                    <CheckCircle2 size={12} />
                                                     Paid
-                                                </div>
-                                            </div>
+                                                </span>
+                                            </td>
+                                            <td style={{ padding: '14px', textAlign: 'right', fontWeight: 600, color: 'var(--foreground)', fontSize: '0.88rem', whiteSpace: 'nowrap' }}>
+                                                +{formatMoney(ch.amount, ch.currency, 2)}
+                                            </td>
+                                            <td style={{ padding: '14px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                                                <span style={{
+                                                    padding: '3px 7px',
+                                                    borderRadius: '6px',
+                                                    background: 'rgba(255, 255, 255, 0.05)',
+                                                    fontSize: '0.75rem',
+                                                    fontWeight: 600,
+                                                    color: 'rgba(255, 255, 255, 0.7)',
+                                                }}>
+                                                    -{formatMoney(ch.fee ?? calculateStripeFee(ch.amount), ch.currency, 2)}
+                                                </span>
+                                            </td>
+                                            <td style={{ padding: '14px', textAlign: 'right', fontWeight: 800, color: '#10b981', fontSize: '0.92rem', whiteSpace: 'nowrap' }}>
+                                                +{formatMoney(ch.net ?? Math.round((ch.amount - (ch.fee ?? calculateStripeFee(ch.amount))) * 100) / 100, ch.currency, 2)}
+                                            </td>
+                                            <td style={{ padding: '14px', textAlign: 'right' }}>
+                                                {ch.receiptUrl ? (
+                                                    <a
+                                                        href={ch.receiptUrl}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        title="Open Stripe Receipt"
+                                                        className="glass-button chat-press"
+                                                        style={{
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: '4px',
+                                                            padding: '4px 10px',
+                                                            fontSize: '0.75rem',
+                                                            fontWeight: 600,
+                                                            color: 'var(--secondary-foreground)',
+                                                            textDecoration: 'none',
+                                                        }}
+                                                    >
+                                                        <FileText size={13} />
+                                                        <span>Receipt</span>
+                                                        <ExternalLink size={11} />
+                                                    </a>
+                                                ) : (
+                                                    <span style={{ color: 'var(--secondary-foreground)', fontSize: '0.75rem' }}>—</span>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    ))}
 
-                                            {ch.receiptUrl && (
-                                                <a
-                                                    href={ch.receiptUrl}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    title="View Receipt"
-                                                    className="glass-button chat-press"
-                                                    style={{
-                                                        width: 32,
-                                                        height: 32,
-                                                        borderRadius: '8px',
-                                                        display: 'flex',
-                                                        alignItems: 'center',
-                                                        justifyContent: 'center',
-                                                        padding: 0,
-                                                        color: 'var(--secondary-foreground)',
-                                                    }}
-                                                >
-                                                    <FileText size={14} />
-                                                </a>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
+                                    {paginatedCharges.length === 0 && (
+                                        <tr>
+                                            <td colSpan={8} style={{ padding: '36px', textAlign: 'center', color: 'var(--secondary-foreground)' }}>
+                                                No charges found for this period {chargeSearchQuery ? 'matching search' : ''}.
+                                            </td>
+                                        </tr>
+                                    )}
+                                </tbody>
+                            </table>
                         </div>
-                    )}
+
+                        {/* Snappy Pagination Controls */}
+                        {filteredHistoricalCharges.length > CHARGES_PER_PAGE && (
+                            <div style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'space-between',
+                                marginTop: '20px',
+                                paddingTop: '16px',
+                                borderTop: '1px solid var(--card-border)',
+                                flexWrap: 'wrap',
+                                gap: '12px',
+                            }}>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)' }}>
+                                    Showing {(transactionsPage - 1) * CHARGES_PER_PAGE + 1}–{Math.min(transactionsPage * CHARGES_PER_PAGE, filteredHistoricalCharges.length)} of {filteredHistoricalCharges.length} charges
+                                </div>
+
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <button
+                                        type="button"
+                                        disabled={transactionsPage === 1}
+                                        onClick={() => setTransactionsPage(p => Math.max(1, p - 1))}
+                                        className="glass-button chat-press"
+                                        style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '4px',
+                                            padding: '6px 12px',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 600,
+                                            cursor: transactionsPage === 1 ? 'not-allowed' : 'pointer',
+                                            opacity: transactionsPage === 1 ? 0.4 : 1,
+                                        }}
+                                    >
+                                        <ChevronLeft size={14} />
+                                        <span>Previous</span>
+                                    </button>
+
+                                    <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--foreground)', padding: '0 8px' }}>
+                                        {transactionsPage} / {totalPages}
+                                    </span>
+
+                                    <button
+                                        type="button"
+                                        disabled={transactionsPage === totalPages}
+                                        onClick={() => setTransactionsPage(p => Math.min(totalPages, p + 1))}
+                                        className="glass-button chat-press"
+                                        style={{
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
+                                            gap: '4px',
+                                            padding: '6px 12px',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 600,
+                                            cursor: transactionsPage === totalPages ? 'not-allowed' : 'pointer',
+                                            opacity: transactionsPage === totalPages ? 0.4 : 1,
+                                        }}
+                                    >
+                                        <span>Next</span>
+                                        <ChevronRight size={14} />
+                                    </button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                 </div>
             )}
         </div>

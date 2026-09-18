@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { requireCoach } from '@/lib/api-auth';
 import { prisma } from '@/lib/prisma';
+import ledgerData from '@/lib/coach-revenue-ledger.json';
 
 export const dynamic = 'force-dynamic';
 
@@ -119,9 +120,6 @@ export async function GET(req: Request) {
     // Audit Log Access
     console.info(`[SECURITY AUDIT] Revenue data successfully accessed by owner: ${auth.user.email} at ${new Date().toISOString()}`);
 
-    const { searchParams } = new URL(req.url);
-    const queryProductId = searchParams.get('productId');
-
     // 2. Fetch coach billing credentials from Database (enables live Vercel connection without manual env vars)
     let dbConfig: any = null;
     try {
@@ -138,8 +136,6 @@ export async function GET(req: Request) {
     } catch (e) {
         console.error('Error fetching CoachBillingConfig from DB:', e);
     }
-
-    const envProductId = process.env.STRIPE_PRODUCT_ID || dbConfig?.stripeProductId;
     
     // Exclusively lock to Coach Darath's product ID
     const targetProductId = 'prod_PcfIQXv2L5xYid';
@@ -150,13 +146,19 @@ export async function GET(req: Request) {
         return secureJsonResponse({
             connected: false,
             cycleRevenue: 0,
+            cycleFee: 0,
+            cycleNet: 0,
             mrr: 0,
+            mrrNet: 0,
             activeSubscribers: 0,
             pastDueCount: 0,
             grossThisMonth: 0,
+            feeThisMonth: 0,
+            netThisMonth: 0,
             athletes: [],
             unmatchedSubscribers: [],
             recentCharges: [],
+            history: null,
             availableProducts: [
                 { id: targetProductId, name: '[BPS] Coach Darath', activeSubs: 0 }
             ],
@@ -215,6 +217,7 @@ export async function GET(req: Request) {
                         mrr: 0,
                         activeSubscribers: 0,
                         athletes: [],
+                        history: null,
                         availableProducts: [],
                         selectedProductId: targetProductId,
                     });
@@ -245,7 +248,13 @@ export async function GET(req: Request) {
             };
         }
 
-        // Helper functions for matching and display
+        // Helper functions for matching, fees, and display
+        const calculateStripeFee = (amountInDollars: number): number => {
+            if (amountInDollars <= 0) return 0;
+            // Standard Stripe US card processing fee: 2.9% + $0.30
+            return Math.round(amountInDollars * 100 * 0.029 + 30) / 100;
+        };
+
         const KNOWN_EMAIL_ALIASES: Record<string, string> = {
             'tasker.hannah@yahoo.com': 'hannahtasker09@gmail.com',
             'gbaezanevarez@icloud.com': 'gilbaezanevarez@gmail.com',
@@ -312,9 +321,12 @@ export async function GET(req: Request) {
             orderBy: { name: 'asc' },
         });
 
-        // 8. Compute Run-rate, MRR, and Matched Athletes
+        // 8. Compute Run-rate, MRR, Fees, Net Profit, and Matched Athletes
         let cycleRevenueTotal = 0;
+        let cycleFeeTotal = 0;
+        let cycleNetTotal = 0;
         let annualizedMrrTotal = 0;
+        let annualizedMrrNetTotal = 0;
         let activeCount = 0;
         let pastDueCount = 0;
         let primaryCurrency = 'USD';
@@ -346,16 +358,26 @@ export async function GET(req: Request) {
 
             const planDisplay = formatPlanBillingInterval(rawAmountDollars, interval, intervalCount);
 
+            // Fee and Net calculation per payment
+            const stripeFee = calculateStripeFee(rawAmountDollars);
+            const netAmount = Math.round((rawAmountDollars - stripeFee) * 100) / 100;
+
             let monthlyNormalizedDollars = rawAmountDollars * quantity;
+            let monthlyNetDollars = netAmount * quantity;
             if (interval === 'week') {
                 monthlyNormalizedDollars = Math.round((rawAmountDollars * quantity * 52.143) / (intervalCount * 12));
+                monthlyNetDollars = Math.round((netAmount * quantity * 52.143) / (intervalCount * 12));
             } else if (interval === 'month') {
                 monthlyNormalizedDollars = Math.round((rawAmountDollars * quantity) / intervalCount);
+                monthlyNetDollars = Math.round((netAmount * quantity) / intervalCount);
             }
 
             if (sub.status === 'active' || sub.status === 'trialing') {
                 cycleRevenueTotal += rawAmountDollars * quantity;
+                cycleFeeTotal += stripeFee * quantity;
+                cycleNetTotal += netAmount * quantity;
                 annualizedMrrTotal += monthlyNormalizedDollars;
+                annualizedMrrNetTotal += monthlyNetDollars;
                 activeCount++;
             } else if (sub.status === 'past_due') {
                 pastDueCount++;
@@ -404,6 +426,11 @@ export async function GET(req: Request) {
                 }
             }
 
+            const customerId = customerObj?.id || (typeof sub.customer === 'string' ? sub.customer : null);
+            const stripeSubscriptionId = sub.id;
+            const stripeSubscriptionUrl = stripeSubscriptionId ? `https://dashboard.stripe.com/subscriptions/${stripeSubscriptionId}` : null;
+            const stripeCustomerUrl = customerId ? `https://dashboard.stripe.com/customers/${customerId}` : null;
+
             if (matched) {
                 usedAthleteIds.add(matched.id);
                 matchedAthletes.push({
@@ -415,14 +442,21 @@ export async function GET(req: Request) {
                     hasSubscription: true,
                     status: sub.status,
                     rawAmount: rawAmountDollars,
+                    stripeFee,
+                    netAmount,
                     billingInterval: planDisplay,
                     interval,
                     intervalCount,
                     monthlyAmount: monthlyNormalizedDollars,
+                    monthlyNet: monthlyNetDollars,
                     currency,
                     currentPeriodEnd: sub.current_period_end ? sub.current_period_end * 1000 : null,
                     cancelAtPeriodEnd: sub.cancel_at_period_end,
                     productName: '[BPS] Coach Darath',
+                    stripeSubscriptionId,
+                    stripeCustomerId: customerId,
+                    stripeSubscriptionUrl,
+                    stripeCustomerUrl,
                 });
             } else {
                 unmatchedSubscribers.push({
@@ -431,11 +465,18 @@ export async function GET(req: Request) {
                     name: customerName || customerEmail.split('@')[0],
                     status: sub.status,
                     rawAmount: rawAmountDollars,
+                    stripeFee,
+                    netAmount,
                     billingInterval: planDisplay,
                     monthlyAmount: monthlyNormalizedDollars,
+                    monthlyNet: monthlyNetDollars,
                     currency,
                     currentPeriodEnd: sub.current_period_end ? sub.current_period_end * 1000 : null,
                     productName: '[BPS] Coach Darath',
+                    stripeSubscriptionId,
+                    stripeCustomerId: customerId,
+                    stripeSubscriptionUrl,
+                    stripeCustomerUrl,
                 });
             }
         });
@@ -459,17 +500,121 @@ export async function GET(req: Request) {
             }
         });
 
-        const formattedCharges = filteredCharges.slice(0, 15).map((ch, idx) => ({
-            id: `ch-${idx}`,
-            amount: ch.amount / 100,
-            currency: ch.currency.toUpperCase(),
-            created: ch.created * 1000,
+        // 10. Merge ledger history with live charges for instant month-by-month & year filtering
+        const historicalCharges: any[] = [...(ledgerData.charges || [])];
+        const knownChargeIds = new Set(historicalCharges.map((c) => c.id));
+
+        filteredCharges.forEach((ch) => {
+            if (ch.status === 'succeeded' && ch.paid && !ch.refunded) {
+                if (!knownChargeIds.has(ch.id)) {
+                    knownChargeIds.add(ch.id);
+                    const chDate = new Date(ch.created * 1000);
+                    const amountDollars = ch.amount / 100;
+                    const chFee = calculateStripeFee(amountDollars);
+                    const chNet = Math.round((amountDollars - chFee) * 100) / 100;
+                    historicalCharges.unshift({
+                        id: ch.id,
+                        amount: amountDollars,
+                        fee: chFee,
+                        net: chNet,
+                        currency: (ch.currency || 'usd').toUpperCase(),
+                        created: ch.created * 1000,
+                        year: chDate.getFullYear(),
+                        month: chDate.getMonth() + 1,
+                        day: chDate.getDate(),
+                        status: ch.status,
+                        paid: ch.paid,
+                        customerEmail: ch.billing_details?.email?.toLowerCase()?.trim() || '',
+                        customerName: ch.billing_details?.name || null,
+                        description: ch.description || 'Subscription',
+                        receiptUrl: ch.receipt_url || null,
+                    });
+                }
+            }
+        });
+
+        // Sort all charges descending by created timestamp
+        historicalCharges.sort((a, b) => b.created - a.created);
+
+        // Compute dynamically updated yearly and monthly aggregations with fee & net profit
+        const yearlyBreakdown: Record<string, {
+            total: number;
+            fee: number;
+            net: number;
+            count: number;
+            months: Record<number, { total: number; fee: number; net: number; count: number }>;
+        }> = {};
+        let allTimeGross = 0;
+        let allTimeFee = 0;
+        let allTimeNet = 0;
+        let allTimeCount = 0;
+
+        historicalCharges.forEach((ch) => {
+            const fee = ch.fee !== undefined ? ch.fee : calculateStripeFee(ch.amount);
+            const net = ch.net !== undefined ? ch.net : Math.round((ch.amount - fee) * 100) / 100;
+            ch.fee = fee;
+            ch.net = net;
+
+            allTimeGross += ch.amount;
+            allTimeFee += fee;
+            allTimeNet += net;
+            allTimeCount++;
+
+            const yStr = String(ch.year);
+            if (!yearlyBreakdown[yStr]) {
+                yearlyBreakdown[yStr] = {
+                    total: 0,
+                    fee: 0,
+                    net: 0,
+                    count: 0,
+                    months: {
+                        1: { total: 0, fee: 0, net: 0, count: 0 },
+                        2: { total: 0, fee: 0, net: 0, count: 0 },
+                        3: { total: 0, fee: 0, net: 0, count: 0 },
+                        4: { total: 0, fee: 0, net: 0, count: 0 },
+                        5: { total: 0, fee: 0, net: 0, count: 0 },
+                        6: { total: 0, fee: 0, net: 0, count: 0 },
+                        7: { total: 0, fee: 0, net: 0, count: 0 },
+                        8: { total: 0, fee: 0, net: 0, count: 0 },
+                        9: { total: 0, fee: 0, net: 0, count: 0 },
+                        10: { total: 0, fee: 0, net: 0, count: 0 },
+                        11: { total: 0, fee: 0, net: 0, count: 0 },
+                        12: { total: 0, fee: 0, net: 0, count: 0 },
+                    }
+                };
+            }
+            yearlyBreakdown[yStr].total += ch.amount;
+            yearlyBreakdown[yStr].fee += fee;
+            yearlyBreakdown[yStr].net += net;
+            yearlyBreakdown[yStr].count++;
+            if (yearlyBreakdown[yStr].months[ch.month]) {
+                yearlyBreakdown[yStr].months[ch.month].total += ch.amount;
+                yearlyBreakdown[yStr].months[ch.month].fee += fee;
+                yearlyBreakdown[yStr].months[ch.month].net += net;
+                yearlyBreakdown[yStr].months[ch.month].count++;
+            }
+        });
+
+        const currentYearStr = String(nowDate.getFullYear());
+        const currentMonthNum = nowDate.getMonth() + 1;
+        const currentMonthData = yearlyBreakdown[currentYearStr]?.months[currentMonthNum] || { total: Math.round(grossThisMonthCents / 100), fee: 0, net: 0, count: 0 };
+        const currentMonthGross = currentMonthData.total;
+        const currentMonthFee = Math.round(currentMonthData.fee * 100) / 100;
+        const currentMonthNet = Math.round(currentMonthData.net * 100) / 100;
+
+        const formattedCharges = historicalCharges.slice(0, 15).map((ch, idx) => ({
+            id: ch.id || `ch-${idx}`,
+            amount: ch.amount,
+            fee: ch.fee,
+            net: ch.net,
+            currency: ch.currency,
+            created: ch.created,
             status: ch.status,
             paid: ch.paid,
-            customerEmail: ch.billing_details?.email || 'Customer',
-            customerName: ch.billing_details?.name || null,
+            customerEmail: ch.customerEmail || 'Customer',
+            customerName: ch.customerName || null,
             description: ch.description || 'Subscription',
-            receiptUrl: ch.receipt_url || null,
+            receiptUrl: ch.receiptUrl || null,
         }));
 
         const availableProducts = [
@@ -483,13 +628,27 @@ export async function GET(req: Request) {
         return secureJsonResponse({
             connected: true,
             cycleRevenue: cycleRevenueTotal,
+            cycleFee: Math.round(cycleFeeTotal * 100) / 100,
+            cycleNet: Math.round(cycleNetTotal * 100) / 100,
             mrr: annualizedMrrTotal,
+            mrrNet: annualizedMrrNetTotal,
             activeSubscribers: activeCount,
             pastDueCount,
-            grossThisMonth: Math.round(grossThisMonthCents / 100),
+            grossThisMonth: currentMonthGross,
+            feeThisMonth: currentMonthFee,
+            netThisMonth: currentMonthNet,
             athletes: matchedAthletes,
             unmatchedSubscribers,
             recentCharges: formattedCharges,
+            history: {
+                allTimeGross: Math.round(allTimeGross * 100) / 100,
+                allTimeFee: Math.round(allTimeFee * 100) / 100,
+                allTimeNet: Math.round(allTimeNet * 100) / 100,
+                allTimeCount,
+                availableYears: Object.keys(yearlyBreakdown).map(Number).sort((a, b) => b - a),
+                yearlyBreakdown,
+                charges: historicalCharges,
+            },
             availableProducts,
             selectedProductId: targetProductId,
             currency: primaryCurrency,
@@ -509,6 +668,7 @@ export async function GET(req: Request) {
             mrr: 0,
             activeSubscribers: 0,
             athletes: [],
+            history: null,
             availableProducts: [],
             selectedProductId: null,
         }, 500);

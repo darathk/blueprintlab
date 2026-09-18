@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic';
 import AthleteCalendarContainer from '@/components/dashboard/AthleteCalendarContainer';
 import CollapsibleSection from '@/components/ui/CollapsibleSection';
 
-import { MessageSquare } from 'lucide-react';
+import { MessageSquare, CreditCard } from 'lucide-react';
 
 const DotsChart = dynamic(() => import('@/components/dashboard/DotsChart'), {
     loading: () => <div style={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="pulse">Loading DOTs chart...</div>
@@ -74,6 +74,23 @@ async function AthleteData({ id }: { id: string }) {
                         {athlete?.name || 'Athlete'} <span style={{ color: 'var(--primary)', textShadow: '0 0 16px rgba(125, 135, 210, 0.35)' }}>Analytics</span>
                     </h1>
                     <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', alignItems: 'center' }}>
+                        <Link 
+                            href={`/dashboard/revenue?athlete=${encodeURIComponent(athlete.name)}`} 
+                            className="glass-button chat-press" 
+                            style={{ 
+                                fontSize: '0.85rem', 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                gap: '0.45rem', 
+                                color: '#c4b5fd', 
+                                borderColor: 'rgba(99, 91, 255, 0.4)',
+                                background: 'rgba(99, 91, 255, 0.1)'
+                            }}
+                            title="Manage Stripe subscription & billing for this athlete"
+                        >
+                            <CreditCard size={15} style={{ color: '#a78bfa' }} />
+                            <span>Stripe & Billing</span>
+                        </Link>
                         <Link href={`/dashboard/messages?athleteId=${id}`} className="glass-button chat-press" style={{ fontSize: '0.85rem', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <MessageSquare size={15} /> Chat
                         </Link>

@@ -10,7 +10,8 @@ import {
     Target, 
     ClipboardList, 
     Medal, 
-    Sparkles 
+    Sparkles,
+    Video 
 } from 'lucide-react';
 
 export default function TopNavigation({ 
@@ -61,13 +62,15 @@ export default function TopNavigation({
     };
 
     const isMeetsActive = pathname.startsWith('/dashboard/meet-day') || pathname.startsWith('/dashboard/meet-data');
-    const isCommunityActive = pathname.startsWith('/dashboard/leaderboard') || pathname.startsWith('/dashboard/highlights');
+    const isCommunityActive = 
+        pathname.startsWith('/dashboard/leaderboard') || 
+        pathname.startsWith('/dashboard/highlights') ||
+        pathname.startsWith('/dashboard/tutorials');
 
     const primaryLinks = [
         { href: '/dashboard', label: 'Command Center' },
         { href: '/dashboard/messages', label: 'Messages', isMessages: true },
         { href: '/dashboard/revenue', label: 'Revenue' },
-        { href: '/dashboard/tutorials', label: 'Tutorials' },
     ];
 
     const meetsItems = [
@@ -101,21 +104,28 @@ export default function TopNavigation({
             description: 'Athlete milestone celebration cards',
             icon: <Sparkles size={16} className="text-pink-400" />,
             active: pathname.startsWith('/dashboard/highlights')
+        },
+        {
+            href: '/dashboard/tutorials',
+            label: 'Tutorials',
+            description: 'Video coaching guides & walk-throughs',
+            icon: <Video size={16} className="text-purple-400" />,
+            active: pathname.startsWith('/dashboard/tutorials')
         }
     ];
 
     return (
         <nav 
             ref={navRef}
-            className="dashboard-nav flex w-full items-center justify-between md:justify-end" 
-            style={{ gap: '1.25rem' }}
+            className="dashboard-nav flex items-center justify-end" 
+            style={{ gap: '1rem' }}
         >
             {/* Sleek Floating Glass Capsule Dock */}
             <div style={{
                 display: 'inline-flex',
                 alignItems: 'center',
                 gap: '3px',
-                padding: '3px 4px',
+                padding: '4px 6px',
                 borderRadius: '9999px',
                 background: 'rgba(255, 255, 255, 0.035)',
                 border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -136,7 +146,7 @@ export default function TopNavigation({
                                 fontWeight: active ? 600 : 500,
                                 fontSize: '0.8125rem',
                                 color: active ? '#fff' : 'var(--secondary-foreground)',
-                                padding: '6px 13px',
+                                padding: '6px 14px',
                                 borderRadius: 9999,
                                 background: active ? 'rgba(125, 135, 210, 0.18)' : 'transparent',
                                 border: active ? '1px solid rgba(125, 135, 210, 0.35)' : '1px solid transparent',
@@ -149,6 +159,7 @@ export default function TopNavigation({
                                 alignItems: 'center',
                                 gap: 6,
                                 textDecoration: 'none',
+                                whiteSpace: 'nowrap',
                             }}
                             onMouseEnter={(e) => {
                                 if (!active) {
@@ -195,7 +206,7 @@ export default function TopNavigation({
                             fontWeight: isMeetsActive || openDropdown === 'meets' ? 600 : 500,
                             fontSize: '0.8125rem',
                             color: isMeetsActive || openDropdown === 'meets' ? '#fff' : 'var(--secondary-foreground)',
-                            padding: '6px 12px',
+                            padding: '6px 13px',
                             borderRadius: 9999,
                             background: isMeetsActive 
                                 ? 'rgba(125, 135, 210, 0.18)' 
@@ -208,6 +219,7 @@ export default function TopNavigation({
                             gap: 5,
                             cursor: 'pointer',
                             outline: 'none',
+                            whiteSpace: 'nowrap',
                         }}
                         onMouseEnter={(e) => {
                             if (!isMeetsActive && openDropdown !== 'meets') {
@@ -238,8 +250,7 @@ export default function TopNavigation({
                         <div style={{
                             position: 'absolute',
                             top: 'calc(100% + 10px)',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
+                            right: 0,
                             minWidth: 260,
                             padding: '6px',
                             borderRadius: '16px',
@@ -252,6 +263,8 @@ export default function TopNavigation({
                             display: 'flex',
                             flexDirection: 'column',
                             gap: '4px',
+                            transformOrigin: 'top right',
+                            animation: 'popoverIn 140ms cubic-bezier(0.16, 1, 0.3, 1) forwards',
                         }}>
                             {meetsItems.map((item) => (
                                 <Link
@@ -314,7 +327,7 @@ export default function TopNavigation({
                             fontWeight: isCommunityActive || openDropdown === 'community' ? 600 : 500,
                             fontSize: '0.8125rem',
                             color: isCommunityActive || openDropdown === 'community' ? '#fff' : 'var(--secondary-foreground)',
-                            padding: '6px 12px',
+                            padding: '6px 13px',
                             borderRadius: 9999,
                             background: isCommunityActive 
                                 ? 'rgba(125, 135, 210, 0.18)' 
@@ -327,6 +340,7 @@ export default function TopNavigation({
                             gap: 5,
                             cursor: 'pointer',
                             outline: 'none',
+                            whiteSpace: 'nowrap',
                         }}
                         onMouseEnter={(e) => {
                             if (!isCommunityActive && openDropdown !== 'community') {
@@ -357,9 +371,8 @@ export default function TopNavigation({
                         <div style={{
                             position: 'absolute',
                             top: 'calc(100% + 10px)',
-                            left: '50%',
-                            transform: 'translateX(-50%)',
-                            minWidth: 260,
+                            right: 0,
+                            minWidth: 270,
                             padding: '6px',
                             borderRadius: '16px',
                             background: 'rgba(16, 16, 24, 0.96)',
@@ -371,6 +384,8 @@ export default function TopNavigation({
                             display: 'flex',
                             flexDirection: 'column',
                             gap: '4px',
+                            transformOrigin: 'top right',
+                            animation: 'popoverIn 140ms cubic-bezier(0.16, 1, 0.3, 1) forwards',
                         }}>
                             {communityItems.map((item) => (
                                 <Link
