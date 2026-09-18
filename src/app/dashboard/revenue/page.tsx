@@ -1148,7 +1148,7 @@ export default function CoachRevenuePage() {
                             </div>
                         </div>
 
-                        {/* Current Active Roster Net Payout */}
+                        {/* Current Active Athletes Hero Card */}
                         <div className="glass-panel" style={{
                             padding: '22px 24px',
                             borderRadius: '20px',
@@ -1163,7 +1163,7 @@ export default function CoachRevenuePage() {
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <span style={{ fontSize: '0.74rem', fontWeight: 800, color: 'var(--foreground)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                                        Roster Cycle Net Payout
+                                        Active Athletes
                                     </span>
                                     <span style={{
                                         fontSize: '0.68rem',
@@ -1174,7 +1174,7 @@ export default function CoachRevenuePage() {
                                         color: '#38bdf8',
                                         border: '1px solid rgba(56, 189, 248, 0.25)',
                                     }}>
-                                        {data.activeSubscribers} Active
+                                        Paying Roster
                                     </span>
                                 </div>
                                 <div style={{ width: 38, height: 38, borderRadius: '11px', background: 'rgba(56, 189, 248, 0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#38bdf8', flexShrink: 0 }}>
@@ -1182,13 +1182,15 @@ export default function CoachRevenuePage() {
                                 </div>
                             </div>
                             <div>
-                                <div style={{ fontSize: '2.15rem', fontWeight: 900, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.15 }}>
-                                    +{formatMoney(data.cycleNet || (data.cycleRevenue ? data.cycleRevenue - (data.cycleFee || 0) : 0), data.currency, 2)}
+                                <div style={{ fontSize: '2.15rem', fontWeight: 900, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.15, display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                                    <span>{data.activeSubscribers}</span>
+                                    <span style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--secondary-foreground)' }}>athletes</span>
                                 </div>
                                 <div style={{ fontSize: '0.78rem', color: 'var(--secondary-foreground)', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                                    <span>from {formatMoney(data.cycleRevenue || data.mrr, data.currency, 0)} gross</span>
+                                    <span style={{ color: '#38bdf8', fontWeight: 700 }}>+{formatMoney(data.cycleNet || (data.cycleRevenue ? data.cycleRevenue - (data.cycleFee || 0) : 0), data.currency, 2)}</span>
+                                    <span>/ 4 wks net</span>
                                     <span>•</span>
-                                    <span style={{ color: '#38bdf8', fontWeight: 600 }}>{formatMoney(data.mrrNet || 0, data.currency, 0)}/mo net</span>
+                                    <span>{formatMoney(data.mrrNet || 0, data.currency, 0)}/mo net</span>
                                 </div>
                             </div>
                         </div>

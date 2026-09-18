@@ -595,6 +595,20 @@ export async function GET(req: Request) {
             }
         });
 
+        // Ensure clean rounding to 2 decimal places across all breakdowns
+        Object.keys(yearlyBreakdown).forEach((y) => {
+            yearlyBreakdown[y].total = Math.round(yearlyBreakdown[y].total * 100) / 100;
+            yearlyBreakdown[y].fee = Math.round(yearlyBreakdown[y].fee * 100) / 100;
+            yearlyBreakdown[y].net = Math.round(yearlyBreakdown[y].net * 100) / 100;
+            for (let m = 1; m <= 12; m++) {
+                if (yearlyBreakdown[y].months[m]) {
+                    yearlyBreakdown[y].months[m].total = Math.round(yearlyBreakdown[y].months[m].total * 100) / 100;
+                    yearlyBreakdown[y].months[m].fee = Math.round(yearlyBreakdown[y].months[m].fee * 100) / 100;
+                    yearlyBreakdown[y].months[m].net = Math.round(yearlyBreakdown[y].months[m].net * 100) / 100;
+                }
+            }
+        });
+
         const currentYearStr = String(nowDate.getFullYear());
         const currentMonthNum = nowDate.getMonth() + 1;
         const currentMonthData = yearlyBreakdown[currentYearStr]?.months[currentMonthNum] || { total: Math.round(grossThisMonthCents / 100), fee: 0, net: 0, count: 0 };
