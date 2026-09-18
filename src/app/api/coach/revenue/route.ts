@@ -287,8 +287,7 @@ export async function GET(req: Request) {
                 id: true,
                 name: true,
                 email: true,
-                activeProgramId: true,
-                createdAt: true,
+                status: true,
             },
             orderBy: { name: 'asc' },
         });
@@ -490,10 +489,10 @@ export async function GET(req: Request) {
         });
 
     } catch (err: any) {
-        console.error('[SECURITY ALERT] Error executing Stripe revenue query:', err.message);
+        console.error('[SECURITY ALERT] Error executing Stripe revenue query:', err);
         return secureJsonResponse({
             connected: false,
-            error: 'Failed to securely fetch revenue data from Stripe.',
+            error: err.message || 'Failed to securely fetch revenue data from Stripe.',
             mrr: 0,
             activeSubscribers: 0,
             athletes: [],
