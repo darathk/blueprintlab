@@ -1119,7 +1119,7 @@ export default function CoachRevenuePage() {
                             borderRadius: '24px',
                         }}>
                             <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 16px 0' }}>
-                                Recent Stripe Payments {selectedProduct !== 'all' ? `(${activeProductName})` : ''}
+                                Recent Stripe Payments
                             </h2>
 
                             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
