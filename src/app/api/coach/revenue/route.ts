@@ -22,15 +22,17 @@ interface StripeSubscriptionItem {
         amount?: number;
         currency?: string;
         interval?: string;
-        product?: string | StripeProduct;
+        interval_count?: number;
+        product?: string;
     };
     price?: {
         id?: string;
         unit_amount?: number;
         currency?: string;
-        product?: string | StripeProduct;
+        product?: string;
         recurring?: {
             interval?: string;
+            interval_count?: number;
         };
     };
     quantity?: number;
@@ -63,6 +65,13 @@ interface StripeCharge {
     receipt_url?: string | null;
 }
 
+// In-memory cache for 60 seconds to prevent hitting Stripe rate limits on multi-page fetching
+let memoryCache: {
+    data: any;
+    timestamp: number;
+} | null = null;
+const CACHE_TTL_MS = 60 * 1000;
+
 export async function GET(req: Request) {
     // 1. Strict Coach Authorization check
     const auth = await requireCoach();
@@ -73,11 +82,11 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const queryProductId = searchParams.get('productId');
     const envProductId = process.env.STRIPE_PRODUCT_ID;
-    // If queryProductId is 'all', coach explicitly wants to see everything
-    // Otherwise prefer queryProductId, then envProductId
+    
+    // Default to coach's product ID if set
     const targetProductId = queryProductId === 'all' 
         ? null 
-        : (queryProductId || envProductId || null);
+        : (queryProductId || envProductId || 'prod_PcfIQXv2L5xYid');
 
     const stripeKey = process.env.STRIPE_SECRET_KEY || process.env.STRIPE_RESTRICTED_KEY;
 
@@ -105,84 +114,92 @@ export async function GET(req: Request) {
             'Content-Type': 'application/x-www-form-urlencoded',
         };
 
-        // 2. Fetch products (optional check, fails gracefully if restricted key has no products:read)
-        const productsMap = new Map<string, string>(); // id -> name
-        try {
-            const prodRes = await fetch('https://api.stripe.com/v1/products?limit=100', {
-                headers: stripeHeaders,
-                next: { revalidate: 300 },
-            });
-            if (prodRes.ok) {
-                const prodData = await prodRes.json();
-                (prodData.data || []).forEach((p: StripeProduct) => {
-                    productsMap.set(p.id, p.name);
-                });
-            }
-        } catch {
-            // Products read permission may not be present on restricted key
-        }
-
-        // 3. Fetch subscriptions from Stripe with expanded customer & price.product
-        const subRes = await fetch(
-            'https://api.stripe.com/v1/subscriptions?limit=100&status=all&expand[]=data.customer&expand[]=data.items.data.price.product',
-            {
-                headers: stripeHeaders,
-                next: { revalidate: 60 },
-            }
-        );
-
-        if (!subRes.ok) {
-            const errData = await subRes.json().catch(() => ({}));
-            const errorMsg = errData?.error?.message || `Stripe API error (${subRes.status})`;
-            return NextResponse.json({
-                connected: false,
-                error: errorMsg,
-                mrr: 0,
-                activeSubscribers: 0,
-                athletes: [],
-                availableProducts: [],
-                selectedProductId: null,
-            }, { status: 200 });
-        }
-
-        const subData = await subRes.json();
-        const allSubscriptions: StripeSubscription[] = subData.data || [];
-
-        // 4. Fetch recent charges from Stripe
-        const chargesRes = await fetch('https://api.stripe.com/v1/charges?limit=40', {
-            headers: stripeHeaders,
-            next: { revalidate: 60 },
-        });
-
+        const now = Date.now();
+        let allSubscriptions: StripeSubscription[] = [];
         let charges: StripeCharge[] = [];
-        if (chargesRes.ok) {
-            const chargeData = await chargesRes.json();
-            charges = chargeData.data || [];
+        let productsMap = new Map<string, string>();
+
+        if (memoryCache && now - memoryCache.timestamp < CACHE_TTL_MS) {
+            allSubscriptions = memoryCache.data.allSubscriptions;
+            charges = memoryCache.data.charges;
+            productsMap = memoryCache.data.productsMap;
+        } else {
+            // 2. Fetch products map (up to 100 products)
+            try {
+                const prodRes = await fetch('https://api.stripe.com/v1/products?limit=100', {
+                    headers: stripeHeaders,
+                });
+                if (prodRes.ok) {
+                    const prodData = await prodRes.json();
+                    (prodData.data || []).forEach((p: StripeProduct) => {
+                        productsMap.set(p.id, p.name);
+                    });
+                }
+            } catch {
+                // Products read permission may not be present on restricted key
+            }
+
+            // 3. Paginate subscriptions from Stripe (retrieve all subscriptions)
+            let startingAfter: string | undefined = undefined;
+            while (true) {
+                const subUrl = 'https://api.stripe.com/v1/subscriptions?limit=100&status=all&expand[]=data.customer' 
+                    + (startingAfter ? `&starting_after=${startingAfter}` : '');
+
+                const subRes = await fetch(subUrl, { headers: stripeHeaders });
+
+                if (!subRes.ok) {
+                    const errData = await subRes.json().catch(() => ({}));
+                    const errorMsg = errData?.error?.message || `Stripe API error (${subRes.status})`;
+                    return NextResponse.json({
+                        connected: false,
+                        error: errorMsg,
+                        mrr: 0,
+                        activeSubscribers: 0,
+                        athletes: [],
+                        availableProducts: [],
+                        selectedProductId: null,
+                    }, { status: 200 });
+                }
+
+                const subData = await subRes.json();
+                const pageSubs: StripeSubscription[] = subData.data || [];
+                allSubscriptions.push(...pageSubs);
+
+                if (!subData.has_more || pageSubs.length === 0) break;
+                startingAfter = pageSubs[pageSubs.length - 1].id;
+            }
+
+            // 4. Fetch recent charges from Stripe (limit 50)
+            const chargesRes = await fetch('https://api.stripe.com/v1/charges?limit=50', {
+                headers: stripeHeaders,
+            });
+
+            if (chargesRes.ok) {
+                const chargeData = await chargesRes.json();
+                charges = chargeData.data || [];
+            }
+
+            // Save to memory cache
+            memoryCache = {
+                data: { allSubscriptions, charges, productsMap },
+                timestamp: now,
+            };
         }
 
-        // 5. Discover all Products from subscriptions
+        // 5. Discover all Products from subscriptions & count active subscribers
         const productStats = new Map<string, { id: string; name: string; activeSubs: number }>();
 
         allSubscriptions.forEach((sub) => {
             const items = sub.items?.data || [];
             items.forEach((item) => {
-                const prod = item.price?.product || item.plan?.product;
-                let prodId = '';
-                let prodName = '';
+                const prodId = item.price?.product || item.plan?.product;
 
-                if (typeof prod === 'object' && prod !== null) {
-                    prodId = prod.id;
-                    prodName = prod.name || productsMap.get(prod.id) || prod.id;
-                } else if (typeof prod === 'string') {
-                    prodId = prod;
-                    prodName = productsMap.get(prod) || prod;
-                }
-
-                if (prodId) {
-                    const existing = productStats.get(prodId) || { id: prodId, name: prodName, activeSubs: 0 };
-                    if (!existing.name || existing.name === prodId) {
-                        existing.name = prodName || productsMap.get(prodId) || prodId;
-                    }
+                if (prodId && typeof prodId === 'string') {
+                    const existing = productStats.get(prodId) || {
+                        id: prodId,
+                        name: productsMap.get(prodId) || prodId,
+                        activeSubs: 0,
+                    };
                     if (sub.status === 'active' || sub.status === 'trialing') {
                         existing.activeSubs += 1;
                     }
@@ -191,22 +208,15 @@ export async function GET(req: Request) {
             });
         });
 
-        // Also add any products from the /v1/products call if not found in subscriptions
-        productsMap.forEach((name, id) => {
-            if (!productStats.has(id)) {
-                productStats.set(id, { id, name, activeSubs: 0 });
-            }
-        });
-
-        const availableProducts = Array.from(productStats.values());
+        // Sort products by active subscriber count
+        const availableProducts = Array.from(productStats.values()).sort((a, b) => b.activeSubs - a.activeSubs);
 
         // 6. Filter Subscriptions by Coach Product if targetProductId is specified
         const subscriptions = allSubscriptions.filter((sub) => {
             if (!targetProductId) return true; // Include all if no product filter
             const items = sub.items?.data || [];
             return items.some((item) => {
-                const prod = item.price?.product || item.plan?.product;
-                const prodId = typeof prod === 'object' && prod !== null ? prod.id : prod;
+                const prodId = item.price?.product || item.plan?.product;
                 return prodId === targetProductId;
             });
         });
@@ -252,8 +262,7 @@ export async function GET(req: Request) {
             let matchingItem = sub.items?.data?.[0];
             if (targetProductId && sub.items?.data) {
                 const found = sub.items.data.find((it) => {
-                    const p = it.price?.product || it.plan?.product;
-                    const pid = typeof p === 'object' && p !== null ? p.id : p;
+                    const pid = it.price?.product || it.plan?.product;
                     return pid === targetProductId;
                 });
                 if (found) matchingItem = found;
@@ -262,24 +271,23 @@ export async function GET(req: Request) {
             const rawAmount = matchingItem?.price?.unit_amount ?? matchingItem?.plan?.amount ?? 0;
             const quantity = matchingItem?.quantity ?? 1;
             const interval = matchingItem?.price?.recurring?.interval ?? matchingItem?.plan?.interval ?? 'month';
+            const intervalCount = matchingItem?.price?.recurring?.interval_count ?? matchingItem?.plan?.interval_count ?? 1;
             const currency = matchingItem?.price?.currency ?? matchingItem?.plan?.currency ?? 'usd';
             primaryCurrency = currency;
 
-            const prod = matchingItem?.price?.product || matchingItem?.plan?.product;
-            let productName = '';
-            if (typeof prod === 'object' && prod !== null) {
-                productName = prod.name;
-            } else if (typeof prod === 'string') {
-                productName = productStats.get(prod)?.name || prod;
-            }
+            const prodId = matchingItem?.price?.product || matchingItem?.plan?.product;
+            const productName = prodId ? (productsMap.get(prodId) || productStats.get(prodId)?.name || prodId) : '';
 
             let normalizedMonthlyCents = rawAmount * quantity;
-            if (interval === 'year') {
-                normalizedMonthlyCents = Math.round(normalizedMonthlyCents / 12);
-            } else if (interval === 'week') {
-                normalizedMonthlyCents = Math.round(normalizedMonthlyCents * 4.333);
+            const count = intervalCount || 1;
+            if (interval === 'week') {
+                normalizedMonthlyCents = Math.round((rawAmount * quantity * 52.143) / (count * 12));
+            } else if (interval === 'year') {
+                normalizedMonthlyCents = Math.round((rawAmount * quantity) / (12 * count));
+            } else if (interval === 'month') {
+                normalizedMonthlyCents = Math.round((rawAmount * quantity) / count);
             } else if (interval === 'day') {
-                normalizedMonthlyCents = Math.round(normalizedMonthlyCents * 30);
+                normalizedMonthlyCents = Math.round((rawAmount * quantity * 30.416) / count);
             }
 
             if (sub.status === 'active' || sub.status === 'trialing') {
@@ -305,17 +313,15 @@ export async function GET(req: Request) {
         });
 
         // 9. Calculate Gross Revenue This Month
-        // Filter charges by customer email if we have filtered subscriptions
         const allowedCustomerEmails = targetProductId ? new Set(Array.from(subMapByEmail.keys())) : null;
 
-        const now = new Date();
-        const startOfMonthTimestamp = Math.floor(new Date(now.getFullYear(), now.getMonth(), 1).getTime() / 1000);
+        const nowDate = new Date();
+        const startOfMonthTimestamp = Math.floor(new Date(nowDate.getFullYear(), nowDate.getMonth(), 1).getTime() / 1000);
         let grossThisMonthCents = 0;
 
         charges.forEach((ch) => {
             const chEmail = ch.billing_details?.email?.toLowerCase()?.trim();
             if (ch.status === 'succeeded' && ch.paid && !ch.refunded && ch.created >= startOfMonthTimestamp) {
-                // If filtering by product, only count charges from customers subscribed to this product
                 if (!allowedCustomerEmails || (chEmail && allowedCustomerEmails.has(chEmail))) {
                     grossThisMonthCents += ch.amount;
                 }
