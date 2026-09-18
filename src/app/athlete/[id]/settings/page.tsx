@@ -5,6 +5,7 @@ import { UserButton } from '@clerk/nextjs';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import NotificationToggle from '@/components/notifications/NotificationToggle';
+import SubscriptionCard from '@/components/athlete/SubscriptionCard';
 
 export default function AthleteSettingsPage() {
     const params = useParams();
@@ -86,6 +87,12 @@ export default function AthleteSettingsPage() {
                         </div>
                     </div>
                 </div>
+            </div>
+
+            {/* Subscription & Billing Section */}
+            <div style={{ marginBottom: '28px' }}>
+                <div style={sectionLabelStyle}>Billing & Subscription</div>
+                <SubscriptionCard />
             </div>
 
             {/* Notifications Section */}

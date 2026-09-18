@@ -246,3 +246,19 @@ model PlannedTopSet {
   @@index([athleteId])
   @@index([coachId])
 }
+
+model VideoTutorial {
+  id          String   @id @default(uuid())
+  title       String
+  description String?  @db.Text
+  videoUrl    String
+  platform    String   @default("instagram") // instagram, tiktok, youtube, other
+  category    String   // squats, bench, deadlifts, warmup, other
+  tags        Json?    // string[] for keywords
+  coachId     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+  @@index([coachId])
+}

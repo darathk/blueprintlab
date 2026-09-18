@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { UserButton } from '@clerk/nextjs';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, CreditCard, ExternalLink, ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 import NotificationToggle from '@/components/notifications/NotificationToggle';
 
@@ -109,6 +109,89 @@ export default function CoachSettingsPage() {
             <div style={{ marginBottom: '28px' }}>
                 <div style={sectionLabelStyle}>Notifications</div>
                 <NotificationToggle role="coach" />
+            </div>
+
+            {/* Billing & Subscription Section */}
+            <div style={{ marginBottom: '28px' }}>
+                <div style={sectionLabelStyle}>Billing & Customer Portal</div>
+                <div className="glass-panel" style={{
+                    padding: '18px',
+                    borderRadius: '16px',
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
+                        <div style={{
+                            width: 36,
+                            height: 36,
+                            borderRadius: '10px',
+                            background: 'rgba(125, 135, 210, 0.15)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            color: 'var(--primary)',
+                        }}>
+                            <CreditCard size={18} />
+                        </div>
+                        <div>
+                            <div style={{
+                                fontSize: '0.95rem',
+                                fontWeight: 600,
+                                color: 'var(--foreground)',
+                            }}>
+                                Athlete Stripe Customer Portal
+                            </div>
+                            <div style={{
+                                fontSize: '0.75rem',
+                                color: 'var(--secondary-foreground)',
+                                opacity: 0.75,
+                            }}>
+                                Where athletes manage cards, receipts, and subscriptions
+                            </div>
+                        </div>
+                    </div>
+
+                    <p style={{
+                        fontSize: '0.8rem',
+                        color: 'var(--secondary-foreground)',
+                        lineHeight: 1.4,
+                        margin: '12px 0 16px 0',
+                    }}>
+                        Your athletes see this portal link in their portal settings so they can self-manage payments and cards without having to message you.
+                    </p>
+
+                    <div style={{
+                        background: 'rgba(0, 0, 0, 0.3)',
+                        border: '1px solid var(--card-border)',
+                        borderRadius: '10px',
+                        padding: '10px 12px',
+                        fontSize: '0.78rem',
+                        color: 'var(--foreground)',
+                        fontFamily: 'monospace',
+                        wordBreak: 'break-all',
+                        marginBottom: '14px',
+                    }}>
+                        {process.env.NEXT_PUBLIC_STRIPE_BILLING_PORTAL_URL || 'https://billing.stripe.com/p/login/3cI7sL30jevG1f6frI2B200'}
+                    </div>
+
+                    <a
+                        href={process.env.NEXT_PUBLIC_STRIPE_BILLING_PORTAL_URL || 'https://billing.stripe.com/p/login/3cI7sL30jevG1f6frI2B200'}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="glass-button chat-press"
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '8px',
+                            padding: '8px 16px',
+                            fontSize: '0.825rem',
+                            fontWeight: 600,
+                            textDecoration: 'none',
+                            color: 'var(--foreground)',
+                        }}
+                    >
+                        <span>Test Portal Link</span>
+                        <ExternalLink size={14} />
+                    </a>
+                </div>
             </div>
 
             {/* Data Cleanup Section */}

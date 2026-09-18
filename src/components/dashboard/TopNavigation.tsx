@@ -22,6 +22,8 @@ export default function TopNavigation({ unreadCount = 0, userId }: { unreadCount
                 {[
                     { href: '/dashboard', label: 'Command Center' },
                     { href: '/dashboard/messages', label: 'Messages', isMessages: true },
+                    { href: '/dashboard/tutorials', label: 'Tutorials' },
+                    { href: '/dashboard/revenue', label: 'Revenue' },
                     { href: '/dashboard/leaderboard', label: 'Leaderboard' },
                     { href: '/dashboard/highlights', label: 'Highlights' },
                     { href: '/dashboard/meet-data', label: 'Meet Data' },
