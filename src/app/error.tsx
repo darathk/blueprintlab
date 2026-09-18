@@ -1,7 +1,19 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
+
+function isChunkError(err: any): boolean {
+    const msg = err?.message || '';
+    const name = err?.name || '';
+    return (
+        name === 'ChunkLoadError' ||
+        msg.includes('ChunkLoadError') ||
+        msg.includes('Failed to load chunk') ||
+        msg.includes('Loading chunk') ||
+        msg.includes('missing in assets')
+    );
+}
 
 export default function RootError({
     error,
@@ -10,9 +22,37 @@ export default function RootError({
     error: Error & { digest?: string };
     reset: () => void;
 }) {
+    const [reloaded, setReloaded] = useState(false);
+    const isChunk = isChunkError(error);
+
     useEffect(() => {
         console.error('Captured application error:', error);
-    }, [error]);
+
+        // If chunk load error (caused by fresh deployment replacing cached bundle chunks):
+        // Automatically perform a hard reload once to get the latest app version.
+        if (isChunk && typeof window !== 'undefined') {
+            const key = 'chunk_error_reload_target';
+            const lastReload = sessionStorage.getItem(key);
+            const currentUrl = window.location.href;
+
+            if (lastReload !== currentUrl) {
+                sessionStorage.setItem(key, currentUrl);
+                window.location.reload();
+                return;
+            } else {
+                setReloaded(true);
+            }
+        }
+    }, [error, isChunk]);
+
+    const handleRetry = () => {
+        if (isChunk && typeof window !== 'undefined') {
+            sessionStorage.removeItem('chunk_error_reload_target');
+            window.location.reload();
+        } else {
+            reset();
+        }
+    };
 
     return (
         <div style={{
@@ -26,30 +66,40 @@ export default function RootError({
             color: 'var(--foreground)',
             background: 'var(--background)'
         }}>
-            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>⚠️</div>
+            <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>
+                {isChunk ? '🚀' : '⚠️'}
+            </div>
             <h2 style={{ fontSize: '1.5rem', fontWeight: 800, letterSpacing: '-0.02em', marginBottom: '0.5rem' }}>
-                Application Error
+                {isChunk ? 'New Update Available' : 'Application Error'}
             </h2>
             <p style={{ color: 'var(--secondary-foreground)', fontSize: '0.95rem', maxWidth: 500, marginBottom: '1.5rem', lineHeight: 1.5 }}>
-                {error?.message || 'A client-side exception occurred while loading BlueprintLab.'}
+                {isChunk 
+                    ? 'A new update of BlueprintLab was just deployed. Click below to reload the latest version.'
+                    : (error?.message || 'A client-side exception occurred while loading BlueprintLab.')
+                }
             </p>
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', justifyContent: 'center' }}>
                 <button
-                    onClick={() => reset()}
+                    onClick={handleRetry}
                     className="glass-button glass-button-primary chat-press"
                     style={{ fontWeight: 600, cursor: 'pointer' }}
                 >
-                    Try Again
+                    {isChunk ? 'Reload Latest Version' : 'Try Again'}
                 </button>
                 <Link
                     href="/"
+                    onClick={() => {
+                        if (isChunk && typeof window !== 'undefined') {
+                            window.location.href = '/';
+                        }
+                    }}
                     className="glass-button chat-press"
                     style={{ textDecoration: 'none' }}
                 >
                     Return Home
                 </Link>
             </div>
-            {error?.stack && (
+            {error?.stack && !isChunk && (
                 <details style={{ marginTop: '2rem', maxWidth: '640px', textAlign: 'left', width: '100%' }}>
                     <summary style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', cursor: 'pointer' }}>
                         Error Details
@@ -72,3 +122,4 @@ export default function RootError({
         </div>
     );
 }
+

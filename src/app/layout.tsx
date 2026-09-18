@@ -59,6 +59,24 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <html lang="en">
+        <head>
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `
+                window.addEventListener('error', function(e) {
+                  var msg = (e && (e.message || (e.error && e.error.message))) || '';
+                  if (msg.indexOf('ChunkLoadError') !== -1 || msg.indexOf('Failed to load chunk') !== -1) {
+                    var k = 'chunk_auto_reload_' + window.location.pathname;
+                    if (!sessionStorage.getItem(k)) {
+                      sessionStorage.setItem(k, '1');
+                      window.location.reload();
+                    }
+                  }
+                });
+              `,
+            }}
+          />
+        </head>
         <body className={geistSans.variable}>
           <PushNotificationManager />
           <GlobalUploadStatus />
