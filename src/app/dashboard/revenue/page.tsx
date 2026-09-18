@@ -637,7 +637,7 @@ export default function CoachRevenuePage() {
     );
 
     return (
-        <div style={{ maxWidth: 1200, margin: '0 auto', padding: '24px 16px 120px' }}>
+        <div style={{ maxWidth: 1240, margin: '0 auto', padding: '28px 20px 120px' }}>
             {/* Header */}
             <div style={{
                 display: 'flex',
@@ -921,32 +921,35 @@ export default function CoachRevenuePage() {
 
             {/* Live Metrics (When Connected) */}
             {data && data.connected && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                     {/* Time Period & Filter Navigation Bar */}
                     <div className="glass-panel" style={{
-                        padding: '16px 20px',
+                        padding: '14px 20px',
                         borderRadius: '20px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
                         flexWrap: 'wrap',
-                        gap: '16px',
-                        background: 'linear-gradient(145deg, rgba(24, 24, 38, 0.85), rgba(16, 16, 26, 0.95))',
+                        gap: '14px',
+                        background: 'linear-gradient(145deg, rgba(22, 22, 36, 0.9), rgba(14, 14, 24, 0.96))',
                         border: '1px solid rgba(125, 135, 210, 0.25)',
+                        boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 4px 24px rgba(0, 0, 0, 0.25)',
                     }}>
                         {/* Year Selector Tabs */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--secondary-foreground)', fontSize: '0.82rem', fontWeight: 600, marginRight: '4px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--secondary-foreground)', fontSize: '0.82rem', fontWeight: 600, marginRight: '2px' }}>
                                 <Calendar size={15} style={{ color: 'var(--primary)' }} />
                                 <span>Period:</span>
                             </div>
 
                             <div style={{
                                 display: 'inline-flex',
+                                alignItems: 'center',
                                 background: 'rgba(255, 255, 255, 0.04)',
-                                padding: '3px',
-                                borderRadius: '12px',
-                                border: '1px solid var(--card-border)',
+                                padding: '2px',
+                                borderRadius: '11px',
+                                border: '1px solid rgba(255, 255, 255, 0.08)',
+                                height: 36,
                                 gap: '2px',
                             }}>
                                 {['2026', '2025', '2024', 'all'].map((yr) => {
@@ -963,9 +966,10 @@ export default function CoachRevenuePage() {
                                             }}
                                             className="chat-press"
                                             style={{
-                                                padding: '6px 14px',
-                                                borderRadius: '9px',
-                                                fontSize: '0.82rem',
+                                                height: 30,
+                                                padding: '0 13px',
+                                                borderRadius: '8px',
+                                                fontSize: '0.8rem',
                                                 fontWeight: 700,
                                                 border: 'none',
                                                 background: isSelected ? 'linear-gradient(135deg, var(--primary), #4f46e5)' : 'transparent',
@@ -973,6 +977,8 @@ export default function CoachRevenuePage() {
                                                 cursor: 'pointer',
                                                 transition: 'all 0.15s ease',
                                                 boxShadow: isSelected ? '0 2px 10px rgba(125, 135, 210, 0.35)' : 'none',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
                                             }}
                                         >
                                             {label}
@@ -986,19 +992,20 @@ export default function CoachRevenuePage() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                             {selectedYear !== 'all' && (
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <span style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)' }}>Month:</span>
+                                    <span style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', fontWeight: 600 }}>Month:</span>
                                     <select
                                         value={selectedMonth}
                                         onChange={(e) => setSelectedMonth(e.target.value === 'all' ? 'all' : Number(e.target.value))}
                                         className="glass-input"
                                         style={{
-                                            padding: '6px 12px',
+                                            height: 36,
+                                            padding: '0 12px',
                                             borderRadius: '10px',
                                             fontSize: '0.82rem',
                                             fontWeight: 600,
-                                            background: 'rgba(0, 0, 0, 0.4)',
+                                            background: 'rgba(0, 0, 0, 0.45)',
                                             color: 'var(--foreground)',
-                                            border: '1px solid var(--card-border)',
+                                            border: '1px solid rgba(255, 255, 255, 0.1)',
                                             cursor: 'pointer',
                                             outline: 'none',
                                         }}
@@ -1023,12 +1030,15 @@ export default function CoachRevenuePage() {
                                     onClick={() => setSelectedMonth('all')}
                                     className="glass-button chat-press"
                                     style={{
-                                        padding: '5px 10px',
-                                        fontSize: '0.75rem',
+                                        height: 36,
+                                        padding: '0 12px',
+                                        fontSize: '0.78rem',
                                         fontWeight: 600,
-                                        borderRadius: '8px',
+                                        borderRadius: '10px',
                                         cursor: 'pointer',
                                         color: 'var(--secondary-foreground)',
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
                                     }}
                                 >
                                     ✕ Reset to Full Year
@@ -1036,13 +1046,17 @@ export default function CoachRevenuePage() {
                             )}
 
                             <div style={{
-                                padding: '6px 12px',
+                                height: 36,
+                                padding: '0 14px',
                                 borderRadius: '10px',
-                                background: 'rgba(125, 135, 210, 0.12)',
-                                border: '1px solid rgba(125, 135, 210, 0.25)',
-                                fontSize: '0.78rem',
-                                fontWeight: 700,
+                                background: 'rgba(125, 135, 210, 0.14)',
+                                border: '1px solid rgba(125, 135, 210, 0.3)',
+                                fontSize: '0.8rem',
+                                fontWeight: 750,
                                 color: 'var(--primary)',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                letterSpacing: '0.01em',
                             }}>
                                 {periodStats.periodLabel}
                             </div>
@@ -1052,78 +1066,81 @@ export default function CoachRevenuePage() {
                     {/* KPI Cards Grid */}
                     <div style={{
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
                         gap: '16px',
                     }}>
                         {/* Period Net Profit (Take-Home Hero Card) */}
                         <div className="glass-panel" style={{
-                            padding: '22px',
+                            padding: '22px 24px',
                             borderRadius: '20px',
+                            minHeight: '172px',
                             display: 'flex',
                             flexDirection: 'column',
                             justifyContent: 'space-between',
-                            border: '1px solid rgba(16, 185, 129, 0.4)',
-                            background: 'linear-gradient(145deg, rgba(16, 185, 129, 0.15), rgba(20, 20, 30, 0.75))',
-                            boxShadow: '0 8px 32px rgba(16, 185, 129, 0.15)',
+                            border: '1px solid rgba(16, 185, 129, 0.38)',
+                            background: 'linear-gradient(145deg, rgba(16, 185, 129, 0.14) 0%, rgba(18, 22, 28, 0.88) 100%)',
+                            boxShadow: 'inset 0 1px 0 rgba(16, 185, 129, 0.35), 0 8px 30px rgba(16, 185, 129, 0.12)',
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                    <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                    <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                                         Period Net Profit
                                     </span>
                                     <span style={{
-                                        fontSize: '0.7rem',
+                                        fontSize: '0.68rem',
                                         fontWeight: 800,
                                         padding: '2px 7px',
                                         borderRadius: '6px',
-                                        background: 'rgba(16, 185, 129, 0.2)',
+                                        background: 'rgba(16, 185, 129, 0.22)',
                                         color: '#34d399',
-                                        border: '1px solid rgba(16, 185, 129, 0.3)',
+                                        border: '1px solid rgba(16, 185, 129, 0.35)',
                                     }}>
                                         {periodStats.margin}% Margin
                                     </span>
                                 </div>
-                                <div style={{ width: 34, height: 34, borderRadius: '10px', background: 'rgba(16, 185, 129, 0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981' }}>
-                                    <DollarSign size={18} />
+                                <div style={{ width: 38, height: 38, borderRadius: '11px', background: 'rgba(16, 185, 129, 0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981', flexShrink: 0 }}>
+                                    <DollarSign size={19} />
                                 </div>
                             </div>
                             <div>
-                                <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#fff', letterSpacing: '-0.03em' }}>
+                                <div style={{ fontSize: '2.15rem', fontWeight: 900, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.15 }}>
                                     {formatMoney(periodStats.netProfit, data.currency, 0)}
                                 </div>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
-                                    <span style={{ color: 'rgba(255, 255, 255, 0.7)' }}>
-                                        After <strong style={{ color: '#f87171' }}>-{formatMoney(periodStats.stripeFees, data.currency, periodStats.stripeFees % 1 !== 0 ? 2 : 0)}</strong> fees
+                                <div style={{ fontSize: '0.78rem', color: 'var(--secondary-foreground)', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                    <span style={{ color: 'rgba(255, 255, 255, 0.75)' }}>
+                                        After <strong style={{ color: '#f87171', fontWeight: 700 }}>-{formatMoney(periodStats.stripeFees, data.currency, periodStats.stripeFees % 1 !== 0 ? 2 : 0)}</strong> fees
                                     </span>
                                     <span>•</span>
-                                    <span style={{ color: '#10b981', fontWeight: 600 }}>{periodStats.periodLabel}</span>
+                                    <span style={{ color: '#10b981', fontWeight: 700 }}>{periodStats.periodLabel}</span>
                                 </div>
                             </div>
                         </div>
 
                         {/* Period Gross Volume Card */}
                         <div className="glass-panel" style={{
-                            padding: '22px',
+                            padding: '22px 24px',
                             borderRadius: '20px',
+                            minHeight: '172px',
                             display: 'flex',
                             flexDirection: 'column',
                             justifyContent: 'space-between',
                             border: '1px solid rgba(125, 135, 210, 0.3)',
-                            background: 'linear-gradient(145deg, rgba(125, 135, 210, 0.12), rgba(20, 20, 30, 0.7))',
+                            background: 'linear-gradient(145deg, rgba(125, 135, 210, 0.12) 0%, rgba(20, 20, 32, 0.85) 100%)',
+                            boxShadow: 'inset 0 1px 0 rgba(125, 135, 210, 0.25), 0 8px 30px rgba(0, 0, 0, 0.25)',
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                                <span style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--foreground)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                <span style={{ fontSize: '0.74rem', fontWeight: 800, color: 'var(--foreground)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                                     Period Gross Collected
                                 </span>
-                                <div style={{ width: 34, height: 34, borderRadius: '10px', background: 'rgba(125, 135, 210, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
-                                    <TrendingUp size={18} />
+                                <div style={{ width: 38, height: 38, borderRadius: '11px', background: 'rgba(125, 135, 210, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', flexShrink: 0 }}>
+                                    <TrendingUp size={19} />
                                 </div>
                             </div>
                             <div>
-                                <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#fff', letterSpacing: '-0.03em' }}>
+                                <div style={{ fontSize: '2.15rem', fontWeight: 900, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.15 }}>
                                     {formatMoney(periodStats.grossCollected, data.currency, 0)}
                                 </div>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <div style={{ fontSize: '0.78rem', color: 'var(--secondary-foreground)', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
                                     <span>{periodStats.count} charges</span>
                                     <span>•</span>
                                     <span>Avg {formatMoney(periodStats.avgTicket, data.currency, 0)} (Net {formatMoney(periodStats.avgNet, data.currency, 0)})</span>
@@ -1133,61 +1150,93 @@ export default function CoachRevenuePage() {
 
                         {/* Current Active Roster Net Payout */}
                         <div className="glass-panel" style={{
-                            padding: '22px',
+                            padding: '22px 24px',
                             borderRadius: '20px',
+                            minHeight: '172px',
                             display: 'flex',
                             flexDirection: 'column',
                             justifyContent: 'space-between',
+                            border: '1px solid rgba(56, 189, 248, 0.28)',
+                            background: 'linear-gradient(145deg, rgba(56, 189, 248, 0.10) 0%, rgba(20, 20, 32, 0.85) 100%)',
+                            boxShadow: 'inset 0 1px 0 rgba(56, 189, 248, 0.22), 0 8px 30px rgba(0, 0, 0, 0.25)',
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                                <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                    Roster Cycle Net Payout
-                                </span>
-                                <div style={{ width: 34, height: 34, borderRadius: '10px', background: 'rgba(56, 189, 248, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#38bdf8' }}>
-                                    <Users size={18} />
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                    <span style={{ fontSize: '0.74rem', fontWeight: 800, color: 'var(--foreground)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                                        Roster Cycle Net Payout
+                                    </span>
+                                    <span style={{
+                                        fontSize: '0.68rem',
+                                        fontWeight: 800,
+                                        padding: '2px 7px',
+                                        borderRadius: '6px',
+                                        background: 'rgba(56, 189, 248, 0.15)',
+                                        color: '#38bdf8',
+                                        border: '1px solid rgba(56, 189, 248, 0.25)',
+                                    }}>
+                                        {data.activeSubscribers} Active
+                                    </span>
+                                </div>
+                                <div style={{ width: 38, height: 38, borderRadius: '11px', background: 'rgba(56, 189, 248, 0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#38bdf8', flexShrink: 0 }}>
+                                    <Users size={19} />
                                 </div>
                             </div>
                             <div>
-                                <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#fff', letterSpacing: '-0.03em' }}>
+                                <div style={{ fontSize: '2.15rem', fontWeight: 900, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.15 }}>
                                     +{formatMoney(data.cycleNet || (data.cycleRevenue ? data.cycleRevenue - (data.cycleFee || 0) : 0), data.currency, 2)}
                                 </div>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginTop: '4px' }}>
-                                    from {formatMoney(data.cycleRevenue || data.mrr, data.currency, 0)} gross ({data.activeSubscribers} athletes • {formatMoney(data.mrrNet || 0, data.currency, 0)}/mo net)
+                                <div style={{ fontSize: '0.78rem', color: 'var(--secondary-foreground)', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
+                                    <span>from {formatMoney(data.cycleRevenue || data.mrr, data.currency, 0)} gross</span>
+                                    <span>•</span>
+                                    <span style={{ color: '#38bdf8', fontWeight: 600 }}>{formatMoney(data.mrrNet || 0, data.currency, 0)}/mo net</span>
                                 </div>
                             </div>
                         </div>
 
                         {/* Payment Health & Stripe Rates */}
                         <div className="glass-panel" style={{
-                            padding: '22px',
+                            padding: '22px 24px',
                             borderRadius: '20px',
+                            minHeight: '172px',
                             display: 'flex',
                             flexDirection: 'column',
                             justifyContent: 'space-between',
+                            border: data.pastDueCount > 0 ? '1px solid rgba(239, 68, 68, 0.35)' : '1px solid rgba(16, 185, 129, 0.25)',
+                            background: data.pastDueCount > 0
+                                ? 'linear-gradient(145deg, rgba(239, 68, 68, 0.12) 0%, rgba(20, 20, 32, 0.85) 100%)'
+                                : 'linear-gradient(145deg, rgba(16, 185, 129, 0.08) 0%, rgba(20, 20, 32, 0.85) 100%)',
+                            boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 8px 30px rgba(0, 0, 0, 0.25)',
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                                <span style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                <span style={{ fontSize: '0.74rem', fontWeight: 800, color: 'var(--foreground)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                                     Payment Health
                                 </span>
                                 <div style={{ 
-                                    width: 34, 
-                                    height: 34, 
-                                    borderRadius: '10px', 
-                                    background: data.pastDueCount > 0 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)', 
+                                    width: 38, 
+                                    height: 38, 
+                                    borderRadius: '11px', 
+                                    background: data.pastDueCount > 0 ? 'rgba(239, 68, 68, 0.18)' : 'rgba(16, 185, 129, 0.18)', 
                                     display: 'flex', 
                                     alignItems: 'center', 
                                     justifyContent: 'center', 
-                                    color: data.pastDueCount > 0 ? '#ef4444' : '#10b981' 
+                                    color: data.pastDueCount > 0 ? '#ef4444' : '#10b981',
+                                    flexShrink: 0,
                                 }}>
-                                    {data.pastDueCount > 0 ? <AlertCircle size={18} /> : <CheckCircle2 size={18} />}
+                                    {data.pastDueCount > 0 ? <AlertCircle size={19} /> : <CheckCircle2 size={19} />}
                                 </div>
                             </div>
                             <div>
-                                <div style={{ fontSize: '2.2rem', fontWeight: 900, color: '#fff', letterSpacing: '-0.03em' }}>
+                                <div style={{ 
+                                    fontSize: '2.15rem', 
+                                    fontWeight: 900, 
+                                    color: data.pastDueCount > 0 ? '#f87171' : '#fff', 
+                                    letterSpacing: '-0.03em', 
+                                    lineHeight: 1.15 
+                                }}>
                                     {data.pastDueCount === 0 ? '100%' : `${data.pastDueCount} Past Due`}
                                 </div>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginTop: '4px' }}>
-                                    {data.pastDueCount === 0 ? 'Stripe processing: 2.9% + 30¢' : 'Failed or past-due renewals'}
+                                <div style={{ fontSize: '0.78rem', color: 'var(--secondary-foreground)', marginTop: '6px' }}>
+                                    {data.pastDueCount === 0 ? 'Stripe standard processing (2.9% + 30¢)' : 'Action required on past-due renewals'}
                                 </div>
                             </div>
                         </div>
@@ -1229,10 +1278,11 @@ export default function CoachRevenuePage() {
 
                         return (
                             <div className="glass-panel" style={{
-                                padding: '24px',
+                                padding: '24px 26px',
                                 borderRadius: '24px',
-                                background: 'linear-gradient(145deg, rgba(20, 20, 32, 0.85), rgba(12, 12, 22, 0.95))',
+                                background: 'linear-gradient(145deg, rgba(20, 20, 34, 0.88), rgba(12, 12, 24, 0.96))',
                                 border: '1px solid rgba(125, 135, 210, 0.25)',
+                                boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 6px 30px rgba(0, 0, 0, 0.25)',
                             }}>
                                 {/* Card Header */}
                                 <div style={{
@@ -1240,13 +1290,13 @@ export default function CoachRevenuePage() {
                                     alignItems: 'center',
                                     justifyContent: 'space-between',
                                     flexWrap: 'wrap',
-                                    gap: '12px',
+                                    gap: '14px',
                                     marginBottom: '24px',
                                 }}>
                                     <div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                                             <BarChart3 size={18} style={{ color: chartMetric === 'net' ? '#10b981' : 'var(--primary)' }} />
-                                            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'var(--foreground)' }}>
+                                            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'var(--foreground)', letterSpacing: '-0.01em' }}>
                                                 Month-by-Month {chartMetric === 'net' ? 'Net Profit' : 'Gross Revenue'} — {selectedYear}
                                             </h2>
                                         </div>
@@ -1259,21 +1309,25 @@ export default function CoachRevenuePage() {
                                     </div>
 
                                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                                        {/* Metric Mode Toggle */}
+                                        {/* Metric Mode Segmented Control */}
                                         <div style={{
                                             display: 'inline-flex',
-                                            background: 'rgba(255, 255, 255, 0.05)',
-                                            padding: '3px',
+                                            alignItems: 'center',
+                                            background: 'rgba(255, 255, 255, 0.04)',
+                                            padding: '2px',
                                             borderRadius: '10px',
-                                            border: '1px solid var(--card-border)',
+                                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                                            height: 34,
+                                            gap: '2px',
                                         }}>
                                             <button
                                                 type="button"
                                                 onClick={() => setChartMetric('net')}
                                                 className="chat-press"
                                                 style={{
-                                                    padding: '5px 12px',
-                                                    borderRadius: '8px',
+                                                    height: 28,
+                                                    padding: '0 12px',
+                                                    borderRadius: '7px',
                                                     fontSize: '0.78rem',
                                                     fontWeight: 700,
                                                     border: 'none',
@@ -1281,6 +1335,9 @@ export default function CoachRevenuePage() {
                                                     color: chartMetric === 'net' ? '#fff' : 'var(--secondary-foreground)',
                                                     cursor: 'pointer',
                                                     transition: 'all 0.15s ease',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    boxShadow: chartMetric === 'net' ? '0 2px 8px rgba(16, 185, 129, 0.3)' : 'none',
                                                 }}
                                             >
                                                 Net Profit
@@ -1290,8 +1347,9 @@ export default function CoachRevenuePage() {
                                                 onClick={() => setChartMetric('gross')}
                                                 className="chat-press"
                                                 style={{
-                                                    padding: '5px 12px',
-                                                    borderRadius: '8px',
+                                                    height: 28,
+                                                    padding: '0 12px',
+                                                    borderRadius: '7px',
                                                     fontSize: '0.78rem',
                                                     fontWeight: 700,
                                                     border: 'none',
@@ -1299,6 +1357,9 @@ export default function CoachRevenuePage() {
                                                     color: chartMetric === 'gross' ? '#fff' : 'var(--secondary-foreground)',
                                                     cursor: 'pointer',
                                                     transition: 'all 0.15s ease',
+                                                    display: 'inline-flex',
+                                                    alignItems: 'center',
+                                                    boxShadow: chartMetric === 'gross' ? '0 2px 8px rgba(125, 135, 210, 0.3)' : 'none',
                                                 }}
                                             >
                                                 Gross
@@ -1310,7 +1371,8 @@ export default function CoachRevenuePage() {
                                             onClick={() => setSelectedMonth('all')}
                                             className="chat-press"
                                             style={{
-                                                padding: '6px 14px',
+                                                height: 34,
+                                                padding: '0 14px',
                                                 borderRadius: '10px',
                                                 fontSize: '0.78rem',
                                                 fontWeight: 700,
@@ -1319,19 +1381,24 @@ export default function CoachRevenuePage() {
                                                 color: selectedMonth === 'all' ? '#fff' : 'var(--secondary-foreground)',
                                                 cursor: 'pointer',
                                                 transition: 'all 0.15s ease',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
                                             }}
                                         >
                                             All {selectedYear} Months
                                         </button>
 
                                         <div style={{
-                                            padding: '6px 14px',
+                                            height: 34,
+                                            padding: '0 14px',
                                             borderRadius: '10px',
-                                            background: chartMetric === 'net' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(125, 135, 210, 0.12)',
-                                            border: chartMetric === 'net' ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(125, 135, 210, 0.25)',
+                                            background: chartMetric === 'net' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(125, 135, 210, 0.14)',
+                                            border: chartMetric === 'net' ? '1px solid rgba(16, 185, 129, 0.35)' : '1px solid rgba(125, 135, 210, 0.3)',
                                             fontSize: '0.82rem',
                                             fontWeight: 800,
                                             color: chartMetric === 'net' ? '#10b981' : '#fff',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
                                         }}>
                                             {chartMetric === 'net'
                                                 ? `${formatMoney(yearNetTotal, data.currency, 0)} Net Profit`
@@ -1344,9 +1411,9 @@ export default function CoachRevenuePage() {
                                 <div style={{
                                     display: 'grid',
                                     gridTemplateColumns: 'repeat(12, minmax(0, 1fr))',
-                                    gap: '10px',
+                                    gap: '12px',
                                     alignItems: 'end',
-                                    padding: '16px 8px 8px',
+                                    padding: '16px 4px 8px',
                                     overflowX: 'auto',
                                 }}>
                                     {MONTH_NAMES.map((mName, idx) => {
@@ -1377,15 +1444,16 @@ export default function CoachRevenuePage() {
                                                     flexDirection: 'column',
                                                     alignItems: 'center',
                                                     cursor: isFuture ? 'default' : 'pointer',
-                                                    opacity: isFuture ? 0.3 : (isDimmed ? 0.4 : 1),
-                                                    transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                                                    opacity: isFuture ? 0.3 : (isDimmed ? 0.45 : 1),
+                                                    transition: 'all 0.2s cubic-bezier(0.23, 1, 0.32, 1)',
                                                     minWidth: 54,
                                                 }}
                                             >
                                                 {/* Amount on top of bar */}
                                                 <div style={{
                                                     fontSize: '0.72rem',
-                                                    fontWeight: 700,
+                                                    fontWeight: 750,
+                                                    fontVariantNumeric: 'tabular-nums',
                                                     color: isSelected
                                                         ? (chartMetric === 'net' ? '#10b981' : 'var(--primary)')
                                                         : (displayVal > 0 ? (chartMetric === 'net' ? '#34d399' : 'var(--foreground)') : 'transparent'),
@@ -1399,12 +1467,12 @@ export default function CoachRevenuePage() {
                                                 {/* Bar Container */}
                                                 <div style={{
                                                     width: '100%',
-                                                    height: 140,
+                                                    height: 146,
                                                     borderRadius: '12px',
                                                     background: 'rgba(255, 255, 255, 0.03)',
                                                     border: isSelected 
                                                         ? (chartMetric === 'net' ? '1.5px solid #10b981' : '1.5px solid var(--primary)')
-                                                        : (isCurrentMonth ? (chartMetric === 'net' ? '1px solid rgba(16, 185, 129, 0.5)' : '1px solid rgba(125, 135, 210, 0.4)') : '1px solid rgba(255, 255, 255, 0.05)'),
+                                                        : (isCurrentMonth ? (chartMetric === 'net' ? '1px solid rgba(16, 185, 129, 0.5)' : '1px solid rgba(125, 135, 210, 0.4)') : '1px solid rgba(255, 255, 255, 0.06)'),
                                                     display: 'flex',
                                                     flexDirection: 'column',
                                                     justifyContent: 'flex-end',
@@ -1412,7 +1480,7 @@ export default function CoachRevenuePage() {
                                                     position: 'relative',
                                                     overflow: 'hidden',
                                                     boxShadow: isSelected
-                                                        ? (chartMetric === 'net' ? '0 0 16px rgba(16, 185, 129, 0.35)' : '0 0 16px rgba(125, 135, 210, 0.3)')
+                                                        ? (chartMetric === 'net' ? '0 0 18px rgba(16, 185, 129, 0.4)' : '0 0 18px rgba(125, 135, 210, 0.35)')
                                                         : 'none',
                                                 }}>
                                                     <div style={{
@@ -1423,18 +1491,18 @@ export default function CoachRevenuePage() {
                                                             ? (isSelected
                                                                 ? 'linear-gradient(180deg, #10b981, #059669)'
                                                                 : (isCurrentMonth
-                                                                    ? 'linear-gradient(180deg, rgba(16, 185, 129, 0.85), rgba(5, 150, 105, 0.85))'
+                                                                    ? 'linear-gradient(180deg, rgba(16, 185, 129, 0.88), rgba(5, 150, 105, 0.88))'
                                                                     : (displayVal > 0
-                                                                        ? 'linear-gradient(180deg, rgba(16, 185, 129, 0.6), rgba(5, 150, 105, 0.4))'
+                                                                        ? 'linear-gradient(180deg, rgba(16, 185, 129, 0.65), rgba(5, 150, 105, 0.45))'
                                                                         : 'rgba(255, 255, 255, 0.05)')))
                                                             : (isSelected
                                                                 ? 'linear-gradient(180deg, #38bdf8, #6366f1)'
                                                                 : (isCurrentMonth
-                                                                    ? 'linear-gradient(180deg, rgba(56, 189, 248, 0.8), rgba(99, 102, 241, 0.8))'
+                                                                    ? 'linear-gradient(180deg, rgba(56, 189, 248, 0.85), rgba(99, 102, 241, 0.85))'
                                                                     : (displayVal > 0
-                                                                        ? 'linear-gradient(180deg, rgba(125, 135, 210, 0.6), rgba(99, 102, 241, 0.4))'
+                                                                        ? 'linear-gradient(180deg, rgba(125, 135, 210, 0.65), rgba(99, 102, 241, 0.45))'
                                                                         : 'rgba(255, 255, 255, 0.05)'))),
-                                                        transition: 'height 0.4s ease, background 0.2s ease',
+                                                        transition: 'height 0.4s cubic-bezier(0.23, 1, 0.32, 1), background 0.2s ease',
                                                     }} />
                                                 </div>
 
@@ -1454,8 +1522,9 @@ export default function CoachRevenuePage() {
                                                         fontSize: '0.68rem',
                                                         color: 'var(--secondary-foreground)',
                                                         marginTop: '2px',
+                                                        fontVariantNumeric: 'tabular-nums',
                                                     }}>
-                                                        {mStat.count > 0 ? `${mStat.count}` : '—'}
+                                                        {mStat.count > 0 ? `${mStat.count} chgs` : '—'}
                                                     </div>
                                                 </div>
                                             </div>
@@ -1469,14 +1538,15 @@ export default function CoachRevenuePage() {
                     {/* All-Time Year-by-Year Comparison Visualizer */}
                     {data?.history && selectedYear === 'all' && (
                         <div className="glass-panel" style={{
-                            padding: '24px',
+                            padding: '24px 26px',
                             borderRadius: '24px',
-                            background: 'linear-gradient(145deg, rgba(20, 20, 32, 0.85), rgba(12, 12, 22, 0.95))',
+                            background: 'linear-gradient(145deg, rgba(20, 20, 34, 0.88), rgba(12, 12, 24, 0.96))',
                             border: '1px solid rgba(125, 135, 210, 0.25)',
+                            boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 6px 30px rgba(0, 0, 0, 0.25)',
                         }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '14px' }}>
                                 <div>
-                                    <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'var(--foreground)' }}>
+                                    <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'var(--foreground)', letterSpacing: '-0.01em' }}>
                                         Annual Revenue & Profit Performance (2024–2026)
                                     </h2>
                                     <p style={{ fontSize: '0.82rem', color: 'var(--secondary-foreground)', margin: '4px 0 0 0' }}>
@@ -1526,25 +1596,26 @@ export default function CoachRevenuePage() {
                                             }}
                                             className="chat-press"
                                             style={{
-                                                padding: '20px',
-                                                borderRadius: '16px',
-                                                background: 'rgba(255, 255, 255, 0.03)',
-                                                border: '1px solid var(--card-border)',
+                                                padding: '22px',
+                                                borderRadius: '18px',
+                                                background: 'linear-gradient(145deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.015))',
+                                                border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.06)',
                                                 cursor: 'pointer',
-                                                transition: 'all 0.2s ease',
+                                                transition: 'all 0.2s cubic-bezier(0.23, 1, 0.32, 1)',
                                             }}
                                         >
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
                                                 <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--foreground)' }}>
                                                     {y} {y === '2026' ? '• YTD' : ''}
                                                 </span>
-                                                <span style={{ fontSize: '0.75rem', fontWeight: 700, padding: '3px 8px', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981' }}>
+                                                <span style={{ fontSize: '0.74rem', fontWeight: 750, padding: '3px 8px', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
                                                     {pctOfTotal}% of all-time
                                                 </span>
                                             </div>
-                                            <div style={{ fontSize: '1.8rem', fontWeight: 900, color: '#10b981', letterSpacing: '-0.02em', marginBottom: '4px' }}>
+                                            <div style={{ fontSize: '1.85rem', fontWeight: 900, color: '#10b981', letterSpacing: '-0.02em', marginBottom: '4px' }}>
                                                 {formatMoney(yNet, data.currency, 0)}
-                                                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'rgba(16, 185, 129, 0.8)', marginLeft: '6px' }}>
+                                                <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'rgba(16, 185, 129, 0.85)', marginLeft: '6px' }}>
                                                     Net Profit
                                                 </span>
                                             </div>
@@ -1572,8 +1643,11 @@ export default function CoachRevenuePage() {
 
                     {/* Athlete Subscription Roster Section */}
                     <div id="athlete-subscriptions-roster" className="glass-panel" style={{
-                        padding: '24px',
+                        padding: '24px 26px',
                         borderRadius: '24px',
+                        background: 'linear-gradient(145deg, rgba(20, 20, 34, 0.88), rgba(12, 12, 24, 0.96))',
+                        border: '1px solid rgba(125, 135, 210, 0.25)',
+                        boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 6px 30px rgba(0, 0, 0, 0.25)',
                     }}>
                         <div style={{
                             display: 'flex',
@@ -1582,10 +1656,10 @@ export default function CoachRevenuePage() {
                             alignItems: 'center',
                             flexWrap: 'wrap',
                             gap: '16px',
-                            marginBottom: '20px',
+                            marginBottom: '22px',
                         }}>
                             <div>
-                                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 4px 0' }}>
+                                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 4px 0', color: 'var(--foreground)', letterSpacing: '-0.01em' }}>
                                     Athlete Subscriptions
                                 </h2>
                                 <p style={{ fontSize: '0.82rem', color: 'var(--secondary-foreground)', margin: 0 }}>
@@ -1597,7 +1671,7 @@ export default function CoachRevenuePage() {
                             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
                                 <div style={{
                                     position: 'relative',
-                                    minWidth: 220,
+                                    minWidth: 230,
                                 }}>
                                     <Search size={14} style={{
                                         position: 'absolute',
@@ -1605,6 +1679,7 @@ export default function CoachRevenuePage() {
                                         top: '50%',
                                         transform: 'translateY(-50%)',
                                         color: 'var(--secondary-foreground)',
+                                        pointerEvents: 'none',
                                     }} />
                                     <input
                                         type="text"
@@ -1613,36 +1688,45 @@ export default function CoachRevenuePage() {
                                         onChange={(e) => setSearchQuery(e.target.value)}
                                         style={{
                                             width: '100%',
-                                            padding: '8px 12px 8px 34px',
-                                            borderRadius: '12px',
-                                            background: 'rgba(255, 255, 255, 0.05)',
-                                            border: '1px solid var(--card-border)',
+                                            height: 36,
+                                            padding: '0 12px 0 34px',
+                                            borderRadius: '11px',
+                                            background: 'rgba(255, 255, 255, 0.04)',
+                                            border: '1px solid rgba(255, 255, 255, 0.08)',
                                             color: 'var(--foreground)',
                                             fontSize: '0.82rem',
                                             outline: 'none',
+                                            transition: 'border-color 0.15s ease',
                                         }}
                                     />
                                 </div>
 
                                 <div style={{
                                     display: 'inline-flex',
+                                    alignItems: 'center',
                                     background: 'rgba(255, 255, 255, 0.04)',
-                                    padding: '3px',
-                                    borderRadius: '12px',
-                                    border: '1px solid var(--card-border)',
+                                    padding: '2px',
+                                    borderRadius: '11px',
+                                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                                    height: 36,
+                                    gap: '2px',
                                 }}>
                                     <button
                                         onClick={() => setFilterStatus('all')}
+                                        className="chat-press"
                                         style={{
-                                            padding: '5px 12px',
-                                            borderRadius: '9px',
+                                            height: 30,
+                                            padding: '0 12px',
+                                            borderRadius: '8px',
                                             fontSize: '0.78rem',
-                                            fontWeight: 600,
+                                            fontWeight: 700,
                                             border: 'none',
                                             background: filterStatus === 'all' ? 'var(--primary)' : 'transparent',
                                             color: filterStatus === 'all' ? '#fff' : 'var(--secondary-foreground)',
                                             cursor: 'pointer',
                                             transition: 'all 0.15s ease',
+                                            display: 'inline-flex',
+                                            alignItems: 'center',
                                         }}
                                     >
                                         Active ({data.athletes.length})
@@ -1650,16 +1734,20 @@ export default function CoachRevenuePage() {
                                     {data.pastDueCount > 0 && (
                                         <button
                                             onClick={() => setFilterStatus('past_due')}
+                                            className="chat-press"
                                             style={{
-                                                padding: '5px 12px',
-                                                borderRadius: '9px',
+                                                height: 30,
+                                                padding: '0 12px',
+                                                borderRadius: '8px',
                                                 fontSize: '0.78rem',
-                                                fontWeight: 600,
+                                                fontWeight: 700,
                                                 border: 'none',
-                                                background: filterStatus === 'past_due' ? 'rgba(239, 68, 68, 0.2)' : 'transparent',
+                                                background: filterStatus === 'past_due' ? 'rgba(239, 68, 68, 0.25)' : 'transparent',
                                                 color: filterStatus === 'past_due' ? '#f87171' : 'var(--secondary-foreground)',
                                                 cursor: 'pointer',
                                                 transition: 'all 0.15s ease',
+                                                display: 'inline-flex',
+                                                alignItems: 'center',
                                             }}
                                         >
                                             Past Due ({data.pastDueCount})
@@ -1679,16 +1767,17 @@ export default function CoachRevenuePage() {
                             }}>
                                 <thead>
                                     <tr style={{
-                                        borderBottom: '1px solid var(--card-border)',
+                                        borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
                                         color: 'var(--secondary-foreground)',
+                                        background: 'rgba(255, 255, 255, 0.015)',
                                     }}>
-                                        <th style={{ padding: '12px 14px', fontWeight: 600 }}>Athlete</th>
-                                        <th style={{ padding: '12px 14px', fontWeight: 600 }}>Status</th>
-                                        <th style={{ padding: '12px 14px', fontWeight: 600 }}>Gross Plan</th>
-                                        <th style={{ padding: '12px 14px', fontWeight: 600 }}>Stripe Fee</th>
-                                        <th style={{ padding: '12px 14px', fontWeight: 600 }}>Net Take-Home</th>
-                                        <th style={{ padding: '12px 14px', fontWeight: 600 }}>Next Billing</th>
-                                        <th style={{ padding: '12px 14px', fontWeight: 600, textAlign: 'right' }}>Stripe & Actions</th>
+                                        <th style={{ padding: '12px 16px', fontWeight: 700, fontSize: '0.74rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Athlete</th>
+                                        <th style={{ padding: '12px 16px', fontWeight: 700, fontSize: '0.74rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Status</th>
+                                        <th style={{ padding: '12px 16px', fontWeight: 700, fontSize: '0.74rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Gross Plan</th>
+                                        <th style={{ padding: '12px 16px', fontWeight: 700, fontSize: '0.74rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Stripe Fee</th>
+                                        <th style={{ padding: '12px 16px', fontWeight: 700, fontSize: '0.74rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Net Take-Home</th>
+                                        <th style={{ padding: '12px 16px', fontWeight: 700, fontSize: '0.74rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Next Billing</th>
+                                        <th style={{ padding: '12px 16px', fontWeight: 700, fontSize: '0.74rem', textTransform: 'uppercase', letterSpacing: '0.04em', textAlign: 'right' }}>Stripe & Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -1697,6 +1786,7 @@ export default function CoachRevenuePage() {
                                         const athleteFee = athlete.stripeFee ?? calculateStripeFee(athleteGross);
                                         const athleteNet = athlete.netAmount ?? Math.round((athleteGross - athleteFee) * 100) / 100;
                                         const athleteMonthlyNet = athlete.monthlyNet ?? Math.round((athlete.monthlyAmount - calculateStripeFee(athlete.monthlyAmount)) * 100) / 100;
+                                        const initials = athlete.name.split(' ').filter(Boolean).map(n => n[0]).slice(0, 2).join('').toUpperCase() || 'AT';
 
                                         return (
                                             <tr
@@ -1707,32 +1797,53 @@ export default function CoachRevenuePage() {
                                                 }}
                                                 className="hover:bg-white/[0.02]"
                                             >
-                                                <td style={{ padding: '14px' }}>
-                                                    <div style={{ fontWeight: 700, color: 'var(--foreground)' }}>
-                                                        {athlete.name}
-                                                    </div>
-                                                    <div style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', opacity: 0.8 }}>
-                                                        {athlete.email}
-                                                    </div>
-                                                    {athlete.customerEmail && (
-                                                        <div style={{ fontSize: '0.7rem', color: 'var(--primary)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                                                            <span>Stripe: {athlete.customerEmail}</span>
+                                                <td style={{ padding: '14px 16px' }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '11px' }}>
+                                                        <div style={{
+                                                            width: 34,
+                                                            height: 34,
+                                                            borderRadius: '50%',
+                                                            background: 'linear-gradient(135deg, rgba(125, 135, 210, 0.25), rgba(99, 102, 241, 0.18))',
+                                                            border: '1px solid rgba(125, 135, 210, 0.35)',
+                                                            color: '#c4b5fd',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            fontWeight: 750,
+                                                            fontSize: '0.75rem',
+                                                            flexShrink: 0,
+                                                            letterSpacing: '0.02em',
+                                                        }}>
+                                                            {initials}
                                                         </div>
-                                                    )}
+                                                        <div>
+                                                            <div style={{ fontWeight: 750, color: 'var(--foreground)', fontSize: '0.88rem' }}>
+                                                                {athlete.name}
+                                                            </div>
+                                                            <div style={{ fontSize: '0.74rem', color: 'var(--secondary-foreground)', opacity: 0.85 }}>
+                                                                {athlete.email}
+                                                            </div>
+                                                            {athlete.customerEmail && (
+                                                                <div style={{ fontSize: '0.7rem', color: 'var(--primary)', marginTop: '2px', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                                                                    <span>Stripe: {athlete.customerEmail}</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
                                                 </td>
-                                                <td style={{ padding: '14px' }}>
+                                                <td style={{ padding: '14px 16px' }}>
                                                     {athlete.status === 'active' ? (
                                                         <span style={{
                                                             fontSize: '0.72rem',
                                                             fontWeight: 700,
-                                                            padding: '3px 9px',
+                                                            padding: '4px 10px',
                                                             borderRadius: '12px',
                                                             background: 'rgba(16, 185, 129, 0.15)',
                                                             color: '#10b981',
                                                             border: '1px solid rgba(16, 185, 129, 0.3)',
                                                             display: 'inline-flex',
                                                             alignItems: 'center',
-                                                            gap: '4px',
+                                                            gap: '5px',
                                                         }}>
                                                             <CheckCircle2 size={12} />
                                                             Active
@@ -1741,14 +1852,14 @@ export default function CoachRevenuePage() {
                                                         <span style={{
                                                             fontSize: '0.72rem',
                                                             fontWeight: 700,
-                                                            padding: '3px 9px',
+                                                            padding: '4px 10px',
                                                             borderRadius: '12px',
                                                             background: 'rgba(125, 135, 210, 0.15)',
                                                             color: 'var(--primary)',
                                                             border: '1px solid rgba(125, 135, 210, 0.3)',
                                                             display: 'inline-flex',
                                                             alignItems: 'center',
-                                                            gap: '4px',
+                                                            gap: '5px',
                                                         }}>
                                                             <Clock size={12} />
                                                             Trialing
@@ -1757,37 +1868,38 @@ export default function CoachRevenuePage() {
                                                         <span style={{
                                                             fontSize: '0.72rem',
                                                             fontWeight: 700,
-                                                            padding: '3px 9px',
+                                                            padding: '4px 10px',
                                                             borderRadius: '12px',
                                                             background: 'rgba(239, 68, 68, 0.15)',
                                                             color: '#f87171',
                                                             border: '1px solid rgba(239, 68, 68, 0.3)',
                                                             display: 'inline-flex',
                                                             alignItems: 'center',
-                                                            gap: '4px',
+                                                            gap: '5px',
                                                         }}>
                                                             <AlertCircle size={12} />
                                                             Past Due
                                                         </span>
                                                     )}
                                                 </td>
-                                                <td style={{ padding: '14px', fontWeight: 600 }}>
-                                                    <div style={{ color: 'var(--foreground)', fontSize: '0.92rem' }}>
+                                                <td style={{ padding: '14px 16px', fontWeight: 600 }}>
+                                                    <div style={{ color: 'var(--foreground)', fontSize: '0.92rem', fontVariantNumeric: 'tabular-nums' }}>
                                                         {athlete.billingInterval || (athlete.rawAmount ? `$${athlete.rawAmount} / 4 wks` : formatMoney(athlete.monthlyAmount, athlete.currency))}
                                                     </div>
-                                                    <div style={{ fontSize: '0.72rem', color: 'var(--secondary-foreground)', marginTop: '2px' }}>
+                                                    <div style={{ fontSize: '0.72rem', color: 'var(--secondary-foreground)', marginTop: '2px', fontVariantNumeric: 'tabular-nums' }}>
                                                         {formatMoney(athlete.monthlyAmount, athlete.currency, 0)}/mo equiv
                                                     </div>
                                                 </td>
-                                                <td style={{ padding: '14px', whiteSpace: 'nowrap' }}>
+                                                <td style={{ padding: '14px 16px', whiteSpace: 'nowrap' }}>
                                                     <span style={{
-                                                        padding: '3px 7px',
+                                                        padding: '3px 8px',
                                                         borderRadius: '6px',
                                                         background: 'rgba(255, 255, 255, 0.05)',
                                                         border: '1px solid rgba(255, 255, 255, 0.08)',
-                                                        fontSize: '0.78rem',
-                                                        fontWeight: 600,
+                                                        fontSize: '0.76rem',
+                                                        fontWeight: 650,
                                                         color: 'rgba(255, 255, 255, 0.75)',
+                                                        fontVariantNumeric: 'tabular-nums',
                                                     }}>
                                                         -{formatMoney(athleteFee, athlete.currency, 2)}
                                                     </span>
@@ -1795,30 +1907,30 @@ export default function CoachRevenuePage() {
                                                         2.9% + 30¢
                                                     </div>
                                                 </td>
-                                                <td style={{ padding: '14px', whiteSpace: 'nowrap' }}>
-                                                    <div style={{ color: '#10b981', fontWeight: 800, fontSize: '0.95rem' }}>
+                                                <td style={{ padding: '14px 16px', whiteSpace: 'nowrap' }}>
+                                                    <div style={{ color: '#10b981', fontWeight: 800, fontSize: '0.95rem', fontVariantNumeric: 'tabular-nums' }}>
                                                         +{formatMoney(athleteNet, athlete.currency, 2)}
                                                         <span style={{ fontSize: '0.75rem', fontWeight: 600, color: 'rgba(16, 185, 129, 0.8)', marginLeft: '4px' }}>
                                                             {athlete.intervalCount === 4 && athlete.interval === 'week' ? '/ 4 wks' : (athlete.interval === 'month' ? '/ mo' : '')}
                                                         </span>
                                                     </div>
-                                                    <div style={{ fontSize: '0.72rem', color: 'rgba(16, 185, 129, 0.75)', marginTop: '2px', fontWeight: 600 }}>
+                                                    <div style={{ fontSize: '0.72rem', color: 'rgba(16, 185, 129, 0.75)', marginTop: '2px', fontWeight: 600, fontVariantNumeric: 'tabular-nums' }}>
                                                         {formatMoney(athleteMonthlyNet, athlete.currency, 0)}/mo net
                                                     </div>
                                                 </td>
-                                                <td style={{ padding: '14px', color: 'var(--secondary-foreground)', fontSize: '0.8rem' }}>
+                                                <td style={{ padding: '14px 16px', color: 'var(--secondary-foreground)', fontSize: '0.8rem' }}>
                                                     {athlete.currentPeriodEnd ? (
                                                         <div>
-                                                            <div>{formatDate(athlete.currentPeriodEnd)}</div>
+                                                            <div style={{ fontVariantNumeric: 'tabular-nums', color: 'var(--foreground)' }}>{formatDate(athlete.currentPeriodEnd)}</div>
                                                             {athlete.cancelAtPeriodEnd && (
-                                                                <span style={{ fontSize: '0.7rem', color: '#f87171' }}>Cancels at end of cycle</span>
+                                                                <span style={{ fontSize: '0.7rem', color: '#f87171', fontWeight: 600 }}>Cancels at end of cycle</span>
                                                             )}
                                                         </div>
                                                     ) : (
                                                         <span>—</span>
                                                     )}
                                                 </td>
-                                                <td style={{ padding: '14px', textAlign: 'right' }}>
+                                                <td style={{ padding: '14px 16px', textAlign: 'right' }}>
                                                     <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', justifyContent: 'flex-end', flexWrap: 'nowrap' }}>
                                                         {/* Direct Link to Stripe Subscription (Cancel or Change Plan) */}
                                                         {(athlete.stripeSubscriptionUrl || athlete.stripeSubscriptionId) ? (
@@ -1829,10 +1941,11 @@ export default function CoachRevenuePage() {
                                                                 className="chat-press"
                                                                 title="Open subscription in Stripe Dashboard to cancel, update plan, or change price"
                                                                 style={{
+                                                                    height: 30,
                                                                     display: 'inline-flex',
                                                                     alignItems: 'center',
                                                                     gap: '5px',
-                                                                    padding: '5px 10px',
+                                                                    padding: '0 10px',
                                                                     fontSize: '0.74rem',
                                                                     fontWeight: 700,
                                                                     borderRadius: '8px',
@@ -1860,10 +1973,11 @@ export default function CoachRevenuePage() {
                                                                 className="glass-button chat-press"
                                                                 title="Open customer profile in Stripe Dashboard"
                                                                 style={{
+                                                                    height: 30,
                                                                     display: 'inline-flex',
                                                                     alignItems: 'center',
                                                                     gap: '4px',
-                                                                    padding: '5px 8px',
+                                                                    padding: '0 9px',
                                                                     fontSize: '0.72rem',
                                                                     fontWeight: 600,
                                                                     borderRadius: '8px',
@@ -1886,10 +2000,11 @@ export default function CoachRevenuePage() {
                                                             className="glass-button chat-press"
                                                             title="View Athlete Training Analytics in BlueprintLab"
                                                             style={{
+                                                                height: 30,
                                                                 display: 'inline-flex',
                                                                 alignItems: 'center',
                                                                 gap: '3px',
-                                                                padding: '5px 8px',
+                                                                padding: '0 9px',
                                                                 fontSize: '0.72rem',
                                                                 fontWeight: 600,
                                                                 borderRadius: '8px',
@@ -2041,8 +2156,11 @@ export default function CoachRevenuePage() {
 
                     {/* Historical Transactions Ledger (Filtered by Year & Month with Live Search) */}
                     <div className="glass-panel" style={{
-                        padding: '24px',
+                        padding: '24px 26px',
                         borderRadius: '24px',
+                        background: 'linear-gradient(145deg, rgba(20, 20, 34, 0.88), rgba(12, 12, 24, 0.96))',
+                        border: '1px solid rgba(125, 135, 210, 0.25)',
+                        boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 6px 30px rgba(0, 0, 0, 0.25)',
                     }}>
                         <div style={{
                             display: 'flex',
@@ -2050,45 +2168,58 @@ export default function CoachRevenuePage() {
                             alignItems: 'center',
                             flexWrap: 'wrap',
                             gap: '16px',
-                            marginBottom: '20px',
+                            marginBottom: '22px',
                         }}>
                             <div>
-                                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 4px 0' }}>
+                                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 4px 0', color: 'var(--foreground)', letterSpacing: '-0.01em' }}>
                                     Historical Transactions Ledger
                                 </h2>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '6px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
                                     <span style={{ fontSize: '0.82rem', color: 'var(--secondary-foreground)' }}>
-                                        Showing charges for <strong>{periodStats.periodLabel}</strong> ({filteredHistoricalCharges.length} paid charges):
+                                        Showing <strong>{periodStats.periodLabel}</strong> ({filteredHistoricalCharges.length} paid charges):
                                     </span>
                                     <span style={{
-                                        padding: '3px 8px',
-                                        borderRadius: '6px',
+                                        height: 28,
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        padding: '0 10px',
+                                        borderRadius: '8px',
                                         background: 'rgba(255, 255, 255, 0.05)',
+                                        border: '1px solid rgba(255, 255, 255, 0.08)',
                                         fontSize: '0.75rem',
                                         fontWeight: 700,
                                         color: 'var(--foreground)',
+                                        fontVariantNumeric: 'tabular-nums',
                                     }}>
                                         Gross: {formatMoney(periodStats.grossCollected, data.currency, 0)}
                                     </span>
                                     <span style={{
-                                        padding: '3px 8px',
-                                        borderRadius: '6px',
-                                        background: 'rgba(239, 68, 68, 0.1)',
-                                        border: '1px solid rgba(239, 68, 68, 0.2)',
+                                        height: 28,
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        padding: '0 10px',
+                                        borderRadius: '8px',
+                                        background: 'rgba(239, 68, 68, 0.12)',
+                                        border: '1px solid rgba(239, 68, 68, 0.25)',
                                         fontSize: '0.75rem',
                                         fontWeight: 700,
                                         color: '#f87171',
+                                        fontVariantNumeric: 'tabular-nums',
                                     }}>
                                         Fees: -{formatMoney(periodStats.stripeFees, data.currency, periodStats.stripeFees % 1 !== 0 ? 2 : 0)}
                                     </span>
                                     <span style={{
-                                        padding: '3px 8px',
-                                        borderRadius: '6px',
+                                        height: 28,
+                                        display: 'inline-flex',
+                                        alignItems: 'center',
+                                        padding: '0 10px',
+                                        borderRadius: '8px',
                                         background: 'rgba(16, 185, 129, 0.15)',
-                                        border: '1px solid rgba(16, 185, 129, 0.3)',
+                                        border: '1px solid rgba(16, 185, 129, 0.35)',
                                         fontSize: '0.75rem',
                                         fontWeight: 800,
                                         color: '#10b981',
+                                        fontVariantNumeric: 'tabular-nums',
                                     }}>
                                         Net Profit: +{formatMoney(periodStats.netProfit, data.currency, 0)}
                                     </span>
@@ -2106,6 +2237,7 @@ export default function CoachRevenuePage() {
                                     top: '50%',
                                     transform: 'translateY(-50%)',
                                     color: 'var(--secondary-foreground)',
+                                    pointerEvents: 'none',
                                 }} />
                                 <input
                                     type="text"
@@ -2114,13 +2246,15 @@ export default function CoachRevenuePage() {
                                     onChange={(e) => setChargeSearchQuery(e.target.value)}
                                     style={{
                                         width: '100%',
-                                        padding: '8px 12px 8px 34px',
-                                        borderRadius: '12px',
-                                        background: 'rgba(255, 255, 255, 0.05)',
-                                        border: '1px solid var(--card-border)',
+                                        height: 36,
+                                        padding: '0 12px 0 34px',
+                                        borderRadius: '11px',
+                                        background: 'rgba(255, 255, 255, 0.04)',
+                                        border: '1px solid rgba(255, 255, 255, 0.08)',
                                         color: 'var(--foreground)',
                                         fontSize: '0.82rem',
                                         outline: 'none',
+                                        transition: 'border-color 0.15s ease',
                                     }}
                                 />
                             </div>
@@ -2136,17 +2270,18 @@ export default function CoachRevenuePage() {
                             }}>
                                 <thead>
                                     <tr style={{
-                                        borderBottom: '1px solid var(--card-border)',
+                                        borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
                                         color: 'var(--secondary-foreground)',
+                                        background: 'rgba(255, 255, 255, 0.015)',
                                     }}>
-                                        <th style={{ padding: '12px 14px', fontWeight: 600 }}>Date</th>
-                                        <th style={{ padding: '12px 14px', fontWeight: 600 }}>Customer / Athlete</th>
-                                        <th style={{ padding: '12px 14px', fontWeight: 600 }}>Description</th>
-                                        <th style={{ padding: '12px 14px', fontWeight: 600 }}>Status</th>
-                                        <th style={{ padding: '12px 14px', fontWeight: 600, textAlign: 'right' }}>Gross</th>
-                                        <th style={{ padding: '12px 14px', fontWeight: 600, textAlign: 'right' }}>Stripe Fee</th>
-                                        <th style={{ padding: '12px 14px', fontWeight: 600, textAlign: 'right' }}>Net Profit</th>
-                                        <th style={{ padding: '12px 14px', fontWeight: 600, textAlign: 'right' }}>Receipt</th>
+                                        <th style={{ padding: '12px 16px', fontWeight: 700, fontSize: '0.74rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Date</th>
+                                        <th style={{ padding: '12px 16px', fontWeight: 700, fontSize: '0.74rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Customer / Athlete</th>
+                                        <th style={{ padding: '12px 16px', fontWeight: 700, fontSize: '0.74rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Description</th>
+                                        <th style={{ padding: '12px 16px', fontWeight: 700, fontSize: '0.74rem', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Status</th>
+                                        <th style={{ padding: '12px 16px', fontWeight: 700, fontSize: '0.74rem', textTransform: 'uppercase', letterSpacing: '0.04em', textAlign: 'right' }}>Gross</th>
+                                        <th style={{ padding: '12px 16px', fontWeight: 700, fontSize: '0.74rem', textTransform: 'uppercase', letterSpacing: '0.04em', textAlign: 'right' }}>Stripe Fee</th>
+                                        <th style={{ padding: '12px 16px', fontWeight: 700, fontSize: '0.74rem', textTransform: 'uppercase', letterSpacing: '0.04em', textAlign: 'right' }}>Net Profit</th>
+                                        <th style={{ padding: '12px 16px', fontWeight: 700, fontSize: '0.74rem', textTransform: 'uppercase', letterSpacing: '0.04em', textAlign: 'right' }}>Receipt</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -2159,58 +2294,60 @@ export default function CoachRevenuePage() {
                                             }}
                                             className="hover:bg-white/[0.02]"
                                         >
-                                            <td style={{ padding: '14px', color: 'var(--foreground)', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                                            <td style={{ padding: '14px 16px', color: 'var(--foreground)', fontWeight: 650, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
                                                 {formatDate(ch.created)}
                                             </td>
-                                            <td style={{ padding: '14px' }}>
-                                                <div style={{ fontWeight: 700, color: 'var(--foreground)' }}>
+                                            <td style={{ padding: '14px 16px' }}>
+                                                <div style={{ fontWeight: 750, color: 'var(--foreground)' }}>
                                                     {ch.customerName || ch.customerEmail}
                                                 </div>
                                                 {ch.customerName && (
-                                                    <div style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)' }}>
+                                                    <div style={{ fontSize: '0.74rem', color: 'var(--secondary-foreground)', opacity: 0.85 }}>
                                                         {ch.customerEmail}
                                                     </div>
                                                 )}
                                             </td>
-                                            <td style={{ padding: '14px', color: 'var(--secondary-foreground)', fontSize: '0.82rem' }}>
+                                            <td style={{ padding: '14px 16px', color: 'var(--secondary-foreground)', fontSize: '0.82rem' }}>
                                                 {ch.description || 'Subscription'}
                                             </td>
-                                            <td style={{ padding: '14px' }}>
+                                            <td style={{ padding: '14px 16px' }}>
                                                 <span style={{
                                                     fontSize: '0.72rem',
                                                     fontWeight: 700,
-                                                    padding: '3px 9px',
+                                                    padding: '4px 10px',
                                                     borderRadius: '12px',
                                                     background: 'rgba(16, 185, 129, 0.15)',
                                                     color: '#10b981',
                                                     border: '1px solid rgba(16, 185, 129, 0.3)',
                                                     display: 'inline-flex',
                                                     alignItems: 'center',
-                                                    gap: '4px',
+                                                    gap: '5px',
                                                 }}>
                                                     <CheckCircle2 size={12} />
                                                     Paid
                                                 </span>
                                             </td>
-                                            <td style={{ padding: '14px', textAlign: 'right', fontWeight: 600, color: 'var(--foreground)', fontSize: '0.88rem', whiteSpace: 'nowrap' }}>
+                                            <td style={{ padding: '14px 16px', textAlign: 'right', fontWeight: 650, color: 'var(--foreground)', fontSize: '0.88rem', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
                                                 +{formatMoney(ch.amount, ch.currency, 2)}
                                             </td>
-                                            <td style={{ padding: '14px', textAlign: 'right', whiteSpace: 'nowrap' }}>
+                                            <td style={{ padding: '14px 16px', textAlign: 'right', whiteSpace: 'nowrap' }}>
                                                 <span style={{
-                                                    padding: '3px 7px',
+                                                    padding: '3px 8px',
                                                     borderRadius: '6px',
                                                     background: 'rgba(255, 255, 255, 0.05)',
+                                                    border: '1px solid rgba(255, 255, 255, 0.08)',
                                                     fontSize: '0.75rem',
-                                                    fontWeight: 600,
-                                                    color: 'rgba(255, 255, 255, 0.7)',
+                                                    fontWeight: 650,
+                                                    color: 'rgba(255, 255, 255, 0.75)',
+                                                    fontVariantNumeric: 'tabular-nums',
                                                 }}>
                                                     -{formatMoney(ch.fee ?? calculateStripeFee(ch.amount), ch.currency, 2)}
                                                 </span>
                                             </td>
-                                            <td style={{ padding: '14px', textAlign: 'right', fontWeight: 800, color: '#10b981', fontSize: '0.92rem', whiteSpace: 'nowrap' }}>
+                                            <td style={{ padding: '14px 16px', textAlign: 'right', fontWeight: 800, color: '#10b981', fontSize: '0.92rem', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
                                                 +{formatMoney(ch.net ?? Math.round((ch.amount - (ch.fee ?? calculateStripeFee(ch.amount))) * 100) / 100, ch.currency, 2)}
                                             </td>
-                                            <td style={{ padding: '14px', textAlign: 'right' }}>
+                                            <td style={{ padding: '14px 16px', textAlign: 'right' }}>
                                                 {ch.receiptUrl ? (
                                                     <a
                                                         href={ch.receiptUrl}
@@ -2219,14 +2356,16 @@ export default function CoachRevenuePage() {
                                                         title="Open Stripe Receipt"
                                                         className="glass-button chat-press"
                                                         style={{
+                                                            height: 30,
                                                             display: 'inline-flex',
                                                             alignItems: 'center',
                                                             gap: '4px',
-                                                            padding: '4px 10px',
+                                                            padding: '0 10px',
                                                             fontSize: '0.75rem',
                                                             fontWeight: 600,
                                                             color: 'var(--secondary-foreground)',
                                                             textDecoration: 'none',
+                                                            borderRadius: '8px',
                                                         }}
                                                     >
                                                         <FileText size={13} />
@@ -2257,13 +2396,13 @@ export default function CoachRevenuePage() {
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'space-between',
-                                marginTop: '20px',
-                                paddingTop: '16px',
-                                borderTop: '1px solid var(--card-border)',
+                                marginTop: '22px',
+                                paddingTop: '18px',
+                                borderTop: '1px solid rgba(255, 255, 255, 0.08)',
                                 flexWrap: 'wrap',
                                 gap: '12px',
                             }}>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)' }}>
+                                <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', fontVariantNumeric: 'tabular-nums' }}>
                                     Showing {(transactionsPage - 1) * CHARGES_PER_PAGE + 1}–{Math.min(transactionsPage * CHARGES_PER_PAGE, filteredHistoricalCharges.length)} of {filteredHistoricalCharges.length} charges
                                 </div>
 
@@ -2274,12 +2413,14 @@ export default function CoachRevenuePage() {
                                         onClick={() => setTransactionsPage(p => Math.max(1, p - 1))}
                                         className="glass-button chat-press"
                                         style={{
+                                            height: 34,
                                             display: 'inline-flex',
                                             alignItems: 'center',
                                             gap: '4px',
-                                            padding: '6px 12px',
+                                            padding: '0 12px',
                                             fontSize: '0.8rem',
                                             fontWeight: 600,
+                                            borderRadius: '9px',
                                             cursor: transactionsPage === 1 ? 'not-allowed' : 'pointer',
                                             opacity: transactionsPage === 1 ? 0.4 : 1,
                                         }}
@@ -2288,7 +2429,7 @@ export default function CoachRevenuePage() {
                                         <span>Previous</span>
                                     </button>
 
-                                    <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--foreground)', padding: '0 8px' }}>
+                                    <span style={{ fontSize: '0.8rem', fontWeight: 650, color: 'var(--foreground)', padding: '0 8px', fontVariantNumeric: 'tabular-nums' }}>
                                         {transactionsPage} / {totalPages}
                                     </span>
 
@@ -2298,12 +2439,14 @@ export default function CoachRevenuePage() {
                                         onClick={() => setTransactionsPage(p => Math.min(totalPages, p + 1))}
                                         className="glass-button chat-press"
                                         style={{
+                                            height: 34,
                                             display: 'inline-flex',
                                             alignItems: 'center',
                                             gap: '4px',
-                                            padding: '6px 12px',
+                                            padding: '0 12px',
                                             fontSize: '0.8rem',
                                             fontWeight: 600,
+                                            borderRadius: '9px',
                                             cursor: transactionsPage === totalPages ? 'not-allowed' : 'pointer',
                                             opacity: transactionsPage === totalPages ? 0.4 : 1,
                                         }}
