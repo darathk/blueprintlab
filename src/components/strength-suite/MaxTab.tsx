@@ -65,11 +65,13 @@ export default function MaxTab() {
 
                 {/* Unit Switcher */}
                 <div
-                    className="mt-4 flex p-1"
+                    className="mt-4 flex p-1 rounded-full"
                     style={{
-                        borderRadius: '9999px',
-                        background: '#141418',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        background: 'rgba(10, 10, 16, 0.6)',
+                        backdropFilter: 'blur(12px)',
+                        WebkitBackdropFilter: 'blur(12px)',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255, 255, 255, 0.05)',
                     }}
                 >
                     <button
@@ -77,12 +79,13 @@ export default function MaxTab() {
                         onClick={() => setUnit('lbs')}
                         className="chat-press"
                         style={{
-                            padding: '6px 16px',
+                            padding: '6px 18px',
                             borderRadius: '9999px',
                             fontWeight: 700,
                             fontSize: '0.8rem',
                             background: unit === 'lbs' ? '#ffffff' : 'transparent',
                             color: unit === 'lbs' ? '#0a0a0a' : 'rgba(255, 255, 255, 0.6)',
+                            boxShadow: unit === 'lbs' ? '0 2px 8px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.8)' : 'none',
                             border: 'none',
                             cursor: 'pointer',
                             transition: 'all 0.15s ease',
@@ -95,12 +98,13 @@ export default function MaxTab() {
                         onClick={() => setUnit('kg')}
                         className="chat-press"
                         style={{
-                            padding: '6px 16px',
+                            padding: '6px 18px',
                             borderRadius: '9999px',
                             fontWeight: 700,
                             fontSize: '0.8rem',
                             background: unit === 'kg' ? '#ffffff' : 'transparent',
                             color: unit === 'kg' ? '#0a0a0a' : 'rgba(255, 255, 255, 0.6)',
+                            boxShadow: unit === 'kg' ? '0 2px 8px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.8)' : 'none',
                             border: 'none',
                             cursor: 'pointer',
                             transition: 'all 0.15s ease',
@@ -116,9 +120,12 @@ export default function MaxTab() {
                 className="w-full flex flex-col gap-6"
                 style={{
                     padding: '32px',
-                    borderRadius: '20px',
-                    background: '#1c1d22',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    borderRadius: '24px',
+                    background: 'rgba(20, 20, 30, 0.65)',
+                    backdropFilter: 'blur(24px)',
+                    WebkitBackdropFilter: 'blur(24px)',
+                    border: '1px solid rgba(255, 255, 255, 0.09)',
+                    boxShadow: '0 0 0 0.5px rgba(255, 255, 255, 0.04), 0 16px 48px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
                 }}
             >
                 <h4
@@ -151,10 +158,13 @@ export default function MaxTab() {
                         <div
                             className="flex items-center justify-center px-4"
                             style={{
-                                height: '48px',
+                                height: '50px',
                                 borderRadius: '12px',
-                                background: '#141418',
+                                background: 'rgba(10, 10, 16, 0.55)',
+                                backdropFilter: 'blur(8px)',
+                                WebkitBackdropFilter: 'blur(8px)',
                                 border: '1px solid rgba(255, 255, 255, 0.1)',
+                                boxShadow: 'inset 0 2px 6px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.03)',
                             }}
                         >
                             <input
@@ -234,19 +244,39 @@ export default function MaxTab() {
                     <div
                         className="flex flex-col items-center justify-center p-8 rounded-2xl text-center relative overflow-hidden"
                         style={{
-                            background: '#1c1d22',
+                            background: 'rgba(20, 20, 30, 0.65)',
+                            backgroundImage: 'radial-gradient(ellipse at 50% 30%, rgba(239, 68, 68, 0.12) 0%, transparent 70%)',
+                            backdropFilter: 'blur(24px)',
+                            WebkitBackdropFilter: 'blur(24px)',
                             border: '1px solid rgba(239, 68, 68, 0.3)',
                             borderTop: '4px solid #ef4444',
+                            boxShadow: '0 0 0 0.5px rgba(255, 255, 255, 0.04), 0 16px 48px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 24px rgba(239, 68, 68, 0.15)',
                         }}
                     >
-                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.08em', textShadow: '0 0 10px rgba(239, 68, 68, 0.3)' }}>
                             Estimated 1-Rep Max ({FORMULAS.find((f) => f.id === formula)?.label})
                         </span>
                         <div className="flex items-baseline justify-center gap-2 mt-2">
-                            <span style={{ fontSize: '3.75rem', fontWeight: 900, color: '#ffffff', lineHeight: 1, letterSpacing: '-0.03em' }}>
+                            <span
+                                style={{
+                                    fontSize: '4rem',
+                                    fontWeight: 900,
+                                    color: '#ef4444',
+                                    lineHeight: 1,
+                                    letterSpacing: '-0.02em',
+                                    textShadow: '0 0 32px rgba(239, 68, 68, 0.4), 0 0 60px rgba(239, 68, 68, 0.15)',
+                                }}
+                            >
                                 {oneRepMax}
                             </span>
-                            <span style={{ fontSize: '1.5rem', fontWeight: 800, color: '#ef4444' }}>
+                            <span
+                                style={{
+                                    fontSize: '1.5rem',
+                                    fontWeight: 800,
+                                    color: '#ef4444',
+                                    textShadow: '0 0 20px rgba(239, 68, 68, 0.4)',
+                                }}
+                            >
                                 {unit}
                             </span>
                         </div>
@@ -257,19 +287,22 @@ export default function MaxTab() {
 
                     {/* All Formula Comparison Pills */}
                     <div
-                        className="p-5 rounded-2xl"
+                        className="p-6 rounded-2xl"
                         style={{
-                            background: '#1c1d22',
-                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                            background: 'rgba(20, 20, 30, 0.65)',
+                            backdropFilter: 'blur(20px)',
+                            WebkitBackdropFilter: 'blur(20px)',
+                            border: '1px solid rgba(255, 255, 255, 0.09)',
+                            boxShadow: '0 0 0 0.5px rgba(255, 255, 255, 0.04), 0 12px 36px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
                         }}
                     >
-                        <div className="flex items-center gap-2 mb-3">
+                        <div className="flex items-center gap-2 mb-4">
                             <Layers size={16} className="text-cyan-400" />
-                            <h4 style={{ fontSize: '0.9rem', fontWeight: 800, color: '#ffffff' }}>
+                            <h4 style={{ fontSize: '0.95rem', fontWeight: 800, color: '#ffffff' }}>
                                 Formula Comparison
                             </h4>
                         </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
                             {allFormulasComparison.map((f) => {
                                 const isActive = f.id === formula;
                                 return (
@@ -279,8 +312,10 @@ export default function MaxTab() {
                                         onClick={() => setFormula(f.id)}
                                         className="chat-press flex flex-col items-center p-3 rounded-xl transition-all text-center cursor-pointer"
                                         style={{
-                                            background: isActive ? 'rgba(239, 68, 68, 0.15)' : '#141418',
+                                            background: isActive ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(220, 38, 38, 0.2) 100%)' : 'rgba(10, 10, 16, 0.55)',
+                                            backdropFilter: 'blur(8px)',
                                             border: isActive ? '1px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.08)',
+                                            boxShadow: isActive ? '0 0 16px rgba(239, 68, 68, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2)' : 'inset 0 1px 0 rgba(255, 255, 255, 0.04)',
                                         }}
                                     >
                                         <span style={{ fontSize: '0.75rem', fontWeight: 700, color: isActive ? '#ef4444' : 'rgba(255, 255, 255, 0.65)' }}>
@@ -299,8 +334,11 @@ export default function MaxTab() {
                     <div
                         className="p-6 rounded-2xl overflow-hidden"
                         style={{
-                            background: '#1c1d22',
-                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                            background: 'rgba(20, 20, 30, 0.65)',
+                            backdropFilter: 'blur(20px)',
+                            WebkitBackdropFilter: 'blur(20px)',
+                            border: '1px solid rgba(255, 255, 255, 0.09)',
+                            boxShadow: '0 0 0 0.5px rgba(255, 255, 255, 0.04), 0 12px 36px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
                         }}
                     >
                         <div className="flex items-center gap-2 mb-4">
@@ -334,7 +372,7 @@ export default function MaxTab() {
                                             <tr
                                                 key={pct}
                                                 style={{
-                                                    background: pct === 100 ? 'rgba(239, 68, 68, 0.08)' : 'rgba(255, 255, 255, 0.02)',
+                                                    background: pct === 100 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(255, 255, 255, 0.02)',
                                                     border: '1px solid rgba(255, 255, 255, 0.04)',
                                                 }}
                                             >

@@ -46,8 +46,11 @@ export default function StrengthSelect({
                     width: '100%',
                     height: '50px',
                     borderRadius: '12px',
-                    backgroundColor: '#141418',
-                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    background: 'rgba(10, 10, 16, 0.55)',
+                    backdropFilter: 'blur(8px)',
+                    WebkitBackdropFilter: 'blur(8px)',
+                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                    boxShadow: 'inset 0 2px 6px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.03)',
                     color: '#ffffff',
                     fontSize: '1rem',
                     fontWeight: 700,
@@ -61,15 +64,15 @@ export default function StrengthSelect({
                 }}
                 onFocus={(e) => {
                     e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.6)';
-                    e.currentTarget.style.boxShadow = '0 0 0 1px rgba(239, 68, 68, 0.4)';
+                    e.currentTarget.style.boxShadow = '0 0 0 1px rgba(239, 68, 68, 0.4), inset 0 2px 6px rgba(0, 0, 0, 0.4)';
                 }}
                 onBlur={(e) => {
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.12)';
-                    e.currentTarget.style.boxShadow = 'none';
+                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.1)';
+                    e.currentTarget.style.boxShadow = 'inset 0 2px 6px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.03)';
                 }}
             >
                 {placeholder && (
-                    <option value="" disabled className="bg-[#1a1a24] text-zinc-400">
+                    <option value="" disabled className="bg-[#151520] text-zinc-400">
                         {placeholder}
                     </option>
                 )}
@@ -77,7 +80,7 @@ export default function StrengthSelect({
                     <option
                         key={String(opt.value)}
                         value={opt.value}
-                        className="bg-[#1a1a24] text-white py-1"
+                        className="bg-[#151520] text-white py-1.5"
                     >
                         {opt.label}
                     </option>

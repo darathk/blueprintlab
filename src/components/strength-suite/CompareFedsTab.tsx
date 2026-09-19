@@ -30,11 +30,14 @@ export default function CompareFedsTab() {
 
             {/* Note banner exact to Screenshot 16 */}
             <div
-                className="flex items-start gap-3 p-4 rounded-xl"
+                className="flex items-start gap-3 p-4 rounded-2xl"
                 style={{
                     background: 'rgba(245, 158, 11, 0.08)',
+                    backdropFilter: 'blur(16px)',
+                    WebkitBackdropFilter: 'blur(16px)',
                     border: '1px solid rgba(245, 158, 11, 0.25)',
                     borderLeft: '4px solid #f59e0b',
+                    boxShadow: '0 0 20px rgba(245, 158, 11, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
                 }}
             >
                 <AlertCircle size={18} className="text-amber-400 mt-0.5 flex-shrink-0" />
@@ -46,13 +49,16 @@ export default function CompareFedsTab() {
 
             {/* Select Federations to Compare Card */}
             <div
-                className="flex flex-col items-center gap-4 p-6 rounded-2xl"
+                className="flex flex-col items-center gap-4 p-6 sm:p-7 rounded-2xl"
                 style={{
-                    background: '#1c1d22',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    background: 'rgba(20, 20, 30, 0.65)',
+                    backdropFilter: 'blur(24px)',
+                    WebkitBackdropFilter: 'blur(24px)',
+                    border: '1px solid rgba(255, 255, 255, 0.09)',
+                    boxShadow: '0 0 0 0.5px rgba(255, 255, 255, 0.04), 0 16px 48px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
                 }}
             >
-                <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff' }}>
+                <h4 style={{ fontSize: '1.15rem', fontWeight: 800, color: '#ffffff' }}>
                     Select Federations to Compare
                 </h4>
 
@@ -64,8 +70,9 @@ export default function CompareFedsTab() {
                         className="chat-press"
                         style={{
                             padding: '6px 14px',
-                            borderRadius: '8px',
-                            background: '#141418',
+                            borderRadius: '10px',
+                            background: 'rgba(255, 255, 255, 0.06)',
+                            backdropFilter: 'blur(8px)',
                             border: '1px solid rgba(255, 255, 255, 0.12)',
                             color: '#ffffff',
                             fontSize: '0.78rem',
@@ -81,9 +88,10 @@ export default function CompareFedsTab() {
                         className="chat-press"
                         style={{
                             padding: '6px 14px',
-                            borderRadius: '8px',
-                            background: '#141418',
-                            border: '1px solid rgba(255, 255, 255, 0.12)',
+                            borderRadius: '10px',
+                            background: 'rgba(255, 255, 255, 0.04)',
+                            backdropFilter: 'blur(8px)',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
                             color: 'rgba(255, 255, 255, 0.65)',
                             fontSize: '0.78rem',
                             fontWeight: 700,
@@ -105,8 +113,10 @@ export default function CompareFedsTab() {
                                 onClick={() => toggleFed(fed.id)}
                                 className="chat-press flex items-center gap-2 px-3 py-2 rounded-xl transition-all cursor-pointer"
                                 style={{
-                                    background: isSelected ? 'rgba(239, 68, 68, 0.12)' : '#141418',
-                                    border: isSelected ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)',
+                                    background: isSelected ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(220, 38, 38, 0.15) 100%)' : 'rgba(10, 10, 16, 0.55)',
+                                    backdropFilter: 'blur(8px)',
+                                    border: isSelected ? '1px solid rgba(239, 68, 68, 0.5)' : '1px solid rgba(255, 255, 255, 0.08)',
+                                    boxShadow: isSelected ? '0 0 14px rgba(239, 68, 68, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.1)' : 'none',
                                 }}
                             >
                                 <div
@@ -114,7 +124,7 @@ export default function CompareFedsTab() {
                                         width: '18px',
                                         height: '18px',
                                         borderRadius: '4px',
-                                        background: isSelected ? '#ef4444' : 'transparent',
+                                        background: isSelected ? '#ef4444' : 'rgba(255, 255, 255, 0.04)',
                                         border: isSelected ? '1px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.3)',
                                         display: 'flex',
                                         alignItems: 'center',
@@ -143,7 +153,11 @@ export default function CompareFedsTab() {
             {visibleFeds.length === 0 ? (
                 <div
                     className="p-12 text-center rounded-2xl"
-                    style={{ background: '#1c1d22', border: '1px solid rgba(255, 255, 255, 0.08)' }}
+                    style={{
+                        background: 'rgba(20, 20, 30, 0.65)',
+                        backdropFilter: 'blur(20px)',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                    }}
                 >
                     <p style={{ color: 'rgba(255, 255, 255, 0.65)', fontSize: '0.9rem' }}>
                         No federations selected. Please select at least one federation above to compare rules.
@@ -153,19 +167,23 @@ export default function CompareFedsTab() {
                 <div
                     className="rounded-2xl overflow-hidden"
                     style={{
-                        background: '#1c1d22',
-                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                        background: 'rgba(20, 20, 30, 0.65)',
+                        backdropFilter: 'blur(24px)',
+                        WebkitBackdropFilter: 'blur(24px)',
+                        border: '1px solid rgba(255, 255, 255, 0.09)',
+                        boxShadow: '0 0 0 0.5px rgba(255, 255, 255, 0.04), 0 16px 48px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
                     }}
                 >
                     <div className="overflow-x-auto">
                         <table className="w-full text-left" style={{ borderCollapse: 'collapse' }}>
                             <thead>
-                                <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.12)' }}>
+                                <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
                                     <th
                                         style={{
                                             padding: '16px',
                                             minWidth: '200px',
-                                            background: '#18181e',
+                                            background: 'rgba(16, 16, 24, 0.95)',
+                                            backdropFilter: 'blur(12px)',
                                             position: 'sticky',
                                             left: 0,
                                             zIndex: 2,
@@ -221,7 +239,8 @@ export default function CompareFedsTab() {
                                                     position: 'sticky',
                                                     left: 0,
                                                     zIndex: 1,
-                                                    background: '#18181e',
+                                                    background: 'rgba(16, 16, 24, 0.95)',
+                                                    backdropFilter: 'blur(12px)',
                                                     borderRight: '1px solid rgba(255, 255, 255, 0.08)',
                                                 }}
                                             >

@@ -73,8 +73,11 @@ export default function RpeTab({ onSendToBarbell }: RpeTabProps) {
                             display: 'inline-flex',
                             padding: '4px',
                             borderRadius: '9999px',
-                            background: '#141418',
-                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            background: 'rgba(10, 10, 16, 0.6)',
+                            backdropFilter: 'blur(12px)',
+                            WebkitBackdropFilter: 'blur(12px)',
+                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                            boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255, 255, 255, 0.05)',
                         }}
                     >
                         <button
@@ -86,9 +89,10 @@ export default function RpeTab({ onSendToBarbell }: RpeTabProps) {
                                 borderRadius: '9999px',
                                 fontWeight: 700,
                                 fontSize: '0.8rem',
-                                border: mode === 'rpe' ? '1px solid rgba(255, 255, 255, 0.2)' : '1px solid transparent',
-                                background: mode === 'rpe' ? '#ef4444' : 'transparent',
+                                border: mode === 'rpe' ? '1px solid rgba(255, 255, 255, 0.25)' : '1px solid transparent',
+                                background: mode === 'rpe' ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : 'transparent',
                                 color: mode === 'rpe' ? '#ffffff' : 'rgba(255, 255, 255, 0.6)',
+                                boxShadow: mode === 'rpe' ? '0 0 14px rgba(239, 68, 68, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)' : 'none',
                                 cursor: 'pointer',
                                 transition: 'all 0.15s ease',
                             }}
@@ -104,9 +108,10 @@ export default function RpeTab({ onSendToBarbell }: RpeTabProps) {
                                 borderRadius: '9999px',
                                 fontWeight: 700,
                                 fontSize: '0.8rem',
-                                border: mode === 'rir' ? '1px solid rgba(255, 255, 255, 0.2)' : '1px solid transparent',
-                                background: mode === 'rir' ? '#ef4444' : 'transparent',
+                                border: mode === 'rir' ? '1px solid rgba(255, 255, 255, 0.25)' : '1px solid transparent',
+                                background: mode === 'rir' ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : 'transparent',
                                 color: mode === 'rir' ? '#ffffff' : 'rgba(255, 255, 255, 0.6)',
+                                boxShadow: mode === 'rir' ? '0 0 14px rgba(239, 68, 68, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)' : 'none',
                                 cursor: 'pointer',
                                 transition: 'all 0.15s ease',
                             }}
@@ -120,8 +125,11 @@ export default function RpeTab({ onSendToBarbell }: RpeTabProps) {
                             display: 'inline-flex',
                             padding: '4px',
                             borderRadius: '9999px',
-                            background: '#141418',
-                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                            background: 'rgba(10, 10, 16, 0.6)',
+                            backdropFilter: 'blur(12px)',
+                            WebkitBackdropFilter: 'blur(12px)',
+                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                            boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255, 255, 255, 0.05)',
                         }}
                     >
                         <button
@@ -135,6 +143,7 @@ export default function RpeTab({ onSendToBarbell }: RpeTabProps) {
                                 fontSize: '0.8rem',
                                 background: unit === 'lbs' ? '#ffffff' : 'transparent',
                                 color: unit === 'lbs' ? '#0a0a0a' : 'rgba(255, 255, 255, 0.6)',
+                                boxShadow: unit === 'lbs' ? '0 2px 8px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.8)' : 'none',
                                 border: 'none',
                                 cursor: 'pointer',
                                 transition: 'all 0.15s ease',
@@ -153,6 +162,7 @@ export default function RpeTab({ onSendToBarbell }: RpeTabProps) {
                                 fontSize: '0.8rem',
                                 background: unit === 'kg' ? '#ffffff' : 'transparent',
                                 color: unit === 'kg' ? '#0a0a0a' : 'rgba(255, 255, 255, 0.6)',
+                                boxShadow: unit === 'kg' ? '0 2px 8px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.8)' : 'none',
                                 border: 'none',
                                 cursor: 'pointer',
                                 transition: 'all 0.15s ease',
@@ -169,9 +179,12 @@ export default function RpeTab({ onSendToBarbell }: RpeTabProps) {
                 className="w-full flex flex-col gap-6"
                 style={{
                     padding: '32px',
-                    borderRadius: '20px',
-                    background: '#1c1d22',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    borderRadius: '24px',
+                    background: 'rgba(20, 20, 30, 0.65)',
+                    backdropFilter: 'blur(24px)',
+                    WebkitBackdropFilter: 'blur(24px)',
+                    border: '1px solid rgba(255, 255, 255, 0.09)',
+                    boxShadow: '0 0 0 0.5px rgba(255, 255, 255, 0.04), 0 16px 48px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
                 }}
             >
                 {/* 1. LAST SET SECTION */}
@@ -206,10 +219,13 @@ export default function RpeTab({ onSendToBarbell }: RpeTabProps) {
                             <div
                                 className="flex items-center justify-center px-4"
                                 style={{
-                                    height: '48px',
+                                    height: '50px',
                                     borderRadius: '12px',
-                                    background: '#141418',
+                                    background: 'rgba(10, 10, 16, 0.55)',
+                                    backdropFilter: 'blur(8px)',
+                                    WebkitBackdropFilter: 'blur(8px)',
                                     border: '1px solid rgba(255, 255, 255, 0.1)',
+                                    boxShadow: 'inset 0 2px 6px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.03)',
                                 }}
                             >
                                 <input
@@ -351,22 +367,35 @@ export default function RpeTab({ onSendToBarbell }: RpeTabProps) {
             {/* 3. CALCULATION RESULT CARD */}
             {calculation.targetWeight > 0 && (
                 <div
-                    className="w-full flex flex-col sm:flex-row items-center justify-between gap-6 p-6 rounded-2xl"
+                    className="w-full flex flex-col sm:flex-row items-center justify-between gap-6 p-7 rounded-2xl relative overflow-hidden"
                     style={{
-                        background: '#1c1d22',
+                        background: 'rgba(20, 20, 30, 0.65)',
+                        backgroundImage: 'radial-gradient(ellipse at 20% 50%, rgba(239, 68, 68, 0.08) 0%, transparent 60%)',
+                        backdropFilter: 'blur(24px)',
+                        WebkitBackdropFilter: 'blur(24px)',
                         border: '1px solid rgba(239, 68, 68, 0.3)',
                         borderLeft: '4px solid #ef4444',
+                        boxShadow: '0 0 0 0.5px rgba(255, 255, 255, 0.04), 0 16px 48px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 24px rgba(239, 68, 68, 0.12)',
                     }}
                 >
                     <div className="flex flex-col text-center sm:text-left">
-                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.06em', textShadow: '0 0 10px rgba(239, 68, 68, 0.3)' }}>
                             Recommended Target Weight
                         </span>
                         <div className="flex items-baseline justify-center sm:justify-start gap-2 mt-1">
-                            <span style={{ fontSize: '3rem', fontWeight: 900, color: '#ffffff', lineHeight: 1 }}>
+                            <span
+                                style={{
+                                    fontSize: '3.25rem',
+                                    fontWeight: 900,
+                                    color: '#ffffff',
+                                    lineHeight: 1,
+                                    letterSpacing: '-0.02em',
+                                    textShadow: '0 0 24px rgba(239, 68, 68, 0.3)',
+                                }}
+                            >
                                 {calculation.targetWeight}
                             </span>
-                            <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ef4444' }}>
+                            <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ef4444', textShadow: '0 0 16px rgba(239, 68, 68, 0.4)' }}>
                                 {unit}
                             </span>
                             <span style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.6)', marginLeft: '6px' }}>
@@ -392,7 +421,13 @@ export default function RpeTab({ onSendToBarbell }: RpeTabProps) {
 
                     <div className="flex flex-col sm:items-end gap-3">
                         {calculation.e1rm > 0 && (
-                            <div className="flex items-center gap-1.5 text-xs text-zinc-400">
+                            <div
+                                className="flex items-center gap-1.5 px-3 py-1 rounded-full text-xs text-zinc-300"
+                                style={{
+                                    background: 'rgba(255, 255, 255, 0.04)',
+                                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                                }}
+                            >
                                 <Sparkles size={13} className="text-amber-400" />
                                 <span>e1RM: <strong className="text-white">{calculation.e1rm} {unit}</strong></span>
                             </div>
@@ -403,10 +438,10 @@ export default function RpeTab({ onSendToBarbell }: RpeTabProps) {
                                 onClick={() => onSendToBarbell(roundedTarget, unit === 'lbs' ? 'lb' : 'kg')}
                                 className="chat-press flex items-center gap-2 px-5 py-3 rounded-xl font-bold text-sm cursor-pointer"
                                 style={{
-                                    background: '#ef4444',
+                                    background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
                                     color: '#ffffff',
-                                    border: 'none',
-                                    boxShadow: '0 4px 16px rgba(239, 68, 68, 0.4)',
+                                    border: '1px solid rgba(255, 255, 255, 0.25)',
+                                    boxShadow: '0 0 18px rgba(239, 68, 68, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.25)',
                                     whiteSpace: 'nowrap',
                                 }}
                             >

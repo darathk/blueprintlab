@@ -50,9 +50,11 @@ export default function StrengthSuite({
                 <div
                     className="inline-flex items-center gap-1.5 p-1.5 rounded-2xl overflow-x-auto no-scrollbar max-w-full"
                     style={{
-                        background: '#222328',
+                        background: 'rgba(20, 20, 30, 0.65)',
+                        backdropFilter: 'blur(20px)',
+                        WebkitBackdropFilter: 'blur(20px)',
                         border: '1px solid rgba(255, 255, 255, 0.1)',
-                        boxShadow: '0 8px 30px rgba(0, 0, 0, 0.35)',
+                        boxShadow: '0 0 0 0.5px rgba(255, 255, 255, 0.04), 0 12px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.12)',
                     }}
                 >
                     {TABS.map((tab) => {
@@ -62,14 +64,14 @@ export default function StrengthSuite({
                                 key={tab.id}
                                 type="button"
                                 onClick={() => setActiveTab(tab.id)}
-                                className="chat-press flex items-center justify-center px-6 sm:px-7 py-2.5 rounded-xl transition-all cursor-pointer select-none whitespace-nowrap shrink-0"
+                                className="chat-press flex items-center justify-center px-6 sm:px-7 py-2.5 rounded-xl transition-all cursor-pointer select-none whitespace-nowrap shrink-0 hover:text-white"
                                 style={{
-                                    background: isActive ? '#ef4444' : 'transparent',
-                                    color: isActive ? '#ffffff' : 'rgba(255, 255, 255, 0.75)',
+                                    background: isActive ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : 'transparent',
+                                    color: isActive ? '#ffffff' : 'rgba(255, 255, 255, 0.7)',
                                     fontWeight: isActive ? 800 : 700,
                                     fontSize: '0.9rem',
-                                    border: isActive ? '1px solid rgba(255, 255, 255, 0.2)' : '1px solid transparent',
-                                    boxShadow: isActive ? '0 2px 14px rgba(239, 68, 68, 0.45)' : 'none',
+                                    border: isActive ? '1px solid rgba(255, 255, 255, 0.25)' : '1px solid transparent',
+                                    boxShadow: isActive ? '0 0 20px rgba(239, 68, 68, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.25)' : 'none',
                                 }}
                             >
                                 {tab.label}
@@ -85,8 +87,11 @@ export default function StrengthSuite({
                         onClick={onClose}
                         className="chat-press absolute right-0 sm:right-4 flex items-center justify-center w-10 h-10 rounded-full"
                         style={{
-                            background: 'rgba(255, 255, 255, 0.08)',
+                            background: 'rgba(255, 255, 255, 0.06)',
+                            backdropFilter: 'blur(12px)',
+                            WebkitBackdropFilter: 'blur(12px)',
                             border: '1px solid rgba(255, 255, 255, 0.12)',
+                            boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.1)',
                             color: '#ffffff',
                             cursor: 'pointer',
                         }}
