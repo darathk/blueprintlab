@@ -11,7 +11,8 @@ import {
     ClipboardList, 
     Medal, 
     Sparkles,
-    Video 
+    Video,
+    Dumbbell
 } from 'lucide-react';
 
 export default function TopNavigation({ 
@@ -63,7 +64,10 @@ export default function TopNavigation({
         return false;
     };
 
-    const isMeetsActive = pathname.startsWith('/dashboard/meet-day') || pathname.startsWith('/dashboard/meet-data');
+    const isMeetsActive = 
+        pathname.startsWith('/dashboard/meet-day') || 
+        pathname.startsWith('/dashboard/meet-data') ||
+        pathname.startsWith('/dashboard/plate-loader');
     const isCommunityActive = 
         pathname.startsWith('/dashboard/leaderboard') || 
         pathname.startsWith('/dashboard/highlights') ||
@@ -76,6 +80,13 @@ export default function TopNavigation({
     ];
 
     const meetsItems = [
+        {
+            href: '/dashboard/plate-loader',
+            label: 'Plate Loader',
+            description: 'Barbell loading, RPE & points suite',
+            icon: <Dumbbell size={16} className="text-red-400" />,
+            active: pathname.startsWith('/dashboard/plate-loader')
+        },
         {
             href: '/dashboard/meet-day',
             label: 'Meet Day',

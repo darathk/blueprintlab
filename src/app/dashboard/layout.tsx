@@ -29,6 +29,7 @@ export default async function DashboardLayout({
     const coachNavItems: NavItem[] = [
         { label: 'Home', href: '/dashboard', icon: <Home size={26} /> },
         ...(selfAthleteId ? [{ label: 'Workout Log', href: `/athlete/${selfAthleteId}/dashboard`, icon: <Dumbbell size={26} /> }] : []),
+        { label: 'Plate Loader', href: '/dashboard/plate-loader', icon: <Dumbbell size={26} /> },
         { label: 'Messages', href: '/dashboard/messages', icon: <MessageSquare size={26} />, unreadCount },
         { label: 'Tutorials', href: '/dashboard/tutorials', icon: <Video size={26} /> },
         { label: 'Revenue', href: '/dashboard/revenue', icon: <DollarSign size={26} /> },

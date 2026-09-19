@@ -6,7 +6,7 @@ import Link from 'next/link';
 import AthleteNav from '@/components/athlete/AthleteNav';
 import MobileBottomNav, { NavItem } from '@/components/navigation/MobileBottomNav';
 import AppSetupBubble from '@/components/notifications/AppSetupBubble';
-import { LayoutDashboard, MessageSquare, Medal, Target, Settings, Search, Video, Zap } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, Medal, Target, Settings, Search, Video, Zap, Dumbbell } from 'lucide-react';
 import { MASTER_COACH_ID, SELF_ATHLETE_ID, SELF_COACH_EMAILS } from '@/lib/auth-cache';
 
 export default async function AthletePortalLayout({
@@ -74,6 +74,7 @@ export default async function AthletePortalLayout({
     const athleteNavItems: NavItem[] = [
         { label: 'Dashboard', href: `/athlete/${id}/dashboard`, icon: <LayoutDashboard size={26} /> },
         ...(canSwitchToCoach ? [{ label: 'Coach Mode', href: '/dashboard', icon: <Zap size={26} /> }] : []),
+        { label: 'Plate Loader', href: `/athlete/${id}/plate-loader`, icon: <Dumbbell size={26} /> },
         { label: 'Messages', href: `/athlete/${id}/chat`, icon: <MessageSquare size={26} />, unreadCount },
         { label: 'Tutorials', href: `/athlete/${id}/tutorials`, icon: <Video size={26} /> },
         { label: 'Board', href: `/athlete/${id}/leaderboard`, icon: <Medal size={26} /> },

@@ -139,6 +139,7 @@ export default function MobileBottomNav({ items, children, className, userId }: 
                             const active = isActive(item.href);
                             const isWorkout = item.label === 'Workout Log';
                             const isCoach = item.label === 'Coach Mode';
+                            const isPlateLoader = item.label === 'Plate Loader';
 
                             let bg = active ? 'rgba(125, 135, 210, 0.18)' : 'rgba(255, 255, 255, 0.04)';
                             let border = active ? '1px solid rgba(125, 135, 210, 0.38)' : '1px solid rgba(255, 255, 255, 0.07)';
@@ -155,6 +156,11 @@ export default function MobileBottomNav({ items, children, className, userId }: 
                                 border = '1px solid rgba(6, 182, 212, 0.42)';
                                 color = '#38bdf8';
                                 glow = '0 0 14px rgba(6, 182, 212, 0.22)';
+                            } else if (isPlateLoader) {
+                                bg = active ? 'rgba(239, 68, 68, 0.22)' : 'rgba(239, 68, 68, 0.08)';
+                                border = active ? '1px solid rgba(239, 68, 68, 0.45)' : '1px solid rgba(239, 68, 68, 0.2)';
+                                color = '#f87171';
+                                glow = active ? '0 0 14px rgba(239, 68, 68, 0.25)' : 'none';
                             }
 
                             return (
@@ -194,7 +200,7 @@ export default function MobileBottomNav({ items, children, className, userId }: 
                                         justifyContent: 'center',
                                         width: 20,
                                         height: 20,
-                                        color: isWorkout ? '#c084fc' : (isCoach ? '#38bdf8' : (active ? 'var(--primary)' : 'rgba(255, 255, 255, 0.65)')),
+                                        color: isWorkout ? '#c084fc' : (isCoach ? '#38bdf8' : (isPlateLoader ? '#ef4444' : (active ? 'var(--primary)' : 'rgba(255, 255, 255, 0.65)'))),
                                         flexShrink: 0,
                                     }}>
                                         {React.isValidElement(item.icon) 

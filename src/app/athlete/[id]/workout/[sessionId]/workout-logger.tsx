@@ -11,6 +11,7 @@ import WeightInput from '@/components/athlete/WeightInput';
 
 const CelebrationScreen = dynamic(() => import('@/components/athlete/CelebrationScreen'), { ssr: false });
 const PlannedTopSetInput = dynamic(() => import('@/components/athlete/PlannedTopSetInput'), { ssr: false });
+const StrengthSuiteModal = dynamic(() => import('@/components/strength-suite/StrengthSuiteModal'), { ssr: false });
 
 // Category-based colors for exercise names
 const CATEGORY_COLORS = {
@@ -72,6 +73,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
     
     const [unit, setUnit] = useState<'kg' | 'lbs'>('lbs');
     const [plannedTopSets, setPlannedTopSets] = useState<Record<string, any>>({});
+    const [showSuiteModal, setShowSuiteModal] = useState(false);
 
     const fetchPlannedTopSets = useCallback(async () => {
         if (!athleteId || !sessionId) return;
@@ -441,7 +443,32 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                     alignItems: 'center'
                 }}>
                     <h2 style={{ fontSize: '1.2rem', margin: 0, fontWeight: 700, letterSpacing: '-0.02em', color: 'var(--foreground)' }}>Session {dayNum}</h2>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        {/* Plate Loader & Calculators Shortcut */}
+                        <button
+                            type="button"
+                            onClick={() => setShowSuiteModal(true)}
+                            title="Open Plate Loader & Calculators"
+                            className="chat-press"
+                            style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '5px',
+                                padding: '4px 10px',
+                                borderRadius: '16px',
+                                background: 'rgba(239, 68, 68, 0.12)',
+                                border: '1px solid rgba(239, 68, 68, 0.28)',
+                                color: '#f87171',
+                                fontSize: '11px',
+                                fontWeight: 700,
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease',
+                            }}
+                        >
+                            <span>🏋️</span>
+                            <span className="hidden sm:inline">Calculators</span>
+                        </button>
+
                         {/* Unit toggle */}
                         <div style={{
                             display: 'flex',
@@ -1138,6 +1165,13 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                     }}
                 />
             )}
+
+            {/* Strength Suite / Plate Loader Modal */}
+            <StrengthSuiteModal
+                isOpen={showSuiteModal}
+                onClose={() => setShowSuiteModal(false)}
+                initialUnit={unit === 'lbs' ? 'lb' : 'kg'}
+            />
         </div>
     );
 }

@@ -181,3 +181,150 @@ export function solveForRequiredTotal(
     // If it reaches maxIterations, return best guess
     return midTotal;
 }
+
+/**
+ * calculateWilks2020
+ * Uses the updated 2020 Wilks formula coefficients.
+ */
+export function calculateWilks2020(totalKg: number, bwKg: number, isMale: boolean): number {
+    if (bwKg <= 0 || totalKg <= 0) return 0;
+
+    const x = bwKg;
+    const x2 = Math.pow(x, 2);
+    const x3 = Math.pow(x, 3);
+    const x4 = Math.pow(x, 4);
+    const x5 = Math.pow(x, 5);
+
+    let a: number, b: number, c: number, d: number, e: number, f: number;
+
+    if (isMale) {
+        a = 47.4617885411949;
+        b = 8.47252971288316;
+        c = 0.0736941034626354;
+        d = -0.00139583381091811;
+        e = 7.07665973070743e-06;
+        f = -1.20804336482357e-08;
+    } else {
+        a = -125.425539779;
+        b = 13.71219419406;
+        c = -0.03307250481;
+        d = -0.00105040005;
+        e = 9.38773884e-06;
+        f = -2.333461388e-08;
+    }
+
+    const denominator = a + (b * x) + (c * x2) + (d * x3) + (e * x4) + (f * x5);
+    if (denominator <= 0) return 0;
+
+    const coeff = 600 / denominator;
+    return parseFloat((totalKg * coeff).toFixed(2));
+}
+
+export type OneRepMaxFormula = 'brzycki' | 'epley' | 'lander' | 'lombardi' | 'mayhew' | 'oconner' | 'wathan';
+
+/**
+ * calculate1RM
+ * Computes 1RM from weight and reps using the specified formula.
+ */
+export function calculate1RM(weight: number, reps: number, formula: OneRepMaxFormula = 'brzycki'): number {
+    if (weight <= 0 || reps <= 0) return 0;
+    if (reps === 1) return weight;
+
+    let max = 0;
+    switch (formula) {
+        case 'brzycki':
+            max = reps < 37 ? weight * (36 / (37 - reps)) : weight * 1.5;
+            break;
+        case 'epley':
+            max = weight * (1 + reps / 30);
+            break;
+        case 'lander':
+            max = (100 * weight) / (101.3 - 2.67123 * reps);
+            break;
+        case 'lombardi':
+            max = weight * Math.pow(reps, 0.10);
+            break;
+        case 'mayhew':
+            max = (100 * weight) / (52.2 + 41.9 * Math.exp(-0.055 * reps));
+            break;
+        case 'oconner':
+            max = weight * (1 + 0.025 * reps);
+            break;
+        case 'wathan':
+            max = (100 * weight) / (48.8 + 53.8 * Math.exp(-0.075 * reps));
+            break;
+        default:
+            max = weight * (1 + reps / 30);
+    }
+    return Math.max(weight, parseFloat(max.toFixed(2)));
+}
+
+/**
+ * RTS RPE Table (Mike Tuchscherer)
+ * Rows: RPE 10 down to 6.5 in 0.5 increments.
+ * Cols: Reps 1 to 10.
+ */
+export const RTS_RPE_TABLE: Record<number, number[]> = {
+    10.0: [1.000, 0.955, 0.922, 0.892, 0.863, 0.837, 0.811, 0.786, 0.762, 0.739],
+    9.5:  [0.978, 0.939, 0.907, 0.878, 0.850, 0.824, 0.799, 0.774, 0.751, 0.723],
+    9.0:  [0.955, 0.922, 0.892, 0.863, 0.837, 0.811, 0.786, 0.762, 0.739, 0.707],
+    8.5:  [0.939, 0.907, 0.878, 0.850, 0.824, 0.799, 0.774, 0.751, 0.723, 0.694],
+    8.0:  [0.922, 0.892, 0.863, 0.837, 0.811, 0.786, 0.762, 0.739, 0.707, 0.680],
+    7.5:  [0.907, 0.878, 0.850, 0.824, 0.799, 0.774, 0.751, 0.723, 0.694, 0.667],
+    7.0:  [0.892, 0.863, 0.837, 0.811, 0.786, 0.762, 0.739, 0.707, 0.680, 0.653],
+    6.5:  [0.878, 0.850, 0.824, 0.799, 0.774, 0.751, 0.723, 0.694, 0.667, 0.640],
+    6.0:  [0.863, 0.837, 0.811, 0.786, 0.762, 0.739, 0.707, 0.680, 0.653, 0.626],
+};
+
+/**
+ * Get the percentage of 1RM corresponding to a given (reps, rpe).
+ * Extrapolates gracefully for RPE < 6.0.
+ */
+export function getRpePercentage(reps: number, rpe: number): number {
+    const clampedReps = Math.min(Math.max(Math.round(reps), 1), 10);
+    const col = clampedReps - 1;
+
+    // Direct lookup if >= 6.0 and in table
+    const roundedRpe = Math.round(rpe * 2) / 2;
+    if (RTS_RPE_TABLE[roundedRpe]) {
+        return RTS_RPE_TABLE[roundedRpe][col];
+    }
+
+    // Extrapolate below 6.0: subtract approx 2.5% per 0.5 RPE decrement
+    const base6 = RTS_RPE_TABLE[6.0][col];
+    const stepsBelow = (6.0 - rpe) * 2;
+    const extrapolated = base6 - (stepsBelow * 0.026);
+    return Math.max(0.2, extrapolated);
+}
+
+/**
+ * Estimate 1RM from a completed set
+ */
+export function estimate1RMFromRpe(weight: number, reps: number, rpe: number): number {
+    if (weight <= 0 || reps <= 0) return 0;
+    const pct = getRpePercentage(reps, rpe);
+    if (pct <= 0) return weight;
+    return weight / pct;
+}
+
+/**
+ * Project target weight for next set
+ */
+export function calculateTargetWeightFromRpe(
+    lastWeight: number,
+    lastReps: number,
+    lastRpe: number,
+    targetReps: number,
+    targetRpe: number
+): { e1rm: number; targetWeight: number; targetPct: number } {
+    const e1rm = estimate1RMFromRpe(lastWeight, lastReps, lastRpe);
+    if (e1rm <= 0) return { e1rm: 0, targetWeight: 0, targetPct: 0 };
+    const targetPct = getRpePercentage(targetReps, targetRpe);
+    const targetWeight = e1rm * targetPct;
+    return {
+        e1rm: parseFloat(e1rm.toFixed(2)),
+        targetWeight: parseFloat(targetWeight.toFixed(2)),
+        targetPct: parseFloat((targetPct * 100).toFixed(1)),
+    };
+}
+

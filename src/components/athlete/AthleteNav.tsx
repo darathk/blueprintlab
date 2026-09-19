@@ -41,6 +41,23 @@ export default function AthleteNav({ id, unreadCount, userId, canSwitchToCoach }
                     <span>Coach Mode</span>
                 </Link>
             )}
+            <Link prefetch={true} href={`/athlete/${id}/plate-loader`} style={{
+                fontSize: '0.9rem',
+                fontWeight: 600,
+                color: pathname === `/athlete/${id}/plate-loader` ? 'var(--primary)' : 'var(--secondary-foreground)',
+                textDecoration: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.5rem 1rem',
+                borderRadius: '12px',
+                border: '1px solid transparent',
+                background: pathname === `/athlete/${id}/plate-loader` ? 'rgba(125, 135, 210, 0.1)' : 'transparent',
+                transition: 'all 0.2s',
+            }}>
+                <span style={{ fontSize: '1.1rem' }}>🏋️</span>
+                <span className="hidden sm:inline">Plate Loader</span>
+            </Link>
             <Link prefetch={true} href={leaderboardPath} style={{
                 fontSize: '0.9rem',
                 fontWeight: 600,

@@ -49,3 +49,4 @@ next-env.d.ts
 data/
 _archive/
 .env*.local
+reference-screenshots/
