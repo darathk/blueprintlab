@@ -793,38 +793,41 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                 flexDirection: 'column',
                                 alignItems: 'center',
                                 gap: 4,
-                                minWidth: 44,
-                                padding: '8px 6px 6px',
-                                borderRadius: 14,
+                                minWidth: 46,
+                                padding: '9px 7px 7px',
+                                borderRadius: 16,
                                 cursor: 'pointer',
                                 transition: 'all 0.16s var(--ease-out)',
                                 background: isSelected
-                                    ? 'rgba(125, 135, 210, 0.25)'
+                                    ? 'linear-gradient(135deg, rgba(125, 135, 210, 0.32) 0%, rgba(168, 85, 247, 0.22) 100%)'
                                     : d.isToday
-                                        ? 'rgba(125, 135, 210, 0.12)'
-                                        : 'var(--glass-surface-2)',
+                                        ? 'rgba(125, 135, 210, 0.14)'
+                                        : 'rgba(255, 255, 255, 0.035)',
                                 border: isSelected
-                                    ? '1px solid rgba(125, 135, 210, 0.5)'
+                                    ? '1px solid rgba(125, 135, 210, 0.55)'
                                     : d.isToday
-                                        ? '1px solid rgba(125, 135, 210, 0.3)'
-                                        : '1px solid var(--glass-border)',
-                                boxShadow: isSelected ? '0 0 12px rgba(125, 135, 210, 0.3)' : 'none',
+                                        ? '1px solid rgba(125, 135, 210, 0.35)'
+                                        : '1px solid rgba(255, 255, 255, 0.08)',
+                                boxShadow: isSelected
+                                    ? '0 4px 16px rgba(125, 135, 210, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2)'
+                                    : 'none',
                             }}
                             className="chat-press"
                         >
                             <span style={{
-                                fontSize: '0.65rem',
+                                fontSize: '0.64rem',
                                 fontWeight: 700,
                                 textTransform: 'uppercase',
-                                letterSpacing: '0.05em',
+                                letterSpacing: '0.06em',
                                 color: isSelected ? 'white' : 'var(--secondary-foreground)',
                             }}>
                                 {SHORT_DAYS[d.date.getDay()]}
                             </span>
                             <span style={{
-                                fontSize: '1.05rem',
-                                fontWeight: 700,
+                                fontSize: '1.08rem',
+                                fontWeight: 800,
                                 color: isSelected ? 'white' : d.isToday ? 'var(--primary)' : 'var(--foreground)',
+                                lineHeight: 1.1,
                             }}>
                                 {d.date.getDate()}
                             </span>
@@ -853,10 +856,16 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
             `}</style>
 
             {/* ═══ VIEW MODE TOGGLE ═══ */}
-            <div style={{ padding: '0 16px 12px', display: 'flex', width: '100%' }}>
+            <div style={{ padding: '0 16px 14px', display: 'flex', width: '100%' }}>
                 <div style={{
-                    display: 'flex', width: '100%', background: 'var(--glass-surface-2)', borderRadius: 20,
-                    padding: 3, border: '1px solid var(--glass-border)',
+                    display: 'flex', width: '100%',
+                    background: 'rgba(14, 18, 28, 0.75)',
+                    backdropFilter: 'blur(16px)',
+                    WebkitBackdropFilter: 'blur(16px)',
+                    borderRadius: 22,
+                    padding: 4,
+                    border: '1px solid rgba(255, 255, 255, 0.09)',
+                    boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.4), 0 4px 14px rgba(0, 0, 0, 0.25)',
                 }}>
                     {([['date', 'Schedule'], ['blocks', 'All Blocks']] as const).map(([mode, label]) => (
                         <button
@@ -865,12 +874,18 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                             className="chat-press"
                             style={{
                                 flex: 1,
-                                padding: '7px 14px', border: viewMode === mode ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid transparent', cursor: 'pointer',
-                                fontSize: '0.82rem', fontWeight: 700, borderRadius: 16,
+                                padding: '8px 16px',
+                                border: viewMode === mode ? '1px solid rgba(125, 135, 210, 0.45)' : '1px solid transparent',
+                                cursor: 'pointer',
+                                fontSize: '0.84rem',
+                                fontWeight: 700,
+                                borderRadius: 18,
                                 transition: 'all 0.16s var(--ease-out)',
-                                background: viewMode === mode ? 'rgba(125, 135, 210, 0.2)' : 'transparent',
+                                background: viewMode === mode
+                                    ? 'linear-gradient(135deg, rgba(125, 135, 210, 0.28) 0%, rgba(168, 85, 247, 0.2) 100%)'
+                                    : 'transparent',
                                 color: viewMode === mode ? 'white' : 'var(--secondary-foreground)',
-                                boxShadow: viewMode === mode ? '0 0 10px rgba(125, 135, 210, 0.25)' : 'none',
+                                boxShadow: viewMode === mode ? '0 2px 10px rgba(125, 135, 210, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2)' : 'none',
                             }}
                         >
                             {label}
@@ -1261,17 +1276,20 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                 {/* Warmup Drills Display */}
                                                 {(session.warmupDrills || log?.warmupDrills) && (
                                                     <div style={{
-                                                        margin: '12px 16px',
-                                                        padding: '12px 16px',
-                                                        background: 'rgba(125, 135, 210, 0.08)',
-                                                        border: '1px solid rgba(125, 135, 210, 0.25)',
-                                                        borderRadius: 14,
+                                                        margin: '12px 14px',
+                                                        padding: '14px 18px',
+                                                        background: 'linear-gradient(135deg, rgba(125, 135, 210, 0.12) 0%, rgba(168, 85, 247, 0.06) 100%)',
+                                                        border: '1px solid rgba(125, 135, 210, 0.3)',
+                                                        borderRadius: 16,
+                                                        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
                                                     }}>
-                                                        <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--primary)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                            <Sparkles size={14} />
+                                                        <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#c4b5fd', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                            <div style={{ width: 26, height: 26, borderRadius: 8, background: 'rgba(125, 135, 210, 0.2)', border: '1px solid rgba(125, 135, 210, 0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
+                                                                <Sparkles size={14} />
+                                                            </div>
                                                             Warm-Up & Prep Drills
                                                         </div>
-                                                        <div style={{ fontSize: '0.88rem', color: 'var(--foreground)', whiteSpace: 'pre-wrap', lineHeight: '1.45' }}>
+                                                        <div style={{ fontSize: '0.88rem', color: 'var(--foreground)', whiteSpace: 'pre-wrap', lineHeight: '1.45', paddingLeft: 34 }}>
                                                             {linkify(session.warmupDrills || log?.warmupDrills)}
                                                         </div>
                                                     </div>
@@ -1346,7 +1364,26 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                     const isLocked = !isCoachView && !isReadinessExempt && !readySessions.has(sKey) && !isWarmup && !hasExistingLogData;
 
                                                     return (
-                                                        <div key={exIdx} className={shakeKey === exKey ? 'readiness-shake' : ''} style={{ background: 'transparent', borderBottom: '1px solid rgba(255, 255, 255, 0.06)', opacity: isLocked ? 0.5 : 1, transition: 'opacity 0.3s' }}>
+                                                        <div
+                                                            key={exIdx}
+                                                            className={shakeKey === exKey ? 'readiness-shake' : ''}
+                                                            style={{
+                                                                margin: '10px 14px',
+                                                                background: exOpen
+                                                                    ? 'linear-gradient(180deg, rgba(24, 29, 44, 0.85) 0%, rgba(15, 18, 28, 0.9) 100%)'
+                                                                    : 'linear-gradient(180deg, rgba(255, 255, 255, 0.035) 0%, rgba(255, 255, 255, 0.015) 100%)',
+                                                                border: exOpen
+                                                                    ? '1px solid rgba(125, 135, 210, 0.35)'
+                                                                    : '1px solid rgba(255, 255, 255, 0.07)',
+                                                                borderRadius: 16,
+                                                                overflow: 'hidden',
+                                                                opacity: isLocked ? 0.5 : 1,
+                                                                boxShadow: exOpen
+                                                                    ? '0 8px 24px -4px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
+                                                                    : '0 2px 8px rgba(0, 0, 0, 0.2)',
+                                                                transition: 'all 0.22s var(--ease-out)',
+                                                            }}
+                                                        >
                                                             <div 
                                                                 onClick={() => {
                                                                     if (isLocked) {
@@ -1356,26 +1393,45 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                     toggle(openExercises, exKey, setOpenExercises);
                                                                     if (!editState[sKey]) initEdit(sKey, exercises, log);
                                                                 }}
-                                                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 18px', background: exOpen ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.015)', cursor: 'pointer', borderTopLeftRadius: exIdx === 0 ? 8 : 0, borderTopRightRadius: exIdx === 0 ? 8 : 0, transition: 'background 0.16s ease' }}
+                                                                style={{
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'space-between',
+                                                                    padding: '14px 18px',
+                                                                    background: exOpen ? 'rgba(255, 255, 255, 0.03)' : 'transparent',
+                                                                    cursor: 'pointer',
+                                                                    userSelect: 'none',
+                                                                    borderBottom: exOpen ? '1px solid rgba(255, 255, 255, 0.07)' : 'none',
+                                                                    transition: 'background 0.16s ease'
+                                                                }}
                                                             >
                                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                                                                    <div style={{ width: 3, height: 20, borderRadius: 2, background: catColor }} />
-                                                                    <span style={{ fontSize: '1rem', color: '#fff', fontWeight: 600 }}>{exerciseData?.name || ex?.name}</span>
+                                                                    <div style={{
+                                                                        width: 4,
+                                                                        height: 22,
+                                                                        borderRadius: 2,
+                                                                        background: catColor,
+                                                                        boxShadow: `0 0 10px ${catColor}55`,
+                                                                    }} />
+                                                                    <span style={{ fontSize: '1rem', color: '#ffffff', fontWeight: 600, letterSpacing: '-0.01em' }}>
+                                                                        {exerciseData?.name || ex?.name}
+                                                                    </span>
                                                                     {(() => {
                                                                         const planned = plannedTopSets[sKey]?.[exerciseData?.name || ex?.name];
                                                                         if (!planned || (!planned.weight && !planned.reps)) return null;
                                                                         return (
                                                                             <span style={{
                                                                                 fontSize: '0.72rem',
-                                                                                padding: '2px 8px',
-                                                                                borderRadius: 6,
-                                                                                background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(99, 102, 241, 0.18))',
-                                                                                border: '1px solid rgba(56, 189, 248, 0.4)',
+                                                                                padding: '3px 10px',
+                                                                                borderRadius: 8,
+                                                                                background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(99, 102, 241, 0.2))',
+                                                                                border: '1px solid rgba(56, 189, 248, 0.45)',
                                                                                 color: '#38bdf8',
                                                                                 fontWeight: 600,
                                                                                 display: 'inline-flex',
                                                                                 alignItems: 'center',
-                                                                                gap: 4
+                                                                                gap: 5,
+                                                                                boxShadow: '0 2px 8px rgba(56, 189, 248, 0.2)'
                                                                             }}>
                                                                                 🎯 Planned: {planned.weight ? `${planned.weight} ${planned.unit || unit}` : ''}{planned.reps ? ` × ${planned.reps}` : ''}{planned.rpe ? ` @ ${planned.rpe}` : ''}
                                                                             </span>
@@ -1384,19 +1440,25 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                     {isLocked && <span style={{ fontSize: '0.8rem' }}>🔒</span>}
                                                                 </div>
                                                                 <div style={{
-                                                                    color: 'var(--secondary-foreground)',
-                                                                    transition: 'transform 0.2s ease',
+                                                                    width: 30,
+                                                                    height: 30,
+                                                                    borderRadius: 8,
+                                                                    background: exOpen ? 'rgba(125, 135, 210, 0.18)' : 'rgba(255, 255, 255, 0.04)',
+                                                                    border: exOpen ? '1px solid rgba(125, 135, 210, 0.35)' : '1px solid rgba(255, 255, 255, 0.07)',
+                                                                    color: exOpen ? 'var(--primary)' : 'var(--secondary-foreground)',
                                                                     display: 'flex',
                                                                     alignItems: 'center',
                                                                     justifyContent: 'center',
                                                                     transform: exOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                                                                    transition: 'all 0.2s var(--ease-out)',
+                                                                    flexShrink: 0
                                                                 }}>
-                                                                    <ChevronDown size={17} />
+                                                                    <ChevronDown size={16} strokeWidth={2.2} />
                                                                 </div>
                                                             </div>
 
                                                             {exOpen && (
-                                                                <div style={{ padding: '0 8px 16px 8px' }}>
+                                                                <div style={{ padding: '14px 16px 18px 16px' }}>
                                                                     {/* Planned top set banner */}
                                                                     {(() => {
                                                                         const planned = plannedTopSets[sKey]?.[exerciseData?.name || ex?.name];
@@ -1406,17 +1468,17 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                 display: 'flex',
                                                                                 alignItems: 'center',
                                                                                 justifyContent: 'space-between',
-                                                                                padding: '8px 12px',
-                                                                                marginBottom: 10,
-                                                                                marginTop: 6,
-                                                                                borderRadius: 8,
-                                                                                background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(99, 102, 241, 0.06))',
-                                                                                border: '1px solid rgba(56, 189, 248, 0.25)',
-                                                                                fontSize: '0.82rem',
+                                                                                padding: '10px 14px',
+                                                                                marginBottom: 12,
+                                                                                borderRadius: 12,
+                                                                                background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.12) 0%, rgba(99, 102, 241, 0.08) 100%)',
+                                                                                border: '1px solid rgba(56, 189, 248, 0.35)',
+                                                                                boxShadow: '0 4px 14px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+                                                                                fontSize: '0.84rem',
                                                                             }}>
                                                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#38bdf8', fontWeight: 600 }}>
                                                                                     <span>🎯 Planned Top Set:</span>
-                                                                                    <span style={{ color: 'var(--foreground)', fontWeight: 700 }}>
+                                                                                    <span style={{ color: '#ffffff', fontWeight: 700 }}>
                                                                                         {planned.weight ? `${planned.weight} ${planned.unit || unit}` : ''}{planned.reps ? ` × ${planned.reps}` : ''}{planned.rpe ? ` @ ${planned.rpe}` : ''}
                                                                                     </span>
                                                                                 </div>
@@ -1437,14 +1499,16 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                         triggerAutoSave(sKey, program.id);
                                                                                     }}
                                                                                     style={{
-                                                                                        padding: '3px 8px',
-                                                                                        fontSize: '0.72rem',
-                                                                                        borderRadius: 6,
-                                                                                        border: '1px solid rgba(56, 189, 248, 0.4)',
-                                                                                        background: 'rgba(56, 189, 248, 0.15)',
+                                                                                        padding: '5px 12px',
+                                                                                        fontSize: '0.74rem',
+                                                                                        borderRadius: 8,
+                                                                                        border: '1px solid rgba(56, 189, 248, 0.5)',
+                                                                                        background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(99, 102, 241, 0.2))',
                                                                                         color: '#38bdf8',
                                                                                         cursor: 'pointer',
-                                                                                        fontWeight: 600,
+                                                                                        fontWeight: 700,
+                                                                                        boxShadow: '0 2px 8px rgba(56, 189, 248, 0.25)',
+                                                                                        transition: 'all 0.18s ease'
                                                                                     }}
                                                                                 >
                                                                                     Fill Set 1
@@ -1453,8 +1517,8 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                         );
                                                                     })()}
 
-                                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, marginTop: 12, padding: '0 8px' }}>
-                                                                        <div style={{ fontSize: '0.85rem', color: '#818cf8', fontWeight: 500 }}>
+                                                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, marginTop: 4, padding: '0 2px' }}>
+                                                                        <div style={{ fontSize: '0.84rem', color: '#818cf8', fontWeight: 500 }}>
                                                                             <span style={{ color: 'var(--foreground)' }}>Session: </span>
                                                                             {(() => {
                                                                                 const prevForHeader = getPrevSets(exerciseData?.name || ex?.name, sKey);
@@ -1462,9 +1526,9 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                 return prevDateLabel ? `${prevDateLabel} - Prev` : 'New - Prev';
                                                                             })()}
                                                                         </div>
-                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', color: 'var(--foreground)', fontWeight: 500 }}>
+                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.84rem', color: 'var(--foreground)', fontWeight: 500 }}>
                                                                             <span>Sets:</span>
-                                                                            <div style={{ padding: '2px 8px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, background: 'rgba(255,255,255,0.03)' }}>
+                                                                            <div style={{ padding: '2px 8px', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 6, background: 'rgba(255,255,255,0.05)', fontWeight: 600, fontSize: '0.8rem' }}>
                                                                                 {sets.length}
                                                                             </div>
                                                                         </div>
@@ -1473,16 +1537,18 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                     {/* Coach's notes banner */}
                                                                     {(ex?.notes || exerciseData?.coachNotes) && (
                                                                         <div style={{
-                                                                            padding: '10px 14px',
-                                                                            marginBottom: 10,
-                                                                            borderRadius: 8,
-                                                                            background: 'rgba(99, 102, 241, 0.08)',
-                                                                            borderLeft: '3px solid #6366f1',
+                                                                            padding: '12px 14px',
+                                                                            marginBottom: 12,
+                                                                            borderRadius: 12,
+                                                                            background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(125, 135, 210, 0.06) 100%)',
+                                                                            border: '1px solid rgba(99, 102, 241, 0.3)',
+                                                                            borderLeft: '4px solid #6366f1',
                                                                             fontSize: '0.85rem',
                                                                             color: 'var(--foreground)',
-                                                                            lineHeight: 1.4
+                                                                            lineHeight: 1.4,
+                                                                            boxShadow: '0 2px 10px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
                                                                         }}>
-                                                                            <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#818cf8', marginBottom: 3 }}>
+                                                                            <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#818cf8', marginBottom: 4 }}>
                                                                                 Coach Notes
                                                                             </div>
                                                                             <div>{linkify(ex?.notes || exerciseData?.coachNotes)}</div>
@@ -1490,7 +1556,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                     )}
 
                                                                     {/* Athlete notes input */}
-                                                                    <div style={{ display: 'flex', padding: '0 0 8px 0', alignItems: 'flex-start' }}>
+                                                                    <div style={{ display: 'flex', padding: '0 0 12px 0', alignItems: 'flex-start' }}>
                                                                         <textarea
                                                                             value={exerciseData?.notes || ''}
                                                                             onChange={e => updateNotes(sKey, exIdx, e.target.value, program.id)}
@@ -1498,12 +1564,21 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                             onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
                                                                             placeholder="Add notes / feedback for this exercise..."
                                                                             style={{
-                                                                                flex: 1, minHeight: 48, padding: '8px 12px', border: '1px solid var(--card-border)',
-                                                                                borderRadius: 6, background: 'var(--background)', fontSize: '0.85rem',
-                                                                                color: 'var(--foreground)', resize: 'vertical', outlineColor: 'var(--primary)',
+                                                                                flex: 1, minHeight: 48, padding: '10px 14px',
+                                                                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                                                                borderRadius: 12,
+                                                                                background: 'rgba(0, 0, 0, 0.35)',
+                                                                                fontSize: '0.86rem',
+                                                                                color: 'var(--foreground)',
+                                                                                resize: 'vertical',
+                                                                                outline: 'none',
+                                                                                boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.4)',
+                                                                                transition: 'border-color 0.2s',
                                                                             }}
                                                                         />
                                                                     </div>
+
+                                                                    {/* Tab Switcher */}
                                                                     {(() => {
                                                                         const prevForHeader = getPrevSets(exerciseData?.name || ex?.name, sKey);
                                                                         const prevDateLabel = (() => { const raw = prevForHeader?.date; if (!raw) return null; const d = new Date(raw.slice(0, 10)); return isNaN(d.getTime()) ? null : d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); })();
@@ -1511,15 +1586,26 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                         const currentTab = activeTabs[exKey] || 'actual';
                                                                         
                                                                         return (
-                                                                            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                                                                            <div style={{
+                                                                                display: 'flex',
+                                                                                background: 'rgba(0, 0, 0, 0.35)',
+                                                                                border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                                                borderRadius: 14,
+                                                                                padding: 4,
+                                                                                gap: 4,
+                                                                                marginBottom: 14,
+                                                                                boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.4)'
+                                                                            }}>
                                                                                 <button
                                                                                     onClick={() => { if (hasPrev) setActiveTabs(prev => ({ ...prev, [exKey]: 'previous' })); }}
                                                                                     style={{
-                                                                                        flex: 1, padding: '8px 4px', borderRadius: '8px', border: '1px solid var(--card-border)',
-                                                                                        background: currentTab === 'previous' ? 'var(--primary)' : 'var(--card-bg)',
-                                                                                        color: currentTab === 'previous' ? '#fff' : (hasPrev ? 'var(--foreground)' : 'var(--secondary-foreground)'),
+                                                                                        flex: 1, padding: '8px 6px', borderRadius: 10, border: 'none',
+                                                                                        background: currentTab === 'previous' ? 'linear-gradient(135deg, rgba(125, 135, 210, 0.35) 0%, rgba(168, 85, 247, 0.25) 100%)' : 'transparent',
+                                                                                        color: currentTab === 'previous' ? '#ffffff' : (hasPrev ? 'var(--secondary-foreground)' : 'rgba(255, 255, 255, 0.25)'),
                                                                                         opacity: hasPrev ? 1 : 0.5, cursor: hasPrev ? 'pointer' : 'not-allowed',
-                                                                                        fontWeight: 600, fontSize: '0.8rem', transition: 'all 0.2s'
+                                                                                        fontWeight: currentTab === 'previous' ? 700 : 500, fontSize: '0.8rem',
+                                                                                        boxShadow: currentTab === 'previous' ? '0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15)' : 'none',
+                                                                                        transition: 'all 0.18s ease'
                                                                                     }}
                                                                                 >
                                                                                     {prevDateLabel ? `Prev: ${prevDateLabel}` : 'Previous'}
@@ -1527,10 +1613,12 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                 <button
                                                                                     onClick={() => setActiveTabs(prev => ({ ...prev, [exKey]: 'prescribed' }))}
                                                                                     style={{
-                                                                                        flex: 1, padding: '8px 4px', borderRadius: '8px', border: '1px solid var(--card-border)',
-                                                                                        background: currentTab === 'prescribed' ? 'var(--primary)' : 'var(--card-bg)',
-                                                                                        color: currentTab === 'prescribed' ? '#fff' : 'var(--foreground)',
-                                                                                        cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem', transition: 'all 0.2s'
+                                                                                        flex: 1, padding: '8px 6px', borderRadius: 10, border: 'none',
+                                                                                        background: currentTab === 'prescribed' ? 'linear-gradient(135deg, rgba(125, 135, 210, 0.35) 0%, rgba(168, 85, 247, 0.25) 100%)' : 'transparent',
+                                                                                        color: currentTab === 'prescribed' ? '#ffffff' : 'var(--secondary-foreground)',
+                                                                                        cursor: 'pointer', fontWeight: currentTab === 'prescribed' ? 700 : 500, fontSize: '0.8rem',
+                                                                                        boxShadow: currentTab === 'prescribed' ? '0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15)' : 'none',
+                                                                                        transition: 'all 0.18s ease'
                                                                                     }}
                                                                                 >
                                                                                     Prescribed
@@ -1538,10 +1626,12 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                 <button
                                                                                     onClick={() => setActiveTabs(prev => ({ ...prev, [exKey]: 'actual' }))}
                                                                                     style={{
-                                                                                        flex: 1, padding: '8px 4px', borderRadius: '8px', border: '1px solid var(--card-border)',
-                                                                                        background: currentTab === 'actual' ? 'var(--primary)' : 'var(--card-bg)',
-                                                                                        color: currentTab === 'actual' ? '#fff' : 'var(--foreground)',
-                                                                                        cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem', transition: 'all 0.2s'
+                                                                                        flex: 1, padding: '8px 6px', borderRadius: 10, border: 'none',
+                                                                                        background: currentTab === 'actual' ? 'linear-gradient(135deg, rgba(125, 135, 210, 0.35) 0%, rgba(168, 85, 247, 0.25) 100%)' : 'transparent',
+                                                                                        color: currentTab === 'actual' ? '#ffffff' : 'var(--secondary-foreground)',
+                                                                                        cursor: 'pointer', fontWeight: currentTab === 'actual' ? 700 : 500, fontSize: '0.8rem',
+                                                                                        boxShadow: currentTab === 'actual' ? '0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15)' : 'none',
+                                                                                        transition: 'all 0.18s ease'
                                                                                     }}
                                                                                 >
                                                                                     Actual
@@ -1550,10 +1640,11 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                         );
                                                                     })()}
 
-                                                                    <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 8, fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)' }}>
+                                                                    {/* Column Headers */}
+                                                                    <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8, fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)' }}>
                                                                         <span style={{ flex: 1, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
                                                                             Weight
-                                                                            <div style={{ display: 'flex', background: 'rgba(148,163,184,0.15)', borderRadius: 12, padding: 2, cursor: 'pointer' }}>
+                                                                            <div style={{ display: 'flex', background: 'rgba(0, 0, 0, 0.35)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 10, padding: 2, cursor: 'pointer' }}>
                                                                                 <div 
                                                                                     onClick={() => {
                                                                                         if (!editState[sKey]) {
@@ -1561,7 +1652,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                             setTimeout(() => updateExerciseUnit(sKey, exIdx, 'lbs', program.id), 50);
                                                                                         } else updateExerciseUnit(sKey, exIdx, 'lbs', program.id);
                                                                                     }}
-                                                                                    style={{ padding: '2px 6px', fontSize: '0.65rem', borderRadius: 10, background: (exerciseData?.unit || unit) === 'lbs' ? 'var(--primary)' : 'transparent', color: (exerciseData?.unit || unit) === 'lbs' ? '#000' : 'var(--secondary-foreground)', fontWeight: (exerciseData?.unit || unit) === 'lbs' ? 700 : 500, transition: 'all 0.2s' }}
+                                                                                    style={{ padding: '2px 7px', fontSize: '0.65rem', borderRadius: 8, background: (exerciseData?.unit || unit) === 'lbs' ? 'var(--primary)' : 'transparent', color: (exerciseData?.unit || unit) === 'lbs' ? '#000' : 'var(--secondary-foreground)', fontWeight: (exerciseData?.unit || unit) === 'lbs' ? 700 : 500, transition: 'all 0.18s' }}
                                                                                 >
                                                                                     lbs
                                                                                 </div>
@@ -1572,7 +1663,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                             setTimeout(() => updateExerciseUnit(sKey, exIdx, 'kg', program.id), 50);
                                                                                         } else updateExerciseUnit(sKey, exIdx, 'kg', program.id);
                                                                                     }}
-                                                                                    style={{ padding: '2px 6px', fontSize: '0.65rem', borderRadius: 10, background: (exerciseData?.unit || unit) === 'kg' ? 'var(--primary)' : 'transparent', color: (exerciseData?.unit || unit) === 'kg' ? '#000' : 'var(--secondary-foreground)', fontWeight: (exerciseData?.unit || unit) === 'kg' ? 700 : 500, transition: 'all 0.2s' }}
+                                                                                    style={{ padding: '2px 7px', fontSize: '0.65rem', borderRadius: 8, background: (exerciseData?.unit || unit) === 'kg' ? 'var(--primary)' : 'transparent', color: (exerciseData?.unit || unit) === 'kg' ? '#000' : 'var(--secondary-foreground)', fontWeight: (exerciseData?.unit || unit) === 'kg' ? 700 : 500, transition: 'all 0.18s' }}
                                                                                 >
                                                                                     kg
                                                                                 </div>
@@ -1583,6 +1674,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                         {(!activeTabs[exKey] || activeTabs[exKey] === 'actual') && <div style={{ width: '40px' }} />}
                                                                     </div>
 
+                                                                    {/* Set Rows */}
                                                                     {sets.map((set: any, setIdx: number) => {
                                                                         const target = isEdit ? set.target : set;
                                                                         const actual = isEdit ? set.actual : { weight: '', reps: '', rpe: '' };
@@ -1591,11 +1683,11 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                         const currentTab = activeTabs[exKey] || 'actual';
 
                                                                         return (
-                                                                            <div key={setIdx} style={{ display: 'flex', alignItems: 'center', padding: '6px 0', gap: '8px', borderBottom: '1px dashed var(--card-border)' }}>
+                                                                            <div key={setIdx} style={{ display: 'flex', alignItems: 'center', padding: '6px 0', gap: '8px', borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
                                                                                 {currentTab === 'previous' && (
                                                                                     <div style={{ display: 'flex', flex: 1, gap: '8px' }}>
                                                                                         {(['weight', 'reps', 'rpe'] as const).map(f => (
-                                                                                            <div key={f} style={{ flex: 1, padding: '8px', border: '1px solid rgba(125,135,210,0.35)', borderRadius: '6px', background: 'rgba(125,135,210,0.08)', textAlign: 'center', color: 'var(--primary)', fontWeight: 600 }}>
+                                                                                            <div key={f} style={{ flex: 1, padding: '8px 10px', border: '1px solid rgba(125,135,210,0.3)', borderRadius: '10px', background: 'rgba(125,135,210,0.08)', textAlign: 'center', color: '#c4b5fd', fontWeight: 600, fontSize: '0.95rem' }}>
                                                                                                 {prevSet ? (prevSet[f] || '-') : '-'}
                                                                                             </div>
                                                                                         ))}
@@ -1604,7 +1696,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                 {currentTab === 'prescribed' && (
                                                                                     <div style={{ display: 'flex', flex: 1, gap: '8px' }}>
                                                                                         {(['weight', 'reps', 'rpe'] as const).map(f => (
-                                                                                            <div key={f} style={{ flex: 1, padding: '8px', border: '1px solid var(--card-border)', borderRadius: '6px', background: 'var(--card-bg)', textAlign: 'center', color: 'var(--foreground)' }}>
+                                                                                            <div key={f} style={{ flex: 1, padding: '8px 10px', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', background: 'rgba(255, 255, 255, 0.03)', textAlign: 'center', color: '#ffffff', fontWeight: 600, fontSize: '0.95rem' }}>
                                                                                                 {target[f] || '-'}
                                                                                             </div>
                                                                                         ))}
@@ -1622,14 +1714,20 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                             onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
                                                                                                             placeholder={f === 'weight' ? (target[f] || '') : ''}
                                                                                                             style={{
-                                                                                                                flex: 1, padding: '8px', border: '1px solid rgba(148,163,184,0.3)', borderRadius: '6px',
-                                                                                                                background: 'var(--background)', textAlign: 'center', fontSize: '1rem',
-                                                                                                                color: 'var(--foreground)', width: '100%', outlineColor: 'var(--primary)',
-                                                                                                                paddingRight: f === 'weight' ? '30px' : '8px'
+                                                                                                                flex: 1, padding: '8px 10px',
+                                                                                                                border: '1px solid rgba(255, 255, 255, 0.12)',
+                                                                                                                borderRadius: '10px',
+                                                                                                                background: 'rgba(0, 0, 0, 0.35)',
+                                                                                                                textAlign: 'center', fontSize: '0.98rem',
+                                                                                                                fontWeight: 600,
+                                                                                                                color: '#ffffff', width: '100%', outline: 'none',
+                                                                                                                boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.4)',
+                                                                                                                paddingRight: f === 'weight' ? '32px' : '10px',
+                                                                                                                transition: 'border-color 0.2s',
                                                                                                             }}
                                                                                                         />
                                                                                                         {f === 'weight' && (
-                                                                                                            <span style={{ position: 'absolute', right: '10px', fontSize: '0.75rem', color: 'var(--secondary-foreground)', opacity: 0.6, pointerEvents: 'none' }}>
+                                                                                                            <span style={{ position: 'absolute', right: '10px', fontSize: '0.72rem', color: 'var(--secondary-foreground)', opacity: 0.7, pointerEvents: 'none', fontWeight: 600 }}>
                                                                                                                 {exerciseData?.unit || unit}
                                                                                                             </span>
                                                                                                         )}
@@ -1646,16 +1744,17 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                     copyTargetToActual(sKey, exIdx, setIdx, program.id);
                                                                                                 }}
                                                                                                 style={{
-                                                                                                    padding: '2px 0',
-                                                                                                    fontSize: '0.65rem',
+                                                                                                    padding: '3px 0',
+                                                                                                    fontSize: '0.68rem',
                                                                                                     fontWeight: 700,
-                                                                                                    borderRadius: '4px',
-                                                                                                    border: '1px solid rgba(125,135,210,0.3)',
-                                                                                                    background: 'rgba(125,135,210,0.1)',
-                                                                                                    color: 'var(--primary)',
+                                                                                                    borderRadius: '6px',
+                                                                                                    border: '1px solid rgba(125,135,210,0.4)',
+                                                                                                    background: 'linear-gradient(135deg, rgba(125,135,210,0.25), rgba(168,85,247,0.18))',
+                                                                                                    color: '#c4b5fd',
                                                                                                     cursor: 'pointer',
                                                                                                     textAlign: 'center',
-                                                                                                    lineHeight: 1.2
+                                                                                                    lineHeight: 1.2,
+                                                                                                    boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
                                                                                                 }}
                                                                                             >
                                                                                                 Rx
@@ -1669,12 +1768,12 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                         copyPrevSet(sKey, exIdx, setIdx, program.id);
                                                                                                     }}
                                                                                                     style={{
-                                                                                                        padding: '2px 0',
-                                                                                                        fontSize: '0.65rem',
+                                                                                                        padding: '3px 0',
+                                                                                                        fontSize: '0.68rem',
                                                                                                         fontWeight: 600,
-                                                                                                        borderRadius: '4px',
-                                                                                                        border: '1px solid var(--card-border)',
-                                                                                                        background: 'rgba(255,255,255,0.04)',
+                                                                                                        borderRadius: '6px',
+                                                                                                        border: '1px solid rgba(255,255,255,0.1)',
+                                                                                                        background: 'rgba(255,255,255,0.05)',
                                                                                                         color: 'var(--secondary-foreground)',
                                                                                                         cursor: 'pointer',
                                                                                                         textAlign: 'center',
@@ -1690,6 +1789,8 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                             </div>
                                                                         );
                                                                     })}
+
+                                                                    {/* Actions & Stats Sub-Cards */}
                                                                     {(() => {
                                                                         const effectiveSets = (editState[sKey]?.[exIdx]?.sets || []).length > 0
                                                                             ? (editState[sKey]?.[exIdx]?.sets || [])
@@ -1699,10 +1800,16 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                         const prDate = log?.date ? String(log.date).split('T')[0] : (sessionMetaRef.current[sKey]?.scheduledDate || selectedDate);
 
                                                                         return (
-                                                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', padding: '16px 0 8px 0', marginTop: 12, borderTop: '1px solid rgba(148,163,184,0.1)' }}>
+                                                                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px', padding: '16px 0 6px 0', marginTop: 14, borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
                                                                                 {/* Actions Panel */}
-                                                                                <div style={{ border: '1px solid rgba(148,163,184,0.2)', borderRadius: '12px', padding: '16px', background: 'rgba(148,163,184,0.03)' }}>
-                                                                                    <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '16px' }}>Exercise Actions</div>
+                                                                                <div style={{
+                                                                                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                                                    borderRadius: 16,
+                                                                                    padding: '16px',
+                                                                                    background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)',
+                                                                                    boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.06)'
+                                                                                }}>
+                                                                                    <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#ffffff', marginBottom: '14px', letterSpacing: '-0.01em' }}>Exercise Actions</div>
                                                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                                                                         <ExerciseFeedback
                                                                                             athleteId={athleteId}
@@ -1731,19 +1838,34 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                     </div>
                                                                                 </div>
 
-                                                                        {/* Stats Panel */}
-                                                                        <div style={{ border: '1px solid rgba(148,163,184,0.2)', borderRadius: '12px', padding: '16px', background: 'rgba(148,163,184,0.03)' }}>
-                                                                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '0.9rem' }}>
-                                                                                <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>E1RM: {toDisplay(maxE1RM)} {exerciseData?.unit || unit}</div>
-                                                                                <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>Total SI: {exStress.total.toFixed(2)}</div>
-                                                                                <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>Peripheral SI: {exStress.peripheral.toFixed(2)}</div>
-                                                                                <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>Central SI: {exStress.central.toFixed(2)}</div>
+                                                                                {/* Stats Panel */}
+                                                                                <div style={{
+                                                                                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                                                    borderRadius: 16,
+                                                                                    padding: '16px',
+                                                                                    background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)',
+                                                                                    boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.06)'
+                                                                                }}>
+                                                                                    <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#ffffff', marginBottom: '14px', letterSpacing: '-0.01em' }}>Performance Stats</div>
+                                                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '0.85rem' }}>
+                                                                                        <div style={{ background: 'linear-gradient(135deg, rgba(125, 135, 210, 0.15) 0%, rgba(168, 85, 247, 0.1) 100%)', border: '1px solid rgba(125, 135, 210, 0.3)', padding: '6px 14px', borderRadius: 12, color: '#c4b5fd', fontWeight: 700 }}>
+                                                                                            E1RM: {toDisplay(maxE1RM)} {exerciseData?.unit || unit}
+                                                                                        </div>
+                                                                                        <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '6px 14px', borderRadius: 12, color: 'var(--foreground)', fontWeight: 600 }}>
+                                                                                            Total SI: {exStress.total.toFixed(2)}
+                                                                                        </div>
+                                                                                        <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '6px 14px', borderRadius: 12, color: 'var(--foreground)', fontWeight: 600 }}>
+                                                                                            Peripheral SI: {exStress.peripheral.toFixed(2)}
+                                                                                        </div>
+                                                                                        <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '6px 14px', borderRadius: 12, color: 'var(--foreground)', fontWeight: 600 }}>
+                                                                                            Central SI: {exStress.central.toFixed(2)}
+                                                                                        </div>
+                                                                                    </div>
+                                                                                </div>
                                                                             </div>
-                                                                        </div>
-                                                                    </div>
-                                                                );
-                                                            })()}
-                                                            </div>
+                                                                        );
+                                                                    })()}
+                                                                </div>
                                                             )}
                                                         </div>
                                                     );
@@ -1781,48 +1903,64 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
             {viewMode === 'blocks' && (
                 <>
             {/* Toolbar: Search + Sort */}
-            <div style={{ padding: '0 16px 10px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+            <div style={{ padding: '0 16px 12px', display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <div style={{
-                    display: 'flex', alignItems: 'center', gap: 8,
-                    background: 'var(--card-bg)', border: '1px solid var(--card-border)',
-                    borderRadius: 10, padding: '0 12px', height: 42,
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    background: 'rgba(20, 24, 36, 0.7)',
+                    backdropFilter: 'blur(12px)',
+                    WebkitBackdropFilter: 'blur(12px)',
+                    border: '1px solid rgba(255, 255, 255, 0.09)',
+                    borderRadius: 14, padding: '0 14px', height: 44,
+                    boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05)'
                 }}>
-                    <Search size={16} color="var(--secondary-foreground)" style={{ flexShrink: 0 }} />
+                    <Search size={17} color="var(--primary)" style={{ flexShrink: 0 }} />
                     <input
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
                         placeholder="Search blocks..."
                         style={{
                             flex: 1, background: 'transparent', border: 'none',
-                            color: 'var(--foreground)', fontSize: '0.85rem',
+                            color: '#ffffff', fontSize: '0.88rem',
                             outline: 'none', padding: '8px 0',
                         }}
                     />
                     {searchQuery && (
                         <button
                             onClick={() => setSearchQuery('')}
-                            style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', padding: 2 }}
+                            style={{ background: 'rgba(255, 255, 255, 0.1)', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', width: 22, height: 22, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13 }}
                         >
-                            ×
+                            ✕
                         </button>
                     )}
                 </div>
 
                 <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
                     <div style={{
-                        display: 'flex', background: 'var(--card-bg)', borderRadius: 10,
-                        padding: 3, border: '1px solid var(--card-border)',
+                        display: 'flex',
+                        background: 'rgba(16, 20, 30, 0.75)',
+                        backdropFilter: 'blur(12px)',
+                        WebkitBackdropFilter: 'blur(12px)',
+                        borderRadius: 12,
+                        padding: 3,
+                        border: '1px solid rgba(255, 255, 255, 0.09)',
+                        boxShadow: '0 2px 8px rgba(0, 0, 0, 0.2)',
+                        gap: 2
                     }}>
                         {(['latest', 'oldest'] as const).map(s => (
                             <button
                                 key={s}
                                 onClick={() => setSortOrder(s)}
                                 style={{
-                                    padding: '6px 14px', border: 'none', cursor: 'pointer',
-                                    fontSize: '0.75rem', fontWeight: 600, borderRadius: 8,
-                                    transition: 'all 0.2s',
-                                    background: sortOrder === s ? 'var(--primary)' : 'transparent',
-                                    color: sortOrder === s ? 'white' : 'var(--secondary-foreground)',
+                                    padding: '6px 14px',
+                                    border: sortOrder === s ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid transparent',
+                                    cursor: 'pointer',
+                                    fontSize: '0.78rem',
+                                    fontWeight: sortOrder === s ? 700 : 500,
+                                    borderRadius: 9,
+                                    transition: 'all 0.18s ease',
+                                    background: sortOrder === s ? 'linear-gradient(135deg, rgba(125, 135, 210, 0.35) 0%, rgba(168, 85, 247, 0.25) 100%)' : 'transparent',
+                                    color: sortOrder === s ? '#ffffff' : 'var(--secondary-foreground)',
+                                    boxShadow: sortOrder === s ? '0 2px 6px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.12)' : 'none',
                                 }}
                             >
                                 {s === 'latest' ? 'Latest' : 'Oldest'}
@@ -1882,37 +2020,65 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                         const blockProgressPct = bTotalSets > 0 ? Math.min(100, Math.round((bFilledSets / bTotalSets) * 100)) : 0;
 
                         return (
-                            <div key={program.id} style={{ marginBottom: 16 }}>
+                            <div key={program.id} style={{
+                                marginBottom: 16,
+                                borderRadius: 20,
+                                overflow: 'hidden',
+                                border: blockOpen ? '1px solid rgba(125, 135, 210, 0.45)' : '1px solid rgba(255, 255, 255, 0.09)',
+                                boxShadow: blockOpen ? '0 12px 36px -4px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)' : '0 4px 20px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+                                background: blockOpen ? 'linear-gradient(180deg, rgba(24, 29, 44, 0.9) 0%, rgba(15, 18, 28, 0.95) 100%)' : 'linear-gradient(180deg, rgba(22, 27, 40, 0.75) 0%, rgba(14, 18, 28, 0.8) 100%)',
+                                backdropFilter: 'blur(16px)',
+                                WebkitBackdropFilter: 'blur(16px)',
+                                transition: 'all 0.25s var(--ease-out)'
+                            }}>
                                 {/* ═══ Block Header ═══ */}
                                 <button
                                     onClick={() => toggle(openBlocks, program.id, setOpenBlocks)}
                                     style={{
                                         width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                        padding: '16px', background: 'var(--card-bg)',
-                                        border: '1px solid var(--card-border)', borderRadius: blockOpen ? '8px 8px 0 0' : '8px',
+                                        padding: '18px 20px', background: 'transparent',
+                                        border: 'none',
+                                        borderBottom: blockOpen ? '1px solid rgba(255, 255, 255, 0.08)' : 'none',
                                         color: 'var(--foreground)', cursor: 'pointer', textAlign: 'left', boxSizing: 'border-box'
                                     }}
                                 >
-                                    <div style={{ flex: 1 }}>
-                                        <div style={{ fontSize: '1.2rem', fontWeight: 600 }}>{program.name}</div>
-                                <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginTop: 2 }}>
-                                    {totalSessions} session{totalSessions !== 1 ? 's' : ''}
-                                </div>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 12, paddingRight: 24 }}>
-                                    <div style={{ flex: 1, height: 6, borderRadius: 3, background: 'var(--background)', overflow: 'hidden' }}>
-                                        <div style={{
-                                             height: '100%', borderRadius: 3, transition: 'width 300ms',
-                                             width: `${blockProgressPct}%`,
-                                             background: blockProgressPct === 100 ? 'var(--success)' : 'var(--primary)'
-                                         }} />
+                                    <div style={{ flex: 1, minWidth: 0 }}>
+                                        <div style={{ fontSize: '1.22rem', fontWeight: 700, color: '#ffffff', letterSpacing: '-0.01em' }}>{program.name}</div>
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginTop: 4 }}>
+                                            {totalSessions} session{totalSessions !== 1 ? 's' : ''}
+                                        </div>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 12, paddingRight: 24 }}>
+                                            <div style={{ flex: 1, height: 6, borderRadius: 9999, background: 'rgba(255, 255, 255, 0.07)', overflow: 'hidden' }}>
+                                                <div style={{
+                                                     height: '100%', borderRadius: 9999, transition: 'width 300ms',
+                                                     width: `${blockProgressPct}%`,
+                                                     background: blockProgressPct === 100 ? 'linear-gradient(90deg, #10b981 0%, #34d399 100%)' : 'linear-gradient(90deg, #7d87d2 0%, #a855f7 100%)',
+                                                     boxShadow: blockProgressPct > 0 ? (blockProgressPct === 100 ? '0 0 10px rgba(16, 185, 129, 0.6)' : '0 0 10px rgba(125, 135, 210, 0.5)') : 'none'
+                                                 }} />
+                                            </div>
+                                            <span style={{ fontSize: '0.78rem', color: '#ffffff', fontWeight: 700, width: 32, fontVariantNumeric: 'tabular-nums' }}>
+                                                {blockProgressPct}%
+                                            </span>
+                                        </div>
                                     </div>
-                                    <span style={{ fontSize: '0.75rem', color: 'var(--foreground)', fontWeight: 600, width: 30 }}>
-                                        {blockProgressPct}%
-                                    </span>
-                                </div>
-                            </div>
-                            <span style={{ fontSize: '0.85rem', color: 'var(--secondary-foreground)', transition: 'transform 200ms', transform: blockOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
-                        </button>
+                                    <div style={{
+                                        width: 34,
+                                        height: 34,
+                                        borderRadius: '50%',
+                                        background: blockOpen ? 'rgba(125, 135, 210, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                                        border: blockOpen ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'center',
+                                        color: blockOpen ? 'var(--primary)' : 'var(--secondary-foreground)',
+                                        transform: blockOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                                        transition: 'all 0.2s var(--ease-out)',
+                                        flexShrink: 0,
+                                        marginLeft: 12
+                                    }}>
+                                        <ChevronDown size={18} strokeWidth={2.5} />
+                                    </div>
+                                </button>
 
                         {/* ═══ Weeks ═══ */}
                         {blockOpen && (() => {
@@ -1940,24 +2106,59 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                             const weekOpen = openWeeks.has(weekKey);
 
                             return (
-                                <div key={weekKey} style={{ background: 'var(--card-bg)', color: 'var(--foreground)' }}> {/* Light grey background for RTS style */}
+                                <div key={weekKey} style={{
+                                    background: 'rgba(12, 15, 24, 0.5)',
+                                    borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+                                    padding: '10px 14px',
+                                }}>
                                     <div style={{
-                                        display: 'flex', alignItems: 'center',
-                                        background: 'var(--background)',
-                                        borderBottom: '1px solid var(--card-border)', borderLeft: '1px solid var(--card-border)', borderRight: '1px solid var(--card-border)',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        background: weekOpen ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.02)',
+                                        border: weekOpen ? '1px solid rgba(125, 135, 210, 0.3)' : '1px solid rgba(255, 255, 255, 0.07)',
+                                        borderRadius: 14,
+                                        padding: '4px 6px',
+                                        transition: 'all 0.2s ease',
+                                        marginBottom: weekOpen ? 12 : 0,
                                     }}>
                                         <button
                                             onClick={() => toggle(openWeeks, weekKey, setOpenWeeks)}
                                             style={{
                                                 flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                                                padding: '12px 16px', background: 'transparent',
+                                                padding: '10px 12px', background: 'transparent',
                                                 border: 'none',
-                                                color: 'var(--foreground)', cursor: 'pointer', fontSize: '1rem', fontWeight: 600,
-                                                minWidth: 0 // Prevent flex child from overflowing
+                                                color: '#ffffff', cursor: 'pointer', fontSize: '0.96rem', fontWeight: 600,
+                                                minWidth: 0
                                             }}
                                         >
-                                            <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>Week {weekNum} — {weekDateRangeFromDate(program.startDate, weekNum)} <span style={{ fontWeight: 400, color: 'var(--secondary-foreground)', fontSize: '0.85rem' }}>• {sessions.length} session{sessions.length !== 1 ? 's' : ''}</span></span>
-                                            <span style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', transition: 'transform 200ms', transform: weekOpen ? 'rotate(90deg)' : 'rotate(0deg)', marginRight: '8px', flexShrink: 0 }}>▶</span>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' }}>
+                                                <span style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                    Week {weekNum} — {weekDateRangeFromDate(program.startDate, weekNum)}
+                                                </span>
+                                                <span style={{
+                                                    fontSize: '0.72rem',
+                                                    fontWeight: 600,
+                                                    padding: '2px 8px',
+                                                    borderRadius: 9999,
+                                                    background: 'rgba(125, 135, 210, 0.15)',
+                                                    color: 'var(--primary)',
+                                                    border: '1px solid rgba(125, 135, 210, 0.3)',
+                                                    flexShrink: 0
+                                                }}>
+                                                    {sessions.length} session{sessions.length !== 1 ? 's' : ''}
+                                                </span>
+                                            </div>
+                                            <div style={{
+                                                color: 'var(--secondary-foreground)',
+                                                transform: weekOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                                                transition: 'transform 200ms',
+                                                marginRight: 8,
+                                                flexShrink: 0,
+                                                display: 'flex',
+                                                alignItems: 'center'
+                                            }}>
+                                                <ChevronDown size={16} />
+                                            </div>
                                         </button>
                                         {/* Week Overview Button */}
                                         <button
@@ -1967,22 +2168,23 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                             }}
                                             title="View week overview"
                                             style={{
-                                                background: '#3B82F6',
-                                                color: 'white',
-                                                border: 'none',
+                                                background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.2) 0%, rgba(99, 102, 241, 0.18) 100%)',
+                                                color: '#38bdf8',
+                                                border: '1px solid rgba(56, 189, 248, 0.4)',
                                                 width: '32px',
                                                 height: '32px',
-                                                borderRadius: '8px',
+                                                borderRadius: '10px',
                                                 cursor: 'pointer',
                                                 display: 'flex',
                                                 alignItems: 'center',
                                                 justifyContent: 'center',
-                                                marginRight: '12px',
+                                                marginRight: '6px',
                                                 flexShrink: 0,
-                                                boxShadow: '0 1px 4px rgba(59, 130, 246, 0.3)',
+                                                boxShadow: '0 2px 8px rgba(56, 189, 248, 0.2)',
+                                                transition: 'all 0.18s ease'
                                             }}
                                         >
-                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
                                                 <polyline points="18 15 12 9 6 15" />
                                             </svg>
                                         </button>
@@ -2280,17 +2482,20 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                             {/* Warmup Drills Display */}
                                                             {(session.warmupDrills || log?.warmupDrills) && (
                                                                 <div style={{
-                                                                    margin: '12px 16px',
-                                                                    padding: '12px 16px',
-                                                                    background: 'rgba(125, 135, 210, 0.08)',
-                                                                    border: '1px solid rgba(125, 135, 210, 0.25)',
-                                                                    borderRadius: 14,
+                                                                    margin: '12px 14px',
+                                                                    padding: '14px 18px',
+                                                                    background: 'linear-gradient(135deg, rgba(125, 135, 210, 0.12) 0%, rgba(168, 85, 247, 0.06) 100%)',
+                                                                    border: '1px solid rgba(125, 135, 210, 0.3)',
+                                                                    borderRadius: 16,
+                                                                    boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
                                                                 }}>
-                                                                    <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--primary)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                                        <Sparkles size={14} />
+                                                                    <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#c4b5fd', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                        <div style={{ width: 26, height: 26, borderRadius: 8, background: 'rgba(125, 135, 210, 0.2)', border: '1px solid rgba(125, 135, 210, 0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
+                                                                            <Sparkles size={14} />
+                                                                        </div>
                                                                         Warm-Up & Prep Drills
                                                                     </div>
-                                                                    <div style={{ fontSize: '0.88rem', color: 'var(--foreground)', whiteSpace: 'pre-wrap', lineHeight: '1.45' }}>
+                                                                    <div style={{ fontSize: '0.88rem', color: 'var(--foreground)', whiteSpace: 'pre-wrap', lineHeight: '1.45', paddingLeft: 34 }}>
                                                                         {linkify(session.warmupDrills || log?.warmupDrills)}
                                                                     </div>
                                                                 </div>
@@ -2365,7 +2570,26 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                 const isLocked = !isCoachView && !isReadinessExempt && !readySessions.has(sKey) && !isWarmup && !hasExistingLogData;
 
                                                                 return (
-                                                                    <div key={exIdx} className={shakeKey === exKey ? 'readiness-shake' : ''} style={{ background: 'transparent', borderBottom: '1px solid rgba(255, 255, 255, 0.06)', opacity: isLocked ? 0.5 : 1, transition: 'opacity 0.3s' }}>
+                                                                    <div
+                                                                        key={exIdx}
+                                                                        className={shakeKey === exKey ? 'readiness-shake' : ''}
+                                                                        style={{
+                                                                            margin: '10px 14px',
+                                                                            background: exOpen
+                                                                                ? 'linear-gradient(180deg, rgba(24, 29, 44, 0.85) 0%, rgba(15, 18, 28, 0.9) 100%)'
+                                                                                : 'linear-gradient(180deg, rgba(255, 255, 255, 0.035) 0%, rgba(255, 255, 255, 0.015) 100%)',
+                                                                            border: exOpen
+                                                                                ? '1px solid rgba(125, 135, 210, 0.35)'
+                                                                                : '1px solid rgba(255, 255, 255, 0.07)',
+                                                                            borderRadius: 16,
+                                                                            overflow: 'hidden',
+                                                                            opacity: isLocked ? 0.5 : 1,
+                                                                            boxShadow: exOpen
+                                                                                ? '0 8px 24px -4px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
+                                                                                : '0 2px 8px rgba(0, 0, 0, 0.2)',
+                                                                            transition: 'all 0.22s var(--ease-out)',
+                                                                        }}
+                                                                    >
                                                                         {/* Exercise header */}
                                                                         <div 
                                                                             onClick={() => {
@@ -2376,26 +2600,45 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                 toggle(openExercises, exKey, setOpenExercises);
                                                                                 if (!editState[sKey]) initEdit(sKey, exercises, log);
                                                                             }}
-                                                                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 18px', background: exOpen ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.015)', cursor: 'pointer', borderTopLeftRadius: exIdx === 0 ? 8 : 0, borderTopRightRadius: exIdx === 0 ? 8 : 0, transition: 'background 0.16s ease' }}
+                                                                            style={{
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                justifyContent: 'space-between',
+                                                                                padding: '14px 18px',
+                                                                                background: exOpen ? 'rgba(255, 255, 255, 0.03)' : 'transparent',
+                                                                                cursor: 'pointer',
+                                                                                userSelect: 'none',
+                                                                                borderBottom: exOpen ? '1px solid rgba(255, 255, 255, 0.07)' : 'none',
+                                                                                transition: 'background 0.16s ease'
+                                                                            }}
                                                                         >
                                                                             <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-                                                                                <div style={{ width: 3, height: 20, borderRadius: 2, background: catColor }} />
-                                                                                <span style={{ fontSize: '1rem', color: '#fff', fontWeight: 600 }}>{exerciseData?.name || ex?.name}</span>
+                                                                                <div style={{
+                                                                                    width: 4,
+                                                                                    height: 22,
+                                                                                    borderRadius: 2,
+                                                                                    background: catColor,
+                                                                                    boxShadow: `0 0 10px ${catColor}55`,
+                                                                                }} />
+                                                                                <span style={{ fontSize: '1rem', color: '#ffffff', fontWeight: 600, letterSpacing: '-0.01em' }}>
+                                                                                    {exerciseData?.name || ex?.name}
+                                                                                </span>
                                                                                 {(() => {
                                                                                     const planned = plannedTopSets[sKey]?.[exerciseData?.name || ex?.name];
                                                                                     if (!planned || (!planned.weight && !planned.reps)) return null;
                                                                                     return (
                                                                                         <span style={{
                                                                                             fontSize: '0.72rem',
-                                                                                            padding: '2px 8px',
-                                                                                            borderRadius: 6,
-                                                                                            background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(99, 102, 241, 0.18))',
-                                                                                            border: '1px solid rgba(56, 189, 248, 0.4)',
+                                                                                            padding: '3px 10px',
+                                                                                            borderRadius: 8,
+                                                                                            background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(99, 102, 241, 0.2))',
+                                                                                            border: '1px solid rgba(56, 189, 248, 0.45)',
                                                                                             color: '#38bdf8',
                                                                                             fontWeight: 600,
                                                                                             display: 'inline-flex',
                                                                                             alignItems: 'center',
-                                                                                            gap: 4
+                                                                                            gap: 5,
+                                                                                            boxShadow: '0 2px 8px rgba(56, 189, 248, 0.2)'
                                                                                         }}>
                                                                                             🎯 Planned: {planned.weight ? `${planned.weight} ${planned.unit || unit}` : ''}{planned.reps ? ` × ${planned.reps}` : ''}{planned.rpe ? ` @ ${planned.rpe}` : ''}
                                                                                         </span>
@@ -2404,20 +2647,26 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                 {isLocked && <span style={{ fontSize: '0.8rem' }}>🔒</span>}
                                                                             </div>
                                                                             <div style={{
-                                                                                color: 'var(--secondary-foreground)',
-                                                                                transition: 'transform 0.2s ease',
+                                                                                width: 30,
+                                                                                height: 30,
+                                                                                borderRadius: 8,
+                                                                                background: exOpen ? 'rgba(125, 135, 210, 0.18)' : 'rgba(255, 255, 255, 0.04)',
+                                                                                border: exOpen ? '1px solid rgba(125, 135, 210, 0.35)' : '1px solid rgba(255, 255, 255, 0.07)',
+                                                                                color: exOpen ? 'var(--primary)' : 'var(--secondary-foreground)',
                                                                                 display: 'flex',
                                                                                 alignItems: 'center',
                                                                                 justifyContent: 'center',
                                                                                 transform: exOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                                                                                transition: 'all 0.2s var(--ease-out)',
+                                                                                flexShrink: 0
                                                                             }}>
-                                                                                <ChevronDown size={17} />
+                                                                                <ChevronDown size={16} strokeWidth={2.2} />
                                                                             </div>
                                                                         </div>
 
                                                                         {/* Exercise body / Input rows */}
                                                                         {exOpen && (
-                                                                            <div style={{ padding: '0 8px 16px 8px' }}>
+                                                                            <div style={{ padding: '14px 16px 18px 16px' }}>
                                                                                 {/* Planned top set banner */}
                                                                                 {(() => {
                                                                                     const planned = plannedTopSets[sKey]?.[exerciseData?.name || ex?.name];
@@ -2427,17 +2676,17 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                             display: 'flex',
                                                                                             alignItems: 'center',
                                                                                             justifyContent: 'space-between',
-                                                                                            padding: '8px 12px',
-                                                                                            marginBottom: 10,
-                                                                                            marginTop: 6,
-                                                                                            borderRadius: 8,
-                                                                                            background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(99, 102, 241, 0.06))',
-                                                                                            border: '1px solid rgba(56, 189, 248, 0.25)',
-                                                                                            fontSize: '0.82rem',
+                                                                                            padding: '10px 14px',
+                                                                                            marginBottom: 12,
+                                                                                            borderRadius: 12,
+                                                                                            background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.12) 0%, rgba(99, 102, 241, 0.08) 100%)',
+                                                                                            border: '1px solid rgba(56, 189, 248, 0.35)',
+                                                                                            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+                                                                                            fontSize: '0.84rem',
                                                                                         }}>
                                                                                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#38bdf8', fontWeight: 600 }}>
                                                                                                 <span>🎯 Planned Top Set:</span>
-                                                                                                <span style={{ color: 'var(--foreground)', fontWeight: 700 }}>
+                                                                                                <span style={{ color: '#ffffff', fontWeight: 700 }}>
                                                                                                     {planned.weight ? `${planned.weight} ${planned.unit || unit}` : ''}{planned.reps ? ` × ${planned.reps}` : ''}{planned.rpe ? ` @ ${planned.rpe}` : ''}
                                                                                                 </span>
                                                                                             </div>
@@ -2458,14 +2707,16 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                     triggerAutoSave(sKey, program.id);
                                                                                                 }}
                                                                                                 style={{
-                                                                                                    padding: '3px 8px',
-                                                                                                    fontSize: '0.72rem',
-                                                                                                    borderRadius: 6,
-                                                                                                    border: '1px solid rgba(56, 189, 248, 0.4)',
-                                                                                                    background: 'rgba(56, 189, 248, 0.15)',
+                                                                                                    padding: '5px 12px',
+                                                                                                    fontSize: '0.74rem',
+                                                                                                    borderRadius: 8,
+                                                                                                    border: '1px solid rgba(56, 189, 248, 0.5)',
+                                                                                                    background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(99, 102, 241, 0.2))',
                                                                                                     color: '#38bdf8',
                                                                                                     cursor: 'pointer',
-                                                                                                    fontWeight: 600,
+                                                                                                    fontWeight: 700,
+                                                                                                    boxShadow: '0 2px 8px rgba(56, 189, 248, 0.25)',
+                                                                                                    transition: 'all 0.18s ease'
                                                                                                 }}
                                                                                             >
                                                                                                 Fill Set 1
@@ -2474,8 +2725,8 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                     );
                                                                                 })()}
 
-                                                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8, marginTop: 12, padding: '0 8px' }}>
-                                                                                    <div style={{ fontSize: '0.85rem', color: '#818cf8', fontWeight: 500 }}>
+                                                                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10, marginTop: 4, padding: '0 2px' }}>
+                                                                                    <div style={{ fontSize: '0.84rem', color: '#818cf8', fontWeight: 500 }}>
                                                                                         <span style={{ color: 'var(--foreground)' }}>Session: </span>
                                                                                         {(() => {
                                                                                             const prevForHeader = getPrevSets(exerciseData?.name || ex?.name, sKey);
@@ -2483,9 +2734,9 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                             return prevDateLabel ? `${prevDateLabel} - Prev` : 'New - Prev';
                                                                                         })()}
                                                                                     </div>
-                                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.85rem', color: 'var(--foreground)', fontWeight: 500 }}>
+                                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.84rem', color: 'var(--foreground)', fontWeight: 500 }}>
                                                                                         <span>Sets:</span>
-                                                                                        <div style={{ padding: '2px 8px', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6, background: 'rgba(255,255,255,0.03)' }}>
+                                                                                        <div style={{ padding: '2px 8px', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 6, background: 'rgba(255,255,255,0.05)', fontWeight: 600, fontSize: '0.8rem' }}>
                                                                                             {sets.length}
                                                                                         </div>
                                                                                     </div>
@@ -2494,16 +2745,18 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                 {/* Coach's notes banner */}
                                                                                 {(ex?.notes || exerciseData?.coachNotes) && (
                                                                                     <div style={{
-                                                                                        padding: '10px 14px',
-                                                                                        marginBottom: 10,
-                                                                                        borderRadius: 8,
-                                                                                        background: 'rgba(99, 102, 241, 0.08)',
-                                                                                        borderLeft: '3px solid #6366f1',
+                                                                                        padding: '12px 14px',
+                                                                                        marginBottom: 12,
+                                                                                        borderRadius: 12,
+                                                                                        background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.12) 0%, rgba(125, 135, 210, 0.06) 100%)',
+                                                                                        border: '1px solid rgba(99, 102, 241, 0.3)',
+                                                                                        borderLeft: '4px solid #6366f1',
                                                                                         fontSize: '0.85rem',
                                                                                         color: 'var(--foreground)',
-                                                                                        lineHeight: 1.4
+                                                                                        lineHeight: 1.4,
+                                                                                        boxShadow: '0 2px 10px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
                                                                                     }}>
-                                                                                        <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#818cf8', marginBottom: 3 }}>
+                                                                                        <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#818cf8', marginBottom: 4 }}>
                                                                                             Coach Notes
                                                                                         </div>
                                                                                         <div>{linkify(ex?.notes || exerciseData?.coachNotes)}</div>
@@ -2511,7 +2764,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                 )}
 
                                                                                 {/* Athlete notes input */}
-                                                                                <div style={{ display: 'flex', padding: '0 0 8px 0', alignItems: 'flex-start' }}>
+                                                                                <div style={{ display: 'flex', padding: '0 0 12px 0', alignItems: 'flex-start' }}>
                                                                                     <textarea
                                                                                         value={exerciseData?.notes || ''}
                                                                                         onChange={e => updateNotes(sKey, exIdx, e.target.value, program.id)}
@@ -2519,9 +2772,16 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                         onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
                                                                                         placeholder="Add notes / feedback for this exercise..."
                                                                                         style={{
-                                                                                            flex: 1, minHeight: 48, padding: '8px 12px', border: '1px solid var(--card-border)',
-                                                                                            borderRadius: 6, background: 'var(--background)', fontSize: '0.85rem',
-                                                                                            color: 'var(--foreground)', resize: 'vertical', outlineColor: 'var(--primary)',
+                                                                                            flex: 1, minHeight: 48, padding: '10px 14px',
+                                                                                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                                                                                            borderRadius: 12,
+                                                                                            background: 'rgba(0, 0, 0, 0.35)',
+                                                                                            fontSize: '0.86rem',
+                                                                                            color: 'var(--foreground)',
+                                                                                            resize: 'vertical',
+                                                                                            outline: 'none',
+                                                                                            boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.4)',
+                                                                                            transition: 'border-color 0.2s',
                                                                                         }}
                                                                                     />
                                                                                 </div>
@@ -2533,15 +2793,26 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                     const currentTab = activeTabs[exKey] || 'actual';
                                                                                     
                                                                                     return (
-                                                                                        <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                                                                                        <div style={{
+                                                                                            display: 'flex',
+                                                                                            background: 'rgba(0, 0, 0, 0.35)',
+                                                                                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                                                            borderRadius: 14,
+                                                                                            padding: 4,
+                                                                                            gap: 4,
+                                                                                            marginBottom: 14,
+                                                                                            boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.4)'
+                                                                                        }}>
                                                                                             <button
                                                                                                 onClick={() => { if (hasPrev) setActiveTabs(prev => ({ ...prev, [exKey]: 'previous' })); }}
                                                                                                 style={{
-                                                                                                    flex: 1, padding: '8px 4px', borderRadius: '8px', border: '1px solid var(--card-border)',
-                                                                                                    background: currentTab === 'previous' ? 'var(--primary)' : 'var(--card-bg)',
-                                                                                                    color: currentTab === 'previous' ? '#fff' : (hasPrev ? 'var(--foreground)' : 'var(--secondary-foreground)'),
+                                                                                                    flex: 1, padding: '8px 6px', borderRadius: 10, border: 'none',
+                                                                                                    background: currentTab === 'previous' ? 'linear-gradient(135deg, rgba(125, 135, 210, 0.35) 0%, rgba(168, 85, 247, 0.25) 100%)' : 'transparent',
+                                                                                                    color: currentTab === 'previous' ? '#ffffff' : (hasPrev ? 'var(--secondary-foreground)' : 'rgba(255, 255, 255, 0.25)'),
                                                                                                     opacity: hasPrev ? 1 : 0.5, cursor: hasPrev ? 'pointer' : 'not-allowed',
-                                                                                                    fontWeight: 600, fontSize: '0.8rem', transition: 'all 0.2s'
+                                                                                                    fontWeight: currentTab === 'previous' ? 700 : 500, fontSize: '0.8rem',
+                                                                                                    boxShadow: currentTab === 'previous' ? '0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15)' : 'none',
+                                                                                                    transition: 'all 0.18s ease'
                                                                                                 }}
                                                                                             >
                                                                                                 {prevDateLabel ? `Prev: ${prevDateLabel}` : 'Previous'}
@@ -2549,10 +2820,12 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                             <button
                                                                                                 onClick={() => setActiveTabs(prev => ({ ...prev, [exKey]: 'prescribed' }))}
                                                                                                 style={{
-                                                                                                    flex: 1, padding: '8px 4px', borderRadius: '8px', border: '1px solid var(--card-border)',
-                                                                                                    background: currentTab === 'prescribed' ? 'var(--primary)' : 'var(--card-bg)',
-                                                                                                    color: currentTab === 'prescribed' ? '#fff' : 'var(--foreground)',
-                                                                                                    cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem', transition: 'all 0.2s'
+                                                                                                    flex: 1, padding: '8px 6px', borderRadius: 10, border: 'none',
+                                                                                                    background: currentTab === 'prescribed' ? 'linear-gradient(135deg, rgba(125, 135, 210, 0.35) 0%, rgba(168, 85, 247, 0.25) 100%)' : 'transparent',
+                                                                                                    color: currentTab === 'prescribed' ? '#ffffff' : 'var(--secondary-foreground)',
+                                                                                                    cursor: 'pointer', fontWeight: currentTab === 'prescribed' ? 700 : 500, fontSize: '0.8rem',
+                                                                                                    boxShadow: currentTab === 'prescribed' ? '0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15)' : 'none',
+                                                                                                    transition: 'all 0.18s ease'
                                                                                                 }}
                                                                                             >
                                                                                                 Prescribed
@@ -2560,10 +2833,12 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                             <button
                                                                                                 onClick={() => setActiveTabs(prev => ({ ...prev, [exKey]: 'actual' }))}
                                                                                                 style={{
-                                                                                                    flex: 1, padding: '8px 4px', borderRadius: '8px', border: '1px solid var(--card-border)',
-                                                                                                    background: currentTab === 'actual' ? 'var(--primary)' : 'var(--card-bg)',
-                                                                                                    color: currentTab === 'actual' ? '#fff' : 'var(--foreground)',
-                                                                                                    cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem', transition: 'all 0.2s'
+                                                                                                    flex: 1, padding: '8px 6px', borderRadius: 10, border: 'none',
+                                                                                                    background: currentTab === 'actual' ? 'linear-gradient(135deg, rgba(125, 135, 210, 0.35) 0%, rgba(168, 85, 247, 0.25) 100%)' : 'transparent',
+                                                                                                    color: currentTab === 'actual' ? '#ffffff' : 'var(--secondary-foreground)',
+                                                                                                    cursor: 'pointer', fontWeight: currentTab === 'actual' ? 700 : 500, fontSize: '0.8rem',
+                                                                                                    boxShadow: currentTab === 'actual' ? '0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15)' : 'none',
+                                                                                                    transition: 'all 0.18s ease'
                                                                                                 }}
                                                                                             >
                                                                                                 Actual
@@ -2572,10 +2847,10 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                     );
                                                                                 })()}
 
-                                                                                <div style={{ display: 'flex', alignItems: 'flex-start', marginBottom: 8, fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)' }}>
+                                                                                <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8, fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)' }}>
                                                                                     <span style={{ flex: 1, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
                                                                                         Weight
-                                                                                        <div style={{ display: 'flex', background: 'rgba(148,163,184,0.15)', borderRadius: 12, padding: 2, cursor: 'pointer' }}>
+                                                                                        <div style={{ display: 'flex', background: 'rgba(0, 0, 0, 0.35)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 10, padding: 2, cursor: 'pointer' }}>
                                                                                             <div 
                                                                                                 onClick={() => {
                                                                                                     if (!editState[sKey]) {
@@ -2583,7 +2858,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                         setTimeout(() => updateExerciseUnit(sKey, exIdx, 'lbs', program.id), 50);
                                                                                                     } else updateExerciseUnit(sKey, exIdx, 'lbs', program.id);
                                                                                                 }}
-                                                                                                style={{ padding: '2px 6px', fontSize: '0.65rem', borderRadius: 10, background: (exerciseData?.unit || unit) === 'lbs' ? 'var(--primary)' : 'transparent', color: (exerciseData?.unit || unit) === 'lbs' ? '#000' : 'var(--secondary-foreground)', fontWeight: (exerciseData?.unit || unit) === 'lbs' ? 700 : 500, transition: 'all 0.2s' }}
+                                                                                                style={{ padding: '2px 7px', fontSize: '0.65rem', borderRadius: 8, background: (exerciseData?.unit || unit) === 'lbs' ? 'var(--primary)' : 'transparent', color: (exerciseData?.unit || unit) === 'lbs' ? '#000' : 'var(--secondary-foreground)', fontWeight: (exerciseData?.unit || unit) === 'lbs' ? 700 : 500, transition: 'all 0.18s' }}
                                                                                             >
                                                                                                 lbs
                                                                                             </div>
@@ -2594,7 +2869,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                         setTimeout(() => updateExerciseUnit(sKey, exIdx, 'kg', program.id), 50);
                                                                                                     } else updateExerciseUnit(sKey, exIdx, 'kg', program.id);
                                                                                                 }}
-                                                                                                style={{ padding: '2px 6px', fontSize: '0.65rem', borderRadius: 10, background: (exerciseData?.unit || unit) === 'kg' ? 'var(--primary)' : 'transparent', color: (exerciseData?.unit || unit) === 'kg' ? '#000' : 'var(--secondary-foreground)', fontWeight: (exerciseData?.unit || unit) === 'kg' ? 700 : 500, transition: 'all 0.2s' }}
+                                                                                                style={{ padding: '2px 7px', fontSize: '0.65rem', borderRadius: 8, background: (exerciseData?.unit || unit) === 'kg' ? 'var(--primary)' : 'transparent', color: (exerciseData?.unit || unit) === 'kg' ? '#000' : 'var(--secondary-foreground)', fontWeight: (exerciseData?.unit || unit) === 'kg' ? 700 : 500, transition: 'all 0.18s' }}
                                                                                             >
                                                                                                 kg
                                                                                             </div>
@@ -2614,11 +2889,11 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                     const currentTab = activeTabs[exKey] || 'actual';
 
                                                                                     return (
-                                                                                        <div key={setIdx} style={{ display: 'flex', alignItems: 'center', padding: '6px 0', gap: '8px', borderBottom: '1px dashed #e2e8f0' }}>
+                                                                                        <div key={setIdx} style={{ display: 'flex', alignItems: 'center', padding: '6px 0', gap: '8px', borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
                                                                                             {currentTab === 'previous' && (
                                                                                                 <div style={{ display: 'flex', flex: 1, gap: '8px' }}>
                                                                                                     {(['weight', 'reps', 'rpe'] as const).map(f => (
-                                                                                                        <div key={f} style={{ flex: 1, padding: '8px', border: '1px solid rgba(125,135,210,0.35)', borderRadius: '6px', background: 'rgba(125,135,210,0.08)', textAlign: 'center', color: 'var(--primary)', fontWeight: 600 }}>
+                                                                                                        <div key={f} style={{ flex: 1, padding: '8px 10px', border: '1px solid rgba(125,135,210,0.3)', borderRadius: '10px', background: 'rgba(125,135,210,0.08)', textAlign: 'center', color: '#c4b5fd', fontWeight: 600, fontSize: '0.95rem' }}>
                                                                                                             {prevSet ? (prevSet[f] || '-') : '-'}
                                                                                                         </div>
                                                                                                     ))}
@@ -2627,7 +2902,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                             {currentTab === 'prescribed' && (
                                                                                                 <div style={{ display: 'flex', flex: 1, gap: '8px' }}>
                                                                                                     {(['weight', 'reps', 'rpe'] as const).map(f => (
-                                                                                                        <div key={f} style={{ flex: 1, padding: '8px', border: '1px solid var(--card-border)', borderRadius: '6px', background: 'var(--card-bg)', textAlign: 'center', color: 'var(--foreground)' }}>
+                                                                                                        <div key={f} style={{ flex: 1, padding: '8px 10px', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', background: 'rgba(255, 255, 255, 0.03)', textAlign: 'center', color: '#ffffff', fontWeight: 600, fontSize: '0.95rem' }}>
                                                                                                             {target[f] || '-'}
                                                                                                         </div>
                                                                                                     ))}
@@ -2645,14 +2920,20 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                                         onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
                                                                                                                         placeholder={f === 'weight' ? (target[f] || '') : ''}
                                                                                                                         style={{
-                                                                                                                            flex: 1, padding: '8px', border: '1px solid rgba(148,163,184,0.3)', borderRadius: '6px',
-                                                                                                                            background: 'var(--background)', textAlign: 'center', fontSize: '1rem',
-                                                                                                                            color: 'var(--foreground)', width: '100%', outlineColor: 'var(--primary)',
-                                                                                                                            paddingRight: f === 'weight' ? '30px' : '8px'
+                                                                                                                            flex: 1, padding: '8px 10px',
+                                                                                                                            border: '1px solid rgba(255, 255, 255, 0.12)',
+                                                                                                                            borderRadius: '10px',
+                                                                                                                            background: 'rgba(0, 0, 0, 0.35)',
+                                                                                                                            textAlign: 'center', fontSize: '0.98rem',
+                                                                                                                            fontWeight: 600,
+                                                                                                                            color: '#ffffff', width: '100%', outline: 'none',
+                                                                                                                            boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.4)',
+                                                                                                                            paddingRight: f === 'weight' ? '32px' : '10px',
+                                                                                                                            transition: 'border-color 0.2s',
                                                                                                                         }}
                                                                                                                     />
                                                                                                                     {f === 'weight' && (
-                                                                                                                        <span style={{ position: 'absolute', right: '10px', fontSize: '0.75rem', color: 'var(--secondary-foreground)', opacity: 0.6, pointerEvents: 'none' }}>
+                                                                                                                        <span style={{ position: 'absolute', right: '10px', fontSize: '0.72rem', color: 'var(--secondary-foreground)', opacity: 0.7, pointerEvents: 'none', fontWeight: 600 }}>
                                                                                                                             {exerciseData?.unit || unit}
                                                                                                                         </span>
                                                                                                                     )}
@@ -2669,16 +2950,17 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                                 copyTargetToActual(sKey, exIdx, setIdx, program.id);
                                                                                                             }}
                                                                                                             style={{
-                                                                                                                padding: '2px 0',
-                                                                                                                fontSize: '0.65rem',
+                                                                                                                padding: '3px 0',
+                                                                                                                fontSize: '0.68rem',
                                                                                                                 fontWeight: 700,
-                                                                                                                borderRadius: '4px',
-                                                                                                                border: '1px solid rgba(125,135,210,0.3)',
-                                                                                                                background: 'rgba(125,135,210,0.1)',
-                                                                                                                color: 'var(--primary)',
+                                                                                                                borderRadius: '6px',
+                                                                                                                border: '1px solid rgba(125,135,210,0.4)',
+                                                                                                                background: 'linear-gradient(135deg, rgba(125,135,210,0.25), rgba(168,85,247,0.18))',
+                                                                                                                color: '#c4b5fd',
                                                                                                                 cursor: 'pointer',
                                                                                                                 textAlign: 'center',
-                                                                                                                lineHeight: 1.2
+                                                                                                                lineHeight: 1.2,
+                                                                                                                boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
                                                                                                             }}
                                                                                                         >
                                                                                                             Rx
@@ -2692,12 +2974,12 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                                     copyPrevSet(sKey, exIdx, setIdx, program.id);
                                                                                                                 }}
                                                                                                                 style={{
-                                                                                                                    padding: '2px 0',
-                                                                                                                    fontSize: '0.65rem',
+                                                                                                                    padding: '3px 0',
+                                                                                                                    fontSize: '0.68rem',
                                                                                                                     fontWeight: 600,
-                                                                                                                    borderRadius: '4px',
-                                                                                                                    border: '1px solid var(--card-border)',
-                                                                                                                    background: 'rgba(255,255,255,0.04)',
+                                                                                                                    borderRadius: '6px',
+                                                                                                                    border: '1px solid rgba(255,255,255,0.1)',
+                                                                                                                    background: 'rgba(255,255,255,0.05)',
                                                                                                                     color: 'var(--secondary-foreground)',
                                                                                                                     cursor: 'pointer',
                                                                                                                     textAlign: 'center',
@@ -2714,7 +2996,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                     );
                                                                                 })}
 
-                                                                                {/* Stats and Actions Grid */}
+                                                                                {/* Stats and Actions Sub-Cards */}
                                                                                 {(() => {
                                                                                     const effectiveSets = (editState[sKey]?.[exIdx]?.sets || []).length > 0
                                                                                         ? (editState[sKey]?.[exIdx]?.sets || [])
@@ -2724,10 +3006,16 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                     const prDate = log?.date ? String(log.date).split('T')[0] : (sessionMetaRef.current[sKey]?.scheduledDate || new Date().toISOString().split('T')[0]);
 
                                                                                     return (
-                                                                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '16px', padding: '16px 0 8px 0', marginTop: 12, borderTop: '1px solid rgba(148,163,184,0.1)' }}>
+                                                                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '14px', padding: '16px 0 6px 0', marginTop: 14, borderTop: '1px solid rgba(255, 255, 255, 0.08)' }}>
                                                                                             {/* Actions Panel */}
-                                                                                            <div style={{ border: '1px solid rgba(148,163,184,0.2)', borderRadius: '12px', padding: '16px', background: 'rgba(148,163,184,0.03)' }}>
-                                                                                                <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)', marginBottom: '16px' }}>Exercise Actions</div>
+                                                                                            <div style={{
+                                                                                                border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                                                                borderRadius: 16,
+                                                                                                padding: '16px',
+                                                                                                background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)',
+                                                                                                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.06)'
+                                                                                            }}>
+                                                                                                <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#ffffff', marginBottom: '14px', letterSpacing: '-0.01em' }}>Exercise Actions</div>
                                                                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                                                                                     <ExerciseFeedback
                                                                                                         athleteId={athleteId}
@@ -2757,12 +3045,27 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                             </div>
 
                                                                                             {/* Stats Panel */}
-                                                                                            <div style={{ border: '1px solid rgba(148,163,184,0.2)', borderRadius: '12px', padding: '16px', background: 'rgba(148,163,184,0.03)' }}>
-                                                                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '0.9rem' }}>
-                                                                                                    <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>E1RM: {toDisplay(maxE1RM)} {exerciseData?.unit || unit}</div>
-                                                                                                    <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>Total SI: {exStress.total.toFixed(2)}</div>
-                                                                                                    <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>Peripheral SI: {exStress.peripheral.toFixed(2)}</div>
-                                                                                                    <div style={{ background: 'rgba(148,163,184,0.1)', padding: '6px 14px', borderRadius: '20px', color: 'var(--foreground)', fontWeight: 600 }}>Central SI: {exStress.central.toFixed(2)}</div>
+                                                                                            <div style={{
+                                                                                                border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                                                                borderRadius: 16,
+                                                                                                padding: '16px',
+                                                                                                background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)',
+                                                                                                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.06)'
+                                                                                            }}>
+                                                                                                <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#ffffff', marginBottom: '14px', letterSpacing: '-0.01em' }}>Performance Stats</div>
+                                                                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '0.85rem' }}>
+                                                                                                    <div style={{ background: 'linear-gradient(135deg, rgba(125, 135, 210, 0.15) 0%, rgba(168, 85, 247, 0.1) 100%)', border: '1px solid rgba(125, 135, 210, 0.3)', padding: '6px 14px', borderRadius: 12, color: '#c4b5fd', fontWeight: 700 }}>
+                                                                                                        E1RM: {toDisplay(maxE1RM)} {exerciseData?.unit || unit}
+                                                                                                    </div>
+                                                                                                    <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '6px 14px', borderRadius: 12, color: 'var(--foreground)', fontWeight: 600 }}>
+                                                                                                        Total SI: {exStress.total.toFixed(2)}
+                                                                                                    </div>
+                                                                                                    <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '6px 14px', borderRadius: 12, color: 'var(--foreground)', fontWeight: 600 }}>
+                                                                                                        Peripheral SI: {exStress.peripheral.toFixed(2)}
+                                                                                                    </div>
+                                                                                                    <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '6px 14px', borderRadius: 12, color: 'var(--foreground)', fontWeight: 600 }}>
+                                                                                                        Central SI: {exStress.central.toFixed(2)}
+                                                                                                    </div>
                                                                                                 </div>
                                                                                             </div>
                                                                                         </div>
@@ -2817,7 +3120,9 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                             style={{
                                 position: 'fixed',
                                 inset: 0,
-                                background: 'rgba(0, 0, 0, 0.6)',
+                                background: 'rgba(0, 0, 0, 0.7)',
+                                backdropFilter: 'blur(8px)',
+                                WebkitBackdropFilter: 'blur(8px)',
                                 zIndex: 200,
                             }}
                         />
@@ -2834,39 +3139,37 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                         transition: 'transform 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
                         maxHeight: '85vh',
                         overflowY: 'auto',
-                        background: 'var(--background)',
-                        borderTop: '2px solid var(--primary)',
-                        borderRadius: '16px 16px 0 0',
+                        background: 'linear-gradient(180deg, rgba(22, 27, 40, 0.97) 0%, rgba(14, 17, 26, 0.99) 100%)',
+                        backdropFilter: 'blur(24px)',
+                        WebkitBackdropFilter: 'blur(24px)',
+                        borderTop: '1px solid rgba(125, 135, 210, 0.4)',
+                        borderRadius: '24px 24px 0 0',
+                        boxShadow: '0 -8px 40px rgba(0, 0, 0, 0.7), inset 0 1px 0 rgba(255, 255, 255, 0.15)',
                         padding: '0 0 2rem 0'
                     }}>
                         {/* Drag Handle */}
                         <div
                             onClick={() => setWeekDrawer(null)}
-                            style={{ display: 'flex', justifyContent: 'center', padding: '12px 0 8px 0', cursor: 'pointer' }}
+                            style={{ display: 'flex', justifyContent: 'center', padding: '14px 0 10px 0', cursor: 'pointer' }}
                         >
-                            <div style={{ width: 40, height: 4, borderRadius: 2, background: 'var(--card-border)' }} />
+                            <div style={{ width: 44, height: 5, borderRadius: 9999, background: 'rgba(255, 255, 255, 0.2)' }} />
                         </div>
 
                         {/* Header */}
-                        <div style={{ textAlign: 'center', padding: '0 1rem 1rem 1rem', borderBottom: '1px solid var(--card-border)' }}>
-                            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.5rem' }}>
-                                <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--foreground)', margin: 0 }}>
+                        <div style={{ textAlign: 'center', padding: '0 1.25rem 1.25rem 1.25rem', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '0.6rem' }}>
+                                <h2 style={{ fontSize: '1.3rem', fontWeight: 700, color: '#ffffff', margin: 0, letterSpacing: '-0.01em' }}>
                                     {weekDrawer.programName || 'Training Program'}
                                 </h2>
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--secondary-foreground)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ opacity: 0.6 }}>
-                                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-                                    <line x1="16" y1="2" x2="16" y2="6" />
-                                    <line x1="8" y1="2" x2="8" y2="6" />
-                                    <line x1="3" y1="10" x2="21" y2="10" />
-                                </svg>
+                                <Calendar size={18} color="var(--primary)" strokeWidth={2.2} />
                             </div>
-                            <p style={{ fontSize: '0.9rem', color: 'var(--secondary-foreground)', margin: '4px 0 0 0' }}>
+                            <p style={{ fontSize: '0.88rem', color: 'var(--secondary-foreground)', margin: '6px 0 0 0' }}>
                                 {weekDrawer.startDate || `Week ${weekDrawer.weekNum}`}
                             </p>
                         </div>
 
                         {/* Sessions by Day */}
-                        <div style={{ padding: '1rem' }}>
+                        <div style={{ padding: '1.25rem 1rem' }}>
                             {(weekDrawer.sessions || [])
                                 .filter((sess: any) => Array.isArray(sess.exercises) && sess.exercises.length > 0)
                                 .sort((a: any, b: any) => (a.day || 1) - (b.day || 1))
@@ -2880,23 +3183,26 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                         <div key={sess.day} style={{ marginBottom: '1.25rem' }}>
                                             {/* Day Label */}
                                             <div style={{
-                                                fontSize: '0.75rem',
+                                                fontSize: '0.74rem',
                                                 fontWeight: 700,
-                                                letterSpacing: '0.05em',
+                                                letterSpacing: '0.06em',
                                                 textTransform: 'uppercase',
-                                                color: 'var(--secondary-foreground)',
-                                                marginBottom: '0.5rem'
+                                                color: '#c4b5fd',
+                                                marginBottom: '0.6rem',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 6
                                             }}>
+                                                <div style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--primary)' }} />
                                                 {fullLabel}
                                             </div>
 
                                             {/* Exercise Cards */}
-                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                                                 {(sess.exercises || []).map((ex: any, exIdx: number) => {
                                                     const category = ex?.category || getExerciseCategory(ex?.name);
                                                     const color = CATEGORY_COLORS[category] || '#94A3B8';
                                                     const setsSummary = formatSetsSummary(ex?.sets);
-                                                    const targetSessionId = `${weekDrawer.programId}_w${weekDrawer.weekNum}_d${sess.day}`;
 
                                                     return (
                                                         <div
@@ -2919,38 +3225,51 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                 display: 'flex',
                                                                 justifyContent: 'space-between',
                                                                 alignItems: 'center',
-                                                                padding: '0.75rem 1rem',
-                                                                background: 'var(--card-bg)',
-                                                                border: `1px solid ${color}30`,
-                                                                borderRadius: '8px',
+                                                                padding: '12px 16px',
+                                                                background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.015) 100%)',
+                                                                border: `1px solid ${color}45`,
+                                                                borderLeft: `4px solid ${color}`,
+                                                                borderRadius: 14,
                                                                 cursor: 'pointer',
-                                                                transition: 'background 0.15s ease'
+                                                                boxShadow: '0 2px 10px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+                                                                transition: 'all 0.18s ease'
                                                             }}
                                                         >
                                                             <div style={{ flex: 1, minWidth: 0 }}>
                                                                 <div style={{
-                                                                    fontSize: '0.95rem',
+                                                                    fontSize: '0.96rem',
                                                                     fontWeight: 600,
-                                                                    color: color,
-                                                                    marginBottom: '2px'
+                                                                    color: '#ffffff',
+                                                                    marginBottom: '3px',
+                                                                    letterSpacing: '-0.01em'
                                                                 }}>
                                                                     {ex?.name}
                                                                 </div>
                                                                 <div style={{
                                                                     fontSize: '0.8rem',
                                                                     color: 'var(--secondary-foreground)',
-                                                                    opacity: 0.8
+                                                                    opacity: 0.85
                                                                 }}>
                                                                     {setsSummary}
                                                                 </div>
                                                             </div>
-                                                            <span style={{
+                                                            <div style={{
+                                                                width: 28,
+                                                                height: 28,
+                                                                borderRadius: 8,
+                                                                background: `${color}18`,
+                                                                border: `1px solid ${color}40`,
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'center',
                                                                 color: color,
-                                                                fontSize: '1.2rem',
+                                                                fontSize: '1.1rem',
                                                                 fontWeight: 700,
                                                                 marginLeft: '0.75rem',
-                                                                opacity: 0.7
-                                                            }}>+</span>
+                                                                flexShrink: 0
+                                                            }}>
+                                                                +
+                                                            </div>
                                                         </div>
                                                     );
                                                 })}

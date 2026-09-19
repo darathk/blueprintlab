@@ -184,36 +184,43 @@ export default function PRToggle({
             {/* Toggle button */}
             <button
                 onClick={handleOpen}
+                className="chat-press"
                 style={{
                     display: 'flex', alignItems: 'center', gap: 6,
-                    background: open ? 'rgba(251, 191, 36, 0.12)' : 'rgba(251, 191, 36, 0.06)',
-                    border: `1px solid rgba(251, 191, 36, ${open ? '0.35' : '0.15'})`,
-                    borderRadius: 8, padding: '7px 12px', cursor: 'pointer',
-                    color: '#fbbf24', fontSize: 12, fontWeight: 600,
-                    transition: 'all 0.15s', flex: 1, justifyContent: 'center',
+                    background: open
+                        ? 'linear-gradient(135deg, rgba(251, 191, 36, 0.2) 0%, rgba(245, 158, 11, 0.12) 100%)'
+                        : 'rgba(251, 191, 36, 0.08)',
+                    border: `1px solid rgba(251, 191, 36, ${open ? '0.45' : '0.22'})`,
+                    borderRadius: 12, padding: '9px 14px', cursor: 'pointer',
+                    color: '#fbbf24', fontSize: '0.82rem', fontWeight: 700,
+                    boxShadow: open ? '0 0 14px rgba(251, 191, 36, 0.2)' : 'none',
+                    transition: 'all 0.16s var(--ease-out)', flex: 1, justifyContent: 'center',
                 }}
             >
-                <Trophy size={13} />
+                <Trophy size={14} />
                 {open ? 'Cancel PR' : 'Mark as PR'}
             </button>
 
             {/* Expanded PR form */}
             {open && !saved && (
                 <div style={{
-                    flexBasis: '100%', order: 10, padding: 12,
-                    background: 'rgba(251, 191, 36, 0.04)',
-                    border: '1px solid rgba(251, 191, 36, 0.15)',
-                    borderRadius: 10,
+                    flexBasis: '100%', order: 10, padding: 14,
+                    background: 'linear-gradient(180deg, rgba(28, 24, 18, 0.88) 0%, rgba(16, 14, 12, 0.96) 100%)',
+                    backdropFilter: 'blur(16px)',
+                    WebkitBackdropFilter: 'blur(16px)',
+                    border: '1px solid rgba(251, 191, 36, 0.3)',
+                    boxShadow: '0 8px 24px -4px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+                    borderRadius: 16,
                 }}>
                     {/* Set selector */}
-                    <div style={{ marginBottom: 10 }}>
-                        <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', marginBottom: 6, fontWeight: 600 }}>Which set was the PR?</div>
+                    <div style={{ marginBottom: 12 }}>
+                        <div style={{ fontSize: '0.74rem', color: 'var(--secondary-foreground)', marginBottom: 7, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em' }}>Which set was the PR?</div>
                         {!hasData ? (
-                            <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', fontStyle: 'italic', padding: '4px 0' }}>
+                            <div style={{ fontSize: '0.78rem', color: 'var(--secondary-foreground)', fontStyle: 'italic', padding: '4px 0' }}>
                                 Please log your weight and reps in the workout first.
                             </div>
                         ) : (
-                            <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                                 {sets.map((s, i) => {
                                     if (!s.weight && !s.reps) return null;
                                     const sel = selectedSet === i;
@@ -221,12 +228,14 @@ export default function PRToggle({
                                         <button
                                             key={i}
                                             onClick={() => setSelectedSet(i)}
+                                            className="chat-press"
                                             style={{
-                                                padding: '5px 10px', borderRadius: 6, fontSize: 11, fontWeight: 600,
-                                                background: sel ? 'rgba(251,191,36,0.2)' : 'rgba(255,255,255,0.04)',
-                                                border: sel ? '1px solid rgba(251,191,36,0.5)' : '1px solid rgba(255,255,255,0.08)',
+                                                padding: '6px 12px', borderRadius: 8, fontSize: '0.74rem', fontWeight: 700,
+                                                background: sel ? 'rgba(251,191,36,0.25)' : 'rgba(255,255,255,0.04)',
+                                                border: sel ? '1px solid rgba(251,191,36,0.55)' : '1px solid rgba(255,255,255,0.08)',
                                                 color: sel ? '#fbbf24' : 'var(--secondary-foreground)',
-                                                cursor: 'pointer', transition: 'all 0.15s',
+                                                boxShadow: sel ? '0 0 10px rgba(251,191,36,0.2)' : 'none',
+                                                cursor: 'pointer', transition: 'all 0.16s var(--ease-out)',
                                             }}
                                         >
                                             S{i + 1}: {s.weight}×{s.reps}{s.rpe ? ` @${s.rpe}` : ''}
@@ -244,15 +253,15 @@ export default function PRToggle({
                         value={note}
                         onChange={e => setNote(e.target.value)}
                         style={{
-                            width: '100%', background: 'rgba(255,255,255,0.04)',
-                            border: '1px solid rgba(255,255,255,0.1)', borderRadius: 6,
-                            padding: '7px 10px', fontSize: 12, color: 'var(--foreground)',
-                            outline: 'none', marginBottom: 10, boxSizing: 'border-box',
+                            width: '100%', background: 'rgba(0,0,0,0.35)',
+                            border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10,
+                            padding: '9px 12px', fontSize: '0.82rem', color: 'var(--foreground)',
+                            outline: 'none', marginBottom: 12, boxSizing: 'border-box',
                         }}
                     />
 
                     {/* Video upload */}
-                    <div style={{ marginBottom: 10 }}>
+                    <div style={{ marginBottom: 12 }}>
                         <input
                             ref={fileRef}
                             type="file"
@@ -262,18 +271,18 @@ export default function PRToggle({
                             id={inputId}
                         />
                         {videoPreview ? (
-                            <div style={{ position: 'relative', borderRadius: 8, overflow: 'hidden' }}>
+                            <div style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', border: '1px solid rgba(251,191,36,0.25)' }}>
                                 <video
                                     src={videoPreview}
                                     controls playsInline muted preload="metadata"
-                                    style={{ width: '100%', maxHeight: 180, borderRadius: 8, background: '#000' }}
+                                    style={{ width: '100%', maxHeight: 180, borderRadius: 10, background: '#000' }}
                                 />
                                 <button
                                     onClick={clearVideo}
                                     style={{
-                                        position: 'absolute', top: 4, right: 4,
-                                        background: 'rgba(0,0,0,0.7)', border: 'none', borderRadius: '50%',
-                                        color: '#fff', width: 24, height: 24, cursor: 'pointer',
+                                        position: 'absolute', top: 6, right: 6,
+                                        background: 'rgba(0,0,0,0.75)', border: 'none', borderRadius: '50%',
+                                        color: '#fff', width: 26, height: 26, cursor: 'pointer',
                                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                                     }}
                                 >
@@ -283,23 +292,25 @@ export default function PRToggle({
                         ) : (
                             <label
                                 htmlFor={inputId}
+                                className="chat-press"
                                 style={{
-                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                                    padding: '10px', borderRadius: 8, cursor: 'pointer',
-                                    border: '1px dashed rgba(251,191,36,0.25)',
-                                    background: 'rgba(251,191,36,0.03)',
-                                    color: 'rgba(251,191,36,0.6)', fontSize: 12, fontWeight: 600,
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                                    padding: '12px', borderRadius: 10, cursor: 'pointer',
+                                    border: '1px dashed rgba(251,191,36,0.35)',
+                                    background: 'rgba(251,191,36,0.05)',
+                                    color: 'rgba(251,191,36,0.8)', fontSize: '0.82rem', fontWeight: 600,
+                                    transition: 'all 0.16s ease',
                                 }}
                             >
-                                <Camera size={14} /> Attach PR Video
+                                <Camera size={15} /> Attach PR Video
                             </label>
                         )}
                     </div>
 
                     {/* Upload progress */}
                     {saving && uploadProgress > 0 && uploadProgress < 100 && (
-                        <div style={{ width: '100%', background: 'rgba(255,255,255,0.08)', borderRadius: 4, height: 4, overflow: 'hidden', marginBottom: 8 }}>
-                            <div style={{ height: '100%', borderRadius: 4, background: '#fbbf24', transition: 'width 200ms', width: `${uploadProgress}%` }} />
+                        <div style={{ width: '100%', background: 'rgba(255,255,255,0.08)', borderRadius: 9999, height: 5, overflow: 'hidden', marginBottom: 10 }}>
+                            <div style={{ height: '100%', borderRadius: 9999, background: '#fbbf24', transition: 'width 200ms', width: `${uploadProgress}%` }} />
                         </div>
                     )}
 
@@ -307,16 +318,18 @@ export default function PRToggle({
                     <button
                         onClick={handleSubmit}
                         disabled={saving || !hasData}
+                        className="chat-press"
                         style={{
-                            width: '100%', padding: '9px', borderRadius: 8, border: 'none',
+                            width: '100%', padding: '11px', borderRadius: 12, border: 'none',
                             cursor: saving || !hasData ? 'default' : 'pointer',
                             background: 'linear-gradient(135deg, #f59e0b, #fbbf24)',
-                            color: '#000', fontSize: 13, fontWeight: 700,
+                            boxShadow: '0 4px 16px rgba(245, 158, 11, 0.35)',
+                            color: '#000', fontSize: '0.88rem', fontWeight: 800,
                             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                             opacity: saving || !hasData ? 0.7 : 1,
                         }}
                     >
-                        {saving ? (uploadProgress > 0 ? `Uploading ${uploadProgress}%` : 'Saving...') : <><Trophy size={14} /> Submit PR</>}
+                        {saving ? (uploadProgress > 0 ? `Uploading ${uploadProgress}%` : 'Saving...') : <><Trophy size={15} /> Submit PR</>}
                     </button>
                 </div>
             )}
@@ -324,14 +337,14 @@ export default function PRToggle({
             {/* Saved confirmation */}
             {saved && (
                 <div style={{
-                    marginTop: 8, padding: '10px 12px',
-                    background: 'rgba(251, 191, 36, 0.1)',
-                    border: '1px solid rgba(251, 191, 36, 0.3)',
-                    borderRadius: 8, textAlign: 'center',
+                    marginTop: 8, padding: '10px 14px',
+                    background: 'rgba(251, 191, 36, 0.12)',
+                    border: '1px solid rgba(251, 191, 36, 0.35)',
+                    borderRadius: 12, textAlign: 'center',
                     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                    color: '#fbbf24', fontSize: 13, fontWeight: 600,
+                    color: '#fbbf24', fontSize: '0.85rem', fontWeight: 700,
                 }}>
-                    <Check size={15} /> PR Saved!
+                    <Check size={16} /> PR Saved!
                 </div>
             )}
         </div>

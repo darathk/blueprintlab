@@ -21,34 +21,64 @@ export default function AnnouncementBanner({ coachId }: { coachId: string }) {
     return (
         <div style={{
             margin: '0 0 1rem 0',
-            padding: '1rem 1.1rem',
-            borderRadius: 14,
-            background: 'linear-gradient(135deg, rgba(251,191,36,0.15) 0%, rgba(245,158,11,0.1) 100%)',
-            border: '1.5px solid rgba(251,191,36,0.5)',
-            boxShadow: '0 4px 24px rgba(251,191,36,0.15)',
+            padding: '1.15rem 1.25rem',
+            borderRadius: 20,
+            background: 'linear-gradient(135deg, rgba(251,191,36,0.14) 0%, rgba(20,24,36,0.85) 100%)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            border: '1px solid rgba(251,191,36,0.35)',
+            boxShadow: '0 10px 30px -6px rgba(0, 0, 0, 0.45), 0 0 20px rgba(251,191,36,0.1), inset 0 1px 0 rgba(255,255,255,0.12)',
             display: 'flex',
-            gap: '0.85rem',
+            gap: '0.9rem',
             alignItems: 'flex-start',
             animation: 'fadeIn 0.4s ease',
         }}>
-            <span style={{ fontSize: '1.4rem', lineHeight: 1, flexShrink: 0, marginTop: 2 }}>📣</span>
+            <div style={{
+                width: 38,
+                height: 38,
+                borderRadius: 12,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: 'rgba(251,191,36,0.18)',
+                border: '1px solid rgba(251,191,36,0.4)',
+                flexShrink: 0,
+                boxShadow: '0 0 12px rgba(251,191,36,0.25)',
+                fontSize: '1.15rem'
+            }}>
+                📣
+            </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: '0.68rem', fontWeight: 700, color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.3rem' }}>
+                <div style={{ fontSize: '0.68rem', fontWeight: 800, color: '#fbbf24', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.25rem' }}>
                     Message from your Coach
                 </div>
-                <div style={{ fontSize: '0.95rem', color: 'var(--foreground)', lineHeight: 1.5, fontWeight: 500 }}>
+                <div style={{ fontSize: '0.92rem', color: '#f8fafc', lineHeight: 1.5, fontWeight: 500 }}>
                     {announcement.message}
                 </div>
-                <div style={{ fontSize: '0.7rem', color: 'var(--secondary-foreground)', marginTop: '0.4rem', opacity: 0.7 }}>
+                <div style={{ fontSize: '0.72rem', color: 'var(--secondary-foreground)', marginTop: '0.45rem', opacity: 0.75, fontWeight: 500 }}>
                     {announcement.startDate} – {announcement.endDate}
                 </div>
             </div>
             <button
                 onClick={() => setDismissed(true)}
-                style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--secondary-foreground)', flexShrink: 0, padding: 2, opacity: 0.6 }}
+                style={{
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 8,
+                    cursor: 'pointer',
+                    color: 'var(--secondary-foreground)',
+                    flexShrink: 0,
+                    width: 28,
+                    height: 28,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    transition: 'all 0.16s ease',
+                }}
+                className="chat-press"
                 title="Dismiss"
             >
-                <X size={16} />
+                <X size={15} />
             </button>
         </div>
     );

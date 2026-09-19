@@ -147,57 +147,68 @@ export default function PlannedTopSetInput({
 
     return (
         <div style={{
-            margin: '0 0 12px',
-            background: saved && !expanded ? 'rgba(56, 189, 248, 0.06)' : 'rgba(56, 189, 248, 0.04)',
-            border: `1px solid rgba(56, 189, 248, ${saved ? '0.2' : '0.12'})`,
-            borderRadius: 12, overflow: 'hidden',
+            margin: '0 0 14px',
+            background: saved && !expanded
+                ? 'linear-gradient(180deg, rgba(20, 28, 44, 0.85) 0%, rgba(12, 16, 26, 0.95) 100%)'
+                : 'linear-gradient(180deg, rgba(18, 24, 38, 0.85) 0%, rgba(10, 14, 22, 0.95) 100%)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            border: `1px solid rgba(56, 189, 248, ${saved ? '0.35' : '0.2'})`,
+            boxShadow: '0 8px 24px -4px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+            borderRadius: 16,
+            overflow: 'hidden',
+            transition: 'all 0.2s var(--ease-out)',
         }}>
             {/* Header */}
             <button
                 onClick={() => setExpanded(!expanded)}
+                className="chat-press"
                 style={{
                     width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                     background: 'none', border: 'none', cursor: 'pointer',
-                    padding: '10px 14px', color: 'var(--foreground)',
+                    padding: '12px 16px', color: 'var(--foreground)',
                 }}
             >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div style={{
-                        width: 26, height: 26, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        background: saved ? 'rgba(56, 189, 248, 0.15)' : 'linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(99,102,241,0.2))',
+                        width: 32, height: 32, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        background: saved ? 'rgba(56, 189, 248, 0.18)' : 'linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(99,102,241,0.2))',
+                        border: '1px solid rgba(56, 189, 248, 0.4)',
+                        boxShadow: '0 0 12px rgba(56, 189, 248, 0.2)',
                     }}>
-                        <Target size={14} style={{ color: '#38bdf8' }} />
+                        <Target size={16} style={{ color: '#38bdf8' }} />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                        <span style={{ fontSize: 13, fontWeight: 700 }}>{title}</span>
+                        <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#f8fafc' }}>{title}</span>
                         {!expanded && saved && hasEntries && (
-                            <span style={{ fontSize: 10, color: '#38bdf8', fontWeight: 600 }}>
+                            <span style={{ fontSize: '0.72rem', color: '#38bdf8', fontWeight: 600, marginTop: 1 }}>
                                 {Object.values(topSets).filter(ts => ts.weight || ts.reps).length} exercise{Object.values(topSets).filter(ts => ts.weight || ts.reps).length !== 1 ? 's' : ''} planned
                             </span>
                         )}
                         {!expanded && !saved && !hasEntries && (
-                            <span style={{ fontSize: 10, color: 'rgba(56,189,248,0.6)', fontWeight: 600 }}>
+                            <span style={{ fontSize: '0.72rem', color: 'rgba(56,189,248,0.7)', fontWeight: 500, marginTop: 1 }}>
                                 {subtitle}
                             </span>
                         )}
                     </div>
                 </div>
                 <div style={{
-                    width: 26, height: 26, borderRadius: 7, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: 'rgba(255,255,255,0.05)',
+                    width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.08)',
                 }}>
-                    {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} style={{ color: '#38bdf8' }} />}
+                    {expanded ? <ChevronUp size={15} /> : <ChevronDown size={15} style={{ color: '#38bdf8' }} />}
                 </div>
             </button>
 
             {/* Expanded form */}
             {expanded && (
-                <div style={{ padding: '0 12px 12px' }}>
+                <div style={{ padding: '0 16px 16px' }}>
                     {targetNextWeek && (
                         <div style={{
-                            fontSize: 11, color: 'rgba(56,189,248,0.7)', fontWeight: 600,
-                            padding: '4px 0 8px', borderBottom: '1px solid rgba(255,255,255,0.04)',
-                            marginBottom: 8,
+                            fontSize: '0.75rem', color: 'rgba(56,189,248,0.85)', fontWeight: 600,
+                            padding: '6px 0 10px', borderBottom: '1px solid rgba(255,255,255,0.06)',
+                            marginBottom: 10,
                         }}>
                             → Pre-fills Week {targetWeekNum} prescribed weights
                         </div>
@@ -206,12 +217,12 @@ export default function PlannedTopSetInput({
                         const ts = topSets[ex.name] || { exerciseName: ex.name, weight: '', reps: '', rpe: '' };
                         return (
                             <div key={ex.name} style={{
-                                padding: '8px 0', borderTop: i > 0 ? '1px solid rgba(255,255,255,0.04)' : 'none',
+                                padding: '10px 0', borderTop: i > 0 ? '1px solid rgba(255,255,255,0.05)' : 'none',
                             }}>
-                                <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--foreground)', marginBottom: 6 }}>
+                                <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--foreground)', marginBottom: 7 }}>
                                     {ex.name}
                                 </div>
-                                <div style={{ display: 'flex', gap: 6 }}>
+                                <div style={{ display: 'flex', gap: 8 }}>
                                     <input
                                         type="number"
                                         inputMode="decimal"
@@ -220,9 +231,9 @@ export default function PlannedTopSetInput({
                                         value={ts.weight}
                                         onChange={e => updateField(ex.name, 'weight', e.target.value)}
                                         style={{
-                                            flex: 2, background: 'rgba(255,255,255,0.04)',
-                                            border: '1px solid rgba(255,255,255,0.08)', borderRadius: 6,
-                                            padding: '6px 8px', fontSize: 13, color: 'var(--foreground)',
+                                            flex: 2, background: 'rgba(0,0,0,0.35)',
+                                            border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10,
+                                            padding: '8px 10px', fontSize: '0.88rem', color: 'var(--foreground)',
                                             outline: 'none', textAlign: 'center', minWidth: 0,
                                         }}
                                     />
@@ -233,9 +244,9 @@ export default function PlannedTopSetInput({
                                         value={ts.reps}
                                         onChange={e => updateField(ex.name, 'reps', e.target.value)}
                                         style={{
-                                            flex: 1, background: 'rgba(255,255,255,0.04)',
-                                            border: '1px solid rgba(255,255,255,0.08)', borderRadius: 6,
-                                            padding: '6px 8px', fontSize: 13, color: 'var(--foreground)',
+                                            flex: 1, background: 'rgba(0,0,0,0.35)',
+                                            border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10,
+                                            padding: '8px 10px', fontSize: '0.88rem', color: 'var(--foreground)',
                                             outline: 'none', textAlign: 'center', minWidth: 0,
                                         }}
                                     />
@@ -247,9 +258,9 @@ export default function PlannedTopSetInput({
                                         value={ts.rpe}
                                         onChange={e => updateField(ex.name, 'rpe', e.target.value)}
                                         style={{
-                                            flex: 1, background: 'rgba(255,255,255,0.04)',
-                                            border: '1px solid rgba(255,255,255,0.08)', borderRadius: 6,
-                                            padding: '6px 8px', fontSize: 13, color: 'var(--foreground)',
+                                            flex: 1, background: 'rgba(0,0,0,0.35)',
+                                            border: '1px solid rgba(255,255,255,0.1)', borderRadius: 10,
+                                            padding: '8px 10px', fontSize: '0.88rem', color: 'var(--foreground)',
                                             outline: 'none', textAlign: 'center', minWidth: 0,
                                         }}
                                     />
@@ -263,17 +274,19 @@ export default function PlannedTopSetInput({
                         <button
                             onClick={handleSave}
                             disabled={saving || saved}
+                            className="chat-press"
                             style={{
-                                width: '100%', padding: '9px', borderRadius: 8,
-                                cursor: saving || saved ? 'default' : 'pointer', marginTop: 8,
-                                background: saved ? 'rgba(16,185,129,0.15)' : 'linear-gradient(135deg, #38bdf8, #6366f1)',
-                                color: saved ? '#10b981' : '#fff', fontSize: 13, fontWeight: 700,
+                                width: '100%', padding: '11px', borderRadius: 12,
+                                cursor: saving || saved ? 'default' : 'pointer', marginTop: 12,
+                                background: saved ? 'rgba(16,185,129,0.18)' : 'linear-gradient(135deg, #38bdf8 0%, #6366f1 100%)',
+                                color: saved ? '#34d399' : '#fff', fontSize: '0.88rem', fontWeight: 800,
                                 display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                                 opacity: saving ? 0.7 : 1, transition: 'all 0.2s',
-                                border: saved ? '1px solid rgba(16,185,129,0.3)' : 'none',
+                                border: saved ? '1px solid rgba(16,185,129,0.35)' : 'none',
+                                boxShadow: saved ? 'none' : '0 4px 16px rgba(56, 189, 248, 0.35)',
                             }}
                         >
-                            {saved ? <><Check size={14} /> Saved for Week {targetWeekNum}</> : saving ? 'Saving...' : `Save for Week ${targetWeekNum}`}
+                            {saved ? <><Check size={16} /> Saved for Week {targetWeekNum}</> : saving ? 'Saving...' : `Save for Week ${targetWeekNum}`}
                         </button>
                     )}
                 </div>

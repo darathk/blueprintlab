@@ -328,13 +328,17 @@ export default function ExerciseFeedback({
             {/* Trigger button */}
             <button
                 onClick={handleOpen}
+                className="chat-press"
                 style={{
                     display: 'flex', alignItems: 'center', gap: 6,
-                    background: open ? 'rgba(99,102,241,0.18)' : 'rgba(99,102,241,0.08)',
-                    border: '1px solid rgba(99,102,241,0.35)',
-                    borderRadius: 8, padding: '8px 14px', cursor: 'pointer',
-                    color: '#818cf8', fontSize: 13, fontWeight: 600,
-                    transition: 'all 0.15s', flex: 1, justifyContent: 'center',
+                    background: open
+                        ? 'linear-gradient(135deg, rgba(99, 102, 241, 0.25) 0%, rgba(168, 85, 247, 0.15) 100%)'
+                        : 'rgba(99, 102, 241, 0.1)',
+                    border: `1px solid rgba(99, 102, 241, ${open ? '0.45' : '0.25'})`,
+                    borderRadius: 12, padding: '9px 14px', cursor: 'pointer',
+                    color: '#a5b4fc', fontSize: '0.82rem', fontWeight: 700,
+                    boxShadow: open ? '0 0 14px rgba(99, 102, 241, 0.25)' : 'none',
+                    transition: 'all 0.16s var(--ease-out)', flex: 1, justifyContent: 'center',
                 }}
             >
                 <MessageCircle size={15} />
@@ -344,9 +348,14 @@ export default function ExerciseFeedback({
             {/* Expandable panel */}
             {open && (
                 <div style={{
-                    flexBasis: '100%', order: 10, background: 'rgba(15,23,42,0.6)',
-                    border: '1px solid rgba(99,102,241,0.25)', borderRadius: 10,
-                    padding: 14, display: 'flex', flexDirection: 'column', gap: 10,
+                    flexBasis: '100%', order: 10,
+                    background: 'linear-gradient(180deg, rgba(18, 22, 36, 0.9) 0%, rgba(12, 14, 24, 0.96) 100%)',
+                    backdropFilter: 'blur(16px)',
+                    WebkitBackdropFilter: 'blur(16px)',
+                    border: '1px solid rgba(99, 102, 241, 0.3)',
+                    boxShadow: '0 8px 24px -4px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+                    borderRadius: 16,
+                    padding: 16, display: 'flex', flexDirection: 'column', gap: 12,
                 }}>
                     {/* Auto-filled message textarea */}
                     <textarea
@@ -362,11 +371,11 @@ export default function ExerciseFeedback({
                         onChange={e => setMessage(e.target.value)}
                         rows={12}
                         style={{
-                            width: '100%', background: 'rgba(15,23,42,0.8)',
-                            border: '1px solid rgba(99,102,241,0.3)', borderRadius: 8,
-                            padding: '10px 12px', fontSize: 13, color: '#f1f5f9',
+                            width: '100%', background: 'rgba(0, 0, 0, 0.4)',
+                            border: '1px solid rgba(99, 102, 241, 0.3)', borderRadius: 12,
+                            padding: '12px 14px', fontSize: '0.84rem', color: '#f8fafc',
                             resize: 'vertical', lineHeight: 1.5, fontFamily: 'inherit',
-                            outlineColor: '#6366f1',
+                            outlineColor: '#6366f1', boxSizing: 'border-box',
                         }}
                     />
 
@@ -465,13 +474,14 @@ export default function ExerciseFeedback({
                         />
                         <button
                             onClick={handleAttachClick}
+                            className="chat-press"
                             style={{
-                                display: 'flex', alignItems: 'center', gap: 5,
-                                background: stagedFiles.length > 0 ? 'rgba(99,102,241,0.2)' : 'rgba(255,255,255,0.06)',
-                                border: `1px solid ${stagedFiles.length > 0 ? 'rgba(99,102,241,0.5)' : 'rgba(255,255,255,0.12)'}`,
-                                borderRadius: 8, padding: '8px 14px', cursor: 'pointer',
-                                color: stagedFiles.length > 0 ? '#818cf8' : '#94a3b8', fontSize: 13, fontWeight: 600,
-                                transition: 'all 0.15s', flexShrink: 0,
+                                display: 'flex', alignItems: 'center', gap: 6,
+                                background: stagedFiles.length > 0 ? 'rgba(99,102,241,0.25)' : 'rgba(255,255,255,0.06)',
+                                border: `1px solid ${stagedFiles.length > 0 ? 'rgba(99,102,241,0.55)' : 'rgba(255,255,255,0.12)'}`,
+                                borderRadius: 10, padding: '9px 14px', cursor: 'pointer',
+                                color: stagedFiles.length > 0 ? '#a5b4fc' : '#94a3b8', fontSize: '0.82rem', fontWeight: 700,
+                                transition: 'all 0.16s var(--ease-out)', flexShrink: 0,
                             }}
                         >
                             <Paperclip size={14} />
@@ -482,22 +492,24 @@ export default function ExerciseFeedback({
                         <button
                             onClick={handleSend}
                             disabled={!!sending || !!sent || (!message.trim() && stagedFiles.length === 0)}
+                            className="chat-press"
                             style={{
                                 flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
                                 background: sent === 'uploading'
-                                    ? 'rgba(99,102,241,0.2)'
+                                    ? 'rgba(99,102,241,0.25)'
                                     : sent === 'done'
-                                        ? 'rgba(16,185,129,0.2)'
-                                        : 'linear-gradient(135deg, #6366f1, #8b5cf6)',
+                                        ? 'rgba(16,185,129,0.25)'
+                                        : 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)',
                                 border: sent === 'uploading'
-                                    ? '1px solid rgba(99,102,241,0.4)'
+                                    ? '1px solid rgba(99,102,241,0.45)'
                                     : sent === 'done'
-                                        ? '1px solid rgba(16,185,129,0.4)'
+                                        ? '1px solid rgba(16,185,129,0.45)'
                                         : 'none',
-                                borderRadius: 8, padding: '9px 14px', cursor: 'pointer',
-                                color: sent === 'uploading' ? '#818cf8' : sent === 'done' ? '#34d399' : '#fff',
-                                fontSize: 13, fontWeight: 700,
+                                borderRadius: 10, padding: '10px 16px', cursor: 'pointer',
+                                color: sent === 'uploading' ? '#a5b4fc' : sent === 'done' ? '#34d399' : '#fff',
+                                fontSize: '0.86rem', fontWeight: 800,
                                 opacity: (!message.trim() && stagedFiles.length === 0) ? 0.4 : 1,
+                                boxShadow: (!message.trim() && stagedFiles.length === 0) || sent ? 'none' : '0 4px 16px rgba(99, 102, 241, 0.35)',
                                 transition: 'all 0.2s',
                             }}
                         >

@@ -386,50 +386,66 @@ export default function ReadinessCheckin({ athleteId, sessionKey, programId, onR
         return (
             <button
                 onClick={() => setExpanded(true)}
+                className="chat-press"
                 style={{
                     width: '100%', display: 'flex', flexDirection: 'column', gap: 0,
-                    background: 'rgba(16, 185, 129, 0.05)',
-                    border: '1px solid rgba(16, 185, 129, 0.15)',
-                    borderRadius: 16, padding: 0, cursor: 'pointer', marginBottom: 12,
+                    background: 'linear-gradient(180deg, rgba(16, 185, 129, 0.09) 0%, rgba(10, 22, 18, 0.95) 100%)',
+                    backdropFilter: 'blur(16px)',
+                    WebkitBackdropFilter: 'blur(16px)',
+                    border: '1px solid rgba(16, 185, 129, 0.25)',
+                    boxShadow: '0 8px 24px -4px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+                    borderRadius: 16, padding: 0, cursor: 'pointer', marginBottom: 14,
                     boxSizing: 'border-box', overflow: 'hidden',
+                    transition: 'all 0.2s var(--ease-out)',
                 }}
             >
                 {/* Top row: icon + label + avg */}
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '16px 20px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '14px 18px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <Activity size={20} style={{ color: '#10b981', flexShrink: 0 }} />
-                        <span style={{ fontSize: 16, color: 'var(--foreground)', fontWeight: 600 }}>Readiness</span>
-                        <span style={{ fontSize: 14, color: '#10b981', fontWeight: 600, marginLeft: 2 }}>✓</span>
+                        <div style={{
+                            width: 32, height: 32, borderRadius: 10,
+                            background: 'rgba(16, 185, 129, 0.15)',
+                            border: '1px solid rgba(16, 185, 129, 0.35)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            flexShrink: 0,
+                        }}>
+                            <Activity size={18} style={{ color: '#10b981' }} />
+                        </div>
+                        <span style={{ fontSize: '0.92rem', color: '#f8fafc', fontWeight: 700 }}>Readiness</span>
+                        <span style={{ fontSize: '0.8rem', color: '#34d399', fontWeight: 700, padding: '2px 6px', borderRadius: 6, background: 'rgba(16, 185, 129, 0.15)', border: '1px solid rgba(16, 185, 129, 0.3)' }}>
+                            Done ✓
+                        </span>
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                         <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
-                            <span style={{ fontSize: 20, fontWeight: 700, color: avgColor }}>{avgScore}</span>
-                            <span style={{ fontSize: 12, color: 'var(--secondary-foreground)' }}>/ 5</span>
+                            <span style={{ fontSize: '1.25rem', fontWeight: 800, color: avgColor }}>{avgScore}</span>
+                            <span style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', fontWeight: 600 }}>/ 5</span>
                         </div>
                         <div style={{ 
                             width: 28, height: 28, borderRadius: 8, 
-                            background: 'rgba(255,255,255,0.1)', display: 'flex', alignItems: 'center', justifyContent: 'center' 
+                            background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.08)',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center' 
                         }}>
-                            <ChevronUp size={16} style={{ color: 'var(--secondary-foreground)' }} />
+                            <ChevronUp size={15} style={{ color: 'var(--secondary-foreground)' }} />
                         </div>
                     </div>
                 </div>
                 {/* Separator */}
-                <div style={{ height: 1, background: 'rgba(16, 185, 129, 0.12)', width: '100%' }} />
+                <div style={{ height: 1, background: 'rgba(255, 255, 255, 0.06)', width: '100%' }} />
                 {/* Bottom row: score pills with labels */}
-                <div style={{ display: 'flex', gap: 8, width: '100%', justifyContent: 'space-between', padding: '16px 20px' }}>
+                <div style={{ display: 'flex', gap: 6, width: '100%', justifyContent: 'space-between', padding: '12px 16px' }}>
                     {METRICS.map(m => (
-                        <div key={m.id} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                        <div key={m.id} style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, minWidth: 0 }}>
                             <div style={{
-                                width: '100%', height: 34, borderRadius: 20, fontSize: 15, fontWeight: 700,
+                                width: '100%', height: 32, borderRadius: 10, fontSize: '0.88rem', fontWeight: 800,
                                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                background: `${SCORE_COLORS[scores[m.id]] || '#555'}15`,
+                                background: `${SCORE_COLORS[scores[m.id]] || '#555'}18`,
                                 color: SCORE_COLORS[scores[m.id]] || '#999',
                                 border: `1px solid ${SCORE_COLORS[scores[m.id]] || '#555'}40`,
                             }}>
                                 {scores[m.id]}
                             </div>
-                            <span style={{ fontSize: 9, fontWeight: 700, color: 'var(--secondary-foreground)', letterSpacing: '0.04em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
+                            <span style={{ fontSize: '0.62rem', fontWeight: 700, color: 'var(--secondary-foreground)', letterSpacing: '0.04em', textTransform: 'uppercase', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
                                 {METRIC_ABBREVS[m.id] || m.label}
                             </span>
                         </div>
@@ -441,33 +457,40 @@ export default function ReadinessCheckin({ athleteId, sessionKey, programId, onR
 
     return (
         <div style={{
-            background: expanded ? 'rgba(18, 18, 18, 0.5)' : 'linear-gradient(135deg, rgba(125,135,210,0.15), rgba(168,85,247,0.12))',
-            border: expanded ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(125,135,210,0.35)',
-            borderRadius: 12, marginBottom: 12, overflow: 'hidden',
-            boxShadow: expanded ? 'none' : '0 0 20px rgba(125,135,210,0.15), inset 0 1px 0 rgba(255,255,255,0.08)',
+            background: expanded
+                ? 'linear-gradient(180deg, rgba(20, 24, 38, 0.9) 0%, rgba(12, 16, 26, 0.96) 100%)'
+                : 'linear-gradient(180deg, rgba(24, 28, 44, 0.85) 0%, rgba(14, 18, 28, 0.95) 100%)',
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
+            border: expanded ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(125,135,210,0.38)',
+            borderRadius: 16, marginBottom: 14, overflow: 'hidden',
+            boxShadow: '0 8px 24px -4px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+            transition: 'all 0.2s var(--ease-out)',
         }}>
             {/* Header */}
             <button
                 onClick={() => setExpanded(!expanded)}
+                className="chat-press"
                 style={{
                     width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    background: expanded ? 'none' : 'linear-gradient(90deg, rgba(125,135,210,0.08), rgba(168,85,247,0.06))',
+                    background: 'none',
                     border: 'none', cursor: 'pointer',
-                    padding: '12px 14px', color: 'var(--foreground)',
+                    padding: '13px 16px', color: 'var(--foreground)',
                 }}
             >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <div style={{
-                        width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        width: 32, height: 32, borderRadius: 10, display: 'flex', alignItems: 'center', justifyContent: 'center',
                         background: expanded ? 'rgba(125,135,210,0.2)' : 'linear-gradient(135deg, #7d87d2, #a855f7)',
                         boxShadow: expanded ? 'none' : '0 0 12px rgba(125,135,210,0.4)',
+                        border: '1px solid rgba(255,255,255,0.12)',
                     }}>
-                        <Activity size={15} style={{ color: '#fff' }} />
+                        <Activity size={16} style={{ color: '#fff' }} />
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start' }}>
-                        <span style={{ fontSize: 13, fontWeight: 700 }}>Pre-Session Readiness</span>
+                        <span style={{ fontSize: '0.88rem', fontWeight: 700, color: '#f8fafc' }}>Pre-Session Readiness</span>
                         {!expanded && !submitted && (
-                            <span style={{ fontSize: 10, color: '#a78bfa', fontWeight: 600, letterSpacing: '0.03em' }}>
+                            <span style={{ fontSize: '0.72rem', color: '#a78bfa', fontWeight: 600, letterSpacing: '0.02em', marginTop: 1 }}>
                                 Tap to check in before training
                             </span>
                         )}
@@ -475,9 +498,10 @@ export default function ReadinessCheckin({ athleteId, sessionKey, programId, onR
                 </div>
                 <div style={{
                     width: 28, height: 28, borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    background: expanded ? 'rgba(255,255,255,0.05)' : 'rgba(125,135,210,0.2)',
+                    background: 'rgba(255,255,255,0.06)',
+                    border: '1px solid rgba(255,255,255,0.08)',
                 }}>
-                    {expanded ? <ChevronUp size={16} /> : <ChevronDown size={16} style={{ color: '#a78bfa' }} />}
+                    {expanded ? <ChevronUp size={15} /> : <ChevronDown size={15} style={{ color: '#a78bfa' }} />}
                 </div>
             </button>
 
