@@ -334,6 +334,15 @@ a {
   background: rgba(148, 163, 184, 0.3);
 }
 
+/* Utility: Hide scrollbar across all browsers while allowing scroll */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
 /* -------------------------------------
    MOBILE RESPONSIVENESS
 -------------------------------------- */
