@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import BarbellVisualizer, { KG_PLATE_SPECS, LB_PLATE_SPECS } from './BarbellVisualizer';
-import { Plus, Minus, Check } from 'lucide-react';
+import BarbellVisualizer, { KG_PLATE_SPECS, LB_PLATE_SPECS, getPlateSpec } from './BarbellVisualizer';
+import { Plus, Minus, RotateCcw, Check, Dumbbell, Sparkles, Layers } from 'lucide-react';
 
 interface BarbellTabProps {
     initialWeight?: number | string;
@@ -11,6 +11,9 @@ interface BarbellTabProps {
 
 const KG_DENOMINATIONS = [25, 20, 15, 10, 5, 2.5, 1.25];
 const LB_DENOMINATIONS = [55, 45, 35, 25, 10, 5, 2.5];
+
+const KG_BENCHMARKS = [60, 100, 140, 180, 220];
+const LB_BENCHMARKS = [135, 225, 315, 405, 495];
 
 export default function BarbellTab({ initialWeight = 100, initialUnit = 'kg' }: BarbellTabProps) {
     const [subMode, setSubMode] = useState<'calculate' | 'load'>('calculate');
@@ -25,7 +28,7 @@ export default function BarbellTab({ initialWeight = 100, initialUnit = 'kg' }: 
         55: 0, 45: 0, 35: 0,
     });
 
-    // Handle unit switch defaults
+    // Handle unit switch
     const handleUnitSwitch = (newUnit: 'kg' | 'lb') => {
         if (newUnit === unit) return;
         const currentTarget = parseFloat(targetWeightStr) || 0;
@@ -37,9 +40,9 @@ export default function BarbellTab({ initialWeight = 100, initialUnit = 'kg' }: 
         setUnit(newUnit);
     };
 
-    // Plate denominations based on current unit
+    // Active plate specs & denominations
     const activeDenominations = unit === 'kg' ? KG_DENOMINATIONS : LB_DENOMINATIONS;
-    const collarWeight = unit === 'kg' ? 5 : 5; // 5kg or 5lb total (2.5 each side)
+    const collarWeight = 5; // 5 kg or 5 lb total (2.5 each side)
 
     // 1. Calculate Mode plates per side
     const calculatedPlates = useMemo(() => {
@@ -84,7 +87,7 @@ export default function BarbellTab({ initialWeight = 100, initialUnit = 'kg' }: 
 
     const otherUnitTotal = unit === 'kg' ? loadedTotal * 2.20462 : loadedTotal / 2.20462;
 
-    // Modify inventory
+    // Inventory operations
     const changeInventory = (denom: number, delta: number) => {
         setInventoryCounts((prev) => {
             const current = prev[denom] || 0;
@@ -108,521 +111,680 @@ export default function BarbellTab({ initialWeight = 100, initialUnit = 'kg' }: 
         }
     };
 
-    // Per-side plate summary text (e.g. "25 kg + 15 kg")
-    const perSideSummary = useMemo(() => {
-        if (activePlates.length === 0) return 'None (Empty Bar)';
-        const counts: Record<number, number> = {};
+    // Quick target increment
+    const adjustTarget = (delta: number) => {
+        const current = parseFloat(targetWeightStr) || 0;
+        const next = Math.max(0, Math.round((current + delta) * 4) / 4);
+        setTargetWeightStr(String(next));
+    };
+
+    // Plate summary groups for visual chips
+    const plateSummaryGroups = useMemo(() => {
+        if (activePlates.length === 0) return [];
+        const map: Record<number, number> = {};
         activePlates.forEach((w) => {
-            counts[w] = (counts[w] || 0) + 1;
+            map[w] = (map[w] || 0) + 1;
         });
-        const parts = Object.entries(counts)
+        return Object.entries(map)
             .sort((a, b) => Number(b[0]) - Number(a[0]))
-            .map(([weight, count]) => (count > 1 ? `${count}x ${weight} ${unit}` : `${weight} ${unit}`));
-        return parts.join(' + ');
+            .map(([weightStr, count]) => ({
+                weight: Number(weightStr),
+                count,
+                spec: getPlateSpec(Number(weightStr), unit),
+            }));
     }, [activePlates, unit]);
 
+    // Barbell presets
+    const barPresets = unit === 'kg'
+        ? [
+            { label: "Men's Olympic", weight: 20 },
+            { label: "Women's", weight: 15 },
+            { label: 'Squat Bar', weight: 25 },
+        ]
+        : [
+            { label: "Standard Bar", weight: 45 },
+            { label: "Women's", weight: 35 },
+            { label: 'Squat Bar', weight: 55 },
+        ];
+
     return (
-        <div className="w-full flex flex-col gap-5 max-w-[1000px] mx-auto px-2 pb-32 md:pb-12">
-            {/* Main Cards: 12-column grid side-by-side on md+ */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-stretch">
-                {/* LEFT CARD: Controls */}
+        <div className="w-full flex flex-col gap-6 max-w-4xl mx-auto px-3 sm:px-4 pb-32 md:pb-16">
+            {/* Top Central Mode Switcher */}
+            <div className="w-full flex justify-center">
                 <div
-                    className="md:col-span-5 flex flex-col p-6 sm:p-7 rounded-2xl"
+                    className="inline-flex p-1.5 rounded-2xl"
                     style={{
-                        background: 'rgba(20, 20, 30, 0.65)',
-                        backdropFilter: 'blur(24px)',
-                        WebkitBackdropFilter: 'blur(24px)',
-                        border: '1px solid rgba(255, 255, 255, 0.09)',
-                        boxShadow: '0 0 0 0.5px rgba(255, 255, 255, 0.04), 0 16px 48px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-                        minHeight: '460px',
+                        background: 'rgba(12, 12, 20, 0.75)',
+                        backdropFilter: 'blur(16px)',
+                        WebkitBackdropFilter: 'blur(16px)',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        boxShadow: 'inset 0 2px 6px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.05)',
                     }}
                 >
-                    {/* Decoupled Segment Selector: Calculate | Load in 50/50 Grid */}
-                    <div className="w-full mb-6">
-                        <div
-                            className="w-full max-w-[280px] mx-auto grid grid-cols-2 p-1.5 rounded-2xl"
-                            style={{
-                                background: 'rgba(10, 10, 16, 0.65)',
-                                backdropFilter: 'blur(12px)',
-                                border: '1px solid rgba(255, 255, 255, 0.1)',
-                                boxShadow: 'inset 0 2px 5px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.05)',
-                            }}
-                        >
-                            <button
-                                type="button"
-                                onClick={() => setSubMode('calculate')}
-                                className="chat-press flex items-center justify-center py-2.5 px-4 rounded-xl font-extrabold text-sm transition-all cursor-pointer select-none"
+                    <button
+                        type="button"
+                        onClick={() => setSubMode('calculate')}
+                        className="chat-press flex items-center gap-2 py-2.5 px-6 rounded-xl font-extrabold text-sm transition-all cursor-pointer select-none"
+                        style={{
+                            background: subMode === 'calculate' ? '#ffffff' : 'transparent',
+                            color: subMode === 'calculate' ? '#09090b' : 'rgba(255, 255, 255, 0.65)',
+                            boxShadow: subMode === 'calculate' ? '0 2px 10px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.9)' : 'none',
+                        }}
+                    >
+                        <Sparkles size={15} className={subMode === 'calculate' ? 'text-red-600' : 'text-zinc-400'} />
+                        Calculate Target
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setSubMode('load')}
+                        className="chat-press flex items-center gap-2 py-2.5 px-6 rounded-xl font-extrabold text-sm transition-all cursor-pointer select-none"
+                        style={{
+                            background: subMode === 'load' ? '#ffffff' : 'transparent',
+                            color: subMode === 'load' ? '#09090b' : 'rgba(255, 255, 255, 0.65)',
+                            boxShadow: subMode === 'load' ? '0 2px 10px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.9)' : 'none',
+                        }}
+                    >
+                        <Layers size={15} className={subMode === 'load' ? 'text-red-600' : 'text-zinc-400'} />
+                        Load Barbell
+                    </button>
+                </div>
+            </div>
+
+            {/* HERO STAGE: Full-Width Showcase Card */}
+            <div
+                className="w-full flex flex-col p-6 sm:p-8 rounded-3xl relative overflow-hidden"
+                style={{
+                    background: 'rgba(20, 20, 32, 0.7)',
+                    backgroundImage: 'radial-gradient(ellipse at 50% 40%, rgba(239, 68, 68, 0.12) 0%, transparent 65%)',
+                    backdropFilter: 'blur(24px)',
+                    WebkitBackdropFilter: 'blur(24px)',
+                    border: '1px solid rgba(255, 255, 255, 0.09)',
+                    boxShadow: '0 0 0 0.5px rgba(255, 255, 255, 0.04), 0 20px 48px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.12)',
+                }}
+            >
+                {/* Hero Header Strip */}
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pb-5 border-b border-white/[0.08]">
+                    <div className="flex flex-col items-center sm:items-start text-center sm:text-left">
+                        <div className="flex items-center gap-2">
+                            <span
+                                className="px-3 py-1 rounded-full text-[11px] font-extrabold tracking-wider uppercase"
                                 style={{
-                                    background: subMode === 'calculate' ? '#ffffff' : 'transparent',
-                                    color: subMode === 'calculate' ? '#09090b' : 'rgba(255, 255, 255, 0.65)',
-                                    boxShadow: subMode === 'calculate' ? '0 2px 10px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.9)' : 'none',
+                                    background: 'rgba(239, 68, 68, 0.15)',
+                                    color: '#f87171',
+                                    border: '1px solid rgba(239, 68, 68, 0.3)',
                                 }}
                             >
-                                Calculate
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setSubMode('load')}
-                                className="chat-press flex items-center justify-center py-2.5 px-4 rounded-xl font-extrabold text-sm transition-all cursor-pointer select-none"
-                                style={{
-                                    background: subMode === 'load' ? '#ffffff' : 'transparent',
-                                    color: subMode === 'load' ? '#09090b' : 'rgba(255, 255, 255, 0.65)',
-                                    boxShadow: subMode === 'load' ? '0 2px 10px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.9)' : 'none',
-                                }}
-                            >
-                                Load
-                            </button>
+                                {subMode === 'calculate' ? 'NEAREST ACHIEVABLE' : 'LOADED BARBELL'}
+                            </span>
+                            <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-white/[0.05] text-zinc-300 border border-white/10">
+                                {activePlates.length} {activePlates.length === 1 ? 'plate' : 'plates'} / side
+                            </span>
                         </div>
+                        {subMode === 'calculate' && parseFloat(targetWeightStr) > 0 && Math.abs(loadedTotal - parseFloat(targetWeightStr)) > 0.01 && (
+                            <span className="text-xs text-amber-300/80 font-medium mt-1.5">
+                                Target: {targetWeightStr} {unit} (Diff: {(loadedTotal - parseFloat(targetWeightStr)) > 0 ? '+' : ''}{(loadedTotal - parseFloat(targetWeightStr)).toFixed(1)} {unit})
+                            </span>
+                        )}
                     </div>
 
-                    {subMode === 'calculate' ? (
-                        /* CALCULATE MODE */
-                        <div className="flex flex-col gap-6 flex-1">
-                            {/* Target Weight + Unit Switch */}
-                            <div>
-                                <label className="block text-sm font-semibold text-white/80 mb-2">
-                                    Target weight
-                                </label>
-                                <div className="flex items-center gap-3">
-                                    <div
-                                        className="flex-1 flex items-center px-4 rounded-xl"
-                                        style={{
-                                            height: '52px',
-                                            minWidth: 0,
-                                            background: 'rgba(10, 10, 16, 0.55)',
-                                            backdropFilter: 'blur(8px)',
-                                            border: '1px solid rgba(255, 255, 255, 0.1)',
-                                            boxShadow: 'inset 0 2px 6px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.03)',
-                                        }}
-                                    >
-                                        <input
-                                            type="number"
-                                            inputMode="decimal"
-                                            step="any"
-                                            value={targetWeightStr}
-                                            onChange={(e) => setTargetWeightStr(e.target.value)}
-                                            placeholder="100"
-                                            className="w-full bg-transparent border-none text-white text-xl font-bold outline-none"
-                                        />
-                                    </div>
+                    {/* Big Weight Readout */}
+                    <div className="flex items-baseline gap-2">
+                        <span
+                            className="text-4xl sm:text-5xl lg:text-6xl font-black text-white tracking-tight leading-none"
+                            style={{ textShadow: '0 0 32px rgba(239, 68, 68, 0.45)' }}
+                        >
+                            {loadedTotal % 1 === 0 ? loadedTotal : loadedTotal.toFixed(1)}
+                        </span>
+                        <span className="text-2xl sm:text-3xl font-black text-red-500 leading-none">
+                            {unit}
+                        </span>
+                        <span className="text-xs sm:text-sm font-semibold text-zinc-400 ml-1.5">
+                            ≈ {otherUnitTotal.toFixed(1)} {unit === 'kg' ? 'lb' : 'kg'}
+                        </span>
+                    </div>
+                </div>
 
-                                    {/* Dedicated Unit switch with fixed width */}
+                {/* Hero Center Barbell Graphic */}
+                <div className="py-6 sm:py-8 flex flex-col items-center justify-center w-full min-h-[260px]">
+                    <BarbellVisualizer
+                        plates={activePlates}
+                        barWeight={barWeight}
+                        includeCollars={includeCollars}
+                        unit={unit}
+                        onRemovePlate={subMode === 'load' ? handleRemovePlateAtIndex : undefined}
+                        isInteractive={subMode === 'load'}
+                    />
+
+                    {subMode === 'load' && activePlates.length > 0 && (
+                        <p className="text-xs text-zinc-400 font-medium mt-3 animate-pulse text-center">
+                            💡 Tap any plate on the barbell sleeve above to remove it
+                        </p>
+                    )}
+                </div>
+
+                {/* Hero Footer Strip: Inside-Out Loading Sequence */}
+                <div className="pt-5 border-t border-white/[0.08] flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                        <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
+                            Per-Side Loading Sequence (Inside → Out)
+                        </span>
+                        {includeCollars && (
+                            <span className="text-[11px] font-bold text-amber-400 bg-amber-400/10 px-2 py-0.5 rounded-md border border-amber-400/20">
+                                +{collarWeight} {unit} Collars Included
+                            </span>
+                        )}
+                    </div>
+
+                    {plateSummaryGroups.length === 0 ? (
+                        <p className="text-sm font-semibold text-zinc-400 py-1">
+                            Empty bar ({barWeight} {unit}). Add plates using the controls below.
+                        </p>
+                    ) : (
+                        <div className="flex flex-wrap items-center gap-2">
+                            {plateSummaryGroups.map(({ weight: pWeight, count, spec }) => (
+                                <div
+                                    key={pWeight}
+                                    className="flex items-center gap-2 px-3 py-1.5 rounded-xl transition-all"
+                                    style={{
+                                        background: 'rgba(255, 255, 255, 0.04)',
+                                        border: `1px solid ${spec.color}66`,
+                                        boxShadow: `0 0 12px ${spec.color}22`,
+                                    }}
+                                >
                                     <div
-                                        className="flex items-center p-1 rounded-xl shrink-0 w-[110px]"
                                         style={{
-                                            height: '52px',
-                                            background: 'rgba(10, 10, 16, 0.55)',
-                                            backdropFilter: 'blur(8px)',
-                                            border: '1px solid rgba(255, 255, 255, 0.1)',
-                                            boxShadow: 'inset 0 2px 6px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.03)',
+                                            width: '10px',
+                                            height: '14px',
+                                            borderRadius: '3px',
+                                            background: spec.color,
+                                            boxShadow: `0 0 6px ${spec.color}`,
                                         }}
-                                    >
-                                        <button
-                                            type="button"
-                                            onClick={() => handleUnitSwitch('kg')}
-                                            className="chat-press flex-1 h-full rounded-lg font-extrabold text-sm transition-all cursor-pointer flex items-center justify-center"
-                                            style={{
-                                                background: unit === 'kg' ? '#ffffff' : 'transparent',
-                                                color: unit === 'kg' ? '#09090b' : 'rgba(255, 255, 255, 0.65)',
-                                                boxShadow: unit === 'kg' ? '0 2px 8px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.8)' : 'none',
-                                            }}
-                                        >
-                                            kg
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleUnitSwitch('lb')}
-                                            className="chat-press flex-1 h-full rounded-lg font-extrabold text-sm transition-all cursor-pointer flex items-center justify-center"
-                                            style={{
-                                                background: unit === 'lb' ? '#ffffff' : 'transparent',
-                                                color: unit === 'lb' ? '#09090b' : 'rgba(255, 255, 255, 0.65)',
-                                                boxShadow: unit === 'lb' ? '0 2px 8px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.8)' : 'none',
-                                            }}
-                                        >
-                                            lb
-                                        </button>
-                                    </div>
+                                    />
+                                    <span className="text-xs font-black text-white">
+                                        {count > 1 ? `${count} × ` : ''}{pWeight} {unit}
+                                    </span>
                                 </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* CONTROLS DECK */}
+            {subMode === 'calculate' ? (
+                /* CALCULATE MODE CONTROLS */
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+                    {/* Card 1: Target Weight & Quick Presets */}
+                    <div
+                        className="lg:col-span-7 flex flex-col justify-between p-6 sm:p-7 rounded-2xl"
+                        style={{
+                            background: 'rgba(20, 20, 30, 0.65)',
+                            backdropFilter: 'blur(20px)',
+                            WebkitBackdropFilter: 'blur(20px)',
+                            border: '1px solid rgba(255, 255, 255, 0.09)',
+                            boxShadow: '0 0 0 0.5px rgba(255, 255, 255, 0.04), 0 12px 36px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+                        }}
+                    >
+                        <div>
+                            <div className="flex items-center justify-between mb-2">
+                                <label className="text-sm font-bold text-white">
+                                    Target Weight
+                                </label>
+                                <span className="text-xs font-semibold text-zinc-400">
+                                    Step by plate denominations
+                                </span>
                             </div>
 
-                            {/* Bar Weight */}
-                            <div>
-                                <label className="block text-sm font-semibold text-white/80 mb-2">
-                                    Bar weight
-                                </label>
+                            {/* Input & Unit Row */}
+                            <div className="flex items-center gap-3">
                                 <div
-                                    className="w-full flex items-center px-4 rounded-xl"
+                                    className="flex-1 flex items-center px-4 rounded-xl"
                                     style={{
-                                        height: '52px',
-                                        background: 'rgba(10, 10, 16, 0.55)',
+                                        height: '56px',
+                                        minWidth: 0,
+                                        background: 'rgba(10, 10, 16, 0.65)',
                                         backdropFilter: 'blur(8px)',
-                                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                                        boxShadow: 'inset 0 2px 6px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.03)',
+                                        border: '1px solid rgba(255, 255, 255, 0.12)',
+                                        boxShadow: 'inset 0 2px 6px rgba(0, 0, 0, 0.45)',
                                     }}
                                 >
                                     <input
                                         type="number"
+                                        inputMode="decimal"
                                         step="any"
-                                        value={barWeight}
-                                        onChange={(e) => setBarWeight(parseFloat(e.target.value) || 0)}
-                                        className="w-full bg-transparent border-none text-white text-xl font-bold outline-none"
+                                        value={targetWeightStr}
+                                        onChange={(e) => setTargetWeightStr(e.target.value)}
+                                        placeholder="100"
+                                        className="w-full bg-transparent border-none text-white text-2xl font-black outline-none"
                                     />
                                 </div>
-                            </div>
 
-                            {/* Collars Checkbox */}
-                            <label className="flex items-start gap-3 cursor-pointer select-none">
+                                {/* Unit Switcher */}
                                 <div
+                                    className="flex items-center p-1 rounded-xl shrink-0 w-[116px]"
                                     style={{
-                                        width: '18px',
-                                        height: '18px',
-                                        borderRadius: '4px',
-                                        background: includeCollars ? '#ffffff' : 'rgba(255, 255, 255, 0.04)',
-                                        border: includeCollars ? '1.5px solid #ffffff' : '1.5px solid rgba(255, 255, 255, 0.45)',
-                                        boxShadow: includeCollars ? '0 0 10px rgba(255, 255, 255, 0.4)' : 'inset 0 1px 0 rgba(255, 255, 255, 0.08)',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        color: '#0a0a0a',
-                                        marginTop: '2px',
-                                        flexShrink: 0,
-                                        transition: 'all 0.15s ease',
+                                        height: '56px',
+                                        background: 'rgba(10, 10, 16, 0.65)',
+                                        backdropFilter: 'blur(8px)',
+                                        border: '1px solid rgba(255, 255, 255, 0.12)',
+                                        boxShadow: 'inset 0 2px 6px rgba(0, 0, 0, 0.45)',
                                     }}
                                 >
-                                    {includeCollars && <Check size={12} strokeWidth={3.5} />}
+                                    <button
+                                        type="button"
+                                        onClick={() => handleUnitSwitch('kg')}
+                                        className="chat-press flex-1 h-full rounded-lg font-extrabold text-sm transition-all cursor-pointer flex items-center justify-center"
+                                        style={{
+                                            background: unit === 'kg' ? '#ffffff' : 'transparent',
+                                            color: unit === 'kg' ? '#09090b' : 'rgba(255, 255, 255, 0.65)',
+                                            boxShadow: unit === 'kg' ? '0 2px 8px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.8)' : 'none',
+                                        }}
+                                    >
+                                        kg
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleUnitSwitch('lb')}
+                                        className="chat-press flex-1 h-full rounded-lg font-extrabold text-sm transition-all cursor-pointer flex items-center justify-center"
+                                        style={{
+                                            background: unit === 'lb' ? '#ffffff' : 'transparent',
+                                            color: unit === 'lb' ? '#09090b' : 'rgba(255, 255, 255, 0.65)',
+                                            boxShadow: unit === 'lb' ? '0 2px 8px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.8)' : 'none',
+                                        }}
+                                    >
+                                        lb
+                                    </button>
                                 </div>
-                                <input
-                                    type="checkbox"
-                                    checked={includeCollars}
-                                    onChange={(e) => setIncludeCollars(e.target.checked)}
-                                    className="hidden"
-                                />
-                                <div className="flex flex-col">
-                                    <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#ef4444', textShadow: '0 0 12px rgba(239, 68, 68, 0.3)', lineHeight: 1.2 }}>
-                                        Add {unit === 'kg' ? '2.5 kg' : '2.5 lb'} collars
-                                    </span>
-                                    <span style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginTop: '2px' }}>
-                                        +{collarWeight} {unit} total
-                                    </span>
-                                </div>
-                            </label>
+                            </div>
                         </div>
-                    ) : (
-                        /* LOAD MODE */
-                        <div className="flex flex-col gap-4 flex-1">
-                            <div className="flex items-center justify-between">
-                                <div>
-                                    <h4 className="text-lg font-extrabold text-white">Plate inventory</h4>
-                                    <p className="text-xs text-white/60 mt-0.5">
-                                        Add one plate to each side at a time.
-                                    </p>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={clearInventory}
-                                    className="chat-press text-sm font-extrabold text-[#ef4444] cursor-pointer hover:underline"
-                                    style={{ textShadow: '0 0 10px rgba(239, 68, 68, 0.3)' }}
-                                >
-                                    Clear
-                                </button>
+
+                        {/* Quick Adjust Buttons */}
+                        <div className="mt-5">
+                            <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 block mb-2">
+                                Quick Jump (+ / -)
+                            </span>
+                            <div className="flex flex-wrap items-center gap-2">
+                                {(unit === 'kg' ? [-10, -5, -2.5, 2.5, 5, 10, 20] : [-25, -10, -5, 5, 10, 25, 45]).map((step) => (
+                                    <button
+                                        key={step}
+                                        type="button"
+                                        onClick={() => adjustTarget(step)}
+                                        className="chat-press px-3 py-2 rounded-xl text-xs font-extrabold transition-all cursor-pointer"
+                                        style={{
+                                            background: step > 0 ? 'rgba(255, 255, 255, 0.06)' : 'rgba(255, 255, 255, 0.03)',
+                                            border: '1px solid rgba(255, 255, 255, 0.09)',
+                                            color: step > 0 ? '#ffffff' : 'rgba(255, 255, 255, 0.65)',
+                                        }}
+                                    >
+                                        {step > 0 ? `+${step}` : step} {unit}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Standard Benchmark Targets */}
+                        <div className="mt-4 pt-4 border-t border-white/[0.06]">
+                            <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 block mb-2">
+                                Warmup Benchmarks
+                            </span>
+                            <div className="flex flex-wrap items-center gap-2">
+                                {(unit === 'kg' ? KG_BENCHMARKS : LB_BENCHMARKS).map((bench) => (
+                                    <button
+                                        key={bench}
+                                        type="button"
+                                        onClick={() => setTargetWeightStr(String(bench))}
+                                        className="chat-press px-3 py-1.5 rounded-lg text-xs font-bold text-zinc-300 hover:text-white transition-all cursor-pointer"
+                                        style={{
+                                            background: parseFloat(targetWeightStr) === bench ? 'rgba(239, 68, 68, 0.2)' : 'rgba(255, 255, 255, 0.04)',
+                                            border: parseFloat(targetWeightStr) === bench ? '1px solid rgba(239, 68, 68, 0.5)' : '1px solid rgba(255, 255, 255, 0.08)',
+                                            color: parseFloat(targetWeightStr) === bench ? '#f87171' : undefined,
+                                        }}
+                                    >
+                                        {bench} {unit}
+                                    </button>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Card 2: Barbell & Equipment Configuration */}
+                    <div
+                        className="lg:col-span-5 flex flex-col justify-between p-6 sm:p-7 rounded-2xl"
+                        style={{
+                            background: 'rgba(20, 20, 30, 0.65)',
+                            backdropFilter: 'blur(20px)',
+                            WebkitBackdropFilter: 'blur(20px)',
+                            border: '1px solid rgba(255, 255, 255, 0.09)',
+                            boxShadow: '0 0 0 0.5px rgba(255, 255, 255, 0.04), 0 12px 36px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+                        }}
+                    >
+                        <div>
+                            <div className="flex items-center gap-2 mb-3">
+                                <Dumbbell size={16} className="text-red-400" />
+                                <h4 className="text-sm font-extrabold text-white">
+                                    Barbell Weight
+                                </h4>
                             </div>
 
-                            {/* Inventory List */}
-                            <div className="flex flex-col divide-y divide-white/[0.06] border-y border-white/[0.08] my-1">
-                                {activeDenominations.map((denom) => {
-                                    const spec = unit === 'kg' ? KG_PLATE_SPECS[denom] : LB_PLATE_SPECS[denom];
-                                    const count = inventoryCounts[denom] || 0;
-
+                            <div className="grid grid-cols-1 gap-2.5">
+                                {barPresets.map((bp) => {
+                                    const isSelected = barWeight === bp.weight;
                                     return (
-                                        <div
-                                            key={denom}
-                                            className="flex items-center justify-between py-2 px-2 rounded-lg hover:bg-white/[0.03] transition-colors"
+                                        <button
+                                            key={bp.weight}
+                                            type="button"
+                                            onClick={() => setBarWeight(bp.weight)}
+                                            className="chat-press flex items-center justify-between px-4 py-3 rounded-xl transition-all cursor-pointer text-left"
+                                            style={{
+                                                background: isSelected ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(220, 38, 38, 0.12) 100%)' : 'rgba(10, 10, 16, 0.55)',
+                                                border: isSelected ? '1.5px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.08)',
+                                                boxShadow: isSelected ? '0 0 14px rgba(239, 68, 68, 0.25)' : 'none',
+                                            }}
                                         >
-                                            <div className="flex items-center gap-3">
-                                                <div
-                                                    style={{
-                                                        width: '16px',
-                                                        height: '22px',
-                                                        borderRadius: '4px',
-                                                        background: spec?.color || '#94a3b8',
-                                                        border: `1px solid ${spec?.darkColor || '#475569'}`,
-                                                        boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
-                                                    }}
-                                                />
-                                                <span className="text-sm font-bold text-white">
-                                                    {denom} {unit}
-                                                </span>
-                                            </div>
-
-                                            {/* Stepper buttons */}
-                                            <div className="flex items-center gap-2.5">
-                                                <button
-                                                    type="button"
-                                                    onClick={() => changeInventory(denom, -1)}
-                                                    disabled={count === 0}
-                                                    className="chat-press flex items-center justify-center w-8 h-8 rounded-lg transition-all"
-                                                    style={{
-                                                        background: 'rgba(255, 255, 255, 0.06)',
-                                                        backdropFilter: 'blur(8px)',
-                                                        border: '1px solid rgba(255, 255, 255, 0.1)',
-                                                        boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 2px 6px rgba(0, 0, 0, 0.2)',
-                                                        color: count > 0 ? '#ffffff' : 'rgba(255, 255, 255, 0.25)',
-                                                        cursor: count > 0 ? 'pointer' : 'default',
-                                                    }}
-                                                >
-                                                    <Minus size={13} />
-                                                </button>
-                                                <span
-                                                    className="w-6 text-center font-extrabold text-base text-[#ef4444]"
-                                                    style={{ textShadow: '0 0 10px rgba(239, 68, 68, 0.35)' }}
-                                                >
-                                                    {count}
-                                                </span>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => changeInventory(denom, 1)}
-                                                    className="chat-press flex items-center justify-center w-8 h-8 rounded-lg cursor-pointer transition-all"
-                                                    style={{
-                                                        background: 'rgba(255, 255, 255, 0.08)',
-                                                        backdropFilter: 'blur(8px)',
-                                                        border: '1px solid rgba(255, 255, 255, 0.12)',
-                                                        boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.15), 0 2px 6px rgba(0, 0, 0, 0.2)',
-                                                        color: '#ffffff',
-                                                    }}
-                                                >
-                                                    <Plus size={13} />
-                                                </button>
-                                            </div>
-                                        </div>
+                                            <span className="text-sm font-bold text-white">
+                                                {bp.label}
+                                            </span>
+                                            <span className="text-sm font-black text-white/90">
+                                                {bp.weight} {unit}
+                                            </span>
+                                        </button>
                                     );
                                 })}
                             </div>
+                        </div>
 
-                            {/* Bar & Collars in Load Mode */}
-                            <div className="flex flex-col gap-2 mt-1">
-                                <label className="block text-sm font-semibold text-white/70">
-                                    Bar weight
-                                </label>
-                                <div className="flex items-center gap-3">
-                                    <div
-                                        className="flex-1 flex items-center px-4 rounded-xl"
-                                        style={{
-                                            height: '52px',
-                                            background: 'rgba(10, 10, 16, 0.55)',
-                                            backdropFilter: 'blur(8px)',
-                                            border: '1px solid rgba(255, 255, 255, 0.1)',
-                                            boxShadow: 'inset 0 2px 6px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.03)',
-                                        }}
-                                    >
-                                        <input
-                                            type="number"
-                                            step="any"
-                                            value={barWeight}
-                                            onChange={(e) => setBarWeight(parseFloat(e.target.value) || 0)}
-                                            className="w-full bg-transparent border-none text-white text-xl font-bold outline-none"
-                                        />
-                                    </div>
-                                    {/* Dedicated Unit switch with fixed width */}
-                                    <div
-                                        className="flex items-center p-1 rounded-xl shrink-0 w-[110px]"
-                                        style={{
-                                            height: '52px',
-                                            background: 'rgba(10, 10, 16, 0.55)',
-                                            backdropFilter: 'blur(8px)',
-                                            border: '1px solid rgba(255, 255, 255, 0.1)',
-                                            boxShadow: 'inset 0 2px 6px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.03)',
-                                        }}
-                                    >
-                                        <button
-                                            type="button"
-                                            onClick={() => handleUnitSwitch('kg')}
-                                            className="chat-press flex-1 h-full rounded-lg font-extrabold text-sm transition-all cursor-pointer flex items-center justify-center"
-                                            style={{
-                                                background: unit === 'kg' ? '#ffffff' : 'transparent',
-                                                color: unit === 'kg' ? '#09090b' : 'rgba(255, 255, 255, 0.65)',
-                                                boxShadow: unit === 'kg' ? '0 2px 8px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.8)' : 'none',
-                                            }}
-                                        >
-                                            kg
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onClick={() => handleUnitSwitch('lb')}
-                                            className="chat-press flex-1 h-full rounded-lg font-extrabold text-sm transition-all cursor-pointer flex items-center justify-center"
-                                            style={{
-                                                background: unit === 'lb' ? '#ffffff' : 'transparent',
-                                                color: unit === 'lb' ? '#09090b' : 'rgba(255, 255, 255, 0.65)',
-                                                boxShadow: unit === 'lb' ? '0 2px 8px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.8)' : 'none',
-                                            }}
-                                        >
-                                            lb
-                                        </button>
-                                    </div>
-                                </div>
+                        {/* Collars Toggle Card */}
+                        <div
+                            onClick={() => setIncludeCollars(!includeCollars)}
+                            className="chat-press flex items-center justify-between p-4 rounded-xl mt-4 cursor-pointer select-none transition-all"
+                            style={{
+                                background: includeCollars ? 'rgba(239, 68, 68, 0.12)' : 'rgba(10, 10, 16, 0.5)',
+                                border: includeCollars ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)',
+                            }}
+                        >
+                            <div className="flex flex-col">
+                                <span className="text-sm font-extrabold text-white">
+                                    Competition Collars
+                                </span>
+                                <span className="text-xs text-zinc-400 mt-0.5">
+                                    +{collarWeight} {unit} total (+2.5 {unit} / side)
+                                </span>
+                            </div>
 
-                                <label className="flex items-start gap-3 cursor-pointer select-none mt-2">
-                                    <div
-                                        style={{
-                                            width: '18px',
-                                            height: '18px',
-                                            borderRadius: '4px',
-                                            background: includeCollars ? '#ffffff' : 'rgba(255, 255, 255, 0.04)',
-                                            border: includeCollars ? '1.5px solid #ffffff' : '1.5px solid rgba(255, 255, 255, 0.45)',
-                                            boxShadow: includeCollars ? '0 0 10px rgba(255, 255, 255, 0.4)' : 'inset 0 1px 0 rgba(255, 255, 255, 0.08)',
-                                            display: 'flex',
-                                            alignItems: 'center',
-                                            justifyContent: 'center',
-                                            color: '#0a0a0a',
-                                            marginTop: '2px',
-                                            flexShrink: 0,
-                                            transition: 'all 0.15s ease',
-                                        }}
-                                    >
-                                        {includeCollars && <Check size={12} strokeWidth={3.5} />}
-                                    </div>
-                                    <input
-                                        type="checkbox"
-                                        checked={includeCollars}
-                                        onChange={(e) => setIncludeCollars(e.target.checked)}
-                                        className="hidden"
-                                    />
-                                    <div className="flex flex-col">
-                                        <span style={{ fontSize: '0.9rem', fontWeight: 700, color: '#ef4444', textShadow: '0 0 12px rgba(239, 68, 68, 0.3)', lineHeight: 1.2 }}>
-                                            Add {unit === 'kg' ? '2.5 kg' : '2.5 lb'} collars
-                                        </span>
-                                        <span style={{ fontSize: '0.8rem', color: 'rgba(255, 255, 255, 0.5)', marginTop: '2px' }}>
-                                            +{collarWeight} {unit} total
-                                        </span>
-                                    </div>
-                                </label>
+                            <div
+                                style={{
+                                    width: '22px',
+                                    height: '22px',
+                                    borderRadius: '6px',
+                                    background: includeCollars ? '#ef4444' : 'rgba(255, 255, 255, 0.05)',
+                                    border: includeCollars ? '1px solid #ef4444' : '1.5px solid rgba(255, 255, 255, 0.3)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: '#ffffff',
+                                }}
+                            >
+                                {includeCollars && <Check size={14} strokeWidth={3.5} />}
                             </div>
                         </div>
-                    )}
-                </div>
-
-                {/* RIGHT CARD: Barbell Visualization & Big Total */}
-                <div
-                    className="md:col-span-7 flex flex-col justify-between p-6 sm:p-7 rounded-2xl relative overflow-hidden"
-                    style={{
-                        background: 'rgba(20, 20, 30, 0.65)',
-                        backgroundImage: 'radial-gradient(ellipse at 50% 38%, rgba(239, 68, 68, 0.09) 0%, transparent 68%)',
-                        backdropFilter: 'blur(24px)',
-                        WebkitBackdropFilter: 'blur(24px)',
-                        border: '1px solid rgba(255, 255, 255, 0.09)',
-                        boxShadow: '0 0 0 0.5px rgba(255, 255, 255, 0.04), 0 16px 48px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-                        minHeight: '460px',
-                    }}
-                >
-                    {/* Header: Nearest Available / Loaded Total & Big Weight */}
-                    <div className="flex flex-col items-center justify-center text-center pt-1">
-                        <div
-                            className="inline-flex items-center px-3 py-1 rounded-full mb-2"
-                            style={{
-                                background: 'rgba(255, 255, 255, 0.04)',
-                                border: '1px solid rgba(255, 255, 255, 0.08)',
-                                backdropFilter: 'blur(8px)',
-                                boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.06)',
-                            }}
-                        >
-                            <span
-                                style={{
-                                    fontSize: '0.75rem',
-                                    fontWeight: 800,
-                                    color: 'rgba(255, 255, 255, 0.7)',
-                                    letterSpacing: '0.08em',
-                                    textTransform: 'uppercase',
-                                }}
-                            >
-                                {subMode === 'calculate' ? 'NEAREST AVAILABLE' : 'LOADED TOTAL'}
-                            </span>
-                        </div>
-                        <div className="flex items-baseline justify-center">
-                            <span
-                                style={{
-                                    fontSize: '4rem',
-                                    fontWeight: 900,
-                                    lineHeight: 1,
-                                    color: '#ef4444',
-                                    letterSpacing: '-0.02em',
-                                    textShadow: '0 0 32px rgba(239, 68, 68, 0.4), 0 0 60px rgba(239, 68, 68, 0.15)',
-                                }}
-                            >
-                                {loadedTotal % 1 === 0 ? loadedTotal : loadedTotal.toFixed(1)}
-                            </span>
-                            <span
-                                style={{
-                                    fontSize: '1.5rem',
-                                    fontWeight: 800,
-                                    color: '#ef4444',
-                                    marginLeft: '6px',
-                                    textShadow: '0 0 20px rgba(239, 68, 68, 0.4)',
-                                }}
-                            >
-                                {unit}
-                            </span>
-                        </div>
-                        <span
-                            style={{
-                                fontSize: '0.9rem',
-                                fontWeight: 600,
-                                color: 'rgba(255, 255, 255, 0.65)',
-                                marginTop: '4px',
-                            }}
-                        >
-                            {otherUnitTotal.toFixed(2)} {unit === 'kg' ? 'lb' : 'kg'}
-                        </span>
-                    </div>
-
-                    {/* Barbell Graphic */}
-                    <div className="my-auto py-4 flex items-center justify-center w-full">
-                        <BarbellVisualizer
-                            plates={activePlates}
-                            barWeight={barWeight}
-                            includeCollars={includeCollars}
-                            unit={unit}
-                            onRemovePlate={subMode === 'load' ? handleRemovePlateAtIndex : undefined}
-                            isInteractive={subMode === 'load'}
-                        />
-                    </div>
-
-                    {/* Footer Plates Count */}
-                    <div className="text-center pb-1">
-                        <div
-                            className="inline-flex items-center px-4 py-1.5 rounded-full"
-                            style={{
-                                background: 'rgba(255, 255, 255, 0.04)',
-                                border: '1px solid rgba(255, 255, 255, 0.08)',
-                                backdropFilter: 'blur(8px)',
-                                boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.04)',
-                            }}
-                        >
-                            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'rgba(255, 255, 255, 0.7)' }}>
-                                {activePlates.length} {activePlates.length === 1 ? 'plate' : 'plates'} per side
-                            </span>
-                        </div>
                     </div>
                 </div>
-            </div>
+            ) : (
+                /* LOAD MODE CONTROLS: Olympic Plate Rack */
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-stretch">
+                    {/* Card 1: Visual Olympic Plate Rack */}
+                    <div
+                        className="lg:col-span-8 flex flex-col p-6 sm:p-7 rounded-2xl"
+                        style={{
+                            background: 'rgba(20, 20, 30, 0.65)',
+                            backdropFilter: 'blur(20px)',
+                            WebkitBackdropFilter: 'blur(20px)',
+                            border: '1px solid rgba(255, 255, 255, 0.09)',
+                            boxShadow: '0 0 0 0.5px rgba(255, 255, 255, 0.04), 0 12px 36px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+                        }}
+                    >
+                        <div className="flex items-center justify-between mb-4">
+                            <div>
+                                <h4 className="text-base font-extrabold text-white">
+                                    Olympic Plate Rack
+                                </h4>
+                                <p className="text-xs text-zinc-400 mt-0.5">
+                                    Tap plate to add to both sides • Adjust count with + / -
+                                </p>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={clearInventory}
+                                className="chat-press flex items-center gap-1.5 text-xs font-extrabold text-red-400 hover:text-red-300 py-1.5 px-3 rounded-lg bg-red-500/10 border border-red-500/20 cursor-pointer"
+                            >
+                                <RotateCcw size={13} />
+                                Clear All
+                            </button>
+                        </div>
 
-            {/* Bottom Callout Bar */}
-            <div
-                className="flex items-center gap-3 px-6 py-4 rounded-2xl"
-                style={{
-                    background: 'rgba(20, 20, 30, 0.65)',
-                    backdropFilter: 'blur(20px)',
-                    WebkitBackdropFilter: 'blur(20px)',
-                    border: '1px solid rgba(255, 255, 255, 0.09)',
-                    borderLeft: '4px solid #ef4444',
-                    boxShadow: '0 0 0 0.5px rgba(255, 255, 255, 0.04), 0 8px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 16px rgba(239, 68, 68, 0.15)',
-                }}
-            >
-                <span style={{ fontSize: '0.95rem', fontWeight: 800, color: '#ef4444', textShadow: '0 0 10px rgba(239, 68, 68, 0.3)', flexShrink: 0 }}>
-                    Per side
-                </span>
-                <span style={{ fontSize: '0.95rem', fontWeight: 600, color: 'rgba(255, 255, 255, 0.9)' }}>
-                    {perSideSummary}
-                </span>
-            </div>
+                        {/* Visual Plate Tiles Grid */}
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                            {activeDenominations.map((denom) => {
+                                const spec = unit === 'kg' ? KG_PLATE_SPECS[denom] : LB_PLATE_SPECS[denom];
+                                const count = inventoryCounts[denom] || 0;
+
+                                return (
+                                    <div
+                                        key={denom}
+                                        onClick={() => changeInventory(denom, 1)}
+                                        className="chat-press relative flex flex-col justify-between p-3.5 rounded-2xl cursor-pointer select-none transition-all group overflow-hidden"
+                                        style={{
+                                            background: count > 0 ? 'rgba(255, 255, 255, 0.06)' : 'rgba(10, 10, 16, 0.55)',
+                                            border: count > 0 ? `1.5px solid ${spec?.color || '#ef4444'}` : '1px solid rgba(255, 255, 255, 0.08)',
+                                            boxShadow: count > 0 ? `0 4px 18px ${spec?.color}25, inset 0 1px 0 rgba(255, 255, 255, 0.1)` : 'none',
+                                            minHeight: '120px',
+                                        }}
+                                    >
+                                        {/* Top Accent Color Bar */}
+                                        <div
+                                            className="absolute top-0 left-0 right-0 h-1.5"
+                                            style={{ background: spec?.color || '#ef4444' }}
+                                        />
+
+                                        {/* Header inside tile: Color icon & Count Badge */}
+                                        <div className="flex items-center justify-between w-full pt-1">
+                                            <div
+                                                style={{
+                                                    width: '14px',
+                                                    height: '14px',
+                                                    borderRadius: '50%',
+                                                    background: spec?.color,
+                                                    boxShadow: `0 0 8px ${spec?.color}`,
+                                                }}
+                                            />
+                                            <span
+                                                className="text-xs font-black px-2 py-0.5 rounded-full"
+                                                style={{
+                                                    background: count > 0 ? spec?.color : 'rgba(255, 255, 255, 0.08)',
+                                                    color: count > 0 ? spec?.textColor || '#ffffff' : 'rgba(255, 255, 255, 0.4)',
+                                                }}
+                                            >
+                                                {count}x
+                                            </span>
+                                        </div>
+
+                                        {/* Plate Weight */}
+                                        <div className="my-2">
+                                            <span className="text-xl font-black text-white leading-none block">
+                                                {denom}
+                                            </span>
+                                            <span className="text-[11px] font-bold text-zinc-400 uppercase">
+                                                {unit} / side
+                                            </span>
+                                        </div>
+
+                                        {/* Stepper Buttons (stop propagation so tile tap won't double fire) */}
+                                        <div className="flex items-center justify-between gap-1.5 pt-1 border-t border-white/[0.06]">
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    changeInventory(denom, -1);
+                                                }}
+                                                disabled={count === 0}
+                                                className="chat-press flex items-center justify-center w-8 h-8 rounded-lg transition-all"
+                                                style={{
+                                                    background: 'rgba(255, 255, 255, 0.06)',
+                                                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                                                    color: count > 0 ? '#ffffff' : 'rgba(255, 255, 255, 0.2)',
+                                                    cursor: count > 0 ? 'pointer' : 'default',
+                                                }}
+                                            >
+                                                <Minus size={13} />
+                                            </button>
+
+                                            <span className="text-xs font-extrabold text-zinc-300">
+                                                {count * 2} tot
+                                            </span>
+
+                                            <button
+                                                type="button"
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    changeInventory(denom, 1);
+                                                }}
+                                                className="chat-press flex items-center justify-center w-8 h-8 rounded-lg cursor-pointer transition-all"
+                                                style={{
+                                                    background: 'rgba(255, 255, 255, 0.1)',
+                                                    border: '1px solid rgba(255, 255, 255, 0.15)',
+                                                    color: '#ffffff',
+                                                }}
+                                            >
+                                                <Plus size={13} />
+                                            </button>
+                                        </div>
+                                    </div>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Card 2: Equipment & Unit Configuration */}
+                    <div
+                        className="lg:col-span-4 flex flex-col justify-between p-6 sm:p-7 rounded-2xl"
+                        style={{
+                            background: 'rgba(20, 20, 30, 0.65)',
+                            backdropFilter: 'blur(20px)',
+                            WebkitBackdropFilter: 'blur(20px)',
+                            border: '1px solid rgba(255, 255, 255, 0.09)',
+                            boxShadow: '0 0 0 0.5px rgba(255, 255, 255, 0.04), 0 12px 36px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+                        }}
+                    >
+                        <div>
+                            {/* Unit Switcher */}
+                            <div className="mb-5">
+                                <label className="text-xs font-bold uppercase tracking-wider text-zinc-400 block mb-2">
+                                    Units
+                                </label>
+                                <div
+                                    className="flex items-center p-1 rounded-xl w-full"
+                                    style={{
+                                        height: '46px',
+                                        background: 'rgba(10, 10, 16, 0.65)',
+                                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                                    }}
+                                >
+                                    <button
+                                        type="button"
+                                        onClick={() => handleUnitSwitch('kg')}
+                                        className="chat-press flex-1 h-full rounded-lg font-extrabold text-sm transition-all cursor-pointer flex items-center justify-center"
+                                        style={{
+                                            background: unit === 'kg' ? '#ffffff' : 'transparent',
+                                            color: unit === 'kg' ? '#09090b' : 'rgba(255, 255, 255, 0.65)',
+                                            boxShadow: unit === 'kg' ? '0 2px 8px rgba(0, 0, 0, 0.25)' : 'none',
+                                        }}
+                                    >
+                                        kg
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleUnitSwitch('lb')}
+                                        className="chat-press flex-1 h-full rounded-lg font-extrabold text-sm transition-all cursor-pointer flex items-center justify-center"
+                                        style={{
+                                            background: unit === 'lb' ? '#ffffff' : 'transparent',
+                                            color: unit === 'lb' ? '#09090b' : 'rgba(255, 255, 255, 0.65)',
+                                            boxShadow: unit === 'lb' ? '0 2px 8px rgba(0, 0, 0, 0.25)' : 'none',
+                                        }}
+                                    >
+                                        lb
+                                    </button>
+                                </div>
+                            </div>
+
+                            {/* Barbell Weight */}
+                            <div className="mb-5">
+                                <label className="text-xs font-bold uppercase tracking-wider text-zinc-400 block mb-2">
+                                    Barbell
+                                </label>
+                                <div className="grid grid-cols-1 gap-2">
+                                    {barPresets.map((bp) => {
+                                        const isSelected = barWeight === bp.weight;
+                                        return (
+                                            <button
+                                                key={bp.weight}
+                                                type="button"
+                                                onClick={() => setBarWeight(bp.weight)}
+                                                className="chat-press flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-all cursor-pointer text-left"
+                                                style={{
+                                                    background: isSelected ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(220, 38, 38, 0.12) 100%)' : 'rgba(10, 10, 16, 0.55)',
+                                                    border: isSelected ? '1.5px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.08)',
+                                                }}
+                                            >
+                                                <span className="text-xs font-bold text-white">
+                                                    {bp.label}
+                                                </span>
+                                                <span className="text-xs font-black text-white/90">
+                                                    {bp.weight} {unit}
+                                                </span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Collars Toggle */}
+                        <div
+                            onClick={() => setIncludeCollars(!includeCollars)}
+                            className="chat-press flex items-center justify-between p-3.5 rounded-xl cursor-pointer select-none transition-all mt-3"
+                            style={{
+                                background: includeCollars ? 'rgba(239, 68, 68, 0.12)' : 'rgba(10, 10, 16, 0.5)',
+                                border: includeCollars ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)',
+                            }}
+                        >
+                            <div className="flex flex-col">
+                                <span className="text-xs font-extrabold text-white">
+                                    Collars
+                                </span>
+                                <span className="text-[11px] text-zinc-400">
+                                    +{collarWeight} {unit} total
+                                </span>
+                            </div>
+
+                            <div
+                                style={{
+                                    width: '20px',
+                                    height: '20px',
+                                    borderRadius: '5px',
+                                    background: includeCollars ? '#ef4444' : 'rgba(255, 255, 255, 0.05)',
+                                    border: includeCollars ? '1px solid #ef4444' : '1.5px solid rgba(255, 255, 255, 0.3)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    color: '#ffffff',
+                                }}
+                            >
+                                {includeCollars && <Check size={13} strokeWidth={3.5} />}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

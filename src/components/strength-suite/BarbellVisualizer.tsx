@@ -67,12 +67,12 @@ export default function BarbellVisualizer({
     onRemovePlate,
     isInteractive = false,
 }: BarbellVisualizerProps) {
-    const svgWidth = 440;
+    const svgWidth = 480;
     const svgHeight = 320;
     const centerY = svgHeight / 2;
 
     // Dimensions for sleeve & shaft
-    const shaftX = 35;
+    const shaftX = 30;
     const shaftWidth = 55;
     const shaftHeight = 24;
 
@@ -81,7 +81,7 @@ export default function BarbellVisualizer({
     const innerCollarHeight = 72;
 
     const sleeveStartX = innerCollarX + innerCollarWidth;
-    const sleeveLength = 275;
+    const sleeveLength = 310;
     const sleeveHeight = 32;
 
     // Calculate positions of plates
@@ -98,11 +98,11 @@ export default function BarbellVisualizer({
     const collarHeight = 64;
 
     return (
-        <div className="w-full flex items-center justify-center select-none py-2">
+        <div className="w-full flex items-center justify-center select-none py-1">
             <svg
                 viewBox={`0 0 ${svgWidth} ${svgHeight}`}
-                className="w-full h-auto max-w-[440px] max-h-[290px] overflow-visible"
-                style={{ filter: 'drop-shadow(0 10px 25px rgba(0,0,0,0.5))' }}
+                className="w-full h-auto max-w-[560px] max-h-[300px] overflow-visible"
+                style={{ filter: 'drop-shadow(0 14px 30px rgba(0,0,0,0.55))' }}
             >
                 <defs>
                     {/* Metallic Bar Shaft Gradient */}
@@ -219,7 +219,7 @@ export default function BarbellVisualizer({
                             filter="url(#plateShadow)"
                             onClick={() => onRemovePlate && onRemovePlate(plate.index)}
                             style={{ cursor: isClickable ? 'pointer' : 'default' }}
-                            className={isClickable ? 'hover:opacity-90 active:scale-95 transition-opacity' : ''}
+                            className={isClickable ? 'hover:opacity-85 active:scale-95 transition-all group' : ''}
                         >
                             <defs>
                                 <linearGradient id={gradId} x1="0%" y1="0%" x2="0%" y2="100%">
@@ -246,16 +246,33 @@ export default function BarbellVisualizer({
                             <rect
                                 x={plate.x + 2}
                                 y={topY + 6}
-                                width={plate.width - 4}
-                                height={plate.height - 12}
+                                width={Math.max(1, plate.width - 4)}
+                                height={Math.max(1, plate.height - 12)}
                                 rx={2}
                                 fill="none"
-                                stroke="rgba(255,255,255,0.2)"
+                                stroke="rgba(255,255,255,0.22)"
                                 strokeWidth="1"
                             />
 
+                            {/* Embossed vertical label for tall plates */}
+                            {plate.height >= 140 && (
+                                <text
+                                    x={plate.x + plate.width / 2}
+                                    y={centerY}
+                                    fill={plate.textColor === '#ffffff' ? 'rgba(255,255,255,0.92)' : 'rgba(15,23,42,0.9)'}
+                                    fontSize={plate.width >= 20 ? '10' : '9'}
+                                    fontWeight="900"
+                                    textAnchor="middle"
+                                    dominantBaseline="middle"
+                                    transform={`rotate(-90, ${plate.x + plate.width / 2}, ${centerY})`}
+                                    style={{ letterSpacing: '0.04em', pointerEvents: 'none', userSelect: 'none' }}
+                                >
+                                    {plate.label}
+                                </text>
+                            )}
+
                             {/* Tooltip on hover */}
-                            <title>{`${plate.weight} ${unit}`}</title>
+                            <title>{isClickable ? `Tap to remove ${plate.weight} ${unit}` : `${plate.weight} ${unit}`}</title>
                         </g>
                     );
                 })}
