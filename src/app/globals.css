@@ -69,10 +69,10 @@
   --input-glow: 0 0 0 3px rgba(125, 135, 210, 0.08);
 }
 
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
+@layer base {
+  *, ::before, ::after {
+    box-sizing: border-box;
+  }
 }
 
 html,

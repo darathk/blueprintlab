@@ -53,7 +53,7 @@ export default function MaxTab() {
     }, [weight, reps]);
 
     return (
-        <div className="w-full flex flex-col items-center gap-6 max-w-4xl mx-auto px-3 sm:px-4 pb-32 md:pb-12">
+        <div className="w-full flex flex-col items-center gap-6 max-w-4xl mx-auto px-3 sm:px-4 pb-44 md:pb-24">
             {/* Header exact to Screenshots 13-15 */}
             <div className="text-center flex flex-col items-center">
                 <h3 style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.02em', color: '#ffffff' }}>
@@ -117,8 +117,9 @@ export default function MaxTab() {
 
             {/* Input Card exact to Screenshot 13 */}
             <div
-                className="w-full flex flex-col gap-6 p-4 sm:p-6 md:p-8 rounded-3xl"
+                className="w-full flex flex-col gap-6 rounded-3xl"
                 style={{
+                    padding: '1.75rem 1.25rem',
                     background: 'rgba(20, 20, 30, 0.65)',
                     backdropFilter: 'blur(24px)',
                     WebkitBackdropFilter: 'blur(24px)',
@@ -240,8 +241,9 @@ export default function MaxTab() {
                 <div className="w-full flex flex-col gap-6">
                     {/* Hero 1RM Display */}
                     <div
-                        className="flex flex-col items-center justify-center p-5 sm:p-8 rounded-3xl text-center relative overflow-hidden"
+                        className="flex flex-col items-center justify-center rounded-3xl text-center relative overflow-hidden"
                         style={{
+                            padding: '2rem 1.5rem',
                             background: 'rgba(20, 20, 30, 0.65)',
                             backgroundImage: 'radial-gradient(ellipse at 50% 30%, rgba(239, 68, 68, 0.12) 0%, transparent 70%)',
                             backdropFilter: 'blur(24px)',
@@ -251,10 +253,10 @@ export default function MaxTab() {
                             boxShadow: '0 0 0 0.5px rgba(255, 255, 255, 0.04), 0 16px 48px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 24px rgba(239, 68, 68, 0.15)',
                         }}
                     >
-                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.08em', textShadow: '0 0 10px rgba(239, 68, 68, 0.3)' }}>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.08em', textShadow: '0 0 10px rgba(239, 68, 68, 0.3)', marginBottom: '8px' }}>
                             Estimated 1-Rep Max ({FORMULAS.find((f) => f.id === formula)?.label})
                         </span>
-                        <div className="flex items-baseline justify-center gap-2 mt-2">
+                        <div className="flex items-baseline justify-center gap-2 my-2">
                             <span
                                 style={{
                                     fontSize: '4rem',
@@ -278,15 +280,16 @@ export default function MaxTab() {
                                 {unit}
                             </span>
                         </div>
-                        <span style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.65)', marginTop: '8px' }}>
+                        <span style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.65)', marginTop: '12px' }}>
                             Based on {weight} {unit} × {reps} {reps === 1 ? 'rep' : 'reps'}
                         </span>
                     </div>
 
                     {/* All Formula Comparison Grouped Cards */}
                     <div
-                        className="p-4 sm:p-6 rounded-3xl"
+                        className="rounded-3xl"
                         style={{
+                            padding: '1.75rem 1.25rem',
                             background: 'rgba(20, 20, 30, 0.65)',
                             backdropFilter: 'blur(20px)',
                             WebkitBackdropFilter: 'blur(20px)',
@@ -308,8 +311,10 @@ export default function MaxTab() {
                                         key={f.id}
                                         type="button"
                                         onClick={() => setFormula(f.id)}
-                                        className="chat-press flex flex-col justify-between py-3 px-3.5 rounded-xl transition-all text-left cursor-pointer min-h-[76px]"
+                                        className="chat-press flex flex-col justify-between rounded-xl transition-all text-left cursor-pointer"
                                         style={{
+                                            padding: '1.15rem 1.15rem',
+                                            minHeight: '94px',
                                             background: isActive ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(220, 38, 38, 0.18) 100%)' : 'rgba(10, 10, 16, 0.55)',
                                             backdropFilter: 'blur(8px)',
                                             border: isActive ? '1.5px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.08)',
@@ -338,8 +343,9 @@ export default function MaxTab() {
 
                     {/* Percentage Breakdown Table */}
                     <div
-                        className="p-4 sm:p-6 rounded-3xl overflow-hidden"
+                        className="rounded-3xl overflow-hidden"
                         style={{
+                            padding: '1.75rem 1.25rem',
                             background: 'rgba(20, 20, 30, 0.65)',
                             backdropFilter: 'blur(20px)',
                             WebkitBackdropFilter: 'blur(20px)',

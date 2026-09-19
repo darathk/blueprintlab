@@ -148,7 +148,7 @@ export default function BarbellTab({ initialWeight = 100, initialUnit = 'kg' }: 
         ];
 
     return (
-        <div className="w-full flex flex-col items-center gap-5 sm:gap-6 max-w-3xl mx-auto px-3 sm:px-4 pb-32 md:pb-16">
+        <div className="w-full flex flex-col items-center gap-5 sm:gap-6 max-w-3xl mx-auto px-3 sm:px-4 pb-44 md:pb-24">
             {/* Header exact to Points / RPE / Max tabs */}
             <div className="text-center flex flex-col items-center">
                 <h3 style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.02em', color: '#ffffff' }}>
@@ -202,8 +202,9 @@ export default function BarbellTab({ initialWeight = 100, initialUnit = 'kg' }: 
 
             {/* HERO STAGE: Full-Width Showcase Card */}
             <div
-                className="w-full flex flex-col p-5 sm:p-7 rounded-3xl relative overflow-hidden"
+                className="w-full flex flex-col rounded-3xl relative overflow-hidden"
                 style={{
+                    padding: '1.75rem 1.25rem',
                     background: 'rgba(20, 20, 32, 0.75)',
                     backgroundImage: 'radial-gradient(ellipse at 50% 35%, rgba(239, 68, 68, 0.12) 0%, transparent 68%)',
                     backdropFilter: 'blur(24px)',
@@ -213,7 +214,7 @@ export default function BarbellTab({ initialWeight = 100, initialUnit = 'kg' }: 
                 }}
             >
                 {/* Hero Header Strip: Badges */}
-                <div className="flex items-center justify-between w-full pb-3.5 border-b border-white/[0.08]">
+                <div className="flex items-center justify-between w-full pb-4 mb-3 border-b border-white/[0.08]">
                     <span
                         className="px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-black tracking-wider uppercase"
                         style={{
@@ -274,7 +275,7 @@ export default function BarbellTab({ initialWeight = 100, initialUnit = 'kg' }: 
                 </div>
 
                 {/* Hero Footer: Centered Inside-Out Loading Sequence */}
-                <div className="pt-4 border-t border-white/[0.08] flex flex-col items-center text-center gap-2.5">
+                <div className="pt-5 pb-2 border-t border-white/[0.08] flex flex-col items-center text-center gap-3">
                     <div className="flex flex-wrap items-center justify-center gap-2">
                         <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
                             Per-Side Loading (Inside → Out)
@@ -327,8 +328,9 @@ export default function BarbellTab({ initialWeight = 100, initialUnit = 'kg' }: 
                 <div className="w-full flex flex-col gap-5">
                     {/* Card 1: Target Weight & Quick Adjustments */}
                     <div
-                        className="w-full flex flex-col p-5 sm:p-6 rounded-2xl"
+                        className="w-full flex flex-col rounded-2xl"
                         style={{
+                            padding: '1.75rem 1.25rem',
                             background: 'rgba(20, 20, 30, 0.65)',
                             backdropFilter: 'blur(20px)',
                             WebkitBackdropFilter: 'blur(20px)',
@@ -337,7 +339,7 @@ export default function BarbellTab({ initialWeight = 100, initialUnit = 'kg' }: 
                         }}
                     >
                         {/* Centered Target Weight Title */}
-                        <div className="flex flex-col items-center text-center mb-3">
+                        <div className="flex flex-col items-center text-center mb-3.5">
                             <label className="text-sm sm:text-base font-extrabold text-white">
                                 Target Weight
                             </label>
@@ -408,8 +410,8 @@ export default function BarbellTab({ initialWeight = 100, initialUnit = 'kg' }: 
                         </div>
 
                         {/* Quick Adjustments Grid */}
-                        <div className="mt-6 max-w-md mx-auto w-full">
-                            <div className="flex items-center justify-between mb-2">
+                        <div className="mt-7 max-w-md mx-auto w-full">
+                            <div className="flex items-center justify-between mb-3">
                                 <span className="text-xs font-bold uppercase tracking-wider text-zinc-400">
                                     Quick Adjust (+ / -)
                                 </span>
@@ -460,7 +462,7 @@ export default function BarbellTab({ initialWeight = 100, initialUnit = 'kg' }: 
                         </div>
 
                         {/* Warmup Benchmarks */}
-                        <div className="mt-6 pt-5 border-t border-white/[0.06] max-w-md mx-auto w-full">
+                        <div className="mt-7 pt-6 border-t border-white/[0.06] max-w-md mx-auto w-full">
                             <span className="text-xs font-bold uppercase tracking-wider text-zinc-400 block text-center mb-3">
                                 Warmup Targets (Wheels)
                             </span>
@@ -489,8 +491,9 @@ export default function BarbellTab({ initialWeight = 100, initialUnit = 'kg' }: 
 
                     {/* Card 2: Barbell & Collars */}
                     <div
-                        className="w-full flex flex-col p-5 sm:p-6 rounded-2xl"
+                        className="w-full flex flex-col rounded-2xl"
                         style={{
+                            padding: '1.75rem 1.25rem',
                             background: 'rgba(20, 20, 30, 0.65)',
                             backdropFilter: 'blur(20px)',
                             WebkitBackdropFilter: 'blur(20px)',
@@ -498,7 +501,7 @@ export default function BarbellTab({ initialWeight = 100, initialUnit = 'kg' }: 
                             boxShadow: '0 0 0 0.5px rgba(255, 255, 255, 0.04), 0 12px 36px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
                         }}
                     >
-                        <div className="flex items-center justify-center gap-2 mb-3">
+                        <div className="flex items-center justify-center gap-2 mb-3.5">
                             <Dumbbell size={16} className="text-red-400" />
                             <h4 className="text-sm sm:text-base font-extrabold text-white text-center">
                                 Barbell & Equipment
@@ -535,8 +538,9 @@ export default function BarbellTab({ initialWeight = 100, initialUnit = 'kg' }: 
                         {/* Collars Toggle Card */}
                         <div
                             onClick={() => setIncludeCollars(!includeCollars)}
-                            className="chat-press flex items-center justify-between p-3.5 sm:p-4 rounded-xl mt-3.5 cursor-pointer select-none transition-all max-w-md mx-auto w-full"
+                            className="chat-press flex items-center justify-between rounded-xl mt-4 cursor-pointer select-none transition-all max-w-md mx-auto w-full"
                             style={{
+                                padding: '1rem 1.25rem',
                                 background: includeCollars ? 'rgba(239, 68, 68, 0.12)' : 'rgba(10, 10, 16, 0.5)',
                                 border: includeCollars ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)',
                             }}

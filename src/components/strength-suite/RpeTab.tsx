@@ -53,7 +53,7 @@ export default function RpeTab({ onSendToBarbell }: RpeTabProps) {
     const roundedTarget = Math.round(calculation.targetWeight / roundIncrement) * roundIncrement;
 
     return (
-        <div className="w-full flex flex-col items-center gap-6 max-w-3xl mx-auto px-3 sm:px-4 pb-32 md:pb-12">
+        <div className="w-full flex flex-col items-center gap-6 max-w-3xl mx-auto px-3 sm:px-4 pb-44 md:pb-24">
             {/* Header exact to Screenshots 3-7 */}
             <div className="text-center flex flex-col items-center">
                 <h3 style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.02em', color: '#ffffff' }}>
@@ -176,8 +176,9 @@ export default function RpeTab({ onSendToBarbell }: RpeTabProps) {
 
             {/* Input Form Card exact to Screenshot 3 */}
             <div
-                className="w-full flex flex-col gap-6 p-4 sm:p-6 md:p-8 rounded-3xl"
+                className="w-full flex flex-col gap-6 rounded-3xl"
                 style={{
+                    padding: '1.75rem 1.25rem',
                     background: 'rgba(20, 20, 30, 0.65)',
                     backdropFilter: 'blur(24px)',
                     WebkitBackdropFilter: 'blur(24px)',
@@ -365,8 +366,9 @@ export default function RpeTab({ onSendToBarbell }: RpeTabProps) {
             {/* 3. CALCULATION RESULT CARD */}
             {calculation.targetWeight > 0 && (
                 <div
-                    className="w-full flex flex-col sm:flex-row items-center justify-between gap-5 p-4 sm:p-6 md:p-7 rounded-3xl relative overflow-hidden"
+                    className="w-full flex flex-col sm:flex-row items-center justify-between gap-5 rounded-3xl relative overflow-hidden"
                     style={{
+                        padding: '1.75rem 1.5rem',
                         background: 'rgba(20, 20, 30, 0.65)',
                         backgroundImage: 'radial-gradient(ellipse at 20% 50%, rgba(239, 68, 68, 0.08) 0%, transparent 60%)',
                         backdropFilter: 'blur(24px)',
@@ -377,10 +379,10 @@ export default function RpeTab({ onSendToBarbell }: RpeTabProps) {
                     }}
                 >
                     <div className="flex flex-col text-center sm:text-left">
-                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.06em', textShadow: '0 0 10px rgba(239, 68, 68, 0.3)' }}>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.06em', textShadow: '0 0 10px rgba(239, 68, 68, 0.3)', marginBottom: '8px' }}>
                             Recommended Target Weight
                         </span>
-                        <div className="flex items-baseline justify-center sm:justify-start gap-2.5 mt-1 flex-wrap">
+                        <div className="flex items-baseline justify-center sm:justify-start gap-2.5 my-1 flex-wrap">
                             <span
                                 className="text-4xl sm:text-5xl font-black text-white leading-none tracking-tight"
                                 style={{
@@ -399,7 +401,7 @@ export default function RpeTab({ onSendToBarbell }: RpeTabProps) {
                                 (Nearest {roundedTarget} {unit})
                             </span>
                         </div>
-                        <div className="flex items-center justify-center sm:justify-start flex-wrap gap-2 mt-3 pt-1">
+                        <div className="flex items-center justify-center sm:justify-start flex-wrap gap-2 mt-4 pt-1">
                             <span
                                 className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold text-white/80"
                                 style={{
