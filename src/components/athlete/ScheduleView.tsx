@@ -163,15 +163,23 @@ function sessionProgress(exercises: any[], log: any, editStateData?: any[]): num
 }
 
 /* ─────────── component ─────────── */
-export default function ScheduleView({ programs, athleteId, coachId, logs, isCoachView = false, nextMeetDate = null }: {
+export default function ScheduleView({ programs, athleteId, coachId, logs, isCoachView = false, nextMeetDate = null, disableReadiness = false, athleteEmail = '' }: {
     programs: any[];
     athleteId: string;
     coachId?: string;
     logs: any[];
     isCoachView?: boolean;
     nextMeetDate?: string | null;
+    disableReadiness?: boolean;
+    athleteEmail?: string;
 }) {
     const router = useRouter();
+
+    // Check if athlete is specifically exempt from readiness quiz (jayseng123@gmail.com)
+    const isReadinessExempt = Boolean(
+        disableReadiness ||
+        athleteEmail?.toLowerCase().trim() === 'jayseng123@gmail.com'
+    );
 
     // Toggle states
     const [openBlocks, setOpenBlocks] = useState<Set<string>>(() => {
@@ -1021,7 +1029,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                         <div 
                                                             onClick={(e) => {
                                                                 e.stopPropagation();
-                                                                if (!isCoachView && !readySessions.has(sKey)) {
+                                                                if (!isCoachView && !isReadinessExempt && !readySessions.has(sKey)) {
                                                                     handleLockedExerciseClick(sKey, `${sKey}-expand-all`);
                                                                     return;
                                                                 }
@@ -1074,7 +1082,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                         {/* Expanded: Readiness + Exercise Cards */}
                                         {sessionOpen && (
                                             <div style={{ background: 'var(--card-border)', position: 'relative' }}>
-                                                {!isCoachView && <ReadinessCheckin athleteId={athleteId} sessionKey={sKey} programId={program.id} onReadinessSubmit={() => markSessionReady(sKey)} />}
+                                                {!isCoachView && !isReadinessExempt && <ReadinessCheckin athleteId={athleteId} sessionKey={sKey} programId={program.id} onReadinessSubmit={() => markSessionReady(sKey)} />}
 
                                                 {/* Warmup Drills Display */}
                                                 {(session.warmupDrills || log?.warmupDrills) && (
@@ -1089,7 +1097,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                 )}
 
                                                 {/* Readiness gate popup */}
-                                                {!isCoachView && readinessPopup === sKey && (
+                                                {!isCoachView && !isReadinessExempt && readinessPopup === sKey && (
                                                     <div style={{
                                                         position: 'sticky', top: 0, zIndex: 50,
                                                         display: 'flex', justifyContent: 'center', padding: '0 16px',
@@ -1156,7 +1164,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                         (log?.exercises && log.exercises.length > 0) ||
                                                         (editState[sKey]?.some((e: any) => e.sets?.some((s: any) => s.actual?.weight || s.actual?.reps)))
                                                     );
-                                                    const isLocked = !isCoachView && !readySessions.has(sKey) && !isWarmup && !hasExistingLogData;
+                                                    const isLocked = !isCoachView && !isReadinessExempt && !readySessions.has(sKey) && !isWarmup && !hasExistingLogData;
 
                                                     return (
                                                         <div key={exIdx} className={shakeKey === exKey ? 'readiness-shake' : ''} style={{ background: 'var(--background)', borderBottom: '1px solid var(--card-border)', opacity: isLocked ? 0.5 : 1, transition: 'opacity 0.3s' }}>
@@ -1839,11 +1847,11 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                     {session.name || `Session ${day}`}
                                                                 </div>
                                                             </div>
-                                                            {sessionOpen && (
+                                                             {sessionOpen && (
                                                                 <div 
                                                                     onClick={(e) => {
                                                                         e.stopPropagation();
-                                                                        if (!readySessions.has(sKey)) {
+                                                                        if (!isCoachView && !isReadinessExempt && !readySessions.has(sKey)) {
                                                                             handleLockedExerciseClick(sKey, `${sKey}-expand-all`);
                                                                             return;
                                                                         }
@@ -1897,7 +1905,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                             </div>
 
                                                             {/* Readiness Check-In */}
-                                                            {!isCoachView && <ReadinessCheckin athleteId={athleteId} sessionKey={sKey} programId={program.id} onReadinessSubmit={() => markSessionReady(sKey)} />}
+                                                            {!isCoachView && !isReadinessExempt && <ReadinessCheckin athleteId={athleteId} sessionKey={sKey} programId={program.id} onReadinessSubmit={() => markSessionReady(sKey)} />}
 
                                                             {/* Warmup Drills Display */}
                                                             {(session.warmupDrills || log?.warmupDrills) && (
@@ -1912,7 +1920,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                             )}
 
                                                             {/* Readiness gate popup */}
-                                                            {!isCoachView && readinessPopup === sKey && (
+                                                            {!isCoachView && !isReadinessExempt && readinessPopup === sKey && (
                                                                 <div style={{
                                                                     position: 'sticky', top: 0, zIndex: 50,
                                                                     display: 'flex', justifyContent: 'center', padding: '0 16px',
@@ -1978,7 +1986,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                     (log?.exercises && log.exercises.length > 0) ||
                                                                     (editState[sKey]?.some((e: any) => e.sets?.some((s: any) => s.actual?.weight || s.actual?.reps)))
                                                                 );
-                                                                const isLocked = !isCoachView && !readySessions.has(sKey) && !isWarmup && !hasExistingLogData;
+                                                                const isLocked = !isCoachView && !isReadinessExempt && !readySessions.has(sKey) && !isWarmup && !hasExistingLogData;
 
                                                                 return (
                                                                     <div key={exIdx} className={shakeKey === exKey ? 'readiness-shake' : ''} style={{ background: 'var(--background)', borderBottom: '1px solid #cbd5e1', opacity: isLocked ? 0.5 : 1, transition: 'opacity 0.3s' }}>

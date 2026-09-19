@@ -827,6 +827,20 @@ export default function ChatInterface({
     const fileRef = useRef<HTMLInputElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
 
+    // Listen for custom event to insert text into chat composer (e.g. from AthleteReadinessCard)
+    useEffect(() => {
+        const handleInsertMessage = (e: any) => {
+            if (e.detail?.text) {
+                setNewMessage(prev => prev ? `${prev}\n${e.detail.text}` : e.detail.text);
+                setTimeout(() => {
+                    inputRef.current?.focus();
+                }, 50);
+            }
+        };
+        window.addEventListener('insert-chat-message' as any, handleInsertMessage);
+        return () => window.removeEventListener('insert-chat-message' as any, handleInsertMessage);
+    }, []);
+
     // Initial fetch — once
     useEffect(() => {
         const ac = new AbortController();

@@ -2,13 +2,14 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import { MessageSquare, Calendar as CalendarIcon, Search, X, MailOpen, LayoutDashboard, Pencil, Menu, MoreVertical } from 'lucide-react';
+import { MessageSquare, Calendar as CalendarIcon, Search, X, MailOpen, LayoutDashboard, Pencil, Menu, MoreVertical, Activity } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import ChatInterface from './ChatInterface';
 import AthleteProgramPane from './AthleteProgramPane';
 import AthleteProgramEditPane from './AthleteProgramEditPane';
 import CoachNotesPane from './CoachNotesPane';
+import AthleteReadinessCard from './AthleteReadinessCard';
 import { StickyNote } from 'lucide-react';
 
 interface Message {
@@ -38,7 +39,7 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
     const [selectedId, setSelectedId] = useState<string | null>(initialAthleteId || null);
     const selectedConvo = convos.find(c => c.athleteId === selectedId);
     const [isMobile, setIsMobile] = useState(false);
-    const [activeSidebar, setActiveSidebar] = useState<'view' | 'edit' | 'notes' | null>(null);
+    const [activeSidebar, setActiveSidebar] = useState<'view' | 'edit' | 'notes' | 'readiness' | null>(null);
     const [builderActive, setBuilderActive] = useState(false);
     const [searchTerm, setSearchTerm] = useState('');
     const [filterType, setFilterType] = useState<'all' | 'unread' | 'archived'>(() => {
@@ -455,113 +456,156 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                         onBack={isMobile ? () => setSelectedId(null) : undefined}
                         athletePosition={athletePositions[selectedId]}
                         headerActions={
-                            <div style={{ position: 'relative' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                                 <button
-                                    onClick={() => setActionsMenuOpen(!actionsMenuOpen)}
+                                    onClick={() => setActiveSidebar(activeSidebar === 'readiness' ? null : 'readiness')}
                                     className="chat-press"
-                                    title="Actions"
+                                    title={activeSidebar === 'readiness' ? 'Hide Readiness Card' : 'Show Readiness Card'}
                                     style={{
                                         display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-                                        background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                                        background: activeSidebar === 'readiness'
+                                            ? 'linear-gradient(135deg, rgba(6, 182, 212, 0.25) 0%, rgba(59, 130, 246, 0.25) 100%)'
+                                            : 'rgba(255,255,255,0.05)',
+                                        border: activeSidebar === 'readiness'
+                                            ? '1px solid rgba(6, 182, 212, 0.5)'
+                                            : '1px solid rgba(255,255,255,0.1)',
                                         borderRadius: isMobile ? '50%' : 8,
                                         width: isMobile ? 34 : undefined,
                                         height: 34,
-                                        padding: isMobile ? 0 : '0 12px',
-                                        color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                                        transition: 'background 160ms var(--ease-out)', whiteSpace: 'nowrap'
+                                        padding: isMobile ? 0 : '0 10px',
+                                        color: activeSidebar === 'readiness' ? '#38bdf8' : '#fff',
+                                        fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                                        transition: 'all 160ms var(--ease-out)', whiteSpace: 'nowrap',
+                                        boxShadow: activeSidebar === 'readiness' ? '0 0 12px rgba(6, 182, 212, 0.3)' : 'none',
                                     }}
                                 >
-                                    {isMobile ? <MoreVertical size={16} /> : <Menu size={14} />}
-                                    {!isMobile && <span>Actions</span>}
+                                    <Activity size={15} style={{ color: activeSidebar === 'readiness' ? '#38bdf8' : '#22d3ee' }} />
+                                    {!isMobile && <span>Readiness</span>}
                                 </button>
 
-                                {actionsMenuOpen && (
-                                    <>
-                                        <div onClick={() => setActionsMenuOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
-                                        <div style={{
-                                            position: 'absolute', top: '100%', right: 0, marginTop: 8,
-                                            background: 'rgba(20, 20, 30, 0.96)',
-                                            backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
-                                            border: '1px solid var(--glass-border)',
-                                            borderTop: '1px solid var(--glass-specular)',
-                                            borderRadius: 12, padding: 6, display: 'flex', flexDirection: 'column', gap: 4, zIndex: 50,
-                                            minWidth: 170, boxShadow: '0 10px 40px rgba(0,0,0,0.6), 0 0 0 0.5px rgba(255,255,255,0.08)',
-                                            transformOrigin: 'top right',
-                                            animation: 'popoverIn 200ms var(--ease-out)'
-                                        }}>
-                                            <Link
-                                                prefetch={true}
-                                                href={`/dashboard/athletes/${selectedId}`}
-                                                title="Dashboard"
-                                                onClick={() => setActionsMenuOpen(false)}
-                                                className="chat-press"
-                                                style={{
-                                                    display: 'flex', alignItems: 'center', gap: 8,
-                                                    background: 'transparent',
-                                                    border: 'none', borderRadius: 6, padding: '8px 12px',
-                                                    color: '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer',
-                                                    textDecoration: 'none', transition: 'background 160ms var(--ease-out)'
-                                                }}
-                                                onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
-                                                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                                            >
-                                                <LayoutDashboard size={14} /> Dashboard
-                                            </Link>
-                                            <button
-                                                onClick={() => { setActiveSidebar(activeSidebar === 'notes' ? null : 'notes'); setActionsMenuOpen(false); }}
-                                                className="chat-press"
-                                                style={{
-                                                    display: 'flex', alignItems: 'center', gap: 8,
-                                                    background: activeSidebar === 'notes' ? 'var(--primary)' : 'transparent',
-                                                    border: 'none', borderRadius: 6, padding: '8px 12px',
-                                                    color: activeSidebar === 'notes' ? '#fff' : '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer',
-                                                    textAlign: 'left', transition: 'background 160ms var(--ease-out)'
-                                                }}
-                                                onMouseEnter={e => { if (activeSidebar !== 'notes') e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
-                                                onMouseLeave={e => { if (activeSidebar !== 'notes') e.currentTarget.style.background = 'transparent'; }}
-                                            >
-                                                <StickyNote size={14} /> {activeSidebar === 'notes' ? 'Close Notes' : 'Notes'}
-                                            </button>
-                                            <button
-                                                onClick={() => { setActiveSidebar(activeSidebar === 'edit' ? null : 'edit'); setActionsMenuOpen(false); }}
-                                                className="chat-press"
-                                                style={{
-                                                    display: 'flex', alignItems: 'center', gap: 8,
-                                                    background: activeSidebar === 'edit' ? 'var(--primary)' : 'transparent',
-                                                    border: 'none', borderRadius: 6, padding: '8px 12px',
-                                                    color: activeSidebar === 'edit' ? '#fff' : '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer',
-                                                    textAlign: 'left', transition: 'background 160ms var(--ease-out)'
-                                                }}
-                                                onMouseEnter={e => { if (activeSidebar !== 'edit') e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
-                                                onMouseLeave={e => { if (activeSidebar !== 'edit') e.currentTarget.style.background = 'transparent'; }}
-                                            >
-                                                <Pencil size={14} /> {activeSidebar === 'edit' ? 'Close Editor' : 'Edit Program'}
-                                            </button>
-                                            <button
-                                                onClick={() => { setActiveSidebar(activeSidebar === 'view' ? null : 'view'); setActionsMenuOpen(false); }}
-                                                className="chat-press"
-                                                style={{
-                                                    display: 'flex', alignItems: 'center', gap: 8,
-                                                    background: activeSidebar === 'view' ? 'var(--primary)' : 'transparent',
-                                                    border: 'none', borderRadius: 6, padding: '8px 12px',
-                                                    color: activeSidebar === 'view' ? '#fff' : '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer',
-                                                    textAlign: 'left', transition: 'background 160ms var(--ease-out)'
-                                                }}
-                                                onMouseEnter={e => { if (activeSidebar !== 'view') e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
-                                                onMouseLeave={e => { if (activeSidebar !== 'view') e.currentTarget.style.background = 'transparent'; }}
-                                            >
-                                                <CalendarIcon size={14} /> {activeSidebar === 'view' ? 'Hide Program' : 'View Program'}
-                                            </button>
-                                        </div>
-                                    </>
-                                )}
+                                <div style={{ position: 'relative' }}>
+                                    <button
+                                        onClick={() => setActionsMenuOpen(!actionsMenuOpen)}
+                                        className="chat-press"
+                                        title="Actions"
+                                        style={{
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                                            background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)',
+                                            borderRadius: isMobile ? '50%' : 8,
+                                            width: isMobile ? 34 : undefined,
+                                            height: 34,
+                                            padding: isMobile ? 0 : '0 12px',
+                                            color: '#fff', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                                            transition: 'background 160ms var(--ease-out)', whiteSpace: 'nowrap'
+                                        }}
+                                    >
+                                        {isMobile ? <MoreVertical size={16} /> : <Menu size={14} />}
+                                        {!isMobile && <span>Actions</span>}
+                                    </button>
+
+                                    {actionsMenuOpen && (
+                                        <>
+                                            <div onClick={() => setActionsMenuOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
+                                            <div style={{
+                                                position: 'absolute', top: '100%', right: 0, marginTop: 8,
+                                                background: 'rgba(20, 20, 30, 0.96)',
+                                                backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+                                                border: '1px solid var(--glass-border)',
+                                                borderTop: '1px solid var(--glass-specular)',
+                                                borderRadius: 12, padding: 6, display: 'flex', flexDirection: 'column', gap: 4, zIndex: 50,
+                                                minWidth: 170, boxShadow: '0 10px 40px rgba(0,0,0,0.6), 0 0 0 0.5px rgba(255,255,255,0.08)',
+                                                transformOrigin: 'top right',
+                                                animation: 'popoverIn 200ms var(--ease-out)'
+                                            }}>
+                                                <Link
+                                                    prefetch={true}
+                                                    href={`/dashboard/athletes/${selectedId}`}
+                                                    title="Dashboard"
+                                                    onClick={() => setActionsMenuOpen(false)}
+                                                    className="chat-press"
+                                                    style={{
+                                                        display: 'flex', alignItems: 'center', gap: 8,
+                                                        background: 'transparent',
+                                                        border: 'none', borderRadius: 6, padding: '8px 12px',
+                                                        color: '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                                                        textDecoration: 'none', transition: 'background 160ms var(--ease-out)'
+                                                    }}
+                                                    onMouseEnter={e => (e.currentTarget.style.background = 'rgba(255,255,255,0.08)')}
+                                                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                                                >
+                                                    <LayoutDashboard size={14} /> Dashboard
+                                                </Link>
+                                                <button
+                                                    onClick={() => { setActiveSidebar(activeSidebar === 'readiness' ? null : 'readiness'); setActionsMenuOpen(false); }}
+                                                    className="chat-press"
+                                                    style={{
+                                                        display: 'flex', alignItems: 'center', gap: 8,
+                                                        background: activeSidebar === 'readiness' ? 'rgba(6, 182, 212, 0.25)' : 'transparent',
+                                                        border: 'none', borderRadius: 6, padding: '8px 12px',
+                                                        color: activeSidebar === 'readiness' ? '#38bdf8' : '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                                                        textAlign: 'left', transition: 'background 160ms var(--ease-out)'
+                                                    }}
+                                                    onMouseEnter={e => { if (activeSidebar !== 'readiness') e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
+                                                    onMouseLeave={e => { if (activeSidebar !== 'readiness') e.currentTarget.style.background = 'transparent'; }}
+                                                >
+                                                    <Activity size={14} style={{ color: '#22d3ee' }} /> {activeSidebar === 'readiness' ? 'Hide Readiness' : 'Readiness Status'}
+                                                </button>
+                                                <button
+                                                    onClick={() => { setActiveSidebar(activeSidebar === 'notes' ? null : 'notes'); setActionsMenuOpen(false); }}
+                                                    className="chat-press"
+                                                    style={{
+                                                        display: 'flex', alignItems: 'center', gap: 8,
+                                                        background: activeSidebar === 'notes' ? 'var(--primary)' : 'transparent',
+                                                        border: 'none', borderRadius: 6, padding: '8px 12px',
+                                                        color: activeSidebar === 'notes' ? '#fff' : '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                                                        textAlign: 'left', transition: 'background 160ms var(--ease-out)'
+                                                    }}
+                                                    onMouseEnter={e => { if (activeSidebar !== 'notes') e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
+                                                    onMouseLeave={e => { if (activeSidebar !== 'notes') e.currentTarget.style.background = 'transparent'; }}
+                                                >
+                                                    <StickyNote size={14} /> {activeSidebar === 'notes' ? 'Close Notes' : 'Notes'}
+                                                </button>
+                                                <button
+                                                    onClick={() => { setActiveSidebar(activeSidebar === 'edit' ? null : 'edit'); setActionsMenuOpen(false); }}
+                                                    className="chat-press"
+                                                    style={{
+                                                        display: 'flex', alignItems: 'center', gap: 8,
+                                                        background: activeSidebar === 'edit' ? 'var(--primary)' : 'transparent',
+                                                        border: 'none', borderRadius: 6, padding: '8px 12px',
+                                                        color: activeSidebar === 'edit' ? '#fff' : '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                                                        textAlign: 'left', transition: 'background 160ms var(--ease-out)'
+                                                    }}
+                                                    onMouseEnter={e => { if (activeSidebar !== 'edit') e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
+                                                    onMouseLeave={e => { if (activeSidebar !== 'edit') e.currentTarget.style.background = 'transparent'; }}
+                                                >
+                                                    <Pencil size={14} /> {activeSidebar === 'edit' ? 'Close Editor' : 'Edit Program'}
+                                                </button>
+                                                <button
+                                                    onClick={() => { setActiveSidebar(activeSidebar === 'view' ? null : 'view'); setActionsMenuOpen(false); }}
+                                                    className="chat-press"
+                                                    style={{
+                                                        display: 'flex', alignItems: 'center', gap: 8,
+                                                        background: activeSidebar === 'view' ? 'var(--primary)' : 'transparent',
+                                                        border: 'none', borderRadius: 6, padding: '8px 12px',
+                                                        color: activeSidebar === 'view' ? '#fff' : '#fff', fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                                                        textAlign: 'left', transition: 'background 160ms var(--ease-out)'
+                                                    }}
+                                                    onMouseEnter={e => { if (activeSidebar !== 'view') e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
+                                                    onMouseLeave={e => { if (activeSidebar !== 'view') e.currentTarget.style.background = 'transparent'; }}
+                                                >
+                                                    <CalendarIcon size={14} /> {activeSidebar === 'view' ? 'Hide Program' : 'View Program'}
+                                                </button>
+                                            </div>
+                                        </>
+                                    )}
+                                </div>
                             </div>
                         }
                     />
                 )}
             </div>
 
-            {/* Athlete Program Pane (View / Edit) */}
+            {/* Athlete Program Pane (View / Edit / Notes / Readiness) */}
             {activeSidebar && selectedId && (
                 <div style={{
                     position: (isMobile || builderActive) ? 'absolute' : 'relative',
@@ -570,7 +614,7 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                     bottom: 0, 
                     left: builderActive ? 0 : 'auto',
                     zIndex: 50,
-                    width: (isMobile || builderActive) ? '100%' : 400,
+                    width: (isMobile || builderActive) ? '100%' : (activeSidebar === 'readiness' ? 380 : 400),
                     maxWidth: '100%',
                     flexShrink: 0,
                     borderLeft: (isMobile || builderActive) ? 'none' : '1px solid rgba(255,255,255,0.08)',
@@ -595,6 +639,12 @@ export default function CoachInbox({ coachId, coachName, initialConvos = [], ini
                         />
                     ) : activeSidebar === 'notes' ? (
                         <CoachNotesPane
+                            athleteId={selectedId}
+                            athleteName={selectedConvo?.athleteName}
+                            onClose={() => setActiveSidebar(null)}
+                        />
+                    ) : activeSidebar === 'readiness' ? (
+                        <AthleteReadinessCard
                             athleteId={selectedId}
                             athleteName={selectedConvo?.athleteName}
                             onClose={() => setActiveSidebar(null)}

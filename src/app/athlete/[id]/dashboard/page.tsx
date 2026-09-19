@@ -11,13 +11,16 @@ const LeaderboardRankWidget = dynamic(
     () => import('@/components/leaderboard/LeaderboardRankWidget')
 );
 
-async function AsyncSchedule({ id }: { id: string }) {
+async function AsyncSchedule({ id, disableReadiness = false, athleteEmail = '' }: { id: string; disableReadiness?: boolean; athleteEmail?: string }) {
     try {
         const [athlete, programs, logs] = await Promise.all([
             getAthleteById(id),
             getProgramsByAthlete(id),
             getLogsByAthlete(id)
         ]);
+
+        const finalEmail = (athleteEmail || athlete?.email || '').toLowerCase().trim();
+        const finalDisable = disableReadiness || finalEmail === 'jayseng123@gmail.com';
 
         return (
             <ScheduleView
@@ -26,6 +29,8 @@ async function AsyncSchedule({ id }: { id: string }) {
                 coachId={athlete?.coachId || ''}
                 logs={logs as any}
                 nextMeetDate={athlete?.nextMeetDate}
+                disableReadiness={finalDisable}
+                athleteEmail={finalEmail}
             />
         );
     } catch (e) {
@@ -47,6 +52,9 @@ export default async function AthleteDashboard({ params }) {
     const athlete = await getAthleteById(id);
 
     if (!athlete) return <div>Athlete not found</div>;
+
+    const athleteEmail = (athlete.email || '').toLowerCase().trim();
+    const isJayseng = email === 'jayseng123@gmail.com' || athleteEmail === 'jayseng123@gmail.com';
 
     return (
         <div style={{ minHeight: '100vh', padding: '1rem 0', maxWidth: 600, margin: '0 auto' }}>
@@ -115,7 +123,7 @@ export default async function AthleteDashboard({ params }) {
 
             <div>
                 <Suspense fallback={<div style={{ padding: '2rem', textAlign: 'center', color: 'var(--secondary-foreground)' }} className="pulse">Loading schedule…</div>}>
-                    <AsyncSchedule id={id} />
+                    <AsyncSchedule id={id} disableReadiness={isJayseng} athleteEmail={athleteEmail || email} />
                 </Suspense>
             </div>
         </div>
