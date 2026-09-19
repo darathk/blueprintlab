@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { calculateSimpleE1RM, calculateStress } from '@/lib/stress-index';
 import WeightInput from '@/components/athlete/WeightInput';
-import { ArrowRight, Search, ChevronDown } from 'lucide-react';
+import { ArrowRight, Search, ChevronDown, Dumbbell, Calendar, Check, ChevronsUpDown, Sparkles } from 'lucide-react';
 import { getExerciseCategory } from '@/lib/exercise-db';
 
 const ExerciseFeedback = dynamic(() => import('@/components/athlete/ExerciseFeedback'), { ssr: false });
@@ -886,9 +886,12 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                         <div style={{
                             padding: '2.5rem 1.5rem',
                             textAlign: 'center',
-                            background: 'var(--card-bg)',
-                            border: '1px solid var(--card-border)',
-                            borderRadius: 12,
+                            background: 'linear-gradient(180deg, rgba(22, 27, 38, 0.6) 0%, rgba(13, 16, 24, 0.7) 100%)',
+                            backdropFilter: 'blur(16px)',
+                            WebkitBackdropFilter: 'blur(16px)',
+                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                            borderRadius: 20,
+                            boxShadow: '0 4px 20px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
                         }}>
                             <div style={{ fontSize: '2rem', marginBottom: 8, opacity: 0.4 }}>
                                 {isSelectedToday ? '---' : '---'}
@@ -925,7 +928,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                             </div>
                         </div>
                     ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                             {selectedDateSessions.map(({ program, weekNum, weekDisplayNum, session, sKey, legacyKey, isActive, isCurrent, sessionNum }) => {
                                 const exercises: any[] = Array.isArray(session.exercises) ? session.exercises : [];
                                 const log = findSessionLog(sKey, legacyKey, program.id);
@@ -937,94 +940,191 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
 
                                 return (
                                     <div key={sKey} id={`session-${sKey}`} className="glass-panel" style={{
-                                        border: sessionOpen ? '1px solid rgba(125, 135, 210, 0.5)' : '1px solid var(--glass-border)',
-                                        borderRadius: 16,
+                                        background: sessionOpen
+                                            ? 'linear-gradient(180deg, rgba(22, 27, 40, 0.9) 0%, rgba(14, 17, 26, 0.95) 100%)'
+                                            : 'linear-gradient(180deg, rgba(22, 27, 38, 0.75) 0%, rgba(13, 16, 24, 0.8) 100%)',
+                                        backdropFilter: 'blur(16px)',
+                                        WebkitBackdropFilter: 'blur(16px)',
+                                        border: sessionOpen
+                                            ? '1px solid rgba(125, 135, 210, 0.45)'
+                                            : '1px solid rgba(255, 255, 255, 0.09)',
+                                        borderRadius: 20,
                                         overflow: 'hidden',
-                                        transition: 'all 0.2s var(--ease-out)',
-                                        boxShadow: sessionOpen ? '0 0 24px rgba(125, 135, 210, 0.2)' : 'var(--glass-shadow-sm)',
-                                        opacity: 1,
+                                        transition: 'all 0.25s var(--ease-out)',
+                                        boxShadow: sessionOpen
+                                            ? '0 12px 36px -4px rgba(0, 0, 0, 0.5), 0 0 24px rgba(125, 135, 210, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+                                            : '0 4px 20px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
                                     }}>
                                         {/* Past program label */}
                                         {!isCurrent && (
                                             <div style={{
-                                                padding: '4px 16px',
-                                                background: 'rgba(255,255,255,0.02)',
-                                                borderBottom: '1px solid var(--glass-border)',
-                                                fontSize: '0.65rem',
-                                                fontWeight: 600,
+                                                padding: '6px 18px',
+                                                background: 'rgba(255, 255, 255, 0.03)',
+                                                borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+                                                fontSize: '0.68rem',
+                                                fontWeight: 700,
                                                 color: 'var(--secondary-foreground)',
                                                 textTransform: 'uppercase',
                                                 letterSpacing: '0.08em',
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: 6,
                                             }}>
+                                                <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--secondary-foreground)', opacity: 0.6 }} />
                                                 Past Program
                                             </div>
                                         )}
-                                        {/* Session Card Header */}
-                                            <div
-                                                style={{
-                                                    display: 'flex', flexDirection: 'column',
-                                                    padding: '16px 20px',
-                                                    background: 'var(--glass-surface-2)',
-                                                    backdropFilter: 'blur(12px)',
-                                                    color: '#fff',
-                                                    borderBottom: '1px solid var(--glass-border)',
-                                                }}
-                                            >
-                                                {/* Top Row: Title, Week Info, Collapse All */}
-                                                <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', width: '100%' }}>
-                                                    <div style={{ flex: 1, display: 'flex', gap: 16 }}>
-                                                        {/* Week Overview Button */}
-                                                        <button
-                                                            onClick={(e) => {
-                                                                e.stopPropagation();
-                                                                const weekObj = program.weeks?.find((w: any) => w.weekNumber === weekNum) || { weekNumber: weekNum, sessions: [] };
-                                                                openWeekDrawer(program, weekObj);
-                                                            }}
-                                                            title="View week overview"
-                                                            className="chat-press"
-                                                            style={{
-                                                                background: 'rgba(125, 135, 210, 0.15)',
-                                                                color: 'var(--primary)',
-                                                                border: '1px solid rgba(125, 135, 210, 0.35)',
-                                                                width: '36px',
-                                                                height: '36px',
-                                                                borderRadius: '10px',
-                                                                cursor: 'pointer',
-                                                                display: 'flex',
-                                                                alignItems: 'center',
-                                                                justifyContent: 'center',
-                                                                transition: 'all 0.16s var(--ease-out)',
-                                                                marginTop: '2px',
-                                                            }}
-                                                        >
-                                                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                                                                <line x1="16" y1="2" x2="16" y2="6"></line>
-                                                                <line x1="8" y1="2" x2="8" y2="6"></line>
-                                                                <line x1="3" y1="10" x2="21" y2="10"></line>
-                                                            </svg>
-                                                        </button>
 
-                                                        <div style={{ cursor: 'pointer', flex: 1 }} onClick={() => {
-                                                            toggle(openSessions, sKey, setOpenSessions);
-                                                            if (!openSessions.has(sKey)) initEdit(sKey, exercises, log);
-                                                        }}>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                                                {sessionOpen ? (
-                                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--primary)' }}><path d="m6 9 6 6 6-6"/></svg>
-                                                                ) : (
-                                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--secondary-foreground)' }}><path d="m9 18 6-6-6-6"/></svg>
-                                                                )}
-                                                                <div style={{ fontSize: '1.4rem', fontWeight: 600 }}>
-                                                                    {session.name || `Session ${session.day}`}
-                                                                </div>
-                                                            </div>
-                                                            <div style={{ fontSize: '0.85rem', color: 'var(--secondary-foreground)', marginTop: 4, marginLeft: 30 }}>
-                                                                {program.name} — Week {weekNum} • {weekDateRangeFromDate(program.startDate, weekNum)}
-                                                            </div>
-                                                        </div>
+                                        {/* Session Card Header */}
+                                        <div
+                                            onClick={() => {
+                                                toggle(openSessions, sKey, setOpenSessions);
+                                                if (!openSessions.has(sKey)) initEdit(sKey, exercises, log);
+                                            }}
+                                            style={{
+                                                display: 'flex',
+                                                flexDirection: 'column',
+                                                padding: '16px 18px',
+                                                cursor: 'pointer',
+                                                userSelect: 'none',
+                                                borderBottom: sessionOpen ? '1px solid rgba(255, 255, 255, 0.08)' : 'none',
+                                                transition: 'background 0.2s ease',
+                                            }}
+                                        >
+                                            {/* Top Row: Left Icon Squircle, Center Title & Subtitle, Right Controls */}
+                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: 12 }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 0 }}>
+                                                    {/* Session Icon Squircle */}
+                                                    <div style={{
+                                                        width: 44,
+                                                        height: 44,
+                                                        borderRadius: 14,
+                                                        background: progress === 100
+                                                            ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.1) 100%)'
+                                                            : sessionOpen
+                                                                ? 'linear-gradient(135deg, rgba(125, 135, 210, 0.25) 0%, rgba(168, 85, 247, 0.18) 100%)'
+                                                                : 'linear-gradient(135deg, rgba(125, 135, 210, 0.12) 0%, rgba(255, 255, 255, 0.04) 100%)',
+                                                        border: progress === 100
+                                                            ? '1px solid rgba(16, 185, 129, 0.45)'
+                                                            : sessionOpen
+                                                                ? '1px solid rgba(125, 135, 210, 0.45)'
+                                                                : '1px solid rgba(255, 255, 255, 0.1)',
+                                                        boxShadow: progress === 100
+                                                            ? '0 0 16px rgba(16, 185, 129, 0.25)'
+                                                            : sessionOpen
+                                                                ? '0 0 16px rgba(125, 135, 210, 0.2)'
+                                                                : 'none',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        flexShrink: 0,
+                                                        color: progress === 100 ? '#34d399' : sessionOpen ? 'var(--primary)' : 'var(--foreground)',
+                                                        transition: 'all 0.2s var(--ease-out)',
+                                                    }}>
+                                                        {progress === 100 ? (
+                                                            <Check size={20} strokeWidth={2.5} />
+                                                        ) : (
+                                                            <Dumbbell size={20} strokeWidth={2} />
+                                                        )}
                                                     </div>
 
+                                                    {/* Title & Metadata Block */}
+                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0, flex: 1 }}>
+                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                                            <span style={{
+                                                                fontSize: '1.2rem',
+                                                                fontWeight: 700,
+                                                                letterSpacing: '-0.01em',
+                                                                color: '#ffffff',
+                                                                lineHeight: 1.25,
+                                                            }}>
+                                                                {session.name || `Session ${session.day}`}
+                                                            </span>
+
+                                                            {/* Status Tag */}
+                                                            {progress === 100 ? (
+                                                                <span style={{
+                                                                    fontSize: '0.68rem',
+                                                                    fontWeight: 700,
+                                                                    padding: '2px 8px',
+                                                                    borderRadius: 9999,
+                                                                    background: 'rgba(16, 185, 129, 0.15)',
+                                                                    color: '#34d399',
+                                                                    border: '1px solid rgba(16, 185, 129, 0.3)',
+                                                                    display: 'inline-flex',
+                                                                    alignItems: 'center',
+                                                                    gap: 4,
+                                                                }}>
+                                                                    ✓ Done
+                                                                </span>
+                                                            ) : progress > 0 ? (
+                                                                <span style={{
+                                                                    fontSize: '0.68rem',
+                                                                    fontWeight: 700,
+                                                                    padding: '2px 8px',
+                                                                    borderRadius: 9999,
+                                                                    background: 'rgba(125, 135, 210, 0.15)',
+                                                                    color: 'var(--primary)',
+                                                                    border: '1px solid rgba(125, 135, 210, 0.3)',
+                                                                }}>
+                                                                    In Progress
+                                                                </span>
+                                                            ) : null}
+                                                        </div>
+
+                                                        {/* Metadata Row */}
+                                                        <div style={{
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: 6,
+                                                            fontSize: '0.8rem',
+                                                            color: 'var(--secondary-foreground)',
+                                                            flexWrap: 'wrap',
+                                                            lineHeight: 1.35,
+                                                        }}>
+                                                            <span style={{ color: 'var(--primary)', fontWeight: 600 }}>
+                                                                {program.name}
+                                                            </span>
+                                                            <span style={{ opacity: 0.35 }}>•</span>
+                                                            <span>Week {weekNum}</span>
+                                                            <span style={{ opacity: 0.35 }}>•</span>
+                                                            <span style={{ whiteSpace: 'nowrap' }}>
+                                                                {weekDateRangeFromDate(program.startDate, weekNum)}
+                                                            </span>
+
+                                                            {/* Week Overview Button */}
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    const weekObj = program.weeks?.find((w: any) => w.weekNumber === weekNum) || { weekNumber: weekNum, sessions: [] };
+                                                                    openWeekDrawer(program, weekObj);
+                                                                }}
+                                                                title="View week overview"
+                                                                className="chat-press"
+                                                                style={{
+                                                                    display: 'inline-flex',
+                                                                    alignItems: 'center',
+                                                                    gap: 4,
+                                                                    background: 'rgba(255, 255, 255, 0.06)',
+                                                                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                                                                    color: 'var(--foreground)',
+                                                                    padding: '2px 7px',
+                                                                    borderRadius: 6,
+                                                                    fontSize: '0.72rem',
+                                                                    fontWeight: 600,
+                                                                    cursor: 'pointer',
+                                                                    transition: 'all 0.16s ease',
+                                                                }}
+                                                            >
+                                                                <Calendar size={11} strokeWidth={2} />
+                                                                <span>Week</span>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Right: Expand/Collapse All (if open) & Rotating Chevron */}
+                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
                                                     {sessionOpen && (
                                                         <div 
                                                             onClick={(e) => {
@@ -1036,61 +1136,142 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                 const anyOpen = exercises.some((_, idx) => openExercises.has(`${sKey}-ex${idx}`));
                                                                 toggleSessionExercises(sKey, exercises, !anyOpen);
                                                             }}
-                                                            style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'var(--secondary-foreground)', cursor: 'pointer' }}
+                                                            style={{
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                gap: 4,
+                                                                padding: '4px 8px',
+                                                                background: 'rgba(255, 255, 255, 0.05)',
+                                                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                                                borderRadius: 8,
+                                                                color: 'var(--secondary-foreground)',
+                                                                cursor: 'pointer',
+                                                                fontSize: '0.72rem',
+                                                                fontWeight: 600,
+                                                            }}
                                                         >
-                                                            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: -2 }}><path d="m7 6 5 5 5-5"/><path d="m7 13 5 5 5-5"/></svg>
-                                                            <span style={{ fontSize: '0.65rem', fontWeight: 500 }}>
-                                                                {exercises.some((_, idx) => openExercises.has(`${sKey}-ex${idx}`)) ? 'Collapse All' : 'Expand All'}
+                                                            <ChevronsUpDown size={13} />
+                                                            <span className="hidden sm:inline">
+                                                                {exercises.some((_, idx) => openExercises.has(`${sKey}-ex${idx}`)) ? 'Collapse' : 'Expand'}
                                                             </span>
                                                         </div>
                                                     )}
-                                                </div>
 
-                                                {/* Progress Bar Row */}
-                                                <div 
-                                                    style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 16, cursor: 'pointer' }}
-                                                    onClick={() => {
-                                                        toggle(openSessions, sKey, setOpenSessions);
-                                                        if (!openSessions.has(sKey)) initEdit(sKey, exercises, log);
-                                                    }}
-                                                >
-                                                    <div style={{ flex: 1, height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.1)', overflow: 'hidden', marginLeft: 46 }}>
-                                                        <div style={{
-                                                            height: '100%', borderRadius: 4, transition: 'width 300ms',
-                                                            width: `${progress}%`,
-                                                            background: progress === 100 ? '#4ade80' : 'var(--primary)',
-                                                            boxShadow: progress === 100 ? '0 0 12px rgba(74,222,128,0.8)' : 'none'
-                                                        }} />
+                                                    {/* Chevron Circle */}
+                                                    <div style={{
+                                                        width: 32,
+                                                        height: 32,
+                                                        borderRadius: '50%',
+                                                        background: sessionOpen ? 'rgba(125, 135, 210, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                                                        border: sessionOpen ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'center',
+                                                        color: sessionOpen ? 'var(--primary)' : 'var(--secondary-foreground)',
+                                                        transition: 'all 0.2s var(--ease-out)',
+                                                        transform: sessionOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                                                    }}>
+                                                        <ChevronDown size={17} strokeWidth={2.5} />
                                                     </div>
-                                                    <span style={{ fontSize: '0.9rem', color: 'var(--secondary-foreground)', fontWeight: 600 }}>
+                                                </div>
+                                            </div>
+
+                                            {/* Progress Bar & Stats Section */}
+                                            <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.76rem' }}>
+                                                    <span style={{ color: 'var(--secondary-foreground)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                        <span>{exercises.length} exercise{exercises.length !== 1 ? 's' : ''}</span>
+                                                        {progress > 0 && progress < 100 && (
+                                                            <>
+                                                                <span style={{ opacity: 0.35 }}>•</span>
+                                                                <span style={{ color: 'var(--primary)', fontWeight: 600 }}>In progress</span>
+                                                            </>
+                                                        )}
+                                                    </span>
+                                                    <span style={{
+                                                        fontWeight: 700,
+                                                        color: progress === 100 ? '#34d399' : progress > 0 ? 'var(--primary)' : 'var(--secondary-foreground)',
+                                                        fontVariantNumeric: 'tabular-nums',
+                                                    }}>
                                                         {progress}%
                                                     </span>
                                                 </div>
 
-                                                {/* Save Status Row */}
-                                                {sessionOpen && (
-                                                    <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.1)', fontSize: '0.95rem' }}>
-                                                        {saving.has(sKey) ? (
-                                                            <span style={{ color: 'var(--warning)', fontWeight: 500 }}>Saving...</span>
-                                                        ) : savedKeys.has(sKey) ? (
-                                                            <span style={{ color: '#4ade80', fontWeight: 500 }}>All Changes Saved.</span>
-                                                        ) : <span style={{ color: 'transparent' }}>-</span>}
-                                                    </div>
-                                                )}
+                                                {/* Modern Progress Track */}
+                                                <div style={{
+                                                    width: '100%',
+                                                    height: 6,
+                                                    borderRadius: 9999,
+                                                    background: 'rgba(255, 255, 255, 0.07)',
+                                                    overflow: 'hidden',
+                                                    position: 'relative',
+                                                }}>
+                                                    <div style={{
+                                                        height: '100%',
+                                                        borderRadius: 9999,
+                                                        transition: 'width 350ms var(--ease-out)',
+                                                        width: `${progress}%`,
+                                                        background: progress === 100
+                                                            ? 'linear-gradient(90deg, #10b981 0%, #34d399 100%)'
+                                                            : 'linear-gradient(90deg, #7d87d2 0%, #a855f7 100%)',
+                                                        boxShadow: progress === 100
+                                                            ? '0 0 12px rgba(16, 185, 129, 0.7)'
+                                                            : progress > 0
+                                                                ? '0 0 10px rgba(125, 135, 210, 0.5)'
+                                                                : 'none',
+                                                    }} />
+                                                </div>
                                             </div>
+
+                                            {/* Save Status Row (when open) */}
+                                            {sessionOpen && (
+                                                <div style={{
+                                                    marginTop: 12,
+                                                    paddingTop: 10,
+                                                    borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+                                                    fontSize: '0.8rem',
+                                                    display: 'flex',
+                                                    alignItems: 'center',
+                                                    justifyContent: 'space-between'
+                                                }}>
+                                                    {saving.has(sKey) ? (
+                                                        <span style={{ color: 'var(--warning)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--warning)', display: 'inline-block' }} />
+                                                            Saving changes...
+                                                        </span>
+                                                    ) : savedKeys.has(sKey) ? (
+                                                        <span style={{ color: '#34d399', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                            <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#34d399', display: 'inline-block' }} />
+                                                            All Changes Saved
+                                                        </span>
+                                                    ) : (
+                                                        <span style={{ color: 'var(--secondary-foreground)', opacity: 0.6, fontSize: '0.76rem' }}>
+                                                            Tap an exercise to log sets
+                                                        </span>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </div>
 
                                         {/* Expanded: Readiness + Exercise Cards */}
                                         {sessionOpen && (
-                                            <div style={{ background: 'var(--card-border)', position: 'relative' }}>
+                                            <div style={{ background: 'rgba(10, 12, 18, 0.4)', position: 'relative' }}>
                                                 {!isCoachView && !isReadinessExempt && <ReadinessCheckin athleteId={athleteId} sessionKey={sKey} programId={program.id} onReadinessSubmit={() => markSessionReady(sKey)} />}
 
                                                 {/* Warmup Drills Display */}
                                                 {(session.warmupDrills || log?.warmupDrills) && (
-                                                    <div style={{ padding: '12px 16px', background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid var(--card-border)' }}>
-                                                        <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--primary)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                    <div style={{
+                                                        margin: '12px 16px',
+                                                        padding: '12px 16px',
+                                                        background: 'rgba(125, 135, 210, 0.08)',
+                                                        border: '1px solid rgba(125, 135, 210, 0.25)',
+                                                        borderRadius: 14,
+                                                    }}>
+                                                        <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--primary)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                            <Sparkles size={14} />
                                                             Warm-Up & Prep Drills
                                                         </div>
-                                                        <div style={{ fontSize: '0.9rem', color: 'var(--foreground)', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>
+                                                        <div style={{ fontSize: '0.88rem', color: 'var(--foreground)', whiteSpace: 'pre-wrap', lineHeight: '1.45' }}>
                                                             {linkify(session.warmupDrills || log?.warmupDrills)}
                                                         </div>
                                                     </div>
@@ -1115,8 +1296,6 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                         </div>
                                                     </div>
                                                 )}
-
-
 
                                                 {(editState[sKey] || exercises).map((ex: any, exIdx: number) => {
                                                     const isEdit = !!editState[sKey];
@@ -1167,7 +1346,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                     const isLocked = !isCoachView && !isReadinessExempt && !readySessions.has(sKey) && !isWarmup && !hasExistingLogData;
 
                                                     return (
-                                                        <div key={exIdx} className={shakeKey === exKey ? 'readiness-shake' : ''} style={{ background: 'var(--background)', borderBottom: '1px solid var(--card-border)', opacity: isLocked ? 0.5 : 1, transition: 'opacity 0.3s' }}>
+                                                        <div key={exIdx} className={shakeKey === exKey ? 'readiness-shake' : ''} style={{ background: 'transparent', borderBottom: '1px solid rgba(255, 255, 255, 0.06)', opacity: isLocked ? 0.5 : 1, transition: 'opacity 0.3s' }}>
                                                             <div 
                                                                 onClick={() => {
                                                                     if (isLocked) {
@@ -1177,7 +1356,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                     toggle(openExercises, exKey, setOpenExercises);
                                                                     if (!editState[sKey]) initEdit(sKey, exercises, log);
                                                                 }}
-                                                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'rgba(255,255,255,0.06)', cursor: 'pointer', borderTopLeftRadius: exIdx === 0 ? 8 : 0, borderTopRightRadius: exIdx === 0 ? 8 : 0, borderBottom: '1px solid var(--card-border)' }}
+                                                                style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 18px', background: exOpen ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.015)', cursor: 'pointer', borderTopLeftRadius: exIdx === 0 ? 8 : 0, borderTopRightRadius: exIdx === 0 ? 8 : 0, transition: 'background 0.16s ease' }}
                                                             >
                                                                 <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                                                                     <div style={{ width: 3, height: 20, borderRadius: 2, background: catColor }} />
@@ -1204,11 +1383,16 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                     })()}
                                                                     {isLocked && <span style={{ fontSize: '0.8rem' }}>🔒</span>}
                                                                 </div>
-                                                                <span style={{
-                                                                    color: 'var(--secondary-foreground)', fontSize: '0.8rem',
-                                                                    transition: 'transform 0.2s', display: 'inline-block',
+                                                                <div style={{
+                                                                    color: 'var(--secondary-foreground)',
+                                                                    transition: 'transform 0.2s ease',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
                                                                     transform: exOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                                                                }}>▼</span>
+                                                                }}>
+                                                                    <ChevronDown size={17} />
+                                                                </div>
                                                             </div>
 
                                                             {exOpen && (
@@ -1821,76 +2005,267 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                         sessionMetaRef.current[sKey] = { exercises, sessionName: session.name || `Session ${day}`, scheduledDate: sessDateStr, legacyKey };
 
                                         return (
-                                                <div style={{ marginBottom: sessionOpen ? 16 : 8 }}>
+                                                <div key={sKey} id={`session-${sKey}`} className="glass-panel" style={{
+                                                    background: sessionOpen
+                                                        ? 'linear-gradient(180deg, rgba(22, 27, 40, 0.9) 0%, rgba(14, 17, 26, 0.95) 100%)'
+                                                        : 'linear-gradient(180deg, rgba(22, 27, 38, 0.75) 0%, rgba(13, 16, 24, 0.8) 100%)',
+                                                    backdropFilter: 'blur(16px)',
+                                                    WebkitBackdropFilter: 'blur(16px)',
+                                                    border: sessionOpen
+                                                        ? '1px solid rgba(125, 135, 210, 0.45)'
+                                                        : '1px solid rgba(255, 255, 255, 0.09)',
+                                                    borderRadius: 20,
+                                                    overflow: 'hidden',
+                                                    marginBottom: sessionOpen ? 16 : 10,
+                                                    transition: 'all 0.25s var(--ease-out)',
+                                                    boxShadow: sessionOpen
+                                                        ? '0 12px 36px -4px rgba(0, 0, 0, 0.5), 0 0 24px rgba(125, 135, 210, 0.16), inset 0 1px 0 rgba(255, 255, 255, 0.1)'
+                                                        : '0 4px 20px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+                                                }}>
                                                     {/* Session header */}
-                                                    <div style={{
-                                                        display: 'flex', flexDirection: 'column',
-                                                        padding: '16px 20px',
-                                                        background: 'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 100%)',
-                                                        color: '#fff',
-                                                        borderRadius: 16,
-                                                        border: '1px solid rgba(255,255,255,0.1)',
-                                                        boxShadow: '0 4px 24px rgba(0,0,0,0.2)',
-                                                    }}>
-                                                        {/* Top Row: Title and Collapse All */}
-                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', cursor: 'pointer' }} onClick={() => {
+                                                    <div
+                                                        onClick={() => {
                                                             toggle(openSessions, sKey, setOpenSessions);
                                                             if (!openSessions.has(sKey)) initEdit(sKey, exercises, log);
-                                                        }}>
-                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                                                                {sessionOpen ? (
-                                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--primary)' }}><path d="m6 9 6 6 6-6"/></svg>
-                                                                ) : (
-                                                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--secondary-foreground)' }}><path d="m9 18 6-6-6-6"/></svg>
-                                                                )}
-                                                                <div style={{ fontSize: '1.4rem', fontWeight: 600 }}>
-                                                                    {session.name || `Session ${day}`}
+                                                        }}
+                                                        style={{
+                                                            display: 'flex',
+                                                            flexDirection: 'column',
+                                                            padding: '16px 18px',
+                                                            cursor: 'pointer',
+                                                            userSelect: 'none',
+                                                            borderBottom: sessionOpen ? '1px solid rgba(255, 255, 255, 0.08)' : 'none',
+                                                            transition: 'background 0.2s ease',
+                                                        }}
+                                                    >
+                                                        {/* Top Row: Left Icon, Center Title & Subtitle, Right Controls */}
+                                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', gap: 12 }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 0 }}>
+                                                                {/* Session Icon Squircle */}
+                                                                <div style={{
+                                                                    width: 44,
+                                                                    height: 44,
+                                                                    borderRadius: 14,
+                                                                    background: progress === 100
+                                                                        ? 'linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.1) 100%)'
+                                                                        : sessionOpen
+                                                                            ? 'linear-gradient(135deg, rgba(125, 135, 210, 0.25) 0%, rgba(168, 85, 247, 0.18) 100%)'
+                                                                            : 'linear-gradient(135deg, rgba(125, 135, 210, 0.12) 0%, rgba(255, 255, 255, 0.04) 100%)',
+                                                                    border: progress === 100
+                                                                        ? '1px solid rgba(16, 185, 129, 0.45)'
+                                                                        : sessionOpen
+                                                                            ? '1px solid rgba(125, 135, 210, 0.45)'
+                                                                            : '1px solid rgba(255, 255, 255, 0.1)',
+                                                                    boxShadow: progress === 100
+                                                                        ? '0 0 16px rgba(16, 185, 129, 0.25)'
+                                                                        : sessionOpen
+                                                                            ? '0 0 16px rgba(125, 135, 210, 0.2)'
+                                                                            : 'none',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    flexShrink: 0,
+                                                                    color: progress === 100 ? '#34d399' : sessionOpen ? 'var(--primary)' : 'var(--foreground)',
+                                                                    transition: 'all 0.2s var(--ease-out)',
+                                                                }}>
+                                                                    {progress === 100 ? (
+                                                                        <Check size={20} strokeWidth={2.5} />
+                                                                    ) : (
+                                                                        <Dumbbell size={20} strokeWidth={2} />
+                                                                    )}
+                                                                </div>
+
+                                                                {/* Title & Metadata Block */}
+                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0, flex: 1 }}>
+                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                                                                        <span style={{
+                                                                            fontSize: '1.2rem',
+                                                                            fontWeight: 700,
+                                                                            letterSpacing: '-0.01em',
+                                                                            color: '#ffffff',
+                                                                            lineHeight: 1.25,
+                                                                        }}>
+                                                                            {session.name || `Session ${day}`}
+                                                                        </span>
+
+                                                                        {/* Status Tag */}
+                                                                        {progress === 100 ? (
+                                                                            <span style={{
+                                                                                fontSize: '0.68rem',
+                                                                                fontWeight: 700,
+                                                                                padding: '2px 8px',
+                                                                                borderRadius: 9999,
+                                                                                background: 'rgba(16, 185, 129, 0.15)',
+                                                                                color: '#34d399',
+                                                                                border: '1px solid rgba(16, 185, 129, 0.3)',
+                                                                                display: 'inline-flex',
+                                                                                alignItems: 'center',
+                                                                                gap: 4,
+                                                                            }}>
+                                                                                ✓ Done
+                                                                            </span>
+                                                                        ) : progress > 0 ? (
+                                                                            <span style={{
+                                                                                fontSize: '0.68rem',
+                                                                                fontWeight: 700,
+                                                                                padding: '2px 8px',
+                                                                                borderRadius: 9999,
+                                                                                background: 'rgba(125, 135, 210, 0.15)',
+                                                                                color: 'var(--primary)',
+                                                                                border: '1px solid rgba(125, 135, 210, 0.3)',
+                                                                            }}>
+                                                                                In Progress
+                                                                            </span>
+                                                                        ) : null}
+                                                                    </div>
+
+                                                                    {/* Metadata Row */}
+                                                                    <div style={{
+                                                                        display: 'flex',
+                                                                        alignItems: 'center',
+                                                                        gap: 6,
+                                                                        fontSize: '0.8rem',
+                                                                        color: 'var(--secondary-foreground)',
+                                                                        flexWrap: 'wrap',
+                                                                        lineHeight: 1.35,
+                                                                    }}>
+                                                                        <span style={{ color: 'var(--primary)', fontWeight: 600 }}>
+                                                                            Day {day}
+                                                                        </span>
+                                                                        <span style={{ opacity: 0.35 }}>•</span>
+                                                                        <span style={{ whiteSpace: 'nowrap' }}>
+                                                                            {sessDateStr || weekDateRangeFromDate(program.startDate, weekNum)}
+                                                                        </span>
+                                                                    </div>
                                                                 </div>
                                                             </div>
-                                                             {sessionOpen && (
-                                                                <div 
-                                                                    onClick={(e) => {
-                                                                        e.stopPropagation();
-                                                                        if (!isCoachView && !isReadinessExempt && !readySessions.has(sKey)) {
-                                                                            handleLockedExerciseClick(sKey, `${sKey}-expand-all`);
-                                                                            return;
-                                                                        }
-                                                                        const anyOpen = exercises.some((_, idx) => openExercises.has(`${sKey}-ex${idx}`));
-                                                                        toggleSessionExercises(sKey, exercises, !anyOpen);
-                                                                    }}
-                                                                    style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', color: 'var(--secondary-foreground)' }}
-                                                                >
-                                                                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ marginBottom: -2 }}><path d="m7 6 5 5 5-5"/><path d="m7 13 5 5 5-5"/></svg>
-                                                                    <span style={{ fontSize: '0.65rem', fontWeight: 500 }}>
-                                                                        {exercises.some((_, idx) => openExercises.has(`${sKey}-ex${idx}`)) ? 'Collapse All' : 'Expand All'}
-                                                                    </span>
+
+                                                            {/* Right: Expand/Collapse All (if open) & Rotating Chevron */}
+                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                                                                {sessionOpen && (
+                                                                    <div 
+                                                                        onClick={(e) => {
+                                                                            e.stopPropagation();
+                                                                            if (!isCoachView && !isReadinessExempt && !readySessions.has(sKey)) {
+                                                                                handleLockedExerciseClick(sKey, `${sKey}-expand-all`);
+                                                                                return;
+                                                                            }
+                                                                            const anyOpen = exercises.some((_, idx) => openExercises.has(`${sKey}-ex${idx}`));
+                                                                            toggleSessionExercises(sKey, exercises, !anyOpen);
+                                                                        }}
+                                                                        style={{
+                                                                            display: 'flex',
+                                                                            alignItems: 'center',
+                                                                            gap: 4,
+                                                                            padding: '4px 8px',
+                                                                            background: 'rgba(255, 255, 255, 0.05)',
+                                                                            border: '1px solid rgba(255, 255, 255, 0.1)',
+                                                                            borderRadius: 8,
+                                                                            color: 'var(--secondary-foreground)',
+                                                                            cursor: 'pointer',
+                                                                            fontSize: '0.72rem',
+                                                                            fontWeight: 600,
+                                                                        }}
+                                                                    >
+                                                                        <ChevronsUpDown size={13} />
+                                                                        <span className="hidden sm:inline">
+                                                                            {exercises.some((_, idx) => openExercises.has(`${sKey}-ex${idx}`)) ? 'Collapse' : 'Expand'}
+                                                                        </span>
+                                                                    </div>
+                                                                )}
+
+                                                                {/* Chevron Circle */}
+                                                                <div style={{
+                                                                    width: 32,
+                                                                    height: 32,
+                                                                    borderRadius: '50%',
+                                                                    background: sessionOpen ? 'rgba(125, 135, 210, 0.2)' : 'rgba(255, 255, 255, 0.05)',
+                                                                    border: sessionOpen ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)',
+                                                                    display: 'flex',
+                                                                    alignItems: 'center',
+                                                                    justifyContent: 'center',
+                                                                    color: sessionOpen ? 'var(--primary)' : 'var(--secondary-foreground)',
+                                                                    transition: 'all 0.2s var(--ease-out)',
+                                                                    transform: sessionOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                                                                }}>
+                                                                    <ChevronDown size={17} strokeWidth={2.5} />
                                                                 </div>
-                                                            )}
+                                                            </div>
                                                         </div>
 
-                                                        {/* Progress Bar Row */}
-                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 16 }}>
-                                                            <div style={{ flex: 1, height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.1)', overflow: 'hidden' }}>
+                                                        {/* Progress Bar & Stats Section */}
+                                                        <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.76rem' }}>
+                                                                <span style={{ color: 'var(--secondary-foreground)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                                    <span>{exercises.length} exercise{exercises.length !== 1 ? 's' : ''}</span>
+                                                                    {progress > 0 && progress < 100 && (
+                                                                        <>
+                                                                            <span style={{ opacity: 0.35 }}>•</span>
+                                                                            <span style={{ color: 'var(--primary)', fontWeight: 600 }}>In progress</span>
+                                                                        </>
+                                                                    )}
+                                                                </span>
+                                                                <span style={{
+                                                                    fontWeight: 700,
+                                                                    color: progress === 100 ? '#34d399' : progress > 0 ? 'var(--primary)' : 'var(--secondary-foreground)',
+                                                                    fontVariantNumeric: 'tabular-nums',
+                                                                }}>
+                                                                    {progress}%
+                                                                </span>
+                                                            </div>
+
+                                                            {/* Modern Progress Track */}
+                                                            <div style={{
+                                                                width: '100%',
+                                                                height: 6,
+                                                                borderRadius: 9999,
+                                                                background: 'rgba(255, 255, 255, 0.07)',
+                                                                overflow: 'hidden',
+                                                                position: 'relative',
+                                                            }}>
                                                                 <div style={{
-                                                                    height: '100%', borderRadius: 4, transition: 'width 300ms',
+                                                                    height: '100%',
+                                                                    borderRadius: 9999,
+                                                                    transition: 'width 350ms var(--ease-out)',
                                                                     width: `${progress}%`,
-                                                                    background: progress === 100 ? '#4ade80' : 'var(--primary)',
-                                                                    boxShadow: progress === 100 ? '0 0 12px rgba(74,222,128,0.8)' : 'none'
+                                                                    background: progress === 100
+                                                                        ? 'linear-gradient(90deg, #10b981 0%, #34d399 100%)'
+                                                                        : 'linear-gradient(90deg, #7d87d2 0%, #a855f7 100%)',
+                                                                    boxShadow: progress === 100
+                                                                        ? '0 0 12px rgba(16, 185, 129, 0.7)'
+                                                                        : progress > 0
+                                                                            ? '0 0 10px rgba(125, 135, 210, 0.5)'
+                                                                            : 'none',
                                                                 }} />
                                                             </div>
-                                                            <span style={{ fontSize: '0.9rem', color: 'var(--secondary-foreground)', fontWeight: 600 }}>
-                                                                {progress}%
-                                                            </span>
                                                         </div>
                                                         
-                                                        {/* Save Status Row */}
+                                                        {/* Save Status Row (when open) */}
                                                         {sessionOpen && (
-                                                            <div style={{ marginTop: 16, paddingTop: 12, borderTop: '1px solid rgba(255,255,255,0.1)', fontSize: '0.95rem' }}>
+                                                            <div style={{
+                                                                marginTop: 12,
+                                                                paddingTop: 10,
+                                                                borderTop: '1px solid rgba(255, 255, 255, 0.06)',
+                                                                fontSize: '0.8rem',
+                                                                display: 'flex',
+                                                                alignItems: 'center',
+                                                                justifyContent: 'space-between'
+                                                            }}>
                                                                 {saving.has(sKey) ? (
-                                                                    <span style={{ color: 'var(--warning)', fontWeight: 500 }}>Saving...</span>
+                                                                    <span style={{ color: 'var(--warning)', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--warning)', display: 'inline-block' }} />
+                                                                        Saving changes...
+                                                                    </span>
                                                                 ) : savedKeys.has(sKey) ? (
-                                                                    <span style={{ color: '#4ade80', fontWeight: 500 }}>All Changes Saved.</span>
-                                                                ) : <span style={{ color: 'transparent' }}>-</span>}
+                                                                    <span style={{ color: '#34d399', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 6 }}>
+                                                                        <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#34d399', display: 'inline-block' }} />
+                                                                        All Changes Saved
+                                                                    </span>
+                                                                ) : (
+                                                                    <span style={{ color: 'var(--secondary-foreground)', opacity: 0.6, fontSize: '0.76rem' }}>
+                                                                        Tap an exercise to log sets
+                                                                    </span>
+                                                                )}
                                                             </div>
                                                         )}
                                                     </div>
@@ -1898,22 +2273,24 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                 {/* ═══ Expanded Session: Exercise Cards ═══ */}
                                                 {
                                                     sessionOpen && (
-                                                        <div style={{ padding: '0', background: 'var(--card-border)' }}> {/* Light grey backdrop for cards */}
-                                                            {/* "All Changes Saved" header like RTS */}
-                                                            <div style={{ padding: '6px 16px', fontSize: '0.8rem', fontWeight: 600, color: 'var(--foreground)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--card-border)' }}>
-                                                                <span style={{ color: saving.has(sKey) ? 'var(--warning)' : 'var(--success)' }}>{saving.has(sKey) ? 'Saving changes...' : 'All Changes Saved.'}</span>
-                                                            </div>
-
+                                                        <div style={{ padding: '0', background: 'rgba(10, 12, 18, 0.4)' }}>
                                                             {/* Readiness Check-In */}
                                                             {!isCoachView && !isReadinessExempt && <ReadinessCheckin athleteId={athleteId} sessionKey={sKey} programId={program.id} onReadinessSubmit={() => markSessionReady(sKey)} />}
 
                                                             {/* Warmup Drills Display */}
                                                             {(session.warmupDrills || log?.warmupDrills) && (
-                                                                <div style={{ padding: '12px 16px', background: 'rgba(255,255,255,0.03)', borderBottom: '1px solid var(--card-border)' }}>
-                                                                    <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--primary)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                <div style={{
+                                                                    margin: '12px 16px',
+                                                                    padding: '12px 16px',
+                                                                    background: 'rgba(125, 135, 210, 0.08)',
+                                                                    border: '1px solid rgba(125, 135, 210, 0.25)',
+                                                                    borderRadius: 14,
+                                                                }}>
+                                                                    <div style={{ fontSize: '0.82rem', fontWeight: 700, color: 'var(--primary)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                                        <Sparkles size={14} />
                                                                         Warm-Up & Prep Drills
                                                                     </div>
-                                                                    <div style={{ fontSize: '0.9rem', color: 'var(--foreground)', whiteSpace: 'pre-wrap', lineHeight: '1.4' }}>
+                                                                    <div style={{ fontSize: '0.88rem', color: 'var(--foreground)', whiteSpace: 'pre-wrap', lineHeight: '1.45' }}>
                                                                         {linkify(session.warmupDrills || log?.warmupDrills)}
                                                                     </div>
                                                                 </div>
@@ -1938,8 +2315,6 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                     </div>
                                                                 </div>
                                                             )}
-
-
 
                                                             {(editState[sKey] || exercises).map((ex: any, exIdx: number) => {
                                                                 const isEdit = !!editState[sKey];
@@ -1979,6 +2354,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                 });
 
                                                                 const category = exerciseData?.category || ex?.category || getExerciseCategory(exerciseData?.name || ex?.name);
+                                                                const catColor = CATEGORY_COLORS[category] || '#94A3B8';
                                                                 const exName = (exerciseData?.name || ex?.name || '').toLowerCase();
                                                                 const isWarmup = category === 'Warm Up' || category === 'Drills' || exName.includes('warm up') || exName.includes('warmup') || exName.includes('drill');
                                                                 
@@ -1989,7 +2365,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                 const isLocked = !isCoachView && !isReadinessExempt && !readySessions.has(sKey) && !isWarmup && !hasExistingLogData;
 
                                                                 return (
-                                                                    <div key={exIdx} className={shakeKey === exKey ? 'readiness-shake' : ''} style={{ background: 'var(--background)', borderBottom: '1px solid #cbd5e1', opacity: isLocked ? 0.5 : 1, transition: 'opacity 0.3s' }}>
+                                                                    <div key={exIdx} className={shakeKey === exKey ? 'readiness-shake' : ''} style={{ background: 'transparent', borderBottom: '1px solid rgba(255, 255, 255, 0.06)', opacity: isLocked ? 0.5 : 1, transition: 'opacity 0.3s' }}>
                                                                         {/* Exercise header */}
                                                                         <div 
                                                                             onClick={() => {
@@ -2000,9 +2376,10 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                 toggle(openExercises, exKey, setOpenExercises);
                                                                                 if (!editState[sKey]) initEdit(sKey, exercises, log);
                                                                             }}
-                                                                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 16px', background: 'rgba(255,255,255,0.06)', cursor: 'pointer', borderTopLeftRadius: exIdx === 0 ? 8 : 0, borderTopRightRadius: exIdx === 0 ? 8 : 0, borderBottom: '1px solid var(--card-border)' }}
+                                                                            style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '13px 18px', background: exOpen ? 'rgba(255, 255, 255, 0.04)' : 'rgba(255, 255, 255, 0.015)', cursor: 'pointer', borderTopLeftRadius: exIdx === 0 ? 8 : 0, borderTopRightRadius: exIdx === 0 ? 8 : 0, transition: 'background 0.16s ease' }}
                                                                         >
                                                                             <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                                                                                <div style={{ width: 3, height: 20, borderRadius: 2, background: catColor }} />
                                                                                 <span style={{ fontSize: '1rem', color: '#fff', fontWeight: 600 }}>{exerciseData?.name || ex?.name}</span>
                                                                                 {(() => {
                                                                                     const planned = plannedTopSets[sKey]?.[exerciseData?.name || ex?.name];
@@ -2026,11 +2403,16 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                 })()}
                                                                                 {isLocked && <span style={{ fontSize: '0.8rem' }}>🔒</span>}
                                                                             </div>
-                                                                            <span style={{
-                                                                                color: 'var(--secondary-foreground)', fontSize: '0.8rem',
-                                                                                transition: 'transform 0.2s', display: 'inline-block',
+                                                                            <div style={{
+                                                                                color: 'var(--secondary-foreground)',
+                                                                                transition: 'transform 0.2s ease',
+                                                                                display: 'flex',
+                                                                                alignItems: 'center',
+                                                                                justifyContent: 'center',
                                                                                 transform: exOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                                                                            }}>▼</span>
+                                                                            }}>
+                                                                                <ChevronDown size={17} />
+                                                                            </div>
                                                                         </div>
 
                                                                         {/* Exercise body / Input rows */}
