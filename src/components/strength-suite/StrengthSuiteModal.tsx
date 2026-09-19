@@ -37,7 +37,7 @@ export default function StrengthSuiteModal({
 
     return (
         <div
-            className="fixed inset-0 z-[999] flex items-center justify-center p-4 sm:p-6"
+            className="fixed inset-0 z-[999] flex items-center justify-center p-2 sm:p-4 md:p-6"
             style={{
                 background: 'rgba(0, 0, 0, 0.78)',
                 backdropFilter: 'blur(20px)',
@@ -48,7 +48,7 @@ export default function StrengthSuiteModal({
             }}
         >
             <div
-                className="w-full max-w-5xl max-h-[90vh] overflow-y-auto rounded-3xl p-6 sm:p-8"
+                className="w-full max-w-5xl max-h-[92vh] overflow-y-auto rounded-2xl sm:rounded-3xl p-3.5 sm:p-6 md:p-8"
                 style={{
                     background: 'rgba(14, 14, 22, 0.92)',
                     backdropFilter: 'blur(32px)',

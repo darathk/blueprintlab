@@ -46,10 +46,10 @@ export default function StrengthSuite({
     return (
         <div className="w-full flex flex-col items-center">
             {/* Top Navigation Capsule Pill Bar */}
-            <div className="w-full flex items-center justify-center mb-8 px-2 sm:px-4 relative">
-                <div className="w-full max-w-full overflow-x-auto no-scrollbar scroll-smooth flex justify-start sm:justify-center py-1">
+            <div className="w-full flex items-center justify-between gap-2 sm:gap-4 mb-4 sm:mb-6 px-1 sm:px-2 relative">
+                <div className="flex-1 overflow-x-auto no-scrollbar scroll-smooth flex justify-start sm:justify-center py-1">
                     <div
-                        className="inline-flex items-center gap-1.5 sm:gap-2 p-1.5 sm:p-2 rounded-full shrink-0"
+                        className="inline-flex items-center gap-1 sm:gap-2 p-1 sm:p-1.5 rounded-full shrink-0"
                         style={{
                             background: 'rgba(20, 20, 30, 0.75)',
                             backdropFilter: 'blur(24px)',
@@ -65,14 +65,14 @@ export default function StrengthSuite({
                                     key={tab.id}
                                     type="button"
                                     onClick={() => setActiveTab(tab.id)}
-                                    className="chat-press flex items-center justify-center px-4 sm:px-6 py-2 sm:py-2.5 rounded-full transition-all cursor-pointer select-none whitespace-nowrap shrink-0 hover:text-white min-h-[40px] sm:min-h-[44px]"
+                                    className="chat-press flex items-center justify-center px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-full transition-all cursor-pointer select-none whitespace-nowrap shrink-0 hover:text-white min-h-[38px] sm:min-h-[42px]"
                                     style={{
                                         background: isActive ? 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)' : 'transparent',
                                         color: isActive ? '#ffffff' : 'rgba(255, 255, 255, 0.7)',
                                         fontWeight: isActive ? 800 : 600,
-                                        fontSize: '0.875rem',
+                                        fontSize: '0.8125rem',
                                         border: isActive ? '1px solid rgba(255, 255, 255, 0.3)' : '1px solid transparent',
-                                        boxShadow: isActive ? '0 0 20px rgba(239, 68, 68, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3)' : 'none',
+                                        boxShadow: isActive ? '0 0 18px rgba(239, 68, 68, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.3)' : 'none',
                                     }}
                                 >
                                     {tab.label}
@@ -87,7 +87,7 @@ export default function StrengthSuite({
                     <button
                         type="button"
                         onClick={onClose}
-                        className="chat-press absolute right-2 sm:right-4 top-1/2 -translate-y-1/2 flex items-center justify-center w-10 h-10 rounded-full shrink-0 z-10"
+                        className="chat-press flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full shrink-0 z-10"
                         style={{
                             background: 'rgba(255, 255, 255, 0.08)',
                             backdropFilter: 'blur(12px)',
@@ -99,7 +99,7 @@ export default function StrengthSuite({
                         }}
                         aria-label="Close"
                     >
-                        <X size={18} />
+                        <X size={17} />
                     </button>
                 )}
             </div>

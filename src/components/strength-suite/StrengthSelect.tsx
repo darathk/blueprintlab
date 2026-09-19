@@ -28,10 +28,10 @@ export default function StrengthSelect({
     style,
 }: StrengthSelectProps) {
     const formattedOptions: SelectOption[] = options.map((opt) => {
-        if (typeof opt === 'object' && opt !== null && 'value' in opt) {
-            return opt;
+        if (typeof opt === 'object' && opt !== null && 'value' in opt && 'label' in opt) {
+            return opt as SelectOption;
         }
-        return { value: opt, label: String(opt) };
+        return { value: opt as string | number, label: String(opt) };
     });
 
     return (

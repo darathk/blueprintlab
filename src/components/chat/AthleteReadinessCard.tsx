@@ -183,7 +183,8 @@ export default function AthleteReadinessCard({
                 status: 'Prime',
                 color: '#10b981',
                 isPlaceholder: true,
-                raw: null
+                raw: null,
+                originalIndex: undefined as number | undefined
             }));
         }
 
@@ -387,14 +388,16 @@ export default function AthleteReadinessCard({
                             background: 'linear-gradient(145deg, rgba(20, 24, 38, 0.9) 0%, rgba(12, 15, 26, 0.95) 100%)',
                             border: '1px solid rgba(255, 255, 255, 0.08)',
                             borderRadius: 16,
-                            padding: '1.25rem 1rem',
+                            padding: '1.25rem 1.15rem',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'space-between',
-                            gap: 12,
+                            gap: 14,
                             boxShadow: '0 8px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.06)',
                             position: 'relative',
-                            overflow: 'hidden'
+                            overflow: 'hidden',
+                            flexShrink: 0,
+                            minHeight: 136,
                         }}>
                             {/* Decorative glow behind ring */}
                             <div style={{
@@ -410,7 +413,7 @@ export default function AthleteReadinessCard({
                             }} />
 
                             {/* Left: Circular Progress Ring */}
-                            <div style={{ position: 'relative', width: 105, height: 105, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <div style={{ position: 'relative', width: 105, height: 105, minWidth: 105, minHeight: 105, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                                 <svg width="105" height="105" style={{ transform: 'rotate(-90deg)' }}>
                                     <circle
                                         cx="52.5"
@@ -451,7 +454,7 @@ export default function AthleteReadinessCard({
                             </div>
 
                             {/* Right: Status Pill & Meta Details */}
-                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0 }}>
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0, justifyContent: 'center' }}>
                                 <div style={{
                                     alignSelf: 'flex-start',
                                     padding: '4px 10px',
@@ -491,7 +494,8 @@ export default function AthleteReadinessCard({
                             background: 'rgba(255, 255, 255, 0.02)',
                             border: '1px solid rgba(255, 255, 255, 0.06)',
                             borderRadius: 14,
-                            padding: '0.9rem 1rem'
+                            padding: '0.9rem 1rem',
+                            flexShrink: 0,
                         }}>
                             <div style={{
                                 display: 'flex',
@@ -572,7 +576,8 @@ export default function AthleteReadinessCard({
                             background: 'rgba(255, 255, 255, 0.02)',
                             border: '1px solid rgba(255, 255, 255, 0.06)',
                             borderRadius: 14,
-                            padding: '1rem'
+                            padding: '1rem',
+                            flexShrink: 0,
                         }}>
                             <div style={{
                                 fontSize: '0.68rem',
@@ -650,7 +655,8 @@ export default function AthleteReadinessCard({
                             padding: '1rem',
                             display: 'flex',
                             flexDirection: 'column',
-                            gap: 10
+                            gap: 10,
+                            flexShrink: 0,
                         }}>
                             <div style={{
                                 fontSize: '0.68rem',

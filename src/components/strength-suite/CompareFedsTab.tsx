@@ -20,7 +20,7 @@ export default function CompareFedsTab() {
     const visibleFeds = FEDERATIONS.filter((f) => selectedFeds.includes(f.id));
 
     return (
-        <div className="w-full flex flex-col gap-6 max-w-7xl mx-auto pb-32 md:pb-12">
+        <div className="w-full flex flex-col gap-6 max-w-7xl mx-auto px-3 sm:px-4 pb-32 md:pb-12">
             {/* Title exact to Screenshot 16 */}
             <div className="text-center">
                 <h3 style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.02em', color: '#ffffff' }}>
@@ -30,7 +30,7 @@ export default function CompareFedsTab() {
 
             {/* Note banner exact to Screenshot 16 */}
             <div
-                className="flex items-start gap-3.5 p-5 sm:p-6 rounded-2xl"
+                className="flex items-start gap-3.5 p-4 sm:p-5 rounded-2xl"
                 style={{
                     background: 'rgba(245, 158, 11, 0.08)',
                     backdropFilter: 'blur(16px)',
@@ -49,7 +49,7 @@ export default function CompareFedsTab() {
 
             {/* Select Federations to Compare Card */}
             <div
-                className="flex flex-col items-center gap-5 p-6 sm:p-7 rounded-2xl"
+                className="flex flex-col items-center gap-5 p-4 sm:p-6 md:p-7 rounded-3xl"
                 style={{
                     background: 'rgba(20, 20, 30, 0.65)',
                     backdropFilter: 'blur(24px)',

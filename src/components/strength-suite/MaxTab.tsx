@@ -53,7 +53,7 @@ export default function MaxTab() {
     }, [weight, reps]);
 
     return (
-        <div className="w-full flex flex-col items-center gap-6 max-w-4xl mx-auto pb-32 md:pb-12">
+        <div className="w-full flex flex-col items-center gap-6 max-w-4xl mx-auto px-3 sm:px-4 pb-32 md:pb-12">
             {/* Header exact to Screenshots 13-15 */}
             <div className="text-center flex flex-col items-center">
                 <h3 style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.02em', color: '#ffffff' }}>
@@ -117,10 +117,8 @@ export default function MaxTab() {
 
             {/* Input Card exact to Screenshot 13 */}
             <div
-                className="w-full flex flex-col gap-6"
+                className="w-full flex flex-col gap-6 p-4 sm:p-6 md:p-8 rounded-3xl"
                 style={{
-                    padding: '32px',
-                    borderRadius: '24px',
                     background: 'rgba(20, 20, 30, 0.65)',
                     backdropFilter: 'blur(24px)',
                     WebkitBackdropFilter: 'blur(24px)',
@@ -242,7 +240,7 @@ export default function MaxTab() {
                 <div className="w-full flex flex-col gap-6">
                     {/* Hero 1RM Display */}
                     <div
-                        className="flex flex-col items-center justify-center p-8 rounded-2xl text-center relative overflow-hidden"
+                        className="flex flex-col items-center justify-center p-5 sm:p-8 rounded-3xl text-center relative overflow-hidden"
                         style={{
                             background: 'rgba(20, 20, 30, 0.65)',
                             backgroundImage: 'radial-gradient(ellipse at 50% 30%, rgba(239, 68, 68, 0.12) 0%, transparent 70%)',
@@ -287,7 +285,7 @@ export default function MaxTab() {
 
                     {/* All Formula Comparison Grouped Cards */}
                     <div
-                        className="p-5 sm:p-6 rounded-2xl"
+                        className="p-4 sm:p-6 rounded-3xl"
                         style={{
                             background: 'rgba(20, 20, 30, 0.65)',
                             backdropFilter: 'blur(20px)',
@@ -302,7 +300,7 @@ export default function MaxTab() {
                                 Formula Comparison
                             </h4>
                         </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5 sm:gap-3">
                             {allFormulasComparison.map((f) => {
                                 const isActive = f.id === formula;
                                 return (
@@ -310,7 +308,7 @@ export default function MaxTab() {
                                         key={f.id}
                                         type="button"
                                         onClick={() => setFormula(f.id)}
-                                        className="chat-press flex flex-col justify-between py-3.5 px-4 rounded-xl transition-all text-left cursor-pointer min-h-[82px]"
+                                        className="chat-press flex flex-col justify-between py-3 px-3.5 rounded-xl transition-all text-left cursor-pointer min-h-[76px]"
                                         style={{
                                             background: isActive ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(220, 38, 38, 0.18) 100%)' : 'rgba(10, 10, 16, 0.55)',
                                             backdropFilter: 'blur(8px)',
@@ -340,7 +338,7 @@ export default function MaxTab() {
 
                     {/* Percentage Breakdown Table */}
                     <div
-                        className="p-5 sm:p-6 rounded-2xl overflow-hidden"
+                        className="p-4 sm:p-6 rounded-3xl overflow-hidden"
                         style={{
                             background: 'rgba(20, 20, 30, 0.65)',
                             backdropFilter: 'blur(20px)',

@@ -53,7 +53,7 @@ export default function RpeTab({ onSendToBarbell }: RpeTabProps) {
     const roundedTarget = Math.round(calculation.targetWeight / roundIncrement) * roundIncrement;
 
     return (
-        <div className="w-full flex flex-col items-center gap-6 max-w-3xl mx-auto pb-32 md:pb-12">
+        <div className="w-full flex flex-col items-center gap-6 max-w-3xl mx-auto px-3 sm:px-4 pb-32 md:pb-12">
             {/* Header exact to Screenshots 3-7 */}
             <div className="text-center flex flex-col items-center">
                 <h3 style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.02em', color: '#ffffff' }}>
@@ -176,10 +176,8 @@ export default function RpeTab({ onSendToBarbell }: RpeTabProps) {
 
             {/* Input Form Card exact to Screenshot 3 */}
             <div
-                className="w-full flex flex-col gap-6"
+                className="w-full flex flex-col gap-6 p-4 sm:p-6 md:p-8 rounded-3xl"
                 style={{
-                    padding: '32px',
-                    borderRadius: '24px',
                     background: 'rgba(20, 20, 30, 0.65)',
                     backdropFilter: 'blur(24px)',
                     WebkitBackdropFilter: 'blur(24px)',
@@ -367,7 +365,7 @@ export default function RpeTab({ onSendToBarbell }: RpeTabProps) {
             {/* 3. CALCULATION RESULT CARD */}
             {calculation.targetWeight > 0 && (
                 <div
-                    className="w-full flex flex-col sm:flex-row items-center justify-between gap-6 p-6 sm:p-7 rounded-2xl relative overflow-hidden"
+                    className="w-full flex flex-col sm:flex-row items-center justify-between gap-5 p-4 sm:p-6 md:p-7 rounded-3xl relative overflow-hidden"
                     style={{
                         background: 'rgba(20, 20, 30, 0.65)',
                         backgroundImage: 'radial-gradient(ellipse at 20% 50%, rgba(239, 68, 68, 0.08) 0%, transparent 60%)',
@@ -397,7 +395,7 @@ export default function RpeTab({ onSendToBarbell }: RpeTabProps) {
                             >
                                 {unit}
                             </span>
-                            <span className="text-xs sm:text-sm font-medium text-white/60 ml-1.5 self-baseline">
+                            <span className="text-xs sm:text-sm font-medium text-white/60 ml-1 self-baseline">
                                 (Nearest {roundedTarget} {unit})
                             </span>
                         </div>

@@ -53,7 +53,7 @@ export default function PointsTab() {
     const tier = getDotsTier(results.dots);
 
     return (
-        <div className="w-full flex flex-col items-center gap-6 max-w-4xl mx-auto">
+        <div className="w-full flex flex-col items-center gap-6 max-w-4xl mx-auto px-3 sm:px-4">
             {/* Header exact to Screenshots 8-12 */}
             <div className="text-center flex flex-col items-center">
                 <h3 style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.02em', color: '#ffffff' }}>
@@ -66,10 +66,8 @@ export default function PointsTab() {
 
             {/* Input Card exact to Screenshot 8 */}
             <div
-                className="w-full flex flex-col gap-6"
+                className="w-full flex flex-col gap-6 p-4 sm:p-6 md:p-8 rounded-3xl"
                 style={{
-                    padding: '32px',
-                    borderRadius: '24px',
                     background: 'rgba(20, 20, 30, 0.65)',
                     backdropFilter: 'blur(24px)',
                     WebkitBackdropFilter: 'blur(24px)',
@@ -305,7 +303,7 @@ export default function PointsTab() {
                 <div className="w-full flex flex-col gap-4 pb-32 md:pb-12">
                     {/* Overall Classification Banner */}
                     <div
-                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 sm:px-6 py-4 rounded-2xl w-full"
+                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-4 sm:px-6 py-4 rounded-2xl w-full"
                         style={{
                             background: tier.bg,
                             backdropFilter: 'blur(16px)',
@@ -336,7 +334,7 @@ export default function PointsTab() {
                                 {tier.label}
                             </span>
                         </div>
-                        <div className="text-xs sm:text-sm font-semibold text-white/70 sm:text-right shrink-0">
+                        <div className="text-xs sm:text-sm font-semibold text-white/70 sm:text-right">
                             {totalKg.toFixed(1)} kg / {bwKg.toFixed(1)} kg BW{' '}
                             <span className="text-white/40">({(totalKg / bwKg).toFixed(2)}x BW)</span>
                         </div>
