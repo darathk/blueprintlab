@@ -439,44 +439,44 @@ export default function TopNavigation({
                         </div>
                     )}
                 </div>
-            </div>
 
-            {/* Self-Coach Workout Log Switcher */}
-            {selfAthleteId && (
-                <Link
-                    prefetch={true}
-                    href={`/athlete/${selfAthleteId}/dashboard`}
-                    className="chat-press"
-                    title="Switch to Athlete Mode to view schedule & log workouts"
-                    style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '6px',
-                        padding: '6px 14px',
-                        borderRadius: '9999px',
-                        background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.16) 0%, rgba(125, 135, 210, 0.22) 100%)',
-                        border: '1px solid rgba(168, 85, 247, 0.38)',
-                        boxShadow: '0 0 16px rgba(168, 85, 247, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.15)',
-                        color: '#c084fc',
-                        fontSize: '0.8125rem',
-                        fontWeight: 600,
-                        textDecoration: 'none',
-                        whiteSpace: 'nowrap',
-                        transition: 'all 150ms cubic-bezier(0.16, 1, 0.3, 1)',
-                    }}
-                    onMouseEnter={(e) => {
-                        e.currentTarget.style.boxShadow = '0 0 20px rgba(168, 85, 247, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25)';
-                        e.currentTarget.style.color = '#e9d5ff';
-                    }}
-                    onMouseLeave={(e) => {
-                        e.currentTarget.style.boxShadow = '0 0 16px rgba(168, 85, 247, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.15)';
-                        e.currentTarget.style.color = '#c084fc';
-                    }}
-                >
-                    <span style={{ fontSize: '0.95rem' }}>🏋️</span>
-                    <span>Workout Log</span>
-                </Link>
-            )}
+                {/* 4. Self-Coach Workout Log Switcher inside capsule */}
+                {selfAthleteId && (
+                    <Link
+                        prefetch={true}
+                        href={`/athlete/${selfAthleteId}/dashboard`}
+                        className="chat-press"
+                        title="Switch to Athlete Mode to view schedule & log workouts"
+                        style={{
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '5px',
+                            padding: '6px 13px',
+                            borderRadius: '9999px',
+                            background: 'linear-gradient(135deg, rgba(168, 85, 247, 0.16) 0%, rgba(125, 135, 210, 0.22) 100%)',
+                            border: '1px solid rgba(168, 85, 247, 0.38)',
+                            boxShadow: '0 0 14px rgba(168, 85, 247, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.15)',
+                            color: '#d8b4fe',
+                            fontSize: '0.8125rem',
+                            fontWeight: 600,
+                            textDecoration: 'none',
+                            whiteSpace: 'nowrap',
+                            transition: 'all 150ms cubic-bezier(0.16, 1, 0.3, 1)',
+                        }}
+                        onMouseEnter={(e) => {
+                            e.currentTarget.style.boxShadow = '0 0 18px rgba(168, 85, 247, 0.32), inset 0 1px 0 rgba(255, 255, 255, 0.22)';
+                            e.currentTarget.style.color = '#fff';
+                        }}
+                        onMouseLeave={(e) => {
+                            e.currentTarget.style.boxShadow = '0 0 14px rgba(168, 85, 247, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.15)';
+                            e.currentTarget.style.color = '#d8b4fe';
+                        }}
+                    >
+                        <span style={{ fontSize: '0.9rem' }}>🏋️</span>
+                        <span>Workout Log</span>
+                    </Link>
+                )}
+            </div>
 
             {/* Profile Avatar Button */}
             <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>

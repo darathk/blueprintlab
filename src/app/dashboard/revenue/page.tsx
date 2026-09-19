@@ -637,13 +637,13 @@ export default function CoachRevenuePage() {
     );
 
     return (
-        <div style={{ maxWidth: 1240, margin: '0 auto', padding: '28px 20px 120px' }}>
+        <div style={{ maxWidth: 1240, margin: '0 auto', padding: '18px 14px 120px' }} className="sm:!p-6 sm:!pb-32">
             {/* Header */}
             <div style={{
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '16px',
-                marginBottom: '28px',
+                marginBottom: '24px',
             }}>
                 <div style={{
                     display: 'flex',
@@ -661,7 +661,7 @@ export default function CoachRevenuePage() {
                             <span style={{ fontSize: '0.85rem', color: 'var(--primary)', fontWeight: 600 }}>Revenue</span>
                         </div>
                         <h1 style={{
-                            fontSize: '1.85rem',
+                            fontSize: 'clamp(1.4rem, 4vw, 1.85rem)',
                             fontWeight: 800,
                             letterSpacing: '-0.03em',
                             color: 'var(--foreground)',
@@ -924,19 +924,19 @@ export default function CoachRevenuePage() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
                     {/* Time Period & Filter Navigation Bar */}
                     <div className="glass-panel" style={{
-                        padding: '14px 20px',
+                        padding: '14px 16px',
                         borderRadius: '20px',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'space-between',
                         flexWrap: 'wrap',
-                        gap: '14px',
+                        gap: '12px',
                         background: 'linear-gradient(145deg, rgba(22, 22, 36, 0.9), rgba(14, 14, 24, 0.96))',
                         border: '1px solid rgba(125, 135, 210, 0.25)',
                         boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 4px 24px rgba(0, 0, 0, 0.25)',
                     }}>
                         {/* Year Selector Tabs */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--secondary-foreground)', fontSize: '0.82rem', fontWeight: 600, marginRight: '2px' }}>
                                 <Calendar size={15} style={{ color: 'var(--primary)' }} />
                                 <span>Period:</span>
@@ -951,6 +951,9 @@ export default function CoachRevenuePage() {
                                 border: '1px solid rgba(255, 255, 255, 0.08)',
                                 height: 36,
                                 gap: '2px',
+                                maxWidth: '100%',
+                                overflowX: 'auto',
+                                WebkitOverflowScrolling: 'touch',
                             }}>
                                 {['2026', '2025', '2024', 'all'].map((yr) => {
                                     const isCurrent = yr === '2026';
@@ -967,7 +970,7 @@ export default function CoachRevenuePage() {
                                             className="chat-press"
                                             style={{
                                                 height: 30,
-                                                padding: '0 13px',
+                                                padding: '0 11px',
                                                 borderRadius: '8px',
                                                 fontSize: '0.8rem',
                                                 fontWeight: 700,
@@ -979,6 +982,7 @@ export default function CoachRevenuePage() {
                                                 boxShadow: isSelected ? '0 2px 10px rgba(125, 135, 210, 0.35)' : 'none',
                                                 display: 'inline-flex',
                                                 alignItems: 'center',
+                                                whiteSpace: 'nowrap',
                                             }}
                                         >
                                             {label}
@@ -989,7 +993,7 @@ export default function CoachRevenuePage() {
                         </div>
 
                         {/* Month Indicator & Quick Actions */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                             {selectedYear !== 'all' && (
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                     <span style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', fontWeight: 600 }}>Month:</span>
@@ -999,7 +1003,7 @@ export default function CoachRevenuePage() {
                                         className="glass-input"
                                         style={{
                                             height: 36,
-                                            padding: '0 12px',
+                                            padding: '0 10px',
                                             borderRadius: '10px',
                                             fontSize: '0.82rem',
                                             fontWeight: 600,
@@ -1008,6 +1012,7 @@ export default function CoachRevenuePage() {
                                             border: '1px solid rgba(255, 255, 255, 0.1)',
                                             cursor: 'pointer',
                                             outline: 'none',
+                                            maxWidth: 180,
                                         }}
                                     >
                                         <option value="all" style={{ background: '#181826', color: '#fff' }}>All Months ({selectedYear})</option>
@@ -1041,13 +1046,13 @@ export default function CoachRevenuePage() {
                                         alignItems: 'center',
                                     }}
                                 >
-                                    ✕ Reset to Full Year
+                                    ✕ Reset
                                 </button>
                             )}
 
                             <div style={{
                                 height: 36,
-                                padding: '0 14px',
+                                padding: '0 12px',
                                 borderRadius: '10px',
                                 background: 'rgba(125, 135, 210, 0.14)',
                                 border: '1px solid rgba(125, 135, 210, 0.3)',
@@ -1066,14 +1071,14 @@ export default function CoachRevenuePage() {
                     {/* KPI Cards Grid */}
                     <div style={{
                         display: 'grid',
-                        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-                        gap: '16px',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(230px, 1fr))',
+                        gap: '14px',
                     }}>
                         {/* Period Net Profit (Take-Home Hero Card) */}
                         <div className="glass-panel" style={{
-                            padding: '22px 24px',
+                            padding: '18px 18px',
                             borderRadius: '20px',
-                            minHeight: '172px',
+                            minHeight: '168px',
                             display: 'flex',
                             flexDirection: 'column',
                             justifyContent: 'space-between',
@@ -1081,8 +1086,8 @@ export default function CoachRevenuePage() {
                             background: 'linear-gradient(145deg, rgba(16, 185, 129, 0.14) 0%, rgba(18, 22, 28, 0.88) 100%)',
                             boxShadow: 'inset 0 1px 0 rgba(16, 185, 129, 0.35), 0 8px 30px rgba(16, 185, 129, 0.12)',
                         }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', gap: '8px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                                     <span style={{ fontSize: '0.74rem', fontWeight: 800, color: '#10b981', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                                         Period Net Profit
                                     </span>
@@ -1098,12 +1103,12 @@ export default function CoachRevenuePage() {
                                         {periodStats.margin}% Margin
                                     </span>
                                 </div>
-                                <div style={{ width: 38, height: 38, borderRadius: '11px', background: 'rgba(16, 185, 129, 0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981', flexShrink: 0 }}>
-                                    <DollarSign size={19} />
+                                <div style={{ width: 36, height: 36, borderRadius: '11px', background: 'rgba(16, 185, 129, 0.22)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981', flexShrink: 0 }}>
+                                    <DollarSign size={18} />
                                 </div>
                             </div>
                             <div>
-                                <div style={{ fontSize: '2.15rem', fontWeight: 900, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.15 }}>
+                                <div style={{ fontSize: 'clamp(1.75rem, 5.5vw, 2.15rem)', fontWeight: 900, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.15 }}>
                                     {formatMoney(periodStats.netProfit, data.currency, 0)}
                                 </div>
                                 <div style={{ fontSize: '0.78rem', color: 'var(--secondary-foreground)', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
@@ -1118,9 +1123,9 @@ export default function CoachRevenuePage() {
 
                         {/* Period Gross Volume Card */}
                         <div className="glass-panel" style={{
-                            padding: '22px 24px',
+                            padding: '18px 18px',
                             borderRadius: '20px',
-                            minHeight: '172px',
+                            minHeight: '168px',
                             display: 'flex',
                             flexDirection: 'column',
                             justifyContent: 'space-between',
@@ -1128,16 +1133,16 @@ export default function CoachRevenuePage() {
                             background: 'linear-gradient(145deg, rgba(125, 135, 210, 0.12) 0%, rgba(20, 20, 32, 0.85) 100%)',
                             boxShadow: 'inset 0 1px 0 rgba(125, 135, 210, 0.25), 0 8px 30px rgba(0, 0, 0, 0.25)',
                         }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', gap: '8px' }}>
                                 <span style={{ fontSize: '0.74rem', fontWeight: 800, color: 'var(--foreground)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                                     Period Gross Collected
                                 </span>
-                                <div style={{ width: 38, height: 38, borderRadius: '11px', background: 'rgba(125, 135, 210, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', flexShrink: 0 }}>
-                                    <TrendingUp size={19} />
+                                <div style={{ width: 36, height: 36, borderRadius: '11px', background: 'rgba(125, 135, 210, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)', flexShrink: 0 }}>
+                                    <TrendingUp size={18} />
                                 </div>
                             </div>
                             <div>
-                                <div style={{ fontSize: '2.15rem', fontWeight: 900, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.15 }}>
+                                <div style={{ fontSize: 'clamp(1.75rem, 5.5vw, 2.15rem)', fontWeight: 900, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.15 }}>
                                     {formatMoney(periodStats.grossCollected, data.currency, 0)}
                                 </div>
                                 <div style={{ fontSize: '0.78rem', color: 'var(--secondary-foreground)', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px', flexWrap: 'wrap' }}>
@@ -1150,9 +1155,9 @@ export default function CoachRevenuePage() {
 
                         {/* Current Active Athletes Hero Card */}
                         <div className="glass-panel" style={{
-                            padding: '22px 24px',
+                            padding: '18px 18px',
                             borderRadius: '20px',
-                            minHeight: '172px',
+                            minHeight: '168px',
                             display: 'flex',
                             flexDirection: 'column',
                             justifyContent: 'space-between',
@@ -1160,8 +1165,8 @@ export default function CoachRevenuePage() {
                             background: 'linear-gradient(145deg, rgba(56, 189, 248, 0.10) 0%, rgba(20, 20, 32, 0.85) 100%)',
                             boxShadow: 'inset 0 1px 0 rgba(56, 189, 248, 0.22), 0 8px 30px rgba(0, 0, 0, 0.25)',
                         }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', gap: '8px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                                     <span style={{ fontSize: '0.74rem', fontWeight: 800, color: 'var(--foreground)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                                         Active Athletes
                                     </span>
@@ -1177,12 +1182,12 @@ export default function CoachRevenuePage() {
                                         Paying Roster
                                     </span>
                                 </div>
-                                <div style={{ width: 38, height: 38, borderRadius: '11px', background: 'rgba(56, 189, 248, 0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#38bdf8', flexShrink: 0 }}>
-                                    <Users size={19} />
+                                <div style={{ width: 36, height: 36, borderRadius: '11px', background: 'rgba(56, 189, 248, 0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#38bdf8', flexShrink: 0 }}>
+                                    <Users size={18} />
                                 </div>
                             </div>
                             <div>
-                                <div style={{ fontSize: '2.15rem', fontWeight: 900, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.15, display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                                <div style={{ fontSize: 'clamp(1.75rem, 5.5vw, 2.15rem)', fontWeight: 900, color: '#fff', letterSpacing: '-0.03em', lineHeight: 1.15, display: 'flex', alignItems: 'baseline', gap: '8px' }}>
                                     <span>{data.activeSubscribers}</span>
                                     <span style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--secondary-foreground)' }}>athletes</span>
                                 </div>
@@ -1197,9 +1202,9 @@ export default function CoachRevenuePage() {
 
                         {/* Payment Health & Stripe Rates */}
                         <div className="glass-panel" style={{
-                            padding: '22px 24px',
+                            padding: '18px 18px',
                             borderRadius: '20px',
-                            minHeight: '172px',
+                            minHeight: '168px',
                             display: 'flex',
                             flexDirection: 'column',
                             justifyContent: 'space-between',
@@ -1209,13 +1214,13 @@ export default function CoachRevenuePage() {
                                 : 'linear-gradient(145deg, rgba(16, 185, 129, 0.08) 0%, rgba(20, 20, 32, 0.85) 100%)',
                             boxShadow: 'inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 8px 30px rgba(0, 0, 0, 0.25)',
                         }}>
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '12px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '10px', gap: '8px' }}>
                                 <span style={{ fontSize: '0.74rem', fontWeight: 800, color: 'var(--foreground)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
                                     Payment Health
                                 </span>
                                 <div style={{ 
-                                    width: 38, 
-                                    height: 38, 
+                                    width: 36, 
+                                    height: 36, 
                                     borderRadius: '11px', 
                                     background: data.pastDueCount > 0 ? 'rgba(239, 68, 68, 0.18)' : 'rgba(16, 185, 129, 0.18)', 
                                     display: 'flex', 
@@ -1224,12 +1229,12 @@ export default function CoachRevenuePage() {
                                     color: data.pastDueCount > 0 ? '#ef4444' : '#10b981',
                                     flexShrink: 0,
                                 }}>
-                                    {data.pastDueCount > 0 ? <AlertCircle size={19} /> : <CheckCircle2 size={19} />}
+                                    {data.pastDueCount > 0 ? <AlertCircle size={18} /> : <CheckCircle2 size={18} />}
                                 </div>
                             </div>
                             <div>
                                 <div style={{ 
-                                    fontSize: '2.15rem', 
+                                    fontSize: 'clamp(1.75rem, 5.5vw, 2.15rem)', 
                                     fontWeight: 900, 
                                     color: data.pastDueCount > 0 ? '#f87171' : '#fff', 
                                     letterSpacing: '-0.03em', 
@@ -1238,7 +1243,7 @@ export default function CoachRevenuePage() {
                                     {data.pastDueCount === 0 ? '100%' : `${data.pastDueCount} Past Due`}
                                 </div>
                                 <div style={{ fontSize: '0.78rem', color: 'var(--secondary-foreground)', marginTop: '6px' }}>
-                                    {data.pastDueCount === 0 ? 'Stripe standard processing (2.9% + 30¢)' : 'Action required on past-due renewals'}
+                                    {data.pastDueCount === 0 ? 'Stripe standard (2.9% + 30¢)' : 'Action required on past-due renewals'}
                                 </div>
                             </div>
                         </div>
@@ -1279,8 +1284,8 @@ export default function CoachRevenuePage() {
                         const currentRealMonth = new Date().getMonth() + 1;
 
                         return (
-                            <div className="glass-panel" style={{
-                                padding: '24px 26px',
+                            <div className="glass-panel sm:!p-6" style={{
+                                padding: '20px 16px',
                                 borderRadius: '24px',
                                 background: 'linear-gradient(145deg, rgba(20, 20, 34, 0.88), rgba(12, 12, 24, 0.96))',
                                 border: '1px solid rgba(125, 135, 210, 0.25)',
@@ -1293,12 +1298,12 @@ export default function CoachRevenuePage() {
                                     justifyContent: 'space-between',
                                     flexWrap: 'wrap',
                                     gap: '14px',
-                                    marginBottom: '24px',
+                                    marginBottom: '20px',
                                 }}>
                                     <div>
                                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
                                             <BarChart3 size={18} style={{ color: chartMetric === 'net' ? '#10b981' : 'var(--primary)' }} />
-                                            <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'var(--foreground)', letterSpacing: '-0.01em' }}>
+                                            <h2 style={{ fontSize: 'clamp(1.1rem, 3.5vw, 1.25rem)', fontWeight: 800, margin: 0, color: 'var(--foreground)', letterSpacing: '-0.01em' }}>
                                                 Month-by-Month {chartMetric === 'net' ? 'Net Profit' : 'Gross Revenue'} — {selectedYear}
                                             </h2>
                                         </div>
@@ -1409,129 +1414,136 @@ export default function CoachRevenuePage() {
                                     </div>
                                 </div>
 
-                                {/* Month Columns Bar Chart */}
+                                {/* Month Columns Bar Chart with Touch Horizontal Scrolling */}
                                 <div style={{
-                                    display: 'grid',
-                                    gridTemplateColumns: 'repeat(12, minmax(0, 1fr))',
-                                    gap: '12px',
-                                    alignItems: 'end',
-                                    padding: '16px 4px 8px',
+                                    width: '100%',
                                     overflowX: 'auto',
+                                    WebkitOverflowScrolling: 'touch',
+                                    paddingBottom: '4px',
                                 }}>
-                                    {MONTH_NAMES.map((mName, idx) => {
-                                        const mNum = idx + 1;
-                                        const mStat = yearMonths[mNum] || { total: 0, fee: 0, net: 0, count: 0 };
-                                        const grossVal = mStat.total || 0;
-                                        const feeVal = mStat.fee !== undefined ? mStat.fee : calculateStripeFee(grossVal);
-                                        const netVal = mStat.net !== undefined ? mStat.net : Math.round((grossVal - feeVal) * 100) / 100;
-                                        const displayVal = chartMetric === 'net' ? netVal : grossVal;
+                                    <div style={{
+                                        display: 'grid',
+                                        gridTemplateColumns: 'repeat(12, minmax(48px, 1fr))',
+                                        minWidth: '620px',
+                                        gap: '10px',
+                                        alignItems: 'end',
+                                        padding: '16px 4px 8px',
+                                    }}>
+                                        {MONTH_NAMES.map((mName, idx) => {
+                                            const mNum = idx + 1;
+                                            const mStat = yearMonths[mNum] || { total: 0, fee: 0, net: 0, count: 0 };
+                                            const grossVal = mStat.total || 0;
+                                            const feeVal = mStat.fee !== undefined ? mStat.fee : calculateStripeFee(grossVal);
+                                            const netVal = mStat.net !== undefined ? mStat.net : Math.round((grossVal - feeVal) * 100) / 100;
+                                            const displayVal = chartMetric === 'net' ? netVal : grossVal;
 
-                                        const isSelected = selectedMonth === mNum;
-                                        const isDimmed = selectedMonth !== 'all' && !isSelected;
-                                        const isFuture = isCurrentYear && mNum > currentRealMonth;
-                                        const isCurrentMonth = isCurrentYear && mNum === currentRealMonth;
-                                        const barPercent = Math.max(displayVal > 0 ? (displayVal / maxAmount) * 100 : 4, 4);
+                                            const isSelected = selectedMonth === mNum;
+                                            const isDimmed = selectedMonth !== 'all' && !isSelected;
+                                            const isFuture = isCurrentYear && mNum > currentRealMonth;
+                                            const isCurrentMonth = isCurrentYear && mNum === currentRealMonth;
+                                            const barPercent = Math.max(displayVal > 0 ? (displayVal / maxAmount) * 100 : 4, 4);
 
-                                        return (
-                                            <div
-                                                key={mNum}
-                                                onClick={() => {
-                                                    if (isFuture) return;
-                                                    setSelectedMonth(isSelected ? 'all' : mNum);
-                                                }}
-                                                title={`${MONTH_FULL_NAMES[idx]} ${selectedYear}: Gross ${formatMoney(grossVal, data.currency, 0)} • Stripe Fee -${formatMoney(feeVal, data.currency, feeVal % 1 !== 0 ? 2 : 0)} • Net Profit ${formatMoney(netVal, data.currency, 0)} (${mStat.count} payments)`}
-                                                className="chat-press"
-                                                style={{
-                                                    display: 'flex',
-                                                    flexDirection: 'column',
-                                                    alignItems: 'center',
-                                                    cursor: isFuture ? 'default' : 'pointer',
-                                                    opacity: isFuture ? 0.3 : (isDimmed ? 0.45 : 1),
-                                                    transition: 'all 0.2s cubic-bezier(0.23, 1, 0.32, 1)',
-                                                    minWidth: 54,
-                                                }}
-                                            >
-                                                {/* Amount on top of bar */}
-                                                <div style={{
-                                                    fontSize: '0.72rem',
-                                                    fontWeight: 750,
-                                                    fontVariantNumeric: 'tabular-nums',
-                                                    color: isSelected
-                                                        ? (chartMetric === 'net' ? '#10b981' : 'var(--primary)')
-                                                        : (displayVal > 0 ? (chartMetric === 'net' ? '#34d399' : 'var(--foreground)') : 'transparent'),
-                                                    marginBottom: '8px',
-                                                    textAlign: 'center',
-                                                    whiteSpace: 'nowrap',
-                                                }}>
-                                                    {displayVal > 0 ? (displayVal >= 1000 ? `$${(displayVal / 1000).toFixed(1)}k` : `$${Math.round(displayVal)}`) : '—'}
-                                                </div>
+                                            return (
+                                                <div
+                                                    key={mNum}
+                                                    onClick={() => {
+                                                        if (isFuture) return;
+                                                        setSelectedMonth(isSelected ? 'all' : mNum);
+                                                    }}
+                                                    title={`${MONTH_FULL_NAMES[idx]} ${selectedYear}: Gross ${formatMoney(grossVal, data.currency, 0)} • Stripe Fee -${formatMoney(feeVal, data.currency, feeVal % 1 !== 0 ? 2 : 0)} • Net Profit ${formatMoney(netVal, data.currency, 0)} (${mStat.count} payments)`}
+                                                    className="chat-press"
+                                                    style={{
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        alignItems: 'center',
+                                                        cursor: isFuture ? 'default' : 'pointer',
+                                                        opacity: isFuture ? 0.3 : (isDimmed ? 0.45 : 1),
+                                                        transition: 'all 0.2s cubic-bezier(0.23, 1, 0.32, 1)',
+                                                        minWidth: 46,
+                                                    }}
+                                                >
+                                                    {/* Amount on top of bar */}
+                                                    <div style={{
+                                                        fontSize: '0.72rem',
+                                                        fontWeight: 750,
+                                                        fontVariantNumeric: 'tabular-nums',
+                                                        color: isSelected
+                                                            ? (chartMetric === 'net' ? '#10b981' : 'var(--primary)')
+                                                            : (displayVal > 0 ? (chartMetric === 'net' ? '#34d399' : 'var(--foreground)') : 'transparent'),
+                                                        marginBottom: '8px',
+                                                        textAlign: 'center',
+                                                        whiteSpace: 'nowrap',
+                                                    }}>
+                                                        {displayVal > 0 ? (displayVal >= 1000 ? `$${(displayVal / 1000).toFixed(1)}k` : `$${Math.round(displayVal)}`) : '—'}
+                                                    </div>
 
-                                                {/* Bar Container */}
-                                                <div style={{
-                                                    width: '100%',
-                                                    height: 146,
-                                                    borderRadius: '12px',
-                                                    background: 'rgba(255, 255, 255, 0.03)',
-                                                    border: isSelected 
-                                                        ? (chartMetric === 'net' ? '1.5px solid #10b981' : '1.5px solid var(--primary)')
-                                                        : (isCurrentMonth ? (chartMetric === 'net' ? '1px solid rgba(16, 185, 129, 0.5)' : '1px solid rgba(125, 135, 210, 0.4)') : '1px solid rgba(255, 255, 255, 0.06)'),
-                                                    display: 'flex',
-                                                    flexDirection: 'column',
-                                                    justifyContent: 'flex-end',
-                                                    padding: '3px',
-                                                    position: 'relative',
-                                                    overflow: 'hidden',
-                                                    boxShadow: isSelected
-                                                        ? (chartMetric === 'net' ? '0 0 18px rgba(16, 185, 129, 0.4)' : '0 0 18px rgba(125, 135, 210, 0.35)')
-                                                        : 'none',
-                                                }}>
+                                                    {/* Bar Container */}
                                                     <div style={{
                                                         width: '100%',
-                                                        height: `${barPercent}%`,
-                                                        borderRadius: '9px',
-                                                        background: chartMetric === 'net'
-                                                            ? (isSelected
-                                                                ? 'linear-gradient(180deg, #10b981, #059669)'
-                                                                : (isCurrentMonth
-                                                                    ? 'linear-gradient(180deg, rgba(16, 185, 129, 0.88), rgba(5, 150, 105, 0.88))'
-                                                                    : (displayVal > 0
-                                                                        ? 'linear-gradient(180deg, rgba(16, 185, 129, 0.65), rgba(5, 150, 105, 0.45))'
-                                                                        : 'rgba(255, 255, 255, 0.05)')))
-                                                            : (isSelected
-                                                                ? 'linear-gradient(180deg, #38bdf8, #6366f1)'
-                                                                : (isCurrentMonth
-                                                                    ? 'linear-gradient(180deg, rgba(56, 189, 248, 0.85), rgba(99, 102, 241, 0.85))'
-                                                                    : (displayVal > 0
-                                                                        ? 'linear-gradient(180deg, rgba(125, 135, 210, 0.65), rgba(99, 102, 241, 0.45))'
-                                                                        : 'rgba(255, 255, 255, 0.05)'))),
-                                                        transition: 'height 0.4s cubic-bezier(0.23, 1, 0.32, 1), background 0.2s ease',
-                                                    }} />
-                                                </div>
+                                                        height: 146,
+                                                        borderRadius: '12px',
+                                                        background: 'rgba(255, 255, 255, 0.03)',
+                                                        border: isSelected 
+                                                            ? (chartMetric === 'net' ? '1.5px solid #10b981' : '1.5px solid var(--primary)')
+                                                            : (isCurrentMonth ? (chartMetric === 'net' ? '1px solid rgba(16, 185, 129, 0.5)' : '1px solid rgba(125, 135, 210, 0.4)') : '1px solid rgba(255, 255, 255, 0.06)'),
+                                                        display: 'flex',
+                                                        flexDirection: 'column',
+                                                        justifyContent: 'flex-end',
+                                                        padding: '3px',
+                                                        position: 'relative',
+                                                        overflow: 'hidden',
+                                                        boxShadow: isSelected
+                                                            ? (chartMetric === 'net' ? '0 0 18px rgba(16, 185, 129, 0.4)' : '0 0 18px rgba(125, 135, 210, 0.35)')
+                                                            : 'none',
+                                                    }}>
+                                                        <div style={{
+                                                            width: '100%',
+                                                            height: `${barPercent}%`,
+                                                            borderRadius: '9px',
+                                                            background: chartMetric === 'net'
+                                                                ? (isSelected
+                                                                    ? 'linear-gradient(180deg, #10b981, #059669)'
+                                                                    : (isCurrentMonth
+                                                                        ? 'linear-gradient(180deg, rgba(16, 185, 129, 0.88), rgba(5, 150, 105, 0.88))'
+                                                                        : (displayVal > 0
+                                                                            ? 'linear-gradient(180deg, rgba(16, 185, 129, 0.65), rgba(5, 150, 105, 0.45))'
+                                                                            : 'rgba(255, 255, 255, 0.05)')))
+                                                                : (isSelected
+                                                                    ? 'linear-gradient(180deg, #38bdf8, #6366f1)'
+                                                                    : (isCurrentMonth
+                                                                        ? 'linear-gradient(180deg, rgba(56, 189, 248, 0.85), rgba(99, 102, 241, 0.85))'
+                                                                        : (displayVal > 0
+                                                                            ? 'linear-gradient(180deg, rgba(125, 135, 210, 0.65), rgba(99, 102, 241, 0.45))'
+                                                                            : 'rgba(255, 255, 255, 0.05)'))),
+                                                            transition: 'height 0.4s cubic-bezier(0.23, 1, 0.32, 1), background 0.2s ease',
+                                                        }} />
+                                                    </div>
 
-                                                {/* Month label and count */}
-                                                <div style={{
-                                                    marginTop: '8px',
-                                                    textAlign: 'center',
-                                                }}>
+                                                    {/* Month label and count */}
                                                     <div style={{
-                                                        fontSize: '0.8rem',
-                                                        fontWeight: isSelected || isCurrentMonth ? 800 : 600,
-                                                        color: isSelected ? (chartMetric === 'net' ? '#10b981' : 'var(--primary)') : (isCurrentMonth ? (chartMetric === 'net' ? '#34d399' : '#38bdf8') : 'var(--foreground)'),
+                                                        marginTop: '8px',
+                                                        textAlign: 'center',
                                                     }}>
-                                                        {mName}
-                                                    </div>
-                                                    <div style={{
-                                                        fontSize: '0.68rem',
-                                                        color: 'var(--secondary-foreground)',
-                                                        marginTop: '2px',
-                                                        fontVariantNumeric: 'tabular-nums',
-                                                    }}>
-                                                        {mStat.count > 0 ? `${mStat.count} chgs` : '—'}
+                                                        <div style={{
+                                                            fontSize: '0.8rem',
+                                                            fontWeight: isSelected || isCurrentMonth ? 800 : 600,
+                                                            color: isSelected ? (chartMetric === 'net' ? '#10b981' : 'var(--primary)') : (isCurrentMonth ? (chartMetric === 'net' ? '#34d399' : '#38bdf8') : 'var(--foreground)'),
+                                                        }}>
+                                                            {mName}
+                                                        </div>
+                                                        <div style={{
+                                                            fontSize: '0.68rem',
+                                                            color: 'var(--secondary-foreground)',
+                                                            marginTop: '2px',
+                                                            fontVariantNumeric: 'tabular-nums',
+                                                        }}>
+                                                            {mStat.count > 0 ? `${mStat.count} chgs` : '—'}
+                                                        </div>
                                                     </div>
                                                 </div>
-                                            </div>
-                                        );
-                                    })}
+                                            );
+                                        })}
+                                    </div>
                                 </div>
                             </div>
                         );
@@ -1539,8 +1551,8 @@ export default function CoachRevenuePage() {
 
                     {/* All-Time Year-by-Year Comparison Visualizer */}
                     {data?.history && selectedYear === 'all' && (
-                        <div className="glass-panel" style={{
-                            padding: '24px 26px',
+                        <div className="glass-panel sm:!p-6" style={{
+                            padding: '20px 16px',
                             borderRadius: '24px',
                             background: 'linear-gradient(145deg, rgba(20, 20, 34, 0.88), rgba(12, 12, 24, 0.96))',
                             border: '1px solid rgba(125, 135, 210, 0.25)',
@@ -1548,7 +1560,7 @@ export default function CoachRevenuePage() {
                         }}>
                             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '14px' }}>
                                 <div>
-                                    <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: 0, color: 'var(--foreground)', letterSpacing: '-0.01em' }}>
+                                    <h2 style={{ fontSize: 'clamp(1.1rem, 3.5vw, 1.25rem)', fontWeight: 800, margin: 0, color: 'var(--foreground)', letterSpacing: '-0.01em' }}>
                                         Annual Revenue & Profit Performance (2024–2026)
                                     </h2>
                                     <p style={{ fontSize: '0.82rem', color: 'var(--secondary-foreground)', margin: '4px 0 0 0' }}>
@@ -1581,7 +1593,7 @@ export default function CoachRevenuePage() {
                                 </div>
                             </div>
 
-                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '14px' }}>
                                 {['2024', '2025', '2026'].map((y) => {
                                     const yStat = data.history?.yearlyBreakdown?.[y] || { total: 0, fee: 0, net: 0, count: 0 };
                                     const yGross = yStat.total || 0;
@@ -1598,7 +1610,7 @@ export default function CoachRevenuePage() {
                                             }}
                                             className="chat-press"
                                             style={{
-                                                padding: '22px',
+                                                padding: '18px 16px',
                                                 borderRadius: '18px',
                                                 background: 'linear-gradient(145deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.015))',
                                                 border: '1px solid rgba(255, 255, 255, 0.08)',
@@ -1608,14 +1620,14 @@ export default function CoachRevenuePage() {
                                             }}
                                         >
                                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>
-                                                <span style={{ fontSize: '1.2rem', fontWeight: 800, color: 'var(--foreground)' }}>
+                                                <span style={{ fontSize: '1.15rem', fontWeight: 800, color: 'var(--foreground)' }}>
                                                     {y} {y === '2026' ? '• YTD' : ''}
                                                 </span>
                                                 <span style={{ fontSize: '0.74rem', fontWeight: 750, padding: '3px 8px', borderRadius: '6px', background: 'rgba(16, 185, 129, 0.15)', color: '#10b981', border: '1px solid rgba(16, 185, 129, 0.25)' }}>
                                                     {pctOfTotal}% of all-time
                                                 </span>
                                             </div>
-                                            <div style={{ fontSize: '1.85rem', fontWeight: 900, color: '#10b981', letterSpacing: '-0.02em', marginBottom: '4px' }}>
+                                            <div style={{ fontSize: 'clamp(1.5rem, 5vw, 1.85rem)', fontWeight: 900, color: '#10b981', letterSpacing: '-0.02em', marginBottom: '4px' }}>
                                                 {formatMoney(yNet, data.currency, 0)}
                                                 <span style={{ fontSize: '0.85rem', fontWeight: 700, color: 'rgba(16, 185, 129, 0.85)', marginLeft: '6px' }}>
                                                     Net Profit
@@ -1644,8 +1656,8 @@ export default function CoachRevenuePage() {
                     )}
 
                     {/* Athlete Subscription Roster Section */}
-                    <div id="athlete-subscriptions-roster" className="glass-panel" style={{
-                        padding: '24px 26px',
+                    <div id="athlete-subscriptions-roster" className="glass-panel sm:!p-6" style={{
+                        padding: '20px 16px',
                         borderRadius: '24px',
                         background: 'linear-gradient(145deg, rgba(20, 20, 34, 0.88), rgba(12, 12, 24, 0.96))',
                         border: '1px solid rgba(125, 135, 210, 0.25)',
@@ -1658,10 +1670,10 @@ export default function CoachRevenuePage() {
                             alignItems: 'center',
                             flexWrap: 'wrap',
                             gap: '16px',
-                            marginBottom: '22px',
+                            marginBottom: '20px',
                         }}>
                             <div>
-                                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 4px 0', color: 'var(--foreground)', letterSpacing: '-0.01em' }}>
+                                <h2 style={{ fontSize: 'clamp(1.1rem, 3.5vw, 1.25rem)', fontWeight: 800, margin: '0 0 4px 0', color: 'var(--foreground)', letterSpacing: '-0.01em' }}>
                                     Athlete Subscriptions
                                 </h2>
                                 <p style={{ fontSize: '0.82rem', color: 'var(--secondary-foreground)', margin: 0 }}>
@@ -1670,10 +1682,13 @@ export default function CoachRevenuePage() {
                             </div>
 
                             {/* Search and Filters */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap', width: '100%', maxWidth: 460 }}>
                                 <div style={{
                                     position: 'relative',
-                                    minWidth: 230,
+                                    width: '100%',
+                                    maxWidth: 280,
+                                    minWidth: 0,
+                                    flex: '1 1 180px',
                                 }}>
                                     <Search size={14} style={{
                                         position: 'absolute',
@@ -2157,8 +2172,8 @@ export default function CoachRevenuePage() {
                     )}
 
                     {/* Historical Transactions Ledger (Filtered by Year & Month with Live Search) */}
-                    <div className="glass-panel" style={{
-                        padding: '24px 26px',
+                    <div className="glass-panel sm:!p-6" style={{
+                        padding: '20px 16px',
                         borderRadius: '24px',
                         background: 'linear-gradient(145deg, rgba(20, 20, 34, 0.88), rgba(12, 12, 24, 0.96))',
                         border: '1px solid rgba(125, 135, 210, 0.25)',
@@ -2170,10 +2185,10 @@ export default function CoachRevenuePage() {
                             alignItems: 'center',
                             flexWrap: 'wrap',
                             gap: '16px',
-                            marginBottom: '22px',
+                            marginBottom: '20px',
                         }}>
                             <div>
-                                <h2 style={{ fontSize: '1.25rem', fontWeight: 800, margin: '0 0 4px 0', color: 'var(--foreground)', letterSpacing: '-0.01em' }}>
+                                <h2 style={{ fontSize: 'clamp(1.1rem, 3.5vw, 1.25rem)', fontWeight: 800, margin: '0 0 4px 0', color: 'var(--foreground)', letterSpacing: '-0.01em' }}>
                                     Historical Transactions Ledger
                                 </h2>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginTop: '8px' }}>
@@ -2231,7 +2246,9 @@ export default function CoachRevenuePage() {
                             {/* Search bar inside ledger */}
                             <div style={{
                                 position: 'relative',
-                                minWidth: 260,
+                                width: '100%',
+                                maxWidth: 280,
+                                minWidth: 0,
                             }}>
                                 <Search size={14} style={{
                                     position: 'absolute',
