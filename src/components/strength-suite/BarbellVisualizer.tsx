@@ -254,26 +254,8 @@ export default function BarbellVisualizer({
                                 strokeWidth="1"
                             />
 
-                            {/* Center weight label (vertical text) */}
-                            {plate.height >= 120 && (
-                                <text
-                                    x={plate.x + plate.width / 2}
-                                    y={centerY}
-                                    fill={plate.textColor}
-                                    fontSize={plate.width > 16 ? '11' : '9'}
-                                    fontWeight="800"
-                                    fontFamily="system-ui, sans-serif"
-                                    textAnchor="middle"
-                                    dominantBaseline="middle"
-                                    transform={`rotate(-90, ${plate.x + plate.width / 2}, ${centerY})`}
-                                    style={{
-                                        letterSpacing: '0.5px',
-                                        textShadow: plate.textColor === '#ffffff' ? '0 1px 2px rgba(0,0,0,0.7)' : 'none',
-                                    }}
-                                >
-                                    {plate.label}
-                                </text>
-                            )}
+                            {/* Tooltip on hover */}
+                            <title>{`${plate.weight} ${unit}`}</title>
                         </g>
                     );
                 })}
