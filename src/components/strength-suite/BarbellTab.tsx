@@ -137,14 +137,14 @@ export default function BarbellTab({ initialWeight = 100, initialUnit = 'kg' }: 
     // Barbell presets
     const barPresets = unit === 'kg'
         ? [
-            { label: "Men's Olympic", weight: 20 },
-            { label: "Women's", weight: 15 },
-            { label: 'Squat Bar', weight: 25 },
+            { label: "Men's", fullLabel: "Men's Olympic", weight: 20 },
+            { label: "Women's", fullLabel: "Women's Bar", weight: 15 },
+            { label: 'Squat Bar', fullLabel: 'Squat Bar', weight: 25 },
         ]
         : [
-            { label: "Standard Bar", weight: 45 },
-            { label: "Women's", weight: 35 },
-            { label: 'Squat Bar', weight: 55 },
+            { label: "Standard", fullLabel: "Standard Bar", weight: 45 },
+            { label: "Women's", fullLabel: "Women's Bar", weight: 35 },
+            { label: 'Squat Bar', fullLabel: 'Squat Bar', weight: 55 },
         ];
 
     return (
@@ -524,8 +524,9 @@ export default function BarbellTab({ initialWeight = 100, initialUnit = 'kg' }: 
                                             boxShadow: isSelected ? '0 0 14px rgba(239, 68, 68, 0.25)' : 'none',
                                         }}
                                     >
-                                        <span className="text-[11px] sm:text-xs font-bold text-white truncate w-full">
-                                            {bp.label}
+                                        <span className="text-[11px] sm:text-xs font-bold text-white leading-tight w-full text-center">
+                                            <span className="sm:hidden">{bp.label}</span>
+                                            <span className="hidden sm:inline">{bp.fullLabel || bp.label}</span>
                                         </span>
                                         <span className="text-xs sm:text-sm font-black text-white/90">
                                             {bp.weight} {unit}
@@ -804,8 +805,9 @@ export default function BarbellTab({ initialWeight = 100, initialUnit = 'kg' }: 
                                                 border: isSelected ? '1.5px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.08)',
                                             }}
                                         >
-                                            <span className="text-[11px] sm:text-xs font-bold text-white truncate w-full">
-                                                {bp.label}
+                                            <span className="text-[11px] sm:text-xs font-bold text-white leading-tight w-full text-center">
+                                                <span className="sm:hidden">{bp.label}</span>
+                                                <span className="hidden sm:inline">{bp.fullLabel || bp.label}</span>
                                             </span>
                                             <span className="text-xs sm:text-sm font-black text-white/90">
                                                 {bp.weight} {unit}
