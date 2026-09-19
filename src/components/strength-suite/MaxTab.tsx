@@ -53,7 +53,7 @@ export default function MaxTab() {
     }, [weight, reps]);
 
     return (
-        <div className="w-full flex flex-col items-center gap-6 max-w-4xl mx-auto">
+        <div className="w-full flex flex-col items-center gap-6 max-w-4xl mx-auto pb-32 md:pb-12">
             {/* Header exact to Screenshots 13-15 */}
             <div className="text-center flex flex-col items-center">
                 <h3 style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.02em', color: '#ffffff' }}>
@@ -285,9 +285,9 @@ export default function MaxTab() {
                         </span>
                     </div>
 
-                    {/* All Formula Comparison Pills */}
+                    {/* All Formula Comparison Grouped Cards */}
                     <div
-                        className="p-6 rounded-2xl"
+                        className="p-5 sm:p-6 rounded-2xl"
                         style={{
                             background: 'rgba(20, 20, 30, 0.65)',
                             backdropFilter: 'blur(20px)',
@@ -302,7 +302,7 @@ export default function MaxTab() {
                                 Formula Comparison
                             </h4>
                         </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
                             {allFormulasComparison.map((f) => {
                                 const isActive = f.id === formula;
                                 return (
@@ -310,20 +310,28 @@ export default function MaxTab() {
                                         key={f.id}
                                         type="button"
                                         onClick={() => setFormula(f.id)}
-                                        className="chat-press flex flex-col items-center p-3 rounded-xl transition-all text-center cursor-pointer"
+                                        className="chat-press flex flex-col justify-between py-3.5 px-4 rounded-xl transition-all text-left cursor-pointer min-h-[82px]"
                                         style={{
-                                            background: isActive ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(220, 38, 38, 0.2) 100%)' : 'rgba(10, 10, 16, 0.55)',
+                                            background: isActive ? 'linear-gradient(135deg, rgba(239, 68, 68, 0.25) 0%, rgba(220, 38, 38, 0.18) 100%)' : 'rgba(10, 10, 16, 0.55)',
                                             backdropFilter: 'blur(8px)',
-                                            border: isActive ? '1px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.08)',
-                                            boxShadow: isActive ? '0 0 16px rgba(239, 68, 68, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2)' : 'inset 0 1px 0 rgba(255, 255, 255, 0.04)',
+                                            border: isActive ? '1.5px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.08)',
+                                            boxShadow: isActive ? '0 0 18px rgba(239, 68, 68, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.2)' : 'inset 0 1px 0 rgba(255, 255, 255, 0.04)',
                                         }}
                                     >
-                                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: isActive ? '#ef4444' : 'rgba(255, 255, 255, 0.65)' }}>
+                                        <span
+                                            className="text-xs font-semibold uppercase tracking-wider truncate block"
+                                            style={{ color: isActive ? '#ef4444' : '#a1a1aa' }}
+                                        >
                                             {f.label}
                                         </span>
-                                        <span style={{ fontSize: '1.1rem', fontWeight: 900, color: '#ffffff', marginTop: '2px' }}>
-                                            {f.max}
-                                        </span>
+                                        <div className="flex items-baseline justify-between mt-1.5">
+                                            <span className="text-xl sm:text-2xl font-black text-white leading-tight">
+                                                {f.max}
+                                            </span>
+                                            <span className="text-xs font-bold text-white/50">
+                                                {unit}
+                                            </span>
+                                        </div>
                                     </button>
                                 );
                             })}
@@ -332,7 +340,7 @@ export default function MaxTab() {
 
                     {/* Percentage Breakdown Table */}
                     <div
-                        className="p-6 rounded-2xl overflow-hidden"
+                        className="p-5 sm:p-6 rounded-2xl overflow-hidden"
                         style={{
                             background: 'rgba(20, 20, 30, 0.65)',
                             backdropFilter: 'blur(20px)',
@@ -349,13 +357,13 @@ export default function MaxTab() {
                         </div>
 
                         <div className="overflow-x-auto">
-                            <table className="w-full text-left" style={{ borderCollapse: 'separate', borderSpacing: '0 4px' }}>
+                            <table className="w-full text-left" style={{ borderCollapse: 'separate', borderSpacing: '0 6px' }}>
                                 <thead>
-                                    <tr style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                                        <th style={{ padding: '8px 16px' }}>Percentage</th>
-                                        <th style={{ padding: '8px 16px' }}>Weight ({unit})</th>
-                                        <th style={{ padding: '8px 16px' }}>Est. Reps</th>
-                                        <th style={{ padding: '8px 16px' }}>Zone</th>
+                                    <tr className="text-xs uppercase tracking-wider text-zinc-400">
+                                        <th className="px-5 py-3 font-semibold">Percentage</th>
+                                        <th className="px-5 py-3 font-semibold">Weight ({unit})</th>
+                                        <th className="px-5 py-3 font-semibold">Est. Reps</th>
+                                        <th className="px-5 py-3 font-semibold">Zone</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -363,30 +371,61 @@ export default function MaxTab() {
                                         const w = Math.round((oneRepMax * (pct / 100)) * 2) / 2;
                                         let zone = 'Endurance';
                                         let zoneColor = '#94a3b8';
-                                        if (pct >= 90) { zone = 'Maximal Strength'; zoneColor = '#ef4444'; }
-                                        else if (pct >= 80) { zone = 'Heavy / Strength'; zoneColor = '#f59e0b'; }
-                                        else if (pct >= 70) { zone = 'Hypertrophy'; zoneColor = '#a855f7'; }
-                                        else if (pct >= 60) { zone = 'Speed & Power'; zoneColor = '#38bdf8'; }
+                                        let zoneBg = 'rgba(148, 163, 184, 0.1)';
+                                        let zoneBorder = 'rgba(148, 163, 184, 0.2)';
+                                        if (pct >= 90) {
+                                            zone = 'Maximal Strength';
+                                            zoneColor = '#ef4444';
+                                            zoneBg = 'rgba(239, 68, 68, 0.12)';
+                                            zoneBorder = 'rgba(239, 68, 68, 0.25)';
+                                        } else if (pct >= 80) {
+                                            zone = 'Heavy / Strength';
+                                            zoneColor = '#f59e0b';
+                                            zoneBg = 'rgba(245, 158, 11, 0.12)';
+                                            zoneBorder = 'rgba(245, 158, 11, 0.25)';
+                                        } else if (pct >= 70) {
+                                            zone = 'Hypertrophy';
+                                            zoneColor = '#a855f7';
+                                            zoneBg = 'rgba(168, 85, 247, 0.12)';
+                                            zoneBorder = 'rgba(168, 85, 247, 0.25)';
+                                        } else if (pct >= 60) {
+                                            zone = 'Speed & Power';
+                                            zoneColor = '#38bdf8';
+                                            zoneBg = 'rgba(56, 189, 248, 0.12)';
+                                            zoneBorder = 'rgba(56, 189, 248, 0.25)';
+                                        }
 
                                         return (
                                             <tr
                                                 key={pct}
+                                                className="transition-colors rounded-xl overflow-hidden"
                                                 style={{
                                                     background: pct === 100 ? 'rgba(239, 68, 68, 0.1)' : 'rgba(255, 255, 255, 0.02)',
-                                                    border: '1px solid rgba(255, 255, 255, 0.04)',
+                                                    border: pct === 100 ? '1px solid rgba(239, 68, 68, 0.25)' : '1px solid rgba(255, 255, 255, 0.04)',
                                                 }}
                                             >
-                                                <td style={{ padding: '10px 16px', fontWeight: 800, color: pct === 100 ? '#ef4444' : '#ffffff', fontSize: '0.9rem' }}>
-                                                    {pct}%
+                                                <td className="px-5 py-3.5 rounded-l-xl">
+                                                    <span className={`text-sm font-extrabold ${pct === 100 ? 'text-red-400' : 'text-white'}`}>
+                                                        {pct}%
+                                                    </span>
                                                 </td>
-                                                <td style={{ padding: '10px 16px', fontWeight: 900, color: '#ffffff', fontSize: '1rem' }}>
-                                                    {w} {unit}
+                                                <td className="px-5 py-3.5">
+                                                    <span className="text-base sm:text-lg font-black text-white">
+                                                        {w} <span className="text-xs font-bold text-white/50">{unit}</span>
+                                                    </span>
                                                 </td>
-                                                <td style={{ padding: '10px 16px', color: 'rgba(255, 255, 255, 0.65)', fontSize: '0.85rem', fontWeight: 600 }}>
+                                                <td className="px-5 py-3.5 text-xs sm:text-sm font-semibold text-zinc-300">
                                                     {repText}
                                                 </td>
-                                                <td style={{ padding: '10px 16px' }}>
-                                                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: zoneColor }}>
+                                                <td className="px-5 py-3.5 rounded-r-xl">
+                                                    <span
+                                                        className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold"
+                                                        style={{
+                                                            color: zoneColor,
+                                                            background: zoneBg,
+                                                            border: `1px solid ${zoneBorder}`,
+                                                        }}
+                                                    >
                                                         {zone}
                                                     </span>
                                                 </td>

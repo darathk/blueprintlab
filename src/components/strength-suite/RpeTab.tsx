@@ -53,7 +53,7 @@ export default function RpeTab({ onSendToBarbell }: RpeTabProps) {
     const roundedTarget = Math.round(calculation.targetWeight / roundIncrement) * roundIncrement;
 
     return (
-        <div className="w-full flex flex-col items-center gap-6 max-w-3xl mx-auto">
+        <div className="w-full flex flex-col items-center gap-6 max-w-3xl mx-auto pb-32 md:pb-12">
             {/* Header exact to Screenshots 3-7 */}
             <div className="text-center flex flex-col items-center">
                 <h3 style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.02em', color: '#ffffff' }}>
@@ -367,7 +367,7 @@ export default function RpeTab({ onSendToBarbell }: RpeTabProps) {
             {/* 3. CALCULATION RESULT CARD */}
             {calculation.targetWeight > 0 && (
                 <div
-                    className="w-full flex flex-col sm:flex-row items-center justify-between gap-6 p-7 rounded-2xl relative overflow-hidden"
+                    className="w-full flex flex-col sm:flex-row items-center justify-between gap-6 p-6 sm:p-7 rounded-2xl relative overflow-hidden"
                     style={{
                         background: 'rgba(20, 20, 30, 0.65)',
                         backgroundImage: 'radial-gradient(ellipse at 20% 50%, rgba(239, 68, 68, 0.08) 0%, transparent 60%)',
@@ -382,36 +382,41 @@ export default function RpeTab({ onSendToBarbell }: RpeTabProps) {
                         <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.06em', textShadow: '0 0 10px rgba(239, 68, 68, 0.3)' }}>
                             Recommended Target Weight
                         </span>
-                        <div className="flex items-baseline justify-center sm:justify-start gap-2 mt-1">
+                        <div className="flex items-baseline justify-center sm:justify-start gap-2.5 mt-1 flex-wrap">
                             <span
+                                className="text-4xl sm:text-5xl font-black text-white leading-none tracking-tight"
                                 style={{
-                                    fontSize: '3.25rem',
-                                    fontWeight: 900,
-                                    color: '#ffffff',
-                                    lineHeight: 1,
-                                    letterSpacing: '-0.02em',
                                     textShadow: '0 0 24px rgba(239, 68, 68, 0.3)',
                                 }}
                             >
                                 {calculation.targetWeight}
                             </span>
-                            <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ef4444', textShadow: '0 0 16px rgba(239, 68, 68, 0.4)' }}>
+                            <span
+                                className="text-xl sm:text-2xl font-bold text-red-500"
+                                style={{ textShadow: '0 0 16px rgba(239, 68, 68, 0.4)' }}
+                            >
                                 {unit}
                             </span>
-                            <span style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.6)', marginLeft: '6px' }}>
+                            <span className="text-xs sm:text-sm font-medium text-white/60 ml-1.5 self-baseline">
                                 (Nearest {roundedTarget} {unit})
                             </span>
                         </div>
-                        <div className="flex items-center justify-center sm:justify-start gap-3 mt-2">
-                            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'rgba(255, 255, 255, 0.7)' }}>
+                        <div className="flex items-center justify-center sm:justify-start flex-wrap gap-2 mt-3 pt-1">
+                            <span
+                                className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold text-white/80"
+                                style={{
+                                    background: 'rgba(255, 255, 255, 0.05)',
+                                    border: '1px solid rgba(255, 255, 255, 0.1)',
+                                }}
+                            >
                                 {calculation.targetPct}% of 1RM
                             </span>
-                            <span style={{ color: 'rgba(255, 255, 255, 0.2)' }}>•</span>
                             <span
+                                className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold"
                                 style={{
-                                    fontSize: '0.85rem',
-                                    fontWeight: 700,
                                     color: calculation.delta >= 0 ? '#10b981' : '#ef4444',
+                                    background: calculation.delta >= 0 ? 'rgba(16, 185, 129, 0.12)' : 'rgba(239, 68, 68, 0.12)',
+                                    border: calculation.delta >= 0 ? '1px solid rgba(16, 185, 129, 0.3)' : '1px solid rgba(239, 68, 68, 0.3)',
                                 }}
                             >
                                 {calculation.delta >= 0 ? `+${calculation.delta}` : calculation.delta} {unit} ({calculation.deltaPct > 0 ? `+${calculation.deltaPct}` : calculation.deltaPct}%)

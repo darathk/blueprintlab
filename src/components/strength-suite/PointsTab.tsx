@@ -302,10 +302,10 @@ export default function PointsTab() {
 
             {/* RESULTS SECTION: 4 Formula Cards */}
             {results.dots > 0 && (
-                <div className="w-full flex flex-col gap-4">
+                <div className="w-full flex flex-col gap-4 pb-32 md:pb-12">
                     {/* Overall Classification Banner */}
                     <div
-                        className="flex items-center justify-between px-6 py-4 rounded-2xl"
+                        className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-5 sm:px-6 py-4 rounded-2xl w-full"
                         style={{
                             background: tier.bg,
                             backdropFilter: 'blur(16px)',
@@ -314,25 +314,39 @@ export default function PointsTab() {
                             boxShadow: `0 0 24px ${tier.bg}, inset 0 1px 0 rgba(255, 255, 255, 0.1)`,
                         }}
                     >
-                        <div className="flex items-center gap-2.5">
-                            <Trophy size={18} style={{ color: tier.color }} />
-                            <span style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.85)' }}>
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                            <div
+                                className="flex items-center justify-center w-8 h-8 rounded-full shrink-0"
+                                style={{ background: `${tier.color}22`, border: `1px solid ${tier.color}44` }}
+                            >
+                                <Trophy size={16} style={{ color: tier.color }} />
+                            </div>
+                            <span className="text-xs sm:text-sm font-medium text-white/80">
                                 Strength Classification:
                             </span>
-                            <span style={{ fontSize: '0.95rem', fontWeight: 900, color: tier.color, textShadow: `0 0 12px ${tier.color}66` }}>
+                            <span
+                                className="text-xs sm:text-sm font-black px-3 py-1 rounded-full"
+                                style={{
+                                    color: tier.color,
+                                    background: `${tier.color}20`,
+                                    border: `1px solid ${tier.color}40`,
+                                    textShadow: `0 0 12px ${tier.color}66`,
+                                }}
+                            >
                                 {tier.label}
                             </span>
                         </div>
-                        <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.65)' }}>
-                            {totalKg.toFixed(1)} kg / {bwKg.toFixed(1)} kg BW ({(totalKg / bwKg).toFixed(2)}x BW)
-                        </span>
+                        <div className="text-xs sm:text-sm font-semibold text-white/70 sm:text-right shrink-0">
+                            {totalKg.toFixed(1)} kg / {bwKg.toFixed(1)} kg BW{' '}
+                            <span className="text-white/40">({(totalKg / bwKg).toFixed(2)}x BW)</span>
+                        </div>
                     </div>
 
                     {/* 4 Cards Grid */}
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         {/* 1. DOTS */}
                         <div
-                            className="flex flex-col justify-between p-6 rounded-2xl relative overflow-hidden"
+                            className="flex flex-col justify-between p-5 sm:p-6 rounded-2xl relative overflow-hidden"
                             style={{
                                 background: 'rgba(20, 20, 30, 0.65)',
                                 backgroundImage: 'radial-gradient(ellipse at 50% 0%, rgba(239, 68, 68, 0.1) 0%, transparent 70%)',
@@ -340,35 +354,33 @@ export default function PointsTab() {
                                 WebkitBackdropFilter: 'blur(20px)',
                                 border: '1px solid rgba(239, 68, 68, 0.25)',
                                 boxShadow: '0 0 0 0.5px rgba(255, 255, 255, 0.04), 0 12px 36px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-                                minHeight: '145px',
+                                minHeight: '150px',
                             }}
                         >
-                            <div className="flex items-center justify-between mb-2">
-                                <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.05em', textShadow: '0 0 10px rgba(239, 68, 68, 0.3)' }}>
+                            <div className="flex items-center justify-between gap-2 w-full mb-3">
+                                <span className="text-xs font-extrabold uppercase tracking-wider text-red-500" style={{ textShadow: '0 0 10px rgba(239, 68, 68, 0.3)' }}>
                                     DOTS
                                 </span>
-                                <Zap size={15} className="text-red-400" />
+                                <div className="flex items-center justify-center w-7 h-7 rounded-lg shrink-0 bg-red-500/10 border border-red-500/20 text-red-400">
+                                    <Zap size={14} />
+                                </div>
                             </div>
-                            <span
-                                style={{
-                                    fontSize: '2.5rem',
-                                    fontWeight: 900,
-                                    color: '#ffffff',
-                                    lineHeight: 1,
-                                    letterSpacing: '-0.02em',
-                                    textShadow: '0 0 20px rgba(239, 68, 68, 0.3)',
-                                }}
-                            >
-                                {results.dots}
-                            </span>
-                            <span style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.55)', marginTop: '8px' }}>
+                            <div className="my-1">
+                                <span
+                                    className="text-3xl sm:text-4xl font-black text-white leading-none tracking-tight"
+                                    style={{ textShadow: '0 0 20px rgba(239, 68, 68, 0.3)' }}
+                                >
+                                    {results.dots}
+                                </span>
+                            </div>
+                            <span className="text-xs font-medium text-white/50 mt-2 leading-tight">
                                 Primary USAPL, WRPF, PLU, USPA standard
                             </span>
                         </div>
 
                         {/* 2. IPF GL Points */}
                         <div
-                            className="flex flex-col justify-between p-6 rounded-2xl relative overflow-hidden"
+                            className="flex flex-col justify-between p-5 sm:p-6 rounded-2xl relative overflow-hidden"
                             style={{
                                 background: 'rgba(20, 20, 30, 0.65)',
                                 backgroundImage: 'radial-gradient(ellipse at 50% 0%, rgba(56, 189, 248, 0.1) 0%, transparent 70%)',
@@ -376,35 +388,33 @@ export default function PointsTab() {
                                 WebkitBackdropFilter: 'blur(20px)',
                                 border: '1px solid rgba(56, 189, 248, 0.25)',
                                 boxShadow: '0 0 0 0.5px rgba(255, 255, 255, 0.04), 0 12px 36px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-                                minHeight: '145px',
+                                minHeight: '150px',
                             }}
                         >
-                            <div className="flex items-center justify-between mb-2">
-                                <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.05em', textShadow: '0 0 10px rgba(56, 189, 248, 0.3)' }}>
+                            <div className="flex items-center justify-between gap-2 w-full mb-3">
+                                <span className="text-xs font-extrabold uppercase tracking-wider text-sky-400" style={{ textShadow: '0 0 10px rgba(56, 189, 248, 0.3)' }}>
                                     IPF GL Points
                                 </span>
-                                <Shield size={15} className="text-cyan-400" />
+                                <div className="flex items-center justify-center w-7 h-7 rounded-lg shrink-0 bg-sky-500/10 border border-sky-500/20 text-sky-400">
+                                    <Shield size={14} />
+                                </div>
                             </div>
-                            <span
-                                style={{
-                                    fontSize: '2.5rem',
-                                    fontWeight: 900,
-                                    color: '#ffffff',
-                                    lineHeight: 1,
-                                    letterSpacing: '-0.02em',
-                                    textShadow: '0 0 20px rgba(56, 189, 248, 0.3)',
-                                }}
-                            >
-                                {results.gl}
-                            </span>
-                            <span style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.55)', marginTop: '8px' }}>
+                            <div className="my-1">
+                                <span
+                                    className="text-3xl sm:text-4xl font-black text-white leading-none tracking-tight"
+                                    style={{ textShadow: '0 0 20px rgba(56, 189, 248, 0.3)' }}
+                                >
+                                    {results.gl}
+                                </span>
+                            </div>
+                            <span className="text-xs font-medium text-white/50 mt-2 leading-tight">
                                 Official International Powerlifting Fed standard
                             </span>
                         </div>
 
                         {/* 3. Wilks 2020 */}
                         <div
-                            className="flex flex-col justify-between p-6 rounded-2xl relative overflow-hidden"
+                            className="flex flex-col justify-between p-5 sm:p-6 rounded-2xl relative overflow-hidden"
                             style={{
                                 background: 'rgba(20, 20, 30, 0.65)',
                                 backgroundImage: 'radial-gradient(ellipse at 50% 0%, rgba(168, 85, 247, 0.1) 0%, transparent 70%)',
@@ -412,35 +422,33 @@ export default function PointsTab() {
                                 WebkitBackdropFilter: 'blur(20px)',
                                 border: '1px solid rgba(168, 85, 247, 0.25)',
                                 boxShadow: '0 0 0 0.5px rgba(255, 255, 255, 0.04), 0 12px 36px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-                                minHeight: '145px',
+                                minHeight: '150px',
                             }}
                         >
-                            <div className="flex items-center justify-between mb-2">
-                                <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#a855f7', textTransform: 'uppercase', letterSpacing: '0.05em', textShadow: '0 0 10px rgba(168, 85, 247, 0.3)' }}>
+                            <div className="flex items-center justify-between gap-2 w-full mb-3">
+                                <span className="text-xs font-extrabold uppercase tracking-wider text-purple-400" style={{ textShadow: '0 0 10px rgba(168, 85, 247, 0.3)' }}>
                                     Wilks 2020
                                 </span>
-                                <Award size={15} className="text-purple-400" />
+                                <div className="flex items-center justify-center w-7 h-7 rounded-lg shrink-0 bg-purple-500/10 border border-purple-500/20 text-purple-400">
+                                    <Award size={14} />
+                                </div>
                             </div>
-                            <span
-                                style={{
-                                    fontSize: '2.5rem',
-                                    fontWeight: 900,
-                                    color: '#ffffff',
-                                    lineHeight: 1,
-                                    letterSpacing: '-0.02em',
-                                    textShadow: '0 0 20px rgba(168, 85, 247, 0.3)',
-                                }}
-                            >
-                                {results.wilks2020}
-                            </span>
-                            <span style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.55)', marginTop: '8px' }}>
+                            <div className="my-1">
+                                <span
+                                    className="text-3xl sm:text-4xl font-black text-white leading-none tracking-tight"
+                                    style={{ textShadow: '0 0 20px rgba(168, 85, 247, 0.3)' }}
+                                >
+                                    {results.wilks2020}
+                                </span>
+                            </div>
+                            <span className="text-xs font-medium text-white/50 mt-2 leading-tight">
                                 Modern recalibrated Wilks polynomial
                             </span>
                         </div>
 
                         {/* 4. Classic Wilks */}
                         <div
-                            className="flex flex-col justify-between p-6 rounded-2xl relative overflow-hidden"
+                            className="flex flex-col justify-between p-5 sm:p-6 rounded-2xl relative overflow-hidden"
                             style={{
                                 background: 'rgba(20, 20, 30, 0.65)',
                                 backgroundImage: 'radial-gradient(ellipse at 50% 0%, rgba(245, 158, 11, 0.1) 0%, transparent 70%)',
@@ -448,28 +456,26 @@ export default function PointsTab() {
                                 WebkitBackdropFilter: 'blur(20px)',
                                 border: '1px solid rgba(245, 158, 11, 0.25)',
                                 boxShadow: '0 0 0 0.5px rgba(255, 255, 255, 0.04), 0 12px 36px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-                                minHeight: '145px',
+                                minHeight: '150px',
                             }}
                         >
-                            <div className="flex items-center justify-between mb-2">
-                                <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#f59e0b', textTransform: 'uppercase', letterSpacing: '0.05em', textShadow: '0 0 10px rgba(245, 158, 11, 0.3)' }}>
+                            <div className="flex items-center justify-between gap-2 w-full mb-3">
+                                <span className="text-xs font-extrabold uppercase tracking-wider text-amber-400" style={{ textShadow: '0 0 10px rgba(245, 158, 11, 0.3)' }}>
                                     Classic Wilks
                                 </span>
-                                <Trophy size={15} className="text-amber-400" />
+                                <div className="flex items-center justify-center w-7 h-7 rounded-lg shrink-0 bg-amber-500/10 border border-amber-500/20 text-amber-400">
+                                    <Trophy size={14} />
+                                </div>
                             </div>
-                            <span
-                                style={{
-                                    fontSize: '2.5rem',
-                                    fontWeight: 900,
-                                    color: '#ffffff',
-                                    lineHeight: 1,
-                                    letterSpacing: '-0.02em',
-                                    textShadow: '0 0 20px rgba(245, 158, 11, 0.3)',
-                                }}
-                            >
-                                {results.wilks}
-                            </span>
-                            <span style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.55)', marginTop: '8px' }}>
+                            <div className="my-1">
+                                <span
+                                    className="text-3xl sm:text-4xl font-black text-white leading-none tracking-tight"
+                                    style={{ textShadow: '0 0 20px rgba(245, 158, 11, 0.3)' }}
+                                >
+                                    {results.wilks}
+                                </span>
+                            </div>
+                            <span className="text-xs font-medium text-white/50 mt-2 leading-tight">
                                 Historical standard across all divisions
                             </span>
                         </div>

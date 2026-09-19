@@ -122,7 +122,7 @@ export default function BarbellTab({ initialWeight = 100, initialUnit = 'kg' }: 
     }, [activePlates, unit]);
 
     return (
-        <div className="w-full flex flex-col gap-4 max-w-[1000px] mx-auto px-2">
+        <div className="w-full flex flex-col gap-5 max-w-[1000px] mx-auto px-2 pb-32 md:pb-12">
             {/* Main Cards: 12-column grid side-by-side on md+ */}
             <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-stretch">
                 {/* LEFT CARD: Controls */}
@@ -137,26 +137,25 @@ export default function BarbellTab({ initialWeight = 100, initialUnit = 'kg' }: 
                         minHeight: '460px',
                     }}
                 >
-                    {/* Centered Calculate | Load Toggle at Top of Card */}
-                    <div className="flex justify-center mb-6">
+                    {/* Decoupled Segment Selector: Calculate | Load in 50/50 Grid */}
+                    <div className="w-full mb-6">
                         <div
-                            className="inline-flex items-center p-1 rounded-xl"
+                            className="w-full max-w-[280px] mx-auto grid grid-cols-2 p-1.5 rounded-2xl"
                             style={{
-                                background: 'rgba(10, 10, 16, 0.6)',
+                                background: 'rgba(10, 10, 16, 0.65)',
                                 backdropFilter: 'blur(12px)',
-                                border: '1px solid rgba(255, 255, 255, 0.08)',
-                                boxShadow: 'inset 0 2px 4px rgba(0, 0, 0, 0.4), 0 1px 0 rgba(255, 255, 255, 0.05)',
+                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                boxShadow: 'inset 0 2px 5px rgba(0, 0, 0, 0.5), 0 1px 0 rgba(255, 255, 255, 0.05)',
                             }}
                         >
                             <button
                                 type="button"
                                 onClick={() => setSubMode('calculate')}
-                                className="chat-press px-6 py-2 rounded-lg font-extrabold text-sm transition-all cursor-pointer"
+                                className="chat-press flex items-center justify-center py-2.5 px-4 rounded-xl font-extrabold text-sm transition-all cursor-pointer select-none"
                                 style={{
                                     background: subMode === 'calculate' ? '#ffffff' : 'transparent',
                                     color: subMode === 'calculate' ? '#09090b' : 'rgba(255, 255, 255, 0.65)',
-                                    border: subMode === 'calculate' ? '2px solid #3b82f6' : '2px solid transparent',
-                                    boxShadow: subMode === 'calculate' ? '0 0 14px rgba(59, 130, 246, 0.35), 0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.8)' : 'none',
+                                    boxShadow: subMode === 'calculate' ? '0 2px 10px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.9)' : 'none',
                                 }}
                             >
                                 Calculate
@@ -164,12 +163,11 @@ export default function BarbellTab({ initialWeight = 100, initialUnit = 'kg' }: 
                             <button
                                 type="button"
                                 onClick={() => setSubMode('load')}
-                                className="chat-press px-6 py-2 rounded-lg font-extrabold text-sm transition-all cursor-pointer"
+                                className="chat-press flex items-center justify-center py-2.5 px-4 rounded-xl font-extrabold text-sm transition-all cursor-pointer select-none"
                                 style={{
                                     background: subMode === 'load' ? '#ffffff' : 'transparent',
                                     color: subMode === 'load' ? '#09090b' : 'rgba(255, 255, 255, 0.65)',
-                                    border: subMode === 'load' ? '2px solid #3b82f6' : '2px solid transparent',
-                                    boxShadow: subMode === 'load' ? '0 0 14px rgba(59, 130, 246, 0.35), 0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.8)' : 'none',
+                                    boxShadow: subMode === 'load' ? '0 2px 10px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.9)' : 'none',
                                 }}
                             >
                                 Load
@@ -182,7 +180,7 @@ export default function BarbellTab({ initialWeight = 100, initialUnit = 'kg' }: 
                         <div className="flex flex-col gap-6 flex-1">
                             {/* Target Weight + Unit Switch */}
                             <div>
-                                <label className="block text-sm font-semibold text-white/70 mb-2">
+                                <label className="block text-sm font-semibold text-white/80 mb-2">
                                     Target weight
                                 </label>
                                 <div className="flex items-center gap-3">
@@ -190,6 +188,7 @@ export default function BarbellTab({ initialWeight = 100, initialUnit = 'kg' }: 
                                         className="flex-1 flex items-center px-4 rounded-xl"
                                         style={{
                                             height: '52px',
+                                            minWidth: 0,
                                             background: 'rgba(10, 10, 16, 0.55)',
                                             backdropFilter: 'blur(8px)',
                                             border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -207,9 +206,9 @@ export default function BarbellTab({ initialWeight = 100, initialUnit = 'kg' }: 
                                         />
                                     </div>
 
-                                    {/* Unit switch inline */}
+                                    {/* Dedicated Unit switch with fixed width */}
                                     <div
-                                        className="flex items-center p-1 rounded-xl shrink-0"
+                                        className="flex items-center p-1 rounded-xl shrink-0 w-[110px]"
                                         style={{
                                             height: '52px',
                                             background: 'rgba(10, 10, 16, 0.55)',
@@ -221,7 +220,7 @@ export default function BarbellTab({ initialWeight = 100, initialUnit = 'kg' }: 
                                         <button
                                             type="button"
                                             onClick={() => handleUnitSwitch('kg')}
-                                            className="chat-press px-4 h-full rounded-lg font-extrabold text-sm transition-all cursor-pointer"
+                                            className="chat-press flex-1 h-full rounded-lg font-extrabold text-sm transition-all cursor-pointer flex items-center justify-center"
                                             style={{
                                                 background: unit === 'kg' ? '#ffffff' : 'transparent',
                                                 color: unit === 'kg' ? '#09090b' : 'rgba(255, 255, 255, 0.65)',
@@ -233,7 +232,7 @@ export default function BarbellTab({ initialWeight = 100, initialUnit = 'kg' }: 
                                         <button
                                             type="button"
                                             onClick={() => handleUnitSwitch('lb')}
-                                            className="chat-press px-4 h-full rounded-lg font-extrabold text-sm transition-all cursor-pointer"
+                                            className="chat-press flex-1 h-full rounded-lg font-extrabold text-sm transition-all cursor-pointer flex items-center justify-center"
                                             style={{
                                                 background: unit === 'lb' ? '#ffffff' : 'transparent',
                                                 color: unit === 'lb' ? '#09090b' : 'rgba(255, 255, 255, 0.65)',
@@ -248,7 +247,7 @@ export default function BarbellTab({ initialWeight = 100, initialUnit = 'kg' }: 
 
                             {/* Bar Weight */}
                             <div>
-                                <label className="block text-sm font-semibold text-white/70 mb-2">
+                                <label className="block text-sm font-semibold text-white/80 mb-2">
                                     Bar weight
                                 </label>
                                 <div
@@ -423,8 +422,9 @@ export default function BarbellTab({ initialWeight = 100, initialUnit = 'kg' }: 
                                             className="w-full bg-transparent border-none text-white text-xl font-bold outline-none"
                                         />
                                     </div>
+                                    {/* Dedicated Unit switch with fixed width */}
                                     <div
-                                        className="flex items-center p-1 rounded-xl shrink-0"
+                                        className="flex items-center p-1 rounded-xl shrink-0 w-[110px]"
                                         style={{
                                             height: '52px',
                                             background: 'rgba(10, 10, 16, 0.55)',
@@ -436,7 +436,7 @@ export default function BarbellTab({ initialWeight = 100, initialUnit = 'kg' }: 
                                         <button
                                             type="button"
                                             onClick={() => handleUnitSwitch('kg')}
-                                            className="chat-press px-4 h-full rounded-lg font-extrabold text-sm transition-all cursor-pointer"
+                                            className="chat-press flex-1 h-full rounded-lg font-extrabold text-sm transition-all cursor-pointer flex items-center justify-center"
                                             style={{
                                                 background: unit === 'kg' ? '#ffffff' : 'transparent',
                                                 color: unit === 'kg' ? '#09090b' : 'rgba(255, 255, 255, 0.65)',
@@ -448,7 +448,7 @@ export default function BarbellTab({ initialWeight = 100, initialUnit = 'kg' }: 
                                         <button
                                             type="button"
                                             onClick={() => handleUnitSwitch('lb')}
-                                            className="chat-press px-4 h-full rounded-lg font-extrabold text-sm transition-all cursor-pointer"
+                                            className="chat-press flex-1 h-full rounded-lg font-extrabold text-sm transition-all cursor-pointer flex items-center justify-center"
                                             style={{
                                                 background: unit === 'lb' ? '#ffffff' : 'transparent',
                                                 color: unit === 'lb' ? '#09090b' : 'rgba(255, 255, 255, 0.65)',
