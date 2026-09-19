@@ -1264,7 +1264,7 @@ export function LeaderboardRankWidget({
     const activeData = mode === 'monthly' ? monthlyData : allTimeData;
     const activeTotal = mode === 'monthly' ? monthlyTotal : allTimeTotal;
 
-    if (loading || !activeData) {
+    if (loading) {
         return (
             <div style={{
                 borderRadius: 16,
@@ -1284,6 +1284,10 @@ export function LeaderboardRankWidget({
                 </div>
             </div>
         );
+    }
+
+    if (!activeData) {
+        return null;
     }
 
     const tierCfg = TIER_CONFIG[activeData.tier] || TIER_CONFIG.iron;

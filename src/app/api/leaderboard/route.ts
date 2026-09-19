@@ -170,9 +170,16 @@ export async function GET(request: Request) {
     try {
         const cycle = getLeaderboardCycle();
 
-        // Fetch all athletes and their programs + logs in a single query
+        // Fetch all athletes and their programs + logs in a single query (exclude self-coach Jayseng)
         const athletes = await prisma.athlete.findMany({
-            where: { coachId, role: 'athlete' },
+            where: {
+                coachId,
+                role: 'athlete',
+                NOT: [
+                    { email: { equals: 'jayseng123@gmail.com', mode: 'insensitive' } },
+                    { id: '34e1fad4-5c1b-40e4-9173-5a0f63d1c547' }
+                ]
+            },
             select: {
                 id: true,
                 name: true,

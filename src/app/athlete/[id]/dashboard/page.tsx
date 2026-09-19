@@ -54,7 +54,7 @@ export default async function AthleteDashboard({ params }) {
     if (!athlete) return <div>Athlete not found</div>;
 
     const athleteEmail = (athlete.email || '').toLowerCase().trim();
-    const isJayseng = email === 'jayseng123@gmail.com' || athleteEmail === 'jayseng123@gmail.com';
+    const isJayseng = email === 'jayseng123@gmail.com' || athleteEmail === 'jayseng123@gmail.com' || id === '34e1fad4-5c1b-40e4-9173-5a0f63d1c547';
 
     return (
         <div style={{ minHeight: '100vh', padding: '1rem 0', maxWidth: 600, margin: '0 auto' }}>
@@ -115,7 +115,7 @@ export default async function AthleteDashboard({ params }) {
                 </div>
             )}
 
-            {athlete.coachId && (
+            {athlete.coachId && !isJayseng && (
                 <div style={{ marginBottom: '1rem', padding: '0 1rem' }}>
                     <LeaderboardRankWidget coachId={athlete.coachId} athleteId={id} athleteName={athlete.name} />
                 </div>
