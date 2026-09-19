@@ -385,47 +385,74 @@ export default function AthleteReadinessCard({
                     <>
                         {/* ── Overall Readiness Score Card ── */}
                         <div style={{
-                            background: 'linear-gradient(145deg, rgba(20, 24, 38, 0.9) 0%, rgba(12, 15, 26, 0.95) 100%)',
+                            background: 'linear-gradient(145deg, rgba(20, 24, 38, 0.95) 0%, rgba(12, 15, 26, 0.98) 100%)',
                             border: '1px solid rgba(255, 255, 255, 0.08)',
-                            borderRadius: 16,
-                            padding: '1.25rem 1.15rem',
+                            borderRadius: 20,
+                            padding: '1.35rem 1.25rem',
                             display: 'flex',
+                            flexDirection: 'column',
                             alignItems: 'center',
-                            justifyContent: 'space-between',
-                            gap: 14,
+                            textAlign: 'center',
+                            gap: 12,
                             boxShadow: '0 8px 30px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255,255,255,0.06)',
                             position: 'relative',
-                            overflow: 'hidden',
                             flexShrink: 0,
-                            minHeight: 136,
                         }}>
-                            {/* Decorative glow behind ring */}
+                            {/* Top Status Pill Centered */}
                             <div style={{
-                                position: 'absolute',
-                                left: 30,
-                                top: 20,
-                                width: 90,
-                                height: 90,
-                                background: color,
-                                filter: 'blur(45px)',
-                                opacity: 0.18,
-                                pointerEvents: 'none'
-                            }} />
+                                padding: '4px 12px',
+                                borderRadius: 20,
+                                background: `${color}18`,
+                                border: `1px solid ${color}40`,
+                                color: color,
+                                fontSize: '0.72rem',
+                                fontWeight: 800,
+                                letterSpacing: '0.04em',
+                                textTransform: 'uppercase',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: 6,
+                                boxShadow: `0 0 14px ${color}22`
+                            }}>
+                                <span style={{ width: 6, height: 6, borderRadius: '50%', background: color }} />
+                                {status}
+                            </div>
 
-                            {/* Left: Circular Progress Ring */}
-                            <div style={{ position: 'relative', width: 105, height: 105, minWidth: 105, minHeight: 105, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                                <svg width="105" height="105" style={{ transform: 'rotate(-90deg)' }}>
+                            {/* Center Circular Progress Ring with ambient glow */}
+                            <div style={{
+                                position: 'relative',
+                                width: 110,
+                                height: 110,
+                                minWidth: 110,
+                                minHeight: 110,
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                margin: '2px 0',
+                            }}>
+                                {/* Decorative radial glow behind ring */}
+                                <div style={{
+                                    position: 'absolute',
+                                    width: 80,
+                                    height: 80,
+                                    borderRadius: '50%',
+                                    background: color,
+                                    filter: 'blur(36px)',
+                                    opacity: 0.22,
+                                    pointerEvents: 'none'
+                                }} />
+                                <svg width="110" height="110" style={{ transform: 'rotate(-90deg)' }}>
                                     <circle
-                                        cx="52.5"
-                                        cy="52.5"
+                                        cx="55"
+                                        cy="55"
                                         r={radius}
                                         fill="transparent"
                                         stroke="rgba(255, 255, 255, 0.07)"
                                         strokeWidth="8"
                                     />
                                     <circle
-                                        cx="52.5"
-                                        cy="52.5"
+                                        cx="55"
+                                        cy="55"
                                         r={radius}
                                         fill="transparent"
                                         stroke={color}
@@ -444,42 +471,21 @@ export default function AthleteReadinessCard({
                                     justifyContent: 'center',
                                     textAlign: 'center'
                                 }}>
-                                    <span style={{ fontSize: '1.45rem', fontWeight: 900, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1 }}>
+                                    <span style={{ fontSize: '1.6rem', fontWeight: 900, color: '#fff', letterSpacing: '-0.02em', lineHeight: 1 }}>
                                         {score.toFixed(1)}
                                     </span>
-                                    <span style={{ fontSize: '0.62rem', color: 'var(--secondary-foreground)', fontWeight: 600, marginTop: 2 }}>
+                                    <span style={{ fontSize: '0.62rem', color: 'var(--secondary-foreground)', fontWeight: 600, marginTop: 3 }}>
                                         / 10
                                     </span>
                                 </div>
                             </div>
 
-                            {/* Right: Status Pill & Meta Details */}
-                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6, minWidth: 0, justifyContent: 'center' }}>
-                                <div style={{
-                                    alignSelf: 'flex-start',
-                                    padding: '4px 10px',
-                                    borderRadius: 20,
-                                    background: `${color}18`,
-                                    border: `1px solid ${color}40`,
-                                    color: color,
-                                    fontSize: '0.72rem',
-                                    fontWeight: 800,
-                                    letterSpacing: '0.04em',
-                                    textTransform: 'uppercase',
-                                    display: 'inline-flex',
-                                    alignItems: 'center',
-                                    gap: 5,
-                                    boxShadow: `0 0 12px ${color}20`
-                                }}>
-                                    <span style={{ width: 6, height: 6, borderRadius: '50%', background: color }} />
-                                    {status}
-                                </div>
-
-                                <div style={{ fontSize: '0.88rem', fontWeight: 700, color: '#fff' }}>
+                            {/* Centered Heading & Coaching Recommendation */}
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5, maxWidth: 300 }}>
+                                <div style={{ fontSize: '0.95rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.01em' }}>
                                     Overall Recovery
                                 </div>
-
-                                <div style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)', lineHeight: 1.35 }}>
+                                <div style={{ fontSize: '0.78rem', color: 'var(--secondary-foreground)', lineHeight: 1.45 }}>
                                     {score >= 8
                                         ? 'Ready for high intensity, maximal lifts & planned volume.'
                                         : score >= 6

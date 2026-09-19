@@ -46,10 +46,10 @@ export default function StrengthSuite({
     return (
         <div className="w-full flex flex-col items-center">
             {/* Top Navigation Capsule Pill Bar */}
-            <div className="w-full flex items-center justify-between gap-2 sm:gap-4 mb-4 sm:mb-6 px-1 sm:px-2 relative">
-                <div className="flex-1 overflow-x-auto no-scrollbar scroll-smooth flex justify-start sm:justify-center py-1">
+            <div className="w-full relative flex items-center justify-center mb-5 sm:mb-6 px-1 sm:px-2">
+                <div className="w-full flex justify-center overflow-x-auto no-scrollbar scroll-smooth py-1">
                     <div
-                        className="inline-flex items-center gap-1 sm:gap-2 p-1 sm:p-1.5 rounded-full shrink-0"
+                        className="inline-flex items-center gap-1 sm:gap-2 p-1 sm:p-1.5 rounded-full shrink-0 mx-auto"
                         style={{
                             background: 'rgba(20, 20, 30, 0.75)',
                             backdropFilter: 'blur(24px)',
@@ -87,7 +87,7 @@ export default function StrengthSuite({
                     <button
                         type="button"
                         onClick={onClose}
-                        className="chat-press flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-full shrink-0 z-10"
+                        className="chat-press absolute right-0 sm:right-2 top-1/2 -translate-y-1/2 flex items-center justify-center w-8 h-8 sm:w-9 sm:h-9 rounded-full shrink-0 z-20"
                         style={{
                             background: 'rgba(255, 255, 255, 0.08)',
                             backdropFilter: 'blur(12px)',
@@ -99,7 +99,7 @@ export default function StrengthSuite({
                         }}
                         aria-label="Close"
                     >
-                        <X size={17} />
+                        <X size={16} />
                     </button>
                 )}
             </div>
