@@ -1,15 +1,19 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { calculateTargetWeightFromRpe, estimate1RMFromRpe } from '@/lib/calculators';
-import { ArrowRight, Target, Sparkles, Scale } from 'lucide-react';
+import { calculateTargetWeightFromRpe } from '@/lib/calculators';
+import StrengthSelect from './StrengthSelect';
+import { ArrowRight, Scale, Sparkles } from 'lucide-react';
 
 interface RpeTabProps {
     onSendToBarbell?: (weight: number, unit: 'kg' | 'lb') => void;
 }
 
-const REPS_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-const RPE_OPTIONS = [10, 9.5, 9, 8.5, 8, 7.5, 7, 6.5, 6, 5.5, 5, 4.5, 4, 3.5, 3, 2.5, 2, 1.5, 1];
+const REPS_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((r) => ({ value: r, label: String(r) }));
+const RPE_OPTIONS = [10, 9.5, 9, 8.5, 8, 7.5, 7, 6.5, 6, 5.5, 5, 4.5, 4, 3.5, 3, 2.5, 2, 1.5, 1].map((r) => ({
+    value: r,
+    label: String(r),
+}));
 
 export default function RpeTab({ onSendToBarbell }: RpeTabProps) {
     const [mode, setMode] = useState<'rpe' | 'rir'>('rpe');
@@ -18,16 +22,15 @@ export default function RpeTab({ onSendToBarbell }: RpeTabProps) {
     // Last Set
     const [lastWeightStr, setLastWeightStr] = useState<string>('225');
     const [lastReps, setLastReps] = useState<number>(5);
-    const [lastRpeVal, setLastRpeVal] = useState<number>(8); // In RPE terms
+    const [lastRpeVal, setLastRpeVal] = useState<number>(8);
 
     // Next Set
     const [targetReps, setTargetReps] = useState<number>(3);
-    const [targetRpeVal, setTargetRpeVal] = useState<number>(9); // In RPE terms
+    const [targetRpeVal, setTargetRpeVal] = useState<number>(9);
 
     const lastWeight = parseFloat(lastWeightStr) || 0;
 
     // Convert between RPE and RIR for display
-    // RPE 10 = 0 RIR, RPE 9 = 1 RIR, RPE 8 = 2 RIR, etc. (RIR = 10 - RPE, RPE = 10 - RIR)
     const toRir = (rpe: number) => Math.max(0, Math.round((10 - rpe) * 2) / 2);
     const fromRir = (rir: number) => Math.max(1, Math.min(10, Math.round((10 - rir) * 2) / 2));
 
@@ -50,138 +53,162 @@ export default function RpeTab({ onSendToBarbell }: RpeTabProps) {
     const roundedTarget = Math.round(calculation.targetWeight / roundIncrement) * roundIncrement;
 
     return (
-        <div className="w-full flex flex-col items-center gap-6 max-w-4xl mx-auto">
+        <div className="w-full flex flex-col items-center gap-6 max-w-3xl mx-auto">
             {/* Header exact to Screenshots 3-7 */}
             <div className="text-center flex flex-col items-center">
                 <h3 style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.02em', color: '#ffffff' }}>
-                    <span style={{ color: '#ef4444' }}>RPE</span> Calculator
+                    <span style={{ color: '#ef4444', textDecoration: 'underline', textDecorationColor: '#ef4444' }}>
+                        RPE
+                    </span>{' '}
+                    Calculator
                 </h3>
-                <p style={{ fontSize: '0.875rem', color: 'var(--secondary-foreground)', marginTop: '4px' }}>
+                <p style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.65)', marginTop: '4px' }}>
                     Calculate target weights based on Rate of Perceived Exertion
                 </p>
 
-                {/* Submode pill toggle: [ RPE | RIR ] */}
-                <div
-                    className="mt-4 flex p-1"
-                    style={{
-                        borderRadius: '9999px',
-                        background: 'rgba(255, 255, 255, 0.04)',
-                        border: '1px solid rgba(255, 255, 255, 0.08)',
-                        backdropFilter: 'blur(16px)',
-                    }}
-                >
-                    <button
-                        type="button"
-                        onClick={() => setMode('rpe')}
-                        className="chat-press"
+                {/* Submode pill toggle: [ RPE | RIR ] and Unit [ lbs | kg ] */}
+                <div className="mt-4 flex items-center gap-3">
+                    <div
                         style={{
-                            padding: '6px 20px',
+                            display: 'inline-flex',
+                            padding: '4px',
                             borderRadius: '9999px',
-                            fontWeight: 700,
-                            fontSize: '0.8rem',
-                            border: mode === 'rpe' ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid transparent',
-                            background: mode === 'rpe' ? '#ef4444' : 'transparent',
-                            color: mode === 'rpe' ? '#ffffff' : 'var(--secondary-foreground)',
-                            transition: 'all 0.15s ease',
-                            cursor: 'pointer',
+                            background: '#141418',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
                         }}
                     >
-                        RPE
-                    </button>
-                    <button
-                        type="button"
-                        onClick={() => setMode('rir')}
-                        className="chat-press"
+                        <button
+                            type="button"
+                            onClick={() => setMode('rpe')}
+                            className="chat-press"
+                            style={{
+                                padding: '6px 20px',
+                                borderRadius: '9999px',
+                                fontWeight: 700,
+                                fontSize: '0.8rem',
+                                border: mode === 'rpe' ? '1px solid rgba(255, 255, 255, 0.2)' : '1px solid transparent',
+                                background: mode === 'rpe' ? '#ef4444' : 'transparent',
+                                color: mode === 'rpe' ? '#ffffff' : 'rgba(255, 255, 255, 0.6)',
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease',
+                            }}
+                        >
+                            RPE
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setMode('rir')}
+                            className="chat-press"
+                            style={{
+                                padding: '6px 20px',
+                                borderRadius: '9999px',
+                                fontWeight: 700,
+                                fontSize: '0.8rem',
+                                border: mode === 'rir' ? '1px solid rgba(255, 255, 255, 0.2)' : '1px solid transparent',
+                                background: mode === 'rir' ? '#ef4444' : 'transparent',
+                                color: mode === 'rir' ? '#ffffff' : 'rgba(255, 255, 255, 0.6)',
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease',
+                            }}
+                        >
+                            RIR
+                        </button>
+                    </div>
+
+                    <div
                         style={{
-                            padding: '6px 20px',
+                            display: 'inline-flex',
+                            padding: '4px',
                             borderRadius: '9999px',
-                            fontWeight: 700,
-                            fontSize: '0.8rem',
-                            border: mode === 'rir' ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid transparent',
-                            background: mode === 'rir' ? '#ef4444' : 'transparent',
-                            color: mode === 'rir' ? '#ffffff' : 'var(--secondary-foreground)',
-                            transition: 'all 0.15s ease',
-                            cursor: 'pointer',
+                            background: '#141418',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
                         }}
                     >
-                        RIR
-                    </button>
+                        <button
+                            type="button"
+                            onClick={() => setUnit('lbs')}
+                            className="chat-press"
+                            style={{
+                                padding: '6px 14px',
+                                borderRadius: '9999px',
+                                fontWeight: 700,
+                                fontSize: '0.8rem',
+                                background: unit === 'lbs' ? '#ffffff' : 'transparent',
+                                color: unit === 'lbs' ? '#0a0a0a' : 'rgba(255, 255, 255, 0.6)',
+                                border: 'none',
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease',
+                            }}
+                        >
+                            lbs
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setUnit('kg')}
+                            className="chat-press"
+                            style={{
+                                padding: '6px 14px',
+                                borderRadius: '9999px',
+                                fontWeight: 700,
+                                fontSize: '0.8rem',
+                                background: unit === 'kg' ? '#ffffff' : 'transparent',
+                                color: unit === 'kg' ? '#0a0a0a' : 'rgba(255, 255, 255, 0.6)',
+                                border: 'none',
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease',
+                            }}
+                        >
+                            kg
+                        </button>
+                    </div>
                 </div>
             </div>
 
             {/* Input Form Card exact to Screenshot 3 */}
             <div
-                className="w-full glass-panel flex flex-col gap-8"
+                className="w-full flex flex-col gap-6"
                 style={{
                     padding: '32px',
-                    borderRadius: '24px',
-                    background: 'rgba(16, 16, 24, 0.75)',
+                    borderRadius: '20px',
+                    background: '#1c1d22',
                     border: '1px solid rgba(255, 255, 255, 0.08)',
-                    backdropFilter: 'blur(20px)',
                 }}
             >
                 {/* 1. LAST SET SECTION */}
-                <div className="flex flex-col gap-4">
-                    <div className="flex items-center justify-between">
-                        <h4 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff' }}>
-                            Last Set
-                        </h4>
-                        {/* Unit toggle */}
-                        <div
-                            className="flex p-0.5"
-                            style={{
-                                borderRadius: '8px',
-                                background: 'rgba(255, 255, 255, 0.04)',
-                                border: '1px solid rgba(255, 255, 255, 0.08)',
-                            }}
-                        >
-                            <button
-                                type="button"
-                                onClick={() => setUnit('lbs')}
-                                style={{
-                                    padding: '4px 10px',
-                                    borderRadius: '6px',
-                                    fontWeight: 700,
-                                    fontSize: '0.75rem',
-                                    background: unit === 'lbs' ? '#ffffff' : 'transparent',
-                                    color: unit === 'lbs' ? '#0a0a0a' : 'var(--secondary-foreground)',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                }}
-                            >
-                                lbs
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setUnit('kg')}
-                                style={{
-                                    padding: '4px 10px',
-                                    borderRadius: '6px',
-                                    fontWeight: 700,
-                                    fontSize: '0.75rem',
-                                    background: unit === 'kg' ? '#ffffff' : 'transparent',
-                                    color: unit === 'kg' ? '#0a0a0a' : 'var(--secondary-foreground)',
-                                    border: 'none',
-                                    cursor: 'pointer',
-                                }}
-                            >
-                                kg
-                            </button>
-                        </div>
-                    </div>
+                <div className="flex flex-col">
+                    <h4
+                        style={{
+                            fontSize: '1.25rem',
+                            fontWeight: 800,
+                            color: '#ffffff',
+                            textAlign: 'center',
+                            marginBottom: '16px',
+                        }}
+                    >
+                        Last Set
+                    </h4>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                         {/* Weight */}
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)', marginBottom: '6px' }}>
+                        <div className="flex flex-col">
+                            <label
+                                style={{
+                                    display: 'block',
+                                    fontSize: '0.875rem',
+                                    fontWeight: 700,
+                                    color: '#ffffff',
+                                    textAlign: 'center',
+                                    marginBottom: '8px',
+                                }}
+                            >
                                 Weight
                             </label>
                             <div
-                                className="flex items-center px-4"
+                                className="flex items-center justify-center px-4"
                                 style={{
-                                    height: '50px',
+                                    height: '48px',
                                     borderRadius: '12px',
-                                    background: 'rgba(255, 255, 255, 0.04)',
+                                    background: '#141418',
                                     border: '1px solid rgba(255, 255, 255, 0.1)',
                                 }}
                             >
@@ -196,228 +223,180 @@ export default function RpeTab({ onSendToBarbell }: RpeTabProps) {
                                         background: 'transparent',
                                         border: 'none',
                                         color: '#ffffff',
-                                        fontSize: '1.1rem',
+                                        fontSize: '1rem',
                                         fontWeight: 700,
+                                        textAlign: 'center',
                                         outline: 'none',
                                     }}
                                 />
-                                <span style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', fontWeight: 700 }}>
-                                    {unit}
-                                </span>
                             </div>
                         </div>
 
                         {/* Reps */}
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)', marginBottom: '6px' }}>
-                                Reps
-                            </label>
-                            <select
-                                value={lastReps}
-                                onChange={(e) => setLastReps(Number(e.target.value))}
+                        <div className="flex flex-col">
+                            <label
                                 style={{
-                                    width: '100%',
-                                    height: '50px',
-                                    padding: '0 16px',
-                                    borderRadius: '12px',
-                                    background: '#1a1a24',
-                                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                                    color: '#ffffff',
-                                    fontSize: '1rem',
+                                    display: 'block',
+                                    fontSize: '0.875rem',
                                     fontWeight: 700,
-                                    outline: 'none',
-                                    cursor: 'pointer',
+                                    color: '#ffffff',
+                                    textAlign: 'center',
+                                    marginBottom: '8px',
                                 }}
                             >
-                                {REPS_OPTIONS.map((r) => (
-                                    <option key={r} value={r}>
-                                        {r}
-                                    </option>
-                                ))}
-                            </select>
+                                Reps
+                            </label>
+                            <StrengthSelect
+                                value={lastReps}
+                                onChange={(val) => setLastReps(Number(val))}
+                                options={REPS_OPTIONS}
+                            />
                         </div>
 
                         {/* RPE or RIR */}
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)', marginBottom: '6px' }}>
-                                {mode === 'rpe' ? 'RPE' : 'RIR'}
-                            </label>
-                            <select
-                                value={mode === 'rpe' ? lastRpeVal : toRir(lastRpeVal)}
-                                onChange={(e) => {
-                                    const val = Number(e.target.value);
-                                    setLastRpeVal(mode === 'rpe' ? val : fromRir(val));
-                                }}
+                        <div className="flex flex-col">
+                            <label
                                 style={{
-                                    width: '100%',
-                                    height: '50px',
-                                    padding: '0 16px',
-                                    borderRadius: '12px',
-                                    background: '#1a1a24',
-                                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                                    color: '#ffffff',
-                                    fontSize: '1rem',
+                                    display: 'block',
+                                    fontSize: '0.875rem',
                                     fontWeight: 700,
-                                    outline: 'none',
-                                    cursor: 'pointer',
+                                    color: '#ffffff',
+                                    textAlign: 'center',
+                                    marginBottom: '8px',
                                 }}
                             >
-                                {RPE_OPTIONS.map((rpe) => {
-                                    const displayVal = mode === 'rpe' ? rpe : toRir(rpe);
-                                    return (
-                                        <option key={rpe} value={displayVal}>
-                                            {displayVal}
-                                        </option>
-                                    );
+                                {mode === 'rpe' ? 'RPE' : 'RIR'}
+                            </label>
+                            <StrengthSelect
+                                value={mode === 'rpe' ? lastRpeVal : toRir(lastRpeVal)}
+                                onChange={(val) => {
+                                    const num = Number(val);
+                                    setLastRpeVal(mode === 'rpe' ? num : fromRir(num));
+                                }}
+                                options={RPE_OPTIONS.map((opt) => {
+                                    const displayVal = mode === 'rpe' ? opt.value : toRir(Number(opt.value));
+                                    return { value: displayVal, label: String(displayVal) };
                                 })}
-                            </select>
+                            />
                         </div>
                     </div>
-
-                    {/* e1RM feedback banner */}
-                    {calculation.e1rm > 0 && (
-                        <div
-                            className="flex items-center justify-between px-4 py-2.5 rounded-xl"
-                            style={{
-                                background: 'rgba(255, 255, 255, 0.02)',
-                                border: '1px solid rgba(255, 255, 255, 0.06)',
-                            }}
-                        >
-                            <div className="flex items-center gap-2">
-                                <Sparkles size={14} className="text-amber-400" />
-                                <span style={{ fontSize: '0.8125rem', color: 'var(--secondary-foreground)' }}>
-                                    Estimated 1RM (e1RM):
-                                </span>
-                                <span style={{ fontSize: '0.9rem', fontWeight: 800, color: '#ffffff' }}>
-                                    {calculation.e1rm} {unit}
-                                </span>
-                            </div>
-                            <span style={{ fontSize: '0.72rem', color: 'var(--secondary-foreground)' }}>
-                                *RTS Formula Standard
-                            </span>
-                        </div>
-                    )}
                 </div>
 
-                <div style={{ height: '1px', background: 'rgba(255, 255, 255, 0.06)' }} />
-
                 {/* 2. NEXT SET SECTION */}
-                <div className="flex flex-col gap-4">
-                    <h4 style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ffffff' }}>
+                <div className="flex flex-col mt-2">
+                    <h4
+                        style={{
+                            fontSize: '1.25rem',
+                            fontWeight: 800,
+                            color: '#ffffff',
+                            textAlign: 'center',
+                            marginBottom: '16px',
+                        }}
+                    >
                         Next Set
                     </h4>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-xl mx-auto w-full">
                         {/* Target Reps */}
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)', marginBottom: '6px' }}>
-                                Target Reps
-                            </label>
-                            <select
-                                value={targetReps}
-                                onChange={(e) => setTargetReps(Number(e.target.value))}
+                        <div className="flex flex-col">
+                            <label
                                 style={{
-                                    width: '100%',
-                                    height: '50px',
-                                    padding: '0 16px',
-                                    borderRadius: '12px',
-                                    background: '#1a1a24',
-                                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                                    color: '#ffffff',
-                                    fontSize: '1rem',
+                                    display: 'block',
+                                    fontSize: '0.875rem',
                                     fontWeight: 700,
-                                    outline: 'none',
-                                    cursor: 'pointer',
+                                    color: '#ffffff',
+                                    textAlign: 'center',
+                                    marginBottom: '8px',
                                 }}
                             >
-                                {REPS_OPTIONS.map((r) => (
-                                    <option key={r} value={r}>
-                                        {r}
-                                    </option>
-                                ))}
-                            </select>
+                                Target Reps
+                            </label>
+                            <StrengthSelect
+                                value={targetReps}
+                                onChange={(val) => setTargetReps(Number(val))}
+                                options={REPS_OPTIONS}
+                            />
                         </div>
 
                         {/* Target RPE or RIR */}
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)', marginBottom: '6px' }}>
-                                Target {mode === 'rpe' ? 'RPE' : 'RIR'}
-                            </label>
-                            <select
-                                value={mode === 'rpe' ? targetRpeVal : toRir(targetRpeVal)}
-                                onChange={(e) => {
-                                    const val = Number(e.target.value);
-                                    setTargetRpeVal(mode === 'rpe' ? val : fromRir(val));
-                                }}
+                        <div className="flex flex-col">
+                            <label
                                 style={{
-                                    width: '100%',
-                                    height: '50px',
-                                    padding: '0 16px',
-                                    borderRadius: '12px',
-                                    background: '#1a1a24',
-                                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                                    color: '#ffffff',
-                                    fontSize: '1rem',
+                                    display: 'block',
+                                    fontSize: '0.875rem',
                                     fontWeight: 700,
-                                    outline: 'none',
-                                    cursor: 'pointer',
+                                    color: '#ffffff',
+                                    textAlign: 'center',
+                                    marginBottom: '8px',
                                 }}
                             >
-                                {RPE_OPTIONS.map((rpe) => {
-                                    const displayVal = mode === 'rpe' ? rpe : toRir(rpe);
-                                    return (
-                                        <option key={rpe} value={displayVal}>
-                                            {displayVal}
-                                        </option>
-                                    );
+                                Target {mode === 'rpe' ? 'RPE' : 'RIR'}
+                            </label>
+                            <StrengthSelect
+                                value={mode === 'rpe' ? targetRpeVal : toRir(targetRpeVal)}
+                                onChange={(val) => {
+                                    const num = Number(val);
+                                    setTargetRpeVal(mode === 'rpe' ? num : fromRir(num));
+                                }}
+                                options={RPE_OPTIONS.map((opt) => {
+                                    const displayVal = mode === 'rpe' ? opt.value : toRir(Number(opt.value));
+                                    return { value: displayVal, label: String(displayVal) };
                                 })}
-                            </select>
+                            />
                         </div>
                     </div>
                 </div>
+            </div>
 
-                {/* 3. CALCULATION RESULT CARD */}
-                {calculation.targetWeight > 0 && (
-                    <div
-                        className="flex flex-col sm:flex-row items-center justify-between gap-6 p-6 rounded-2xl"
-                        style={{
-                            background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.12) 0%, rgba(16, 16, 24, 0.9) 100%)',
-                            border: '1px solid rgba(239, 68, 68, 0.3)',
-                            boxShadow: '0 8px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
-                        }}
-                    >
-                        <div className="flex flex-col">
-                            <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#f87171', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
-                                Recommended Target Weight
+            {/* 3. CALCULATION RESULT CARD */}
+            {calculation.targetWeight > 0 && (
+                <div
+                    className="w-full flex flex-col sm:flex-row items-center justify-between gap-6 p-6 rounded-2xl"
+                    style={{
+                        background: '#1c1d22',
+                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                        borderLeft: '4px solid #ef4444',
+                    }}
+                >
+                    <div className="flex flex-col text-center sm:text-left">
+                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                            Recommended Target Weight
+                        </span>
+                        <div className="flex items-baseline justify-center sm:justify-start gap-2 mt-1">
+                            <span style={{ fontSize: '3rem', fontWeight: 900, color: '#ffffff', lineHeight: 1 }}>
+                                {calculation.targetWeight}
                             </span>
-                            <div className="flex items-baseline gap-2 mt-1">
-                                <span style={{ fontSize: '2.75rem', fontWeight: 900, color: '#ffffff', lineHeight: 1 }}>
-                                    {calculation.targetWeight}
-                                </span>
-                                <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#f87171' }}>
-                                    {unit}
-                                </span>
-                                <span style={{ fontSize: '0.9rem', color: 'var(--secondary-foreground)', marginLeft: '6px' }}>
-                                    (Nearest {roundedTarget} {unit})
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-3 mt-2">
-                                <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--secondary-foreground)' }}>
-                                    {calculation.targetPct}% of 1RM
-                                </span>
-                                <span style={{ color: 'rgba(255, 255, 255, 0.2)' }}>•</span>
-                                <span
-                                    style={{
-                                        fontSize: '0.85rem',
-                                        fontWeight: 700,
-                                        color: calculation.delta >= 0 ? '#10b981' : '#ef4444',
-                                    }}
-                                >
-                                    {calculation.delta >= 0 ? `+${calculation.delta}` : calculation.delta} {unit} ({calculation.deltaPct > 0 ? `+${calculation.deltaPct}` : calculation.deltaPct}%)
-                                </span>
-                            </div>
+                            <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#ef4444' }}>
+                                {unit}
+                            </span>
+                            <span style={{ fontSize: '0.9rem', color: 'rgba(255, 255, 255, 0.6)', marginLeft: '6px' }}>
+                                (Nearest {roundedTarget} {unit})
+                            </span>
                         </div>
+                        <div className="flex items-center justify-center sm:justify-start gap-3 mt-2">
+                            <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'rgba(255, 255, 255, 0.7)' }}>
+                                {calculation.targetPct}% of 1RM
+                            </span>
+                            <span style={{ color: 'rgba(255, 255, 255, 0.2)' }}>•</span>
+                            <span
+                                style={{
+                                    fontSize: '0.85rem',
+                                    fontWeight: 700,
+                                    color: calculation.delta >= 0 ? '#10b981' : '#ef4444',
+                                }}
+                            >
+                                {calculation.delta >= 0 ? `+${calculation.delta}` : calculation.delta} {unit} ({calculation.deltaPct > 0 ? `+${calculation.deltaPct}` : calculation.deltaPct}%)
+                            </span>
+                        </div>
+                    </div>
 
+                    <div className="flex flex-col sm:items-end gap-3">
+                        {calculation.e1rm > 0 && (
+                            <div className="flex items-center gap-1.5 text-xs text-zinc-400">
+                                <Sparkles size={13} className="text-amber-400" />
+                                <span>e1RM: <strong className="text-white">{calculation.e1rm} {unit}</strong></span>
+                            </div>
+                        )}
                         {onSendToBarbell && (
                             <button
                                 type="button"
@@ -437,8 +416,8 @@ export default function RpeTab({ onSendToBarbell }: RpeTabProps) {
                             </button>
                         )}
                     </div>
-                )}
-            </div>
+                </div>
+            )}
         </div>
     );
 }

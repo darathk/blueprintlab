@@ -6,7 +6,7 @@ import RpeTab from './RpeTab';
 import PointsTab from './PointsTab';
 import MaxTab from './MaxTab';
 import CompareFedsTab from './CompareFedsTab';
-import { Dumbbell, Activity, Award, Flame, Scale, X } from 'lucide-react';
+import { X } from 'lucide-react';
 
 export type StrengthSuiteTab = 'barbell' | 'rpe' | 'points' | 'max' | 'feds';
 
@@ -18,12 +18,12 @@ interface StrengthSuiteProps {
     isModal?: boolean;
 }
 
-const TABS: { id: StrengthSuiteTab; label: string; icon: React.ReactNode }[] = [
-    { id: 'barbell', label: 'Barbell', icon: <Dumbbell size={15} /> },
-    { id: 'rpe', label: 'RPE', icon: <Activity size={15} /> },
-    { id: 'points', label: 'Points', icon: <Award size={15} /> },
-    { id: 'max', label: 'Max', icon: <Flame size={15} /> },
-    { id: 'feds', label: 'Compare Feds', icon: <Scale size={15} /> },
+const TABS: { id: StrengthSuiteTab; label: string }[] = [
+    { id: 'barbell', label: 'Barbell' },
+    { id: 'rpe', label: 'RPE' },
+    { id: 'points', label: 'Points' },
+    { id: 'max', label: 'Max' },
+    { id: 'feds', label: 'Compare Feds' },
 ];
 
 export default function StrengthSuite({
@@ -51,10 +51,10 @@ export default function StrengthSuite({
                     <div
                         className="inline-flex items-center gap-1 p-1.5 rounded-2xl overflow-x-auto max-w-full"
                         style={{
-                            background: 'rgba(255, 255, 255, 0.04)',
-                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                            background: '#1a1a20',
+                            border: '1px solid rgba(255, 255, 255, 0.1)',
                             backdropFilter: 'blur(20px)',
-                            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+                            boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4)',
                         }}
                     >
                         {TABS.map((tab) => {
@@ -64,19 +64,18 @@ export default function StrengthSuite({
                                     key={tab.id}
                                     type="button"
                                     onClick={() => setActiveTab(tab.id)}
-                                    className="chat-press flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all cursor-pointer select-none"
+                                    className="chat-press flex items-center px-6 py-2.5 rounded-xl transition-all cursor-pointer select-none"
                                     style={{
                                         background: isActive ? '#ef4444' : 'transparent',
-                                        color: isActive ? '#ffffff' : 'var(--secondary-foreground)',
-                                        fontWeight: isActive ? 800 : 600,
-                                        fontSize: '0.85rem',
+                                        color: isActive ? '#ffffff' : 'rgba(255, 255, 255, 0.65)',
+                                        fontWeight: isActive ? 800 : 700,
+                                        fontSize: '0.875rem',
                                         border: isActive ? '1px solid rgba(255, 255, 255, 0.2)' : '1px solid transparent',
-                                        boxShadow: isActive ? '0 2px 14px rgba(239, 68, 68, 0.4)' : 'none',
+                                        boxShadow: isActive ? '0 2px 14px rgba(239, 68, 68, 0.45)' : 'none',
                                         whiteSpace: 'nowrap',
                                     }}
                                 >
-                                    <span style={{ opacity: isActive ? 1 : 0.75 }}>{tab.icon}</span>
-                                    <span>{tab.label}</span>
+                                    {tab.label}
                                 </button>
                             );
                         })}
@@ -88,7 +87,7 @@ export default function StrengthSuite({
                     <button
                         type="button"
                         onClick={onClose}
-                        className="chat-press flex items-center justify-center w-10 h-10 rounded-full"
+                        className="chat-press flex items-center justify-center w-10 h-10 rounded-full ml-3"
                         style={{
                             background: 'rgba(255, 255, 255, 0.06)',
                             border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -102,8 +101,8 @@ export default function StrengthSuite({
                 )}
             </div>
 
-            {/* Active Tab Panel with Emil Kowalski subtle fade-in */}
-            <div className="w-full transition-opacity duration-200 ease-out">
+            {/* Active Tab Panel */}
+            <div className="w-full">
                 {activeTab === 'barbell' && (
                     <BarbellTab
                         initialWeight={barbellTargetWeight}

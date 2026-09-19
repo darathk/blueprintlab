@@ -2,16 +2,17 @@
 
 import React, { useState, useMemo } from 'react';
 import { calculate1RM, OneRepMaxFormula } from '@/lib/calculators';
-import { Trophy, BarChart3, ChevronRight, Layers } from 'lucide-react';
+import StrengthSelect from './StrengthSelect';
+import { BarChart3, Layers } from 'lucide-react';
 
 const FORMULAS: { id: OneRepMaxFormula; label: string; description: string }[] = [
-    { id: 'brzycki', label: 'Brzycki', description: 'Most accurate for 1-10 reps (widely used in collegiate & strength sports)' },
-    { id: 'epley', label: 'Epley', description: 'Classic powerlifting standard formula' },
+    { id: 'brzycki', label: 'Brzycki', description: 'Collegiate & strength sports standard (1-10 reps)' },
+    { id: 'epley', label: 'Epley', description: 'Classic powerlifting formula' },
     { id: 'lander', label: 'Lander', description: 'Accurate for moderate rep sets (6-10 reps)' },
     { id: 'lombardi', label: 'Lombardi', description: 'Exponential curve formula' },
-    { id: 'mayhew', label: 'Mayhew et al.', description: 'Validated on college football players' },
+    { id: 'mayhew', label: 'Mayhew et al.', description: 'Validated on college athletes' },
     { id: 'oconner', label: 'O’Conner', description: 'Linear progression model' },
-    { id: 'wathan', label: 'Wathan', description: 'Exponential curve validated on heavy compound lifts' },
+    { id: 'wathan', label: 'Wathan', description: 'Exponential curve validated on compound lifts' },
 ];
 
 const PERCENTAGES = [
@@ -58,82 +59,101 @@ export default function MaxTab() {
                 <h3 style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.02em', color: '#ffffff' }}>
                     1RM Calculator
                 </h3>
-                <p style={{ fontSize: '0.875rem', color: 'var(--secondary-foreground)', marginTop: '4px' }}>
+                <p style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.65)', marginTop: '4px' }}>
                     Calculate your one-rep maximum using scientifically validated formulas
                 </p>
+
+                {/* Unit Switcher */}
+                <div
+                    className="mt-4 flex p-1"
+                    style={{
+                        borderRadius: '9999px',
+                        background: '#141418',
+                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                    }}
+                >
+                    <button
+                        type="button"
+                        onClick={() => setUnit('lbs')}
+                        className="chat-press"
+                        style={{
+                            padding: '6px 16px',
+                            borderRadius: '9999px',
+                            fontWeight: 700,
+                            fontSize: '0.8rem',
+                            background: unit === 'lbs' ? '#ffffff' : 'transparent',
+                            color: unit === 'lbs' ? '#0a0a0a' : 'rgba(255, 255, 255, 0.6)',
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease',
+                        }}
+                    >
+                        lbs
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setUnit('kg')}
+                        className="chat-press"
+                        style={{
+                            padding: '6px 16px',
+                            borderRadius: '9999px',
+                            fontWeight: 700,
+                            fontSize: '0.8rem',
+                            background: unit === 'kg' ? '#ffffff' : 'transparent',
+                            color: unit === 'kg' ? '#0a0a0a' : 'rgba(255, 255, 255, 0.6)',
+                            border: 'none',
+                            cursor: 'pointer',
+                            transition: 'all 0.15s ease',
+                        }}
+                    >
+                        kg
+                    </button>
+                </div>
             </div>
 
             {/* Input Card exact to Screenshot 13 */}
             <div
-                className="w-full glass-panel flex flex-col gap-6"
+                className="w-full flex flex-col gap-6"
                 style={{
                     padding: '32px',
-                    borderRadius: '24px',
-                    background: 'rgba(16, 16, 24, 0.75)',
+                    borderRadius: '20px',
+                    background: '#1c1d22',
                     border: '1px solid rgba(255, 255, 255, 0.08)',
-                    backdropFilter: 'blur(20px)',
                 }}
             >
-                <div className="flex items-center justify-between">
-                    <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff' }}>
-                        Your Lift
-                    </h4>
-                    {/* Unit Switcher */}
-                    <div
-                        className="flex p-0.5"
-                        style={{
-                            borderRadius: '8px',
-                            background: 'rgba(255, 255, 255, 0.04)',
-                            border: '1px solid rgba(255, 255, 255, 0.08)',
-                        }}
-                    >
-                        <button
-                            type="button"
-                            onClick={() => setUnit('lbs')}
-                            style={{
-                                padding: '4px 12px',
-                                borderRadius: '6px',
-                                fontWeight: 700,
-                                fontSize: '0.75rem',
-                                background: unit === 'lbs' ? '#ffffff' : 'transparent',
-                                color: unit === 'lbs' ? '#0a0a0a' : 'var(--secondary-foreground)',
-                                border: 'none',
-                                cursor: 'pointer',
-                            }}
-                        >
-                            lbs
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setUnit('kg')}
-                            style={{
-                                padding: '4px 12px',
-                                borderRadius: '6px',
-                                fontWeight: 700,
-                                fontSize: '0.75rem',
-                                background: unit === 'kg' ? '#ffffff' : 'transparent',
-                                color: unit === 'kg' ? '#0a0a0a' : 'var(--secondary-foreground)',
-                                border: 'none',
-                                cursor: 'pointer',
-                            }}
-                        >
-                            kg
-                        </button>
-                    </div>
-                </div>
+                <h4
+                    style={{
+                        fontSize: '1.25rem',
+                        fontWeight: 800,
+                        color: '#ffffff',
+                        textAlign: 'center',
+                        marginBottom: '4px',
+                    }}
+                >
+                    Your Lift
+                </h4>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     {/* Weight */}
-                    <div>
-                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)', marginBottom: '6px' }}>
+                    <div className="flex flex-col">
+                        <label
+                            style={{
+                                display: 'block',
+                                fontSize: '0.875rem',
+                                fontWeight: 700,
+                                color: '#ffffff',
+                                textAlign: 'center',
+                                marginBottom: '8px',
+                            }}
+                        >
                             Weight
                         </label>
                         <div
-                            className="flex items-center px-4"
+                            className="flex items-center justify-center px-4"
                             style={{
-                                height: '50px',
+                                height: '48px',
                                 borderRadius: '12px',
-                                background: 'rgba(255, 255, 255, 0.04)',
+                                background: '#141418',
                                 border: '1px solid rgba(255, 255, 255, 0.1)',
                             }}
                         >
@@ -148,75 +168,61 @@ export default function MaxTab() {
                                     background: 'transparent',
                                     border: 'none',
                                     color: '#ffffff',
-                                    fontSize: '1.1rem',
-                                    fontWeight: 800,
+                                    fontSize: '1rem',
+                                    fontWeight: 700,
+                                    textAlign: 'center',
                                     outline: 'none',
                                 }}
                             />
-                            <span style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', fontWeight: 700 }}>
-                                {unit}
-                            </span>
                         </div>
                     </div>
 
                     {/* Reps */}
-                    <div>
-                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)', marginBottom: '6px' }}>
-                            Reps
-                        </label>
-                        <select
-                            value={reps}
-                            onChange={(e) => setReps(Number(e.target.value))}
+                    <div className="flex flex-col">
+                        <label
                             style={{
-                                width: '100%',
-                                height: '50px',
-                                padding: '0 16px',
-                                borderRadius: '12px',
-                                background: '#1a1a24',
-                                border: '1px solid rgba(255, 255, 255, 0.1)',
-                                color: '#ffffff',
-                                fontSize: '1rem',
+                                display: 'block',
+                                fontSize: '0.875rem',
                                 fontWeight: 700,
-                                outline: 'none',
-                                cursor: 'pointer',
+                                color: '#ffffff',
+                                textAlign: 'center',
+                                marginBottom: '8px',
                             }}
                         >
-                            {Array.from({ length: 15 }, (_, i) => i + 1).map((r) => (
-                                <option key={r} value={r}>
-                                    {r}
-                                </option>
-                            ))}
-                        </select>
+                            Reps
+                        </label>
+                        <StrengthSelect
+                            value={reps}
+                            onChange={(val) => setReps(Number(val))}
+                            options={Array.from({ length: 15 }, (_, i) => ({
+                                value: i + 1,
+                                label: String(i + 1),
+                            }))}
+                        />
                     </div>
 
                     {/* Formula */}
-                    <div>
-                        <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)', marginBottom: '6px' }}>
-                            Formula
-                        </label>
-                        <select
-                            value={formula}
-                            onChange={(e) => setFormula(e.target.value as OneRepMaxFormula)}
+                    <div className="flex flex-col">
+                        <label
                             style={{
-                                width: '100%',
-                                height: '50px',
-                                padding: '0 16px',
-                                borderRadius: '12px',
-                                background: '#1a1a24',
-                                border: '1px solid rgba(255, 255, 255, 0.1)',
-                                color: '#ffffff',
-                                fontSize: '1rem',
+                                display: 'block',
+                                fontSize: '0.875rem',
                                 fontWeight: 700,
-                                outline: 'none',
-                                cursor: 'pointer',
+                                color: '#ffffff',
+                                textAlign: 'center',
+                                marginBottom: '8px',
                             }}
                         >
-                            {FORMULAS.map((f) => (
-                                <option key={f.id} value={f.id}>
-                                    {f.label}
-                                </option>
-                            ))}
-                        </select>
+                            Formula
+                        </label>
+                        <StrengthSelect
+                            value={formula}
+                            onChange={(val) => setFormula(val as OneRepMaxFormula)}
+                            options={FORMULAS.map((f) => ({
+                                value: f.id,
+                                label: f.label,
+                            }))}
+                        />
                     </div>
                 </div>
             </div>
@@ -228,12 +234,12 @@ export default function MaxTab() {
                     <div
                         className="flex flex-col items-center justify-center p-8 rounded-2xl text-center relative overflow-hidden"
                         style={{
-                            background: 'linear-gradient(135deg, rgba(239, 68, 68, 0.14) 0%, rgba(16, 16, 24, 0.9) 100%)',
+                            background: '#1c1d22',
                             border: '1px solid rgba(239, 68, 68, 0.3)',
-                            boxShadow: '0 8px 30px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
+                            borderTop: '4px solid #ef4444',
                         }}
                     >
-                        <span style={{ fontSize: '0.8125rem', fontWeight: 800, color: '#f87171', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+                        <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#ef4444', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
                             Estimated 1-Rep Max ({FORMULAS.find((f) => f.id === formula)?.label})
                         </span>
                         <div className="flex items-baseline justify-center gap-2 mt-2">
@@ -244,16 +250,16 @@ export default function MaxTab() {
                                 {unit}
                             </span>
                         </div>
-                        <span style={{ fontSize: '0.85rem', color: 'var(--secondary-foreground)', marginTop: '8px' }}>
+                        <span style={{ fontSize: '0.85rem', color: 'rgba(255, 255, 255, 0.65)', marginTop: '8px' }}>
                             Based on {weight} {unit} × {reps} {reps === 1 ? 'rep' : 'reps'}
                         </span>
                     </div>
 
                     {/* All Formula Comparison Pills */}
                     <div
-                        className="glass-panel p-5 rounded-2xl"
+                        className="p-5 rounded-2xl"
                         style={{
-                            background: 'rgba(16, 16, 24, 0.75)',
+                            background: '#1c1d22',
                             border: '1px solid rgba(255, 255, 255, 0.08)',
                         }}
                     >
@@ -263,7 +269,7 @@ export default function MaxTab() {
                                 Formula Comparison
                             </h4>
                         </div>
-                        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-7 gap-2">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
                             {allFormulasComparison.map((f) => {
                                 const isActive = f.id === formula;
                                 return (
@@ -273,14 +279,14 @@ export default function MaxTab() {
                                         onClick={() => setFormula(f.id)}
                                         className="chat-press flex flex-col items-center p-3 rounded-xl transition-all text-center cursor-pointer"
                                         style={{
-                                            background: isActive ? 'rgba(239, 68, 68, 0.15)' : 'rgba(255, 255, 255, 0.03)',
-                                            border: isActive ? '1px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.06)',
+                                            background: isActive ? 'rgba(239, 68, 68, 0.15)' : '#141418',
+                                            border: isActive ? '1px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.08)',
                                         }}
                                     >
-                                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: isActive ? '#f87171' : 'var(--secondary-foreground)' }}>
+                                        <span style={{ fontSize: '0.75rem', fontWeight: 700, color: isActive ? '#ef4444' : 'rgba(255, 255, 255, 0.65)' }}>
                                             {f.label}
                                         </span>
-                                        <span style={{ fontSize: '1.05rem', fontWeight: 900, color: '#ffffff', marginTop: '2px' }}>
+                                        <span style={{ fontSize: '1.1rem', fontWeight: 900, color: '#ffffff', marginTop: '2px' }}>
                                             {f.max}
                                         </span>
                                     </button>
@@ -291,9 +297,9 @@ export default function MaxTab() {
 
                     {/* Percentage Breakdown Table */}
                     <div
-                        className="glass-panel p-6 rounded-2xl overflow-hidden"
+                        className="p-6 rounded-2xl overflow-hidden"
                         style={{
-                            background: 'rgba(16, 16, 24, 0.75)',
+                            background: '#1c1d22',
                             border: '1px solid rgba(255, 255, 255, 0.08)',
                         }}
                     >
@@ -307,7 +313,7 @@ export default function MaxTab() {
                         <div className="overflow-x-auto">
                             <table className="w-full text-left" style={{ borderCollapse: 'separate', borderSpacing: '0 4px' }}>
                                 <thead>
-                                    <tr style={{ color: 'var(--secondary-foreground)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                    <tr style={{ color: 'rgba(255, 255, 255, 0.6)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                         <th style={{ padding: '8px 16px' }}>Percentage</th>
                                         <th style={{ padding: '8px 16px' }}>Weight ({unit})</th>
                                         <th style={{ padding: '8px 16px' }}>Est. Reps</th>
@@ -338,7 +344,7 @@ export default function MaxTab() {
                                                 <td style={{ padding: '10px 16px', fontWeight: 900, color: '#ffffff', fontSize: '1rem' }}>
                                                     {w} {unit}
                                                 </td>
-                                                <td style={{ padding: '10px 16px', color: 'var(--secondary-foreground)', fontSize: '0.85rem', fontWeight: 600 }}>
+                                                <td style={{ padding: '10px 16px', color: 'rgba(255, 255, 255, 0.65)', fontSize: '0.85rem', fontWeight: 600 }}>
                                                     {repText}
                                                 </td>
                                                 <td style={{ padding: '10px 16px' }}>

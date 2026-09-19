@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import { calculateDots, calculateWilks, calculateWilks2020, calculateGL, lbsToKg } from '@/lib/calculators';
+import StrengthSelect from './StrengthSelect';
 import { Trophy, Award, Shield, Zap } from 'lucide-react';
 
 export default function PointsTab() {
@@ -40,13 +41,13 @@ export default function PointsTab() {
 
     // Qualitative classifications based on DOTS score
     const getDotsTier = (score: number) => {
-        if (score >= 500) return { label: 'World Class / Elite Pro', color: '#ec4899', bg: 'rgba(236, 72, 153, 0.15)', border: 'rgba(236, 72, 153, 0.3)' };
-        if (score >= 450) return { label: 'Elite', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.3)' };
-        if (score >= 400) return { label: 'Master / National', color: '#a855f7', bg: 'rgba(168, 85, 247, 0.15)', border: 'rgba(168, 85, 247, 0.3)' };
-        if (score >= 350) return { label: 'Class I', color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.15)', border: 'rgba(56, 189, 248, 0.3)' };
-        if (score >= 300) return { label: 'Class II', color: '#10b981', bg: 'rgba(16, 185, 129, 0.15)', border: 'rgba(16, 185, 129, 0.3)' };
-        if (score >= 250) return { label: 'Class III', color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.15)', border: 'rgba(148, 163, 184, 0.3)' };
-        return { label: 'Novice', color: '#64748b', bg: 'rgba(100, 116, 139, 0.15)', border: 'rgba(100, 116, 139, 0.3)' };
+        if (score >= 500) return { label: 'World Class / Elite Pro', color: '#ec4899', bg: 'rgba(236, 72, 153, 0.12)', border: 'rgba(236, 72, 153, 0.3)' };
+        if (score >= 450) return { label: 'Elite', color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.12)', border: 'rgba(245, 158, 11, 0.3)' };
+        if (score >= 400) return { label: 'Master / National', color: '#a855f7', bg: 'rgba(168, 85, 247, 0.12)', border: 'rgba(168, 85, 247, 0.3)' };
+        if (score >= 350) return { label: 'Class I', color: '#38bdf8', bg: 'rgba(56, 189, 248, 0.12)', border: 'rgba(56, 189, 248, 0.3)' };
+        if (score >= 300) return { label: 'Class II', color: '#10b981', bg: 'rgba(16, 185, 129, 0.12)', border: 'rgba(16, 185, 129, 0.3)' };
+        if (score >= 250) return { label: 'Class III', color: '#94a3b8', bg: 'rgba(148, 163, 184, 0.12)', border: 'rgba(148, 163, 184, 0.3)' };
+        return { label: 'Novice', color: '#64748b', bg: 'rgba(100, 116, 139, 0.12)', border: 'rgba(100, 116, 139, 0.3)' };
     };
 
     const tier = getDotsTier(results.dots);
@@ -58,161 +59,169 @@ export default function PointsTab() {
                 <h3 style={{ fontSize: '1.75rem', fontWeight: 900, letterSpacing: '-0.02em', color: '#ffffff' }}>
                     Powerlifting Points Calculator
                 </h3>
-                <p style={{ fontSize: '0.875rem', color: 'var(--secondary-foreground)', marginTop: '4px' }}>
+                <p style={{ fontSize: '0.875rem', color: 'rgba(255, 255, 255, 0.65)', marginTop: '4px' }}>
                     Calculate DOTS, Wilks, Wilks 2020, and IPF scores for powerlifting
                 </p>
             </div>
 
             {/* Input Card exact to Screenshot 8 */}
             <div
-                className="w-full glass-panel flex flex-col gap-6"
+                className="w-full flex flex-col gap-6"
                 style={{
                     padding: '32px',
-                    borderRadius: '24px',
-                    background: 'rgba(16, 16, 24, 0.75)',
+                    borderRadius: '20px',
+                    background: '#1c1d22',
                     border: '1px solid rgba(255, 255, 255, 0.08)',
-                    backdropFilter: 'blur(20px)',
                 }}
             >
                 {/* 1. COMPETITION DETAILS */}
-                <div className="flex flex-col gap-3">
-                    <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', textAlign: 'center' }}>
+                <div className="flex flex-col">
+                    <h4
+                        style={{
+                            fontSize: '1.25rem',
+                            fontWeight: 800,
+                            color: '#ffffff',
+                            textAlign: 'center',
+                            marginBottom: '16px',
+                        }}
+                    >
                         Competition Details
                     </h4>
 
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                         {/* Gender */}
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--secondary-foreground)', marginBottom: '6px', textAlign: 'center' }}>
-                                Gender
-                            </label>
-                            <select
-                                value={gender}
-                                onChange={(e) => setGender(e.target.value as 'male' | 'female')}
+                        <div className="flex flex-col">
+                            <label
                                 style={{
-                                    width: '100%',
-                                    height: '46px',
-                                    padding: '0 12px',
-                                    borderRadius: '12px',
-                                    background: '#1a1a24',
-                                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                                    color: '#ffffff',
-                                    fontSize: '0.9rem',
+                                    display: 'block',
+                                    fontSize: '0.875rem',
                                     fontWeight: 700,
-                                    outline: 'none',
-                                    cursor: 'pointer',
+                                    color: '#ffffff',
                                     textAlign: 'center',
+                                    marginBottom: '8px',
                                 }}
                             >
-                                <option value="male">Male</option>
-                                <option value="female">Female</option>
-                            </select>
+                                Gender
+                            </label>
+                            <StrengthSelect
+                                value={gender}
+                                onChange={(val) => setGender(val as 'male' | 'female')}
+                                options={[
+                                    { value: 'male', label: 'Male' },
+                                    { value: 'female', label: 'Female' },
+                                ]}
+                            />
                         </div>
 
                         {/* Equipment */}
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--secondary-foreground)', marginBottom: '6px', textAlign: 'center' }}>
-                                Equipment
-                            </label>
-                            <select
-                                value={equipment}
-                                onChange={(e) => setEquipment(e.target.value as 'raw' | 'equipped')}
+                        <div className="flex flex-col">
+                            <label
                                 style={{
-                                    width: '100%',
-                                    height: '46px',
-                                    padding: '0 12px',
-                                    borderRadius: '12px',
-                                    background: '#1a1a24',
-                                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                                    color: '#ffffff',
-                                    fontSize: '0.9rem',
+                                    display: 'block',
+                                    fontSize: '0.875rem',
                                     fontWeight: 700,
-                                    outline: 'none',
-                                    cursor: 'pointer',
+                                    color: '#ffffff',
                                     textAlign: 'center',
+                                    marginBottom: '8px',
                                 }}
                             >
-                                <option value="raw">Raw</option>
-                                <option value="equipped">Equipped</option>
-                            </select>
+                                Equipment
+                            </label>
+                            <StrengthSelect
+                                value={equipment}
+                                onChange={(val) => setEquipment(val as 'raw' | 'equipped')}
+                                options={[
+                                    { value: 'raw', label: 'Raw' },
+                                    { value: 'equipped', label: 'Equipped' },
+                                ]}
+                            />
                         </div>
 
                         {/* Lift Type */}
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--secondary-foreground)', marginBottom: '6px', textAlign: 'center' }}>
-                                Lift Type
-                            </label>
-                            <select
-                                value={liftType}
-                                onChange={(e) => setLiftType(e.target.value as 'sbd' | 'bench_only')}
+                        <div className="flex flex-col">
+                            <label
                                 style={{
-                                    width: '100%',
-                                    height: '46px',
-                                    padding: '0 12px',
-                                    borderRadius: '12px',
-                                    background: '#1a1a24',
-                                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                                    color: '#ffffff',
-                                    fontSize: '0.9rem',
+                                    display: 'block',
+                                    fontSize: '0.875rem',
                                     fontWeight: 700,
-                                    outline: 'none',
-                                    cursor: 'pointer',
+                                    color: '#ffffff',
                                     textAlign: 'center',
+                                    marginBottom: '8px',
                                 }}
                             >
-                                <option value="sbd">SBD Total</option>
-                                <option value="bench_only">Bench Only</option>
-                            </select>
+                                Lift Type
+                            </label>
+                            <StrengthSelect
+                                value={liftType}
+                                onChange={(val) => setLiftType(val as 'sbd' | 'bench_only')}
+                                options={[
+                                    { value: 'sbd', label: 'SBD Total' },
+                                    { value: 'bench_only', label: 'Bench Only' },
+                                ]}
+                            />
                         </div>
 
                         {/* Unit */}
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.75rem', fontWeight: 600, color: 'var(--secondary-foreground)', marginBottom: '6px', textAlign: 'center' }}>
-                                Unit
-                            </label>
-                            <select
-                                value={unit}
-                                onChange={(e) => setUnit(e.target.value as 'lbs' | 'kg')}
+                        <div className="flex flex-col">
+                            <label
                                 style={{
-                                    width: '100%',
-                                    height: '46px',
-                                    padding: '0 12px',
-                                    borderRadius: '12px',
-                                    background: '#1a1a24',
-                                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                                    color: '#ffffff',
-                                    fontSize: '0.9rem',
+                                    display: 'block',
+                                    fontSize: '0.875rem',
                                     fontWeight: 700,
-                                    outline: 'none',
-                                    cursor: 'pointer',
+                                    color: '#ffffff',
                                     textAlign: 'center',
+                                    marginBottom: '8px',
                                 }}
                             >
-                                <option value="lbs">lbs</option>
-                                <option value="kg">kg</option>
-                            </select>
+                                Unit
+                            </label>
+                            <StrengthSelect
+                                value={unit}
+                                onChange={(val) => setUnit(val as 'lbs' | 'kg')}
+                                options={[
+                                    { value: 'lbs', label: 'lbs' },
+                                    { value: 'kg', label: 'kg' },
+                                ]}
+                            />
                         </div>
                     </div>
                 </div>
 
                 {/* 2. COMPETITION PERFORMANCE */}
-                <div className="flex flex-col gap-3">
-                    <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff', textAlign: 'center' }}>
+                <div className="flex flex-col mt-2">
+                    <h4
+                        style={{
+                            fontSize: '1.25rem',
+                            fontWeight: 800,
+                            color: '#ffffff',
+                            textAlign: 'center',
+                            marginBottom: '16px',
+                        }}
+                    >
                         Competition Performance
                     </h4>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                         {/* Bodyweight */}
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)', marginBottom: '6px', textAlign: 'center' }}>
+                        <div className="flex flex-col">
+                            <label
+                                style={{
+                                    display: 'block',
+                                    fontSize: '0.875rem',
+                                    fontWeight: 700,
+                                    color: '#ffffff',
+                                    textAlign: 'center',
+                                    marginBottom: '8px',
+                                }}
+                            >
                                 Bodyweight
                             </label>
                             <div
-                                className="flex items-center px-4"
+                                className="flex items-center justify-center px-4"
                                 style={{
                                     height: '48px',
                                     borderRadius: '12px',
-                                    background: 'rgba(255, 255, 255, 0.04)',
+                                    background: '#141418',
                                     border: '1px solid rgba(255, 255, 255, 0.1)',
                                 }}
                             >
@@ -227,29 +236,35 @@ export default function PointsTab() {
                                         background: 'transparent',
                                         border: 'none',
                                         color: '#ffffff',
-                                        fontSize: '1.1rem',
-                                        fontWeight: 800,
+                                        fontSize: '1rem',
+                                        fontWeight: 700,
                                         textAlign: 'center',
                                         outline: 'none',
                                     }}
                                 />
-                                <span style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', fontWeight: 700 }}>
-                                    {unit}
-                                </span>
                             </div>
                         </div>
 
                         {/* Total */}
-                        <div>
-                            <label style={{ display: 'block', fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)', marginBottom: '6px', textAlign: 'center' }}>
+                        <div className="flex flex-col">
+                            <label
+                                style={{
+                                    display: 'block',
+                                    fontSize: '0.875rem',
+                                    fontWeight: 700,
+                                    color: '#ffffff',
+                                    textAlign: 'center',
+                                    marginBottom: '8px',
+                                }}
+                            >
                                 Total
                             </label>
                             <div
-                                className="flex items-center px-4"
+                                className="flex items-center justify-center px-4"
                                 style={{
                                     height: '48px',
                                     borderRadius: '12px',
-                                    background: 'rgba(255, 255, 255, 0.04)',
+                                    background: '#141418',
                                     border: '1px solid rgba(255, 255, 255, 0.1)',
                                 }}
                             >
@@ -264,15 +279,12 @@ export default function PointsTab() {
                                         background: 'transparent',
                                         border: 'none',
                                         color: '#ffffff',
-                                        fontSize: '1.1rem',
-                                        fontWeight: 800,
+                                        fontSize: '1rem',
+                                        fontWeight: 700,
                                         textAlign: 'center',
                                         outline: 'none',
                                     }}
                                 />
-                                <span style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', fontWeight: 700 }}>
-                                    {unit}
-                                </span>
                             </div>
                         </div>
                     </div>
@@ -284,7 +296,7 @@ export default function PointsTab() {
                 <div className="w-full flex flex-col gap-4">
                     {/* Overall Classification Banner */}
                     <div
-                        className="flex items-center justify-between px-6 py-3 rounded-xl"
+                        className="flex items-center justify-between px-6 py-3.5 rounded-xl"
                         style={{
                             background: tier.bg,
                             border: `1px solid ${tier.border}`,
@@ -292,15 +304,15 @@ export default function PointsTab() {
                     >
                         <div className="flex items-center gap-2.5">
                             <Trophy size={18} style={{ color: tier.color }} />
-                            <span style={{ fontSize: '0.85rem', color: 'rgba(255,255,255,0.8)' }}>
+                            <span style={{ fontSize: '0.875rem', color: 'rgba(255,255,255,0.85)' }}>
                                 Strength Classification:
                             </span>
                             <span style={{ fontSize: '0.95rem', fontWeight: 900, color: tier.color }}>
                                 {tier.label}
                             </span>
                         </div>
-                        <span style={{ fontSize: '0.75rem', color: 'rgba(255,255,255,0.6)' }}>
-                            {totalKg.toFixed(1)} kg / {bwKg.toFixed(1)} kg BW ({ (totalKg / bwKg).toFixed(2) }x BW)
+                        <span style={{ fontSize: '0.8rem', color: 'rgba(255,255,255,0.65)' }}>
+                            {totalKg.toFixed(1)} kg / {bwKg.toFixed(1)} kg BW ({(totalKg / bwKg).toFixed(2)}x BW)
                         </span>
                     </div>
 
@@ -308,10 +320,11 @@ export default function PointsTab() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         {/* 1. DOTS */}
                         <div
-                            className="glass-panel flex flex-col p-5 rounded-2xl relative overflow-hidden"
+                            className="flex flex-col justify-between p-5 rounded-2xl"
                             style={{
-                                background: 'rgba(16, 16, 24, 0.75)',
+                                background: '#1c1d22',
                                 border: '1px solid rgba(255, 255, 255, 0.08)',
+                                minHeight: '140px',
                             }}
                         >
                             <div className="flex items-center justify-between mb-2">
@@ -320,20 +333,21 @@ export default function PointsTab() {
                                 </span>
                                 <Zap size={15} className="text-red-400" />
                             </div>
-                            <span style={{ fontSize: '2.2rem', fontWeight: 900, color: '#ffffff', lineHeight: 1 }}>
+                            <span style={{ fontSize: '2.4rem', fontWeight: 900, color: '#ffffff', lineHeight: 1 }}>
                                 {results.dots}
                             </span>
-                            <span style={{ fontSize: '0.72rem', color: 'var(--secondary-foreground)', marginTop: '8px' }}>
+                            <span style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.55)', marginTop: '8px' }}>
                                 Primary USAPL, WRPF, PLU, USPA standard
                             </span>
                         </div>
 
                         {/* 2. IPF GL Points */}
                         <div
-                            className="glass-panel flex flex-col p-5 rounded-2xl relative overflow-hidden"
+                            className="flex flex-col justify-between p-5 rounded-2xl"
                             style={{
-                                background: 'rgba(16, 16, 24, 0.75)',
+                                background: '#1c1d22',
                                 border: '1px solid rgba(255, 255, 255, 0.08)',
+                                minHeight: '140px',
                             }}
                         >
                             <div className="flex items-center justify-between mb-2">
@@ -342,20 +356,21 @@ export default function PointsTab() {
                                 </span>
                                 <Shield size={15} className="text-cyan-400" />
                             </div>
-                            <span style={{ fontSize: '2.2rem', fontWeight: 900, color: '#ffffff', lineHeight: 1 }}>
+                            <span style={{ fontSize: '2.4rem', fontWeight: 900, color: '#ffffff', lineHeight: 1 }}>
                                 {results.gl}
                             </span>
-                            <span style={{ fontSize: '0.72rem', color: 'var(--secondary-foreground)', marginTop: '8px' }}>
+                            <span style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.55)', marginTop: '8px' }}>
                                 Official International Powerlifting Fed standard
                             </span>
                         </div>
 
                         {/* 3. Wilks 2020 */}
                         <div
-                            className="glass-panel flex flex-col p-5 rounded-2xl relative overflow-hidden"
+                            className="flex flex-col justify-between p-5 rounded-2xl"
                             style={{
-                                background: 'rgba(16, 16, 24, 0.75)',
+                                background: '#1c1d22',
                                 border: '1px solid rgba(255, 255, 255, 0.08)',
+                                minHeight: '140px',
                             }}
                         >
                             <div className="flex items-center justify-between mb-2">
@@ -364,20 +379,21 @@ export default function PointsTab() {
                                 </span>
                                 <Award size={15} className="text-purple-400" />
                             </div>
-                            <span style={{ fontSize: '2.2rem', fontWeight: 900, color: '#ffffff', lineHeight: 1 }}>
+                            <span style={{ fontSize: '2.4rem', fontWeight: 900, color: '#ffffff', lineHeight: 1 }}>
                                 {results.wilks2020}
                             </span>
-                            <span style={{ fontSize: '0.72rem', color: 'var(--secondary-foreground)', marginTop: '8px' }}>
+                            <span style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.55)', marginTop: '8px' }}>
                                 Modern recalibrated Wilks polynomial
                             </span>
                         </div>
 
                         {/* 4. Classic Wilks */}
                         <div
-                            className="glass-panel flex flex-col p-5 rounded-2xl relative overflow-hidden"
+                            className="flex flex-col justify-between p-5 rounded-2xl"
                             style={{
-                                background: 'rgba(16, 16, 24, 0.75)',
+                                background: '#1c1d22',
                                 border: '1px solid rgba(255, 255, 255, 0.08)',
+                                minHeight: '140px',
                             }}
                         >
                             <div className="flex items-center justify-between mb-2">
@@ -386,10 +402,10 @@ export default function PointsTab() {
                                 </span>
                                 <Trophy size={15} className="text-amber-400" />
                             </div>
-                            <span style={{ fontSize: '2.2rem', fontWeight: 900, color: '#ffffff', lineHeight: 1 }}>
+                            <span style={{ fontSize: '2.4rem', fontWeight: 900, color: '#ffffff', lineHeight: 1 }}>
                                 {results.wilks}
                             </span>
-                            <span style={{ fontSize: '0.72rem', color: 'var(--secondary-foreground)', marginTop: '8px' }}>
+                            <span style={{ fontSize: '0.75rem', color: 'rgba(255, 255, 255, 0.55)', marginTop: '8px' }}>
                                 Historical standard across all divisions
                             </span>
                         </div>

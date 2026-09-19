@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { FEDERATIONS, RULE_CATEGORIES, FEDERATION_RULES_MATRIX } from '@/lib/federations-data';
-import { AlertCircle, CheckSquare, Square, Check } from 'lucide-react';
+import { AlertCircle, Check } from 'lucide-react';
 
 export default function CompareFedsTab() {
     // Default all federations selected
@@ -34,6 +34,7 @@ export default function CompareFedsTab() {
                 style={{
                     background: 'rgba(245, 158, 11, 0.08)',
                     border: '1px solid rgba(245, 158, 11, 0.25)',
+                    borderLeft: '4px solid #f59e0b',
                 }}
             >
                 <AlertCircle size={18} className="text-amber-400 mt-0.5 flex-shrink-0" />
@@ -45,11 +46,10 @@ export default function CompareFedsTab() {
 
             {/* Select Federations to Compare Card */}
             <div
-                className="glass-panel flex flex-col items-center gap-4 p-6 rounded-2xl"
+                className="flex flex-col items-center gap-4 p-6 rounded-2xl"
                 style={{
-                    background: 'rgba(16, 16, 24, 0.75)',
+                    background: '#1c1d22',
                     border: '1px solid rgba(255, 255, 255, 0.08)',
-                    backdropFilter: 'blur(20px)',
                 }}
             >
                 <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#ffffff' }}>
@@ -65,7 +65,7 @@ export default function CompareFedsTab() {
                         style={{
                             padding: '6px 14px',
                             borderRadius: '8px',
-                            background: 'rgba(255, 255, 255, 0.06)',
+                            background: '#141418',
                             border: '1px solid rgba(255, 255, 255, 0.12)',
                             color: '#ffffff',
                             fontSize: '0.78rem',
@@ -82,9 +82,9 @@ export default function CompareFedsTab() {
                         style={{
                             padding: '6px 14px',
                             borderRadius: '8px',
-                            background: 'rgba(255, 255, 255, 0.06)',
+                            background: '#141418',
                             border: '1px solid rgba(255, 255, 255, 0.12)',
-                            color: 'var(--secondary-foreground)',
+                            color: 'rgba(255, 255, 255, 0.65)',
                             fontSize: '0.78rem',
                             fontWeight: 700,
                             cursor: 'pointer',
@@ -105,8 +105,8 @@ export default function CompareFedsTab() {
                                 onClick={() => toggleFed(fed.id)}
                                 className="chat-press flex items-center gap-2 px-3 py-2 rounded-xl transition-all cursor-pointer"
                                 style={{
-                                    background: isSelected ? 'rgba(239, 68, 68, 0.12)' : 'rgba(255, 255, 255, 0.03)',
-                                    border: isSelected ? '1px solid rgba(239, 68, 68, 0.35)' : '1px solid rgba(255, 255, 255, 0.08)',
+                                    background: isSelected ? 'rgba(239, 68, 68, 0.12)' : '#141418',
+                                    border: isSelected ? '1px solid rgba(239, 68, 68, 0.4)' : '1px solid rgba(255, 255, 255, 0.08)',
                                 }}
                             >
                                 <div
@@ -114,21 +114,21 @@ export default function CompareFedsTab() {
                                         width: '18px',
                                         height: '18px',
                                         borderRadius: '4px',
-                                        background: isSelected ? '#ef4444' : 'rgba(255, 255, 255, 0.06)',
-                                        border: isSelected ? '1px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.2)',
+                                        background: isSelected ? '#ef4444' : 'transparent',
+                                        border: isSelected ? '1px solid #ef4444' : '1px solid rgba(255, 255, 255, 0.3)',
                                         display: 'flex',
                                         alignItems: 'center',
                                         justifyContent: 'center',
                                         color: '#ffffff',
                                     }}
                                 >
-                                    {isSelected && <Check size={12} strokeWidth={3} />}
+                                    {isSelected && <Check size={13} strokeWidth={3.5} />}
                                 </div>
                                 <span
                                     style={{
                                         fontSize: '0.8125rem',
                                         fontWeight: 800,
-                                        color: isSelected ? '#ffffff' : 'var(--secondary-foreground)',
+                                        color: isSelected ? '#ffffff' : 'rgba(255, 255, 255, 0.65)',
                                     }}
                                 >
                                     {fed.shortName}
@@ -142,20 +142,19 @@ export default function CompareFedsTab() {
             {/* Comparison Matrix Table */}
             {visibleFeds.length === 0 ? (
                 <div
-                    className="glass-panel p-12 text-center rounded-2xl"
-                    style={{ background: 'rgba(16, 16, 24, 0.75)', border: '1px solid rgba(255, 255, 255, 0.08)' }}
+                    className="p-12 text-center rounded-2xl"
+                    style={{ background: '#1c1d22', border: '1px solid rgba(255, 255, 255, 0.08)' }}
                 >
-                    <p style={{ color: 'var(--secondary-foreground)', fontSize: '0.9rem' }}>
+                    <p style={{ color: 'rgba(255, 255, 255, 0.65)', fontSize: '0.9rem' }}>
                         No federations selected. Please select at least one federation above to compare rules.
                     </p>
                 </div>
             ) : (
                 <div
-                    className="glass-panel rounded-2xl overflow-hidden"
+                    className="rounded-2xl overflow-hidden"
                     style={{
-                        background: 'rgba(16, 16, 24, 0.75)',
+                        background: '#1c1d22',
                         border: '1px solid rgba(255, 255, 255, 0.08)',
-                        backdropFilter: 'blur(20px)',
                     }}
                 >
                     <div className="overflow-x-auto">
@@ -166,7 +165,7 @@ export default function CompareFedsTab() {
                                         style={{
                                             padding: '16px',
                                             minWidth: '200px',
-                                            background: 'rgba(16, 16, 24, 0.95)',
+                                            background: '#18181e',
                                             position: 'sticky',
                                             left: 0,
                                             zIndex: 2,
@@ -203,7 +202,7 @@ export default function CompareFedsTab() {
                             </thead>
                             <tbody>
                                 {RULE_CATEGORIES.map((cat, rowIdx) => {
-                                    const rowBg = rowIdx % 2 === 0 ? 'rgba(255, 255, 255, 0.015)' : 'rgba(255, 255, 255, 0.035)';
+                                    const rowBg = rowIdx % 2 === 0 ? 'transparent' : 'rgba(255, 255, 255, 0.02)';
                                     return (
                                         <tr
                                             key={cat.id}
@@ -222,7 +221,7 @@ export default function CompareFedsTab() {
                                                     position: 'sticky',
                                                     left: 0,
                                                     zIndex: 1,
-                                                    background: 'rgba(16, 16, 24, 0.95)',
+                                                    background: '#18181e',
                                                     borderRight: '1px solid rgba(255, 255, 255, 0.08)',
                                                 }}
                                             >
@@ -234,11 +233,10 @@ export default function CompareFedsTab() {
                                                 const value = FEDERATION_RULES_MATRIX[cat.id]?.[fed.id] || '—';
                                                 const isYes = value.toLowerCase() === 'yes';
                                                 const isRequired = value.toLowerCase().includes('required');
-                                                const isNotPermitted = value.toLowerCase().includes('not permitted');
 
-                                                let valColor = 'var(--foreground)';
+                                                let valColor = '#ffffff';
                                                 if (cat.id === 'approved_equipment' && isYes) {
-                                                    valColor = '#ef4444'; // Red accent in screenshot
+                                                    valColor = '#ef4444';
                                                 } else if (isRequired) {
                                                     valColor = '#f87171';
                                                 }
@@ -248,11 +246,10 @@ export default function CompareFedsTab() {
                                                         key={fed.id}
                                                         style={{
                                                             padding: '14px 16px',
-                                                            fontSize: '0.8125rem',
+                                                            fontSize: '0.85rem',
                                                             color: valColor,
-                                                            borderLeft: '1px solid rgba(255, 255, 255, 0.05)',
-                                                            fontWeight: isYes || isRequired || isNotPermitted ? 700 : 500,
-                                                            lineHeight: 1.4,
+                                                            fontWeight: isYes || isRequired ? 800 : 500,
+                                                            borderLeft: '1px solid rgba(255, 255, 255, 0.04)',
                                                         }}
                                                     >
                                                         {value}
