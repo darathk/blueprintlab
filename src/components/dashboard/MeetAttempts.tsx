@@ -638,18 +638,18 @@ export default function MeetAttempts({
     };
 
     return (
-        <div style={{ marginBottom: '2rem' }}>
+        <div style={{ marginBottom: '1.5rem' }}>
             {/* Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
                 <div>
-                    <h2 style={{ fontSize: '1.4rem', fontWeight: 700, color: 'var(--primary)', letterSpacing: '-0.02em', margin: 0 }}>
-                        {meetDayMode ? 'Meet Day' : 'Attempt Selection'}
-                    </h2>
-                    <p style={{ color: 'var(--secondary-foreground)', fontSize: '0.85rem', margin: '4px 0 0' }}>
-                        Enter weights in either unit — they auto-convert
+                    <span style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)' }}>
+                        {meetDayMode ? 'Meet Day Execution' : 'Attempt Strategy'}
+                    </span>
+                    <p style={{ color: 'var(--secondary-foreground)', fontSize: '0.8rem', margin: '2px 0 0' }}>
+                        Enter weights in either unit — auto-calculates total and DOTs
                     </p>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
                     {!isReadOnly && (
                         <div style={{ fontSize: 12, color: saving ? 'var(--secondary-foreground)' : saved ? '#4ade80' : 'transparent', fontWeight: 500, transition: 'color 0.2s' }}>
                             {saving ? 'Saving…' : saved ? '✓ Saved' : '·'}
@@ -657,7 +657,8 @@ export default function MeetAttempts({
                     )}
                     <button
                         onClick={() => setChatOpen(true)}
-                        style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, border: '1px solid var(--card-border)', background: 'var(--card-bg)', color: 'var(--foreground)', fontSize: '0.85rem', fontWeight: 500, cursor: 'pointer' }}
+                        className="glass-button chat-press"
+                        style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.82rem', padding: '0.45rem 0.85rem' }}
                     >
                         <MessageSquare size={14} /> Chat
                     </button>
@@ -665,7 +666,8 @@ export default function MeetAttempts({
                         <button
                             onClick={exportAsPhoto}
                             disabled={exporting}
-                            style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 8, border: '1px solid var(--card-border)', background: 'var(--card-bg)', color: 'var(--foreground)', fontSize: '0.85rem', fontWeight: 500, cursor: exporting ? 'default' : 'pointer', opacity: exporting ? 0.7 : 1 }}
+                            className="glass-button chat-press"
+                            style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: '0.82rem', padding: '0.45rem 0.85rem', opacity: exporting ? 0.7 : 1 }}
                         >
                             {exporting ? 'Exporting...' : <><Camera size={14} /> Export Report</>}
                         </button>
@@ -674,18 +676,32 @@ export default function MeetAttempts({
             </div>
 
             {/* Tabs */}
-            <div style={{ display: 'flex', gap: 4, marginBottom: '1.5rem', background: 'rgba(255,255,255,0.03)', padding: 4, borderRadius: 10 }}>
+            <div style={{ display: 'flex', gap: 4, marginBottom: '1.25rem', background: 'rgba(255,255,255,0.035)', padding: 3, borderRadius: 20, border: '1px solid rgba(255,255,255,0.08)' }}>
                 <button
                     onClick={() => setActiveTab('attempts')}
-                    style={{ flex: 1, padding: '8px', borderRadius: 8, border: 'none', background: activeTab === 'attempts' ? 'var(--card-bg)' : 'transparent', color: activeTab === 'attempts' ? 'var(--foreground)' : 'var(--secondary-foreground)', fontWeight: activeTab === 'attempts' ? 600 : 500, boxShadow: activeTab === 'attempts' ? '0 2px 8px rgba(0,0,0,0.2)' : 'none', cursor: 'pointer', transition: 'all 0.2s' }}
+                    className="chat-press"
+                    style={{
+                        flex: 1, padding: '7px 14px', borderRadius: 16, border: activeTab === 'attempts' ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid transparent',
+                        background: activeTab === 'attempts' ? 'rgba(125, 135, 210, 0.22)' : 'transparent',
+                        color: activeTab === 'attempts' ? '#fff' : 'var(--secondary-foreground)',
+                        fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer', transition: 'all 0.16s var(--ease-out)',
+                        boxShadow: activeTab === 'attempts' ? '0 0 10px rgba(125, 135, 210, 0.25)' : 'none'
+                    }}
                 >
                     Attempt Selection
                 </button>
                 <button
                     onClick={() => setActiveTab('scout')}
-                    style={{ flex: 1, padding: '8px', borderRadius: 8, border: 'none', background: activeTab === 'scout' ? 'var(--card-bg)' : 'transparent', color: activeTab === 'scout' ? 'var(--foreground)' : 'var(--secondary-foreground)', fontWeight: activeTab === 'scout' ? 600 : 500, boxShadow: activeTab === 'scout' ? '0 2px 8px rgba(0,0,0,0.2)' : 'none', cursor: 'pointer', transition: 'all 0.2s' }}
+                    className="chat-press"
+                    style={{
+                        flex: 1, padding: '7px 14px', borderRadius: 16, border: activeTab === 'scout' ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid transparent',
+                        background: activeTab === 'scout' ? 'rgba(125, 135, 210, 0.22)' : 'transparent',
+                        color: activeTab === 'scout' ? '#fff' : 'var(--secondary-foreground)',
+                        fontWeight: 600, fontSize: '0.8rem', cursor: 'pointer', transition: 'all 0.16s var(--ease-out)',
+                        boxShadow: activeTab === 'scout' ? '0 0 10px rgba(125, 135, 210, 0.25)' : 'none'
+                    }}
                 >
-                    Competitor Scouting
+                    Competitor Scout
                 </button>
             </div>
 
@@ -813,8 +829,9 @@ export default function MeetAttempts({
             {/* Projected 9/9 Totals & DOTS */}
             {projections.some(p => p.total > 0) && (
                 <div style={{
-                    background: 'var(--card-bg)',
-                    border: '1px solid var(--card-border)',
+                    background: 'linear-gradient(180deg, rgba(30, 41, 59, 0.35) 0%, rgba(15, 23, 42, 0.55) 100%)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.05)',
                     borderRadius: 16,
                     padding: '1.25rem',
                     marginBottom: '1rem',
@@ -991,8 +1008,9 @@ export default function MeetAttempts({
             {/* One card per lift */}
             {LIFTS.map(({ key: liftKey, label, color: liftColor }) => (
                 <div key={liftKey} style={{
-                    background: 'var(--card-bg)',
-                    border: '1px solid var(--card-border)',
+                    background: 'linear-gradient(180deg, rgba(30, 41, 59, 0.35) 0%, rgba(15, 23, 42, 0.55) 100%)',
+                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.05)',
                     borderRadius: 16,
                     padding: '1.25rem',
                     marginBottom: '1rem',

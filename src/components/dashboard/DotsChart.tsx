@@ -286,7 +286,7 @@ export default function DotsChart({ athleteId, logs, programs = [], initialGende
                 ];
 
                 return (
-                    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10, marginBottom: '1.25rem' }}>
                         {cards.map(s => {
                             const pctColor = s.pct == null ? 'var(--secondary-foreground)'
                                 : s.pct > 0 ? '#10b981'
@@ -294,11 +294,24 @@ export default function DotsChart({ athleteId, logs, programs = [], initialGende
                                 : 'var(--secondary-foreground)';
                             const arrow = s.pct == null ? '' : s.pct > 0 ? '↑' : s.pct < 0 ? '↓' : '→';
                             return (
-                                <div key={s.label} className="glass-panel" style={{ flex: '1 1 110px', background: 'var(--glass-surface-2)', border: `1px solid ${s.color}35`, borderRadius: 12, padding: '12px 16px' }}>
-                                    <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{s.label}</div>
-                                    <div style={{ fontSize: 22, fontWeight: 800, color: s.color, marginTop: 4 }}>{s.value}</div>
-                                    <div style={{ fontSize: 11, fontWeight: 600, color: pctColor, marginTop: 3, minHeight: 14 }}>
-                                        {s.pct == null ? '' : `${arrow} ${Math.abs(s.pct).toFixed(1)}% since first session`}
+                                <div
+                                    key={s.label}
+                                    style={{
+                                        background: 'linear-gradient(180deg, rgba(30, 41, 59, 0.35) 0%, rgba(15, 23, 42, 0.55) 100%)',
+                                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                                        borderTop: `3px solid ${s.color}`,
+                                        boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.05)',
+                                        borderRadius: 14,
+                                        padding: '12px 14px',
+                                        display: 'flex',
+                                        flexDirection: 'column',
+                                        justifyContent: 'space-between',
+                                    }}
+                                >
+                                    <div style={{ fontSize: 10, color: 'var(--secondary-foreground)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.label}</div>
+                                    <div style={{ fontSize: 20, fontWeight: 800, color: s.color, marginTop: 4, lineHeight: 1.1 }}>{s.value}</div>
+                                    <div style={{ fontSize: 10, fontWeight: 600, color: pctColor, marginTop: 4, minHeight: 14 }}>
+                                        {s.pct == null ? '' : `${arrow} ${Math.abs(s.pct).toFixed(1)}%`}
                                     </div>
                                 </div>
                             );
@@ -308,7 +321,7 @@ export default function DotsChart({ athleteId, logs, programs = [], initialGende
             })()}
 
             {/* Chart Area */}
-            <div className="glass-panel" style={{ background: 'var(--glass-surface-1)', borderRadius: 14, border: '1px solid var(--glass-border)', padding: '16px 8px 8px' }}>
+            <div style={{ background: 'rgba(15, 23, 42, 0.45)', borderRadius: 14, border: '1px solid rgba(255, 255, 255, 0.08)', padding: '16px 10px 10px' }}>
                 {/* Controls Row 1: Mission Filter and Timeline */}
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', paddingLeft: 12, paddingRight: 12 }}>
                         {/* Program Filter */}

@@ -125,17 +125,17 @@ export default function CoachNotes({ athleteId }: { athleteId: string }) {
     return (
         <div>
             {/* Category filter + Add button */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '0.5rem' }}>
-                <div style={{ display: 'flex', gap: '0.35rem', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+                <div style={{ display: 'flex', gap: '4px', flexWrap: 'wrap', background: 'rgba(255, 255, 255, 0.035)', padding: 3, borderRadius: 20, border: '1px solid rgba(255, 255, 255, 0.08)' }}>
                     <button
                         onClick={() => setFilterCategory(null)}
                         className="chat-press"
                         style={{
-                            padding: '0.3rem 0.75rem', borderRadius: '14px', fontSize: '0.75rem', fontWeight: 600,
-                            background: !filterCategory ? 'rgba(125,135,210,0.2)' : 'transparent',
-                            border: `1px solid ${!filterCategory ? 'rgba(125,135,210,0.4)' : 'var(--glass-border)'}`,
+                            padding: '0.35rem 0.85rem', borderRadius: '16px', fontSize: '0.75rem', fontWeight: 600,
+                            background: !filterCategory ? 'rgba(125, 135, 210, 0.22)' : 'transparent',
+                            border: !filterCategory ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid transparent',
                             color: !filterCategory ? '#fff' : 'var(--secondary-foreground)',
-                            cursor: 'pointer', transition: 'all 0.15s',
+                            cursor: 'pointer', transition: 'all 0.16s var(--ease-out)',
                         }}
                     >
                         All ({notes.length})
@@ -151,12 +151,12 @@ export default function CoachNotes({ athleteId }: { athleteId: string }) {
                                 onClick={() => setFilterCategory(isSelected ? null : cat.value)}
                                 className="chat-press"
                                 style={{
-                                    padding: '0.3rem 0.75rem', borderRadius: '14px', fontSize: '0.75rem', fontWeight: 600,
-                                    background: isSelected ? 'rgba(125,135,210,0.2)' : 'transparent',
-                                    border: `1px solid ${isSelected ? 'rgba(125,135,210,0.4)' : 'var(--glass-border)'}`,
+                                    padding: '0.35rem 0.85rem', borderRadius: '16px', fontSize: '0.75rem', fontWeight: 600,
+                                    background: isSelected ? 'rgba(125, 135, 210, 0.22)' : 'transparent',
+                                    border: isSelected ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid transparent',
                                     color: isSelected ? '#fff' : 'var(--secondary-foreground)',
-                                    cursor: 'pointer', transition: 'all 0.15s',
-                                    display: 'flex', alignItems: 'center', gap: '0.25rem',
+                                    cursor: 'pointer', transition: 'all 0.16s var(--ease-out)',
+                                    display: 'flex', alignItems: 'center', gap: '0.3rem',
                                 }}
                             >
                                 <Icon size={12} /> {cat.label} ({count})
@@ -168,19 +168,22 @@ export default function CoachNotes({ athleteId }: { athleteId: string }) {
                     onClick={() => setIsAdding(!isAdding)}
                     className="glass-button chat-press"
                     style={{
-                        display: 'flex', alignItems: 'center', gap: '0.35rem', fontSize: '0.8rem',
+                        display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.82rem', padding: '0.45rem 0.9rem'
                     }}
                 >
                     {isAdding ? <X size={14} /> : <Plus size={14} />}
-                    {isAdding ? 'Cancel' : 'Add Note'}
+                    <span>{isAdding ? 'Cancel' : 'Add Note'}</span>
                 </button>
             </div>
 
             {/* Add note form */}
             {isAdding && (
-                <div className="glass-panel-elevated" style={{
-                    padding: '1.25rem', marginBottom: '1.25rem', borderRadius: '14px',
-                    border: '1px solid rgba(125, 135, 210, 0.3)', animation: 'popoverIn 160ms var(--ease-out)'
+                <div style={{
+                    padding: '1.25rem', marginBottom: '1.25rem', borderRadius: 16,
+                    background: 'linear-gradient(180deg, rgba(30, 41, 59, 0.45) 0%, rgba(15, 23, 42, 0.65) 100%)',
+                    border: '1px solid rgba(125, 135, 210, 0.35)',
+                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.25)',
+                    animation: 'popoverIn 160ms var(--ease-out)'
                 }}>
                     <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
                         {CATEGORIES.map(cat => {
@@ -193,8 +196,8 @@ export default function CoachNotes({ athleteId }: { athleteId: string }) {
                                     className="chat-press"
                                     style={{
                                         padding: '0.35rem 0.75rem', borderRadius: '12px', fontSize: '0.75rem', fontWeight: 600,
-                                        background: isCatActive ? 'rgba(125,135,210,0.2)' : 'rgba(255,255,255,0.04)',
-                                        border: `1px solid ${isCatActive ? cat.color : 'var(--glass-border)'}`,
+                                        background: isCatActive ? 'rgba(125, 135, 210, 0.22)' : 'rgba(255, 255, 255, 0.04)',
+                                        border: `1px solid ${isCatActive ? cat.color : 'rgba(255, 255, 255, 0.08)'}`,
                                         color: isCatActive ? cat.color : 'var(--secondary-foreground)',
                                         cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.35rem',
                                     }}
@@ -221,7 +224,7 @@ export default function CoachNotes({ athleteId }: { athleteId: string }) {
                             onClick={handleAdd}
                             disabled={!newContent.trim() || saving}
                             className="glass-button glass-button-primary chat-press"
-                            style={{ fontSize: '0.82rem', padding: '0.45rem 1.25rem' }}
+                            style={{ fontSize: '0.82rem', padding: '0.45rem 1.25rem', fontWeight: 600 }}
                         >
                             {saving ? 'Saving...' : 'Save Note'}
                         </button>
@@ -231,11 +234,45 @@ export default function CoachNotes({ athleteId }: { athleteId: string }) {
 
             {/* Notes list */}
             {filtered.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '2rem', color: 'var(--secondary-foreground)', fontSize: '0.9rem' }}>
-                    {notes.length === 0 ? 'No notes yet. Add a private note about this athlete.' : 'No notes in this category.'}
+                <div
+                    style={{
+                        textAlign: 'center',
+                        padding: '3rem 1.5rem',
+                        borderRadius: 16,
+                        background: 'linear-gradient(180deg, rgba(30, 41, 59, 0.25) 0%, rgba(15, 23, 42, 0.45) 100%)',
+                        border: '1px dashed rgba(255, 255, 255, 0.12)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 10,
+                    }}
+                >
+                    <div
+                        style={{
+                            width: 44,
+                            height: 44,
+                            borderRadius: 12,
+                            background: 'linear-gradient(135deg, rgba(125, 135, 210, 0.15) 0%, rgba(56, 189, 248, 0.12) 100%)',
+                            border: '1px solid rgba(125, 135, 210, 0.3)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}
+                    >
+                        <FileText size={22} style={{ color: '#7d87d2' }} />
+                    </div>
+                    <div>
+                        <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)' }}>
+                            {notes.length === 0 ? 'No Coach Notes Added' : 'No Notes In This Category'}
+                        </div>
+                        <p style={{ color: 'var(--secondary-foreground)', fontSize: '0.8rem', margin: '3px 0 0' }}>
+                            {notes.length === 0 ? 'Keep private cues, injury logs, and observations about this athlete.' : 'Try switching filters or add a new note.'}
+                        </p>
+                    </div>
                 </div>
             ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
                     {filtered.map(note => {
                         const catInfo = getCategoryInfo(note.category);
                         const Icon = catInfo.icon;
@@ -244,11 +281,16 @@ export default function CoachNotes({ athleteId }: { athleteId: string }) {
                         return (
                             <div
                                 key={note.id}
-                                className="glass-panel"
                                 style={{
-                                    padding: '0.85rem 1.1rem', borderRadius: '12px',
-                                    background: note.pinned ? 'rgba(125,135,210,0.08)' : 'var(--glass-surface-2)',
-                                    border: `1px solid ${note.pinned ? 'rgba(125,135,210,0.3)' : 'var(--glass-border)'}`,
+                                    padding: '0.95rem 1.15rem',
+                                    borderRadius: 14,
+                                    background: note.pinned
+                                        ? 'linear-gradient(135deg, rgba(125, 135, 210, 0.12) 0%, rgba(56, 189, 248, 0.05) 100%)'
+                                        : 'rgba(255, 255, 255, 0.03)',
+                                    border: note.pinned
+                                        ? '1px solid rgba(125, 135, 210, 0.38)'
+                                        : '1px solid rgba(255, 255, 255, 0.07)',
+                                    boxShadow: note.pinned ? '0 4px 16px rgba(125, 135, 210, 0.1)' : 'none',
                                     transition: 'all 0.2s var(--ease-out)',
                                 }}
                             >

@@ -5,7 +5,19 @@ import dynamic from 'next/dynamic';
 import AthleteCalendarContainer from '@/components/dashboard/AthleteCalendarContainer';
 import CollapsibleSection from '@/components/ui/CollapsibleSection';
 
-import { MessageSquare, CreditCard } from 'lucide-react';
+import {
+    MessageSquare,
+    CreditCard,
+    TrendingUp,
+    Activity,
+    Calendar,
+    Trophy,
+    History,
+    FileText,
+    Layers,
+    Target,
+    Crosshair
+} from 'lucide-react';
 
 const DotsChart = dynamic(() => import('@/components/dashboard/DotsChart'), {
     loading: () => <div style={{ height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="pulse">Loading DOTs chart...</div>
@@ -104,8 +116,13 @@ async function AthleteData({ id }: { id: string }) {
                 </div>
             </div>
 
-            {/* Charts */}
-            <CollapsibleSection title="Athlete's Progress" defaultOpen={true}>
+            {/* Charts & Modules */}
+            <CollapsibleSection
+                title="Athlete's Progress"
+                icon={<TrendingUp size={18} style={{ color: '#38bdf8' }} />}
+                subtitle="DOTs score & estimated 1RM trajectory"
+                defaultOpen={true}
+            >
                 <DotsChart
                     athleteId={id}
                     logs={logs}
@@ -116,11 +133,21 @@ async function AthleteData({ id }: { id: string }) {
                 />
             </CollapsibleSection>
 
-            <CollapsibleSection title="Fatigue & Readiness Metrics" defaultOpen={true}>
+            <CollapsibleSection
+                title="Fatigue & Readiness Metrics"
+                icon={<Activity size={18} style={{ color: '#a855f7' }} />}
+                subtitle="Daily check-ins & muscle soreness distribution"
+                defaultOpen={true}
+            >
                 <FatigueChart readinessLogs={readiness} />
             </CollapsibleSection>
 
-            <CollapsibleSection title="Training Calendar" defaultOpen={true}>
+            <CollapsibleSection
+                title="Training Calendar"
+                icon={<Calendar size={18} style={{ color: '#10b981' }} />}
+                subtitle="Scheduled workouts, travel events & periodization"
+                defaultOpen={true}
+            >
                 <AthleteCalendarContainer
                     programs={programs}
                     athleteId={id}
@@ -131,24 +158,56 @@ async function AthleteData({ id }: { id: string }) {
                 />
             </CollapsibleSection>
 
-            <CollapsibleSection title="Meet Planner" defaultOpen={false}>
-                <CollapsibleSection title="Periodization Planner" defaultOpen={true}>
+            <CollapsibleSection
+                title="Meet Planner"
+                icon={<Trophy size={18} style={{ color: '#f59e0b' }} />}
+                subtitle={athlete?.nextMeetName ? `${athlete.nextMeetName} • Periodization & Attempts` : 'Target competition roadmap & attempt strategy'}
+                defaultOpen={false}
+            >
+                <CollapsibleSection
+                    variant="nested"
+                    title="Periodization Planner"
+                    icon={<Target size={16} style={{ color: '#38bdf8' }} />}
+                    subtitle="Block timeline leading into competition day"
+                    defaultOpen={true}
+                >
                     <BlockOrganizer athlete={athlete} />
                 </CollapsibleSection>
-                <CollapsibleSection title="Attempt Selection" defaultOpen={false}>
+                <CollapsibleSection
+                    variant="nested"
+                    title="Attempt Selection"
+                    icon={<Crosshair size={16} style={{ color: '#f43f5e' }} />}
+                    subtitle="Conservative, planned, and reach targets"
+                    defaultOpen={false}
+                >
                     <MeetAttempts athlete={athlete} isReadOnly={false} />
                 </CollapsibleSection>
             </CollapsibleSection>
 
-            <CollapsibleSection title="Historical Performance" defaultOpen={false}>
+            <CollapsibleSection
+                title="Historical Performance"
+                icon={<History size={18} style={{ color: '#ec4899' }} />}
+                subtitle="All-time PRs, OpenPowerlifting imports & meet logs"
+                defaultOpen={false}
+            >
                 <HistoricalPerformance athlete={athlete} />
             </CollapsibleSection>
 
-            <CollapsibleSection title="Coach Notes" defaultOpen={false}>
+            <CollapsibleSection
+                title="Coach Notes"
+                icon={<FileText size={18} style={{ color: '#7d87d2' }} />}
+                subtitle="Private athlete notes, cues & observations"
+                defaultOpen={false}
+            >
                 <CoachNotes athleteId={id} />
             </CollapsibleSection>
 
-            <CollapsibleSection title="Program History" defaultOpen={false}>
+            <CollapsibleSection
+                title="Program History"
+                icon={<Layers size={18} style={{ color: '#06b6d4' }} />}
+                subtitle="Assigned training programs & cycle archive"
+                defaultOpen={false}
+            >
                 <ProgramList athleteId={id} initialPrograms={programs} />
             </CollapsibleSection>
         </>

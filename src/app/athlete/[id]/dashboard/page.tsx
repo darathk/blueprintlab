@@ -57,7 +57,7 @@ export default async function AthleteDashboard({ params }) {
     const isJayseng = email === 'jayseng123@gmail.com' || athleteEmail === 'jayseng123@gmail.com' || id === '34e1fad4-5c1b-40e4-9173-5a0f63d1c547';
 
     return (
-        <div style={{ minHeight: '100vh', padding: '1rem 0', maxWidth: 600, margin: '0 auto' }}>
+        <div style={{ minHeight: '100vh', padding: '1rem 0 6rem 0', maxWidth: 600, margin: '0 auto' }}>
             <header style={{ marginBottom: '1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0 1rem' }}>
                 <div>
                     <h1 style={{ fontSize: '1.4rem', fontWeight: 800, letterSpacing: '-0.02em', margin: 0 }}>

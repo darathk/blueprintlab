@@ -84,18 +84,15 @@ export default function ExerciseFeedback({
             .map((s, idx) => {
                 const displayWeight = s.actual.weight;
                 const setNum = s.setNumber !== undefined ? s.setNumber : (idx + 1);
-                return `  Set ${setNum}: ${displayWeight || '—'} ${effectiveUnit} × ${s.actual.reps || '—'} reps @ RPE ${s.actual.rpe || '—'}`;
+                return `Set ${setNum}: ${displayWeight || '—'} ${effectiveUnit} × ${s.actual.reps || '—'} reps @ RPE ${s.actual.rpe || '—'}`;
             })
             .join('\n');
 
         return [
-            `Feedback`,
-            `Block: ${blockName || 'Current Block'}`,
-            `Week: ${weekNum} | Session: ${dayNum}`,
-            `Exercise: ${exerciseName}`,
-            setLines ? `\nSets Logged:\n${setLines}` : '',
-            `\nFeedback: `,
-        ].filter(Boolean).join('\n');
+            `Exercise: ${exerciseName} (${blockName || 'Current Block'} • W${weekNum}:S${dayNum})`,
+            setLines ? `Sets Logged:\n${setLines}` : '',
+            `Feedback:\n`,
+        ].filter(Boolean).join('\n\n');
     };
 
     const handleOpen = () => {
@@ -324,7 +321,7 @@ export default function ExerciseFeedback({
     };
 
     return (
-        <div style={{ display: 'contents' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%' }}>
             {/* Trigger button */}
             <button
                 onClick={handleOpen}
@@ -338,7 +335,7 @@ export default function ExerciseFeedback({
                     borderRadius: 12, padding: '9px 14px', cursor: 'pointer',
                     color: '#a5b4fc', fontSize: '0.82rem', fontWeight: 700,
                     boxShadow: open ? '0 0 14px rgba(99, 102, 241, 0.25)' : 'none',
-                    transition: 'all 0.16s var(--ease-out)', flex: 1, justifyContent: 'center',
+                    transition: 'all 0.16s var(--ease-out)', width: '100%', justifyContent: 'center',
                 }}
             >
                 <MessageCircle size={15} />
@@ -348,20 +345,34 @@ export default function ExerciseFeedback({
             {/* Expandable panel */}
             {open && (
                 <div style={{
-                    flexBasis: '100%', order: 10,
                     background: 'linear-gradient(180deg, rgba(18, 22, 36, 0.9) 0%, rgba(12, 14, 24, 0.96) 100%)',
                     backdropFilter: 'blur(16px)',
                     WebkitBackdropFilter: 'blur(16px)',
                     border: '1px solid rgba(99, 102, 241, 0.3)',
                     boxShadow: '0 8px 24px -4px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
                     borderRadius: 16,
-                    padding: 16, display: 'flex', flexDirection: 'column', gap: 12,
+                    padding: 14, display: 'flex', flexDirection: 'column', gap: 10,
                 }}>
+                    {/* Exercise Context Badge */}
+                    <div style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '6px 10px', borderRadius: 8,
+                        background: 'rgba(99, 102, 241, 0.12)',
+                        border: '1px solid rgba(99, 102, 241, 0.25)',
+                        fontSize: '0.74rem', color: '#c7d2fe',
+                        flexWrap: 'wrap', gap: 4
+                    }}>
+                        <span style={{ fontWeight: 700, color: '#ffffff' }}>{exerciseName}</span>
+                        <span style={{ color: 'rgba(199, 210, 254, 0.75)', fontSize: '0.7rem' }}>
+                            {blockName ? `${blockName} • ` : ''}W{weekNum}:S{dayNum}
+                        </span>
+                    </div>
+
                     {/* Auto-filled message textarea */}
                     <textarea
                         ref={(el) => {
                             if (el && open) {
-                                // Place cursor at the end (where "Feedback:" is) and scroll down
+                                // Place cursor at the end and scroll down
                                 el.selectionStart = el.selectionEnd = el.value.length;
                                 el.scrollTop = el.scrollHeight;
                                 el.focus();
@@ -369,12 +380,12 @@ export default function ExerciseFeedback({
                         }}
                         value={message}
                         onChange={e => setMessage(e.target.value)}
-                        rows={12}
+                        rows={6}
                         style={{
                             width: '100%', background: 'rgba(0, 0, 0, 0.4)',
-                            border: '1px solid rgba(99, 102, 241, 0.3)', borderRadius: 12,
-                            padding: '12px 14px', fontSize: '0.84rem', color: '#f8fafc',
-                            resize: 'vertical', lineHeight: 1.5, fontFamily: 'inherit',
+                            border: '1px solid rgba(99, 102, 241, 0.3)', borderRadius: 10,
+                            padding: '10px 12px', fontSize: '0.82rem', color: '#f8fafc',
+                            resize: 'vertical', lineHeight: 1.45, fontFamily: 'inherit',
                             outlineColor: '#6366f1', boxSizing: 'border-box',
                         }}
                     />

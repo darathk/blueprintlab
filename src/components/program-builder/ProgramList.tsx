@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { Calendar, Layers } from 'lucide-react';
 
 type DropdownMode = 'transfer' | 'copy';
 
@@ -286,11 +287,18 @@ export default function ProgramList({ athleteId, initialPrograms }: { athleteId:
         });
 
     return (
-        <div style={{ marginTop: '2rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem', flexWrap: 'wrap', gap: '1rem' }}>
-                <h2 style={{ fontSize: '1.25rem', fontWeight: 700, margin: 0, color: 'var(--foreground)' }}>Assigned Programs</h2>
+        <div style={{ width: '100%' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '0.75rem' }}>
+                <div>
+                    <span style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)' }}>
+                        Assigned Programs ({filteredAndSortedPrograms.length})
+                    </span>
+                    <p style={{ color: 'var(--secondary-foreground)', fontSize: '0.8rem', margin: '2px 0 0' }}>
+                        Manage assigned cycles, duplicate templates, or transfer programs
+                    </p>
+                </div>
                 {/* Timeline Filter */}
-                <div style={{ display: 'flex', background: 'var(--glass-surface-2)', borderRadius: '20px', padding: '3px', border: '1px solid var(--glass-border)' }}>
+                <div style={{ display: 'flex', background: 'rgba(255, 255, 255, 0.035)', borderRadius: '20px', padding: '3px', border: '1px solid rgba(255, 255, 255, 0.08)' }}>
                     {Object.keys(TIMELINES).map(tl => (
                         <button
                             key={tl}
@@ -298,7 +306,7 @@ export default function ProgramList({ athleteId, initialPrograms }: { athleteId:
                             className="chat-press"
                             style={{
                                 padding: '0.35rem 0.85rem',
-                                background: timeline === tl ? 'rgba(125, 135, 210, 0.2)' : 'transparent',
+                                background: timeline === tl ? 'rgba(125, 135, 210, 0.22)' : 'transparent',
                                 color: timeline === tl ? '#fff' : 'var(--secondary-foreground)',
                                 border: timeline === tl ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid transparent',
                                 cursor: 'pointer',
@@ -316,8 +324,42 @@ export default function ProgramList({ athleteId, initialPrograms }: { athleteId:
             </div>
             
             {filteredAndSortedPrograms.length === 0 ? (
-                <div className="glass-panel" style={{ padding: '2rem', textAlign: 'center', color: 'var(--secondary-foreground)', borderRadius: 12, border: '1px dashed var(--glass-border)' }}>
-                    No programs found in the selected time range.
+                <div
+                    style={{
+                        textAlign: 'center',
+                        padding: '3rem 1.5rem',
+                        borderRadius: 16,
+                        background: 'linear-gradient(180deg, rgba(30, 41, 59, 0.25) 0%, rgba(15, 23, 42, 0.45) 100%)',
+                        border: '1px dashed rgba(255, 255, 255, 0.12)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 10,
+                    }}
+                >
+                    <div
+                        style={{
+                            width: 44,
+                            height: 44,
+                            borderRadius: 12,
+                            background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.15) 0%, rgba(125, 135, 210, 0.12) 100%)',
+                            border: '1px solid rgba(6, 182, 212, 0.3)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}
+                    >
+                        <Layers size={22} style={{ color: '#06b6d4' }} />
+                    </div>
+                    <div>
+                        <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--foreground)' }}>
+                            No Programs Found In Selected Time Range
+                        </div>
+                        <p style={{ color: 'var(--secondary-foreground)', fontSize: '0.8rem', margin: '3px 0 0' }}>
+                            Adjust your timeline filter above or create a new program cycle.
+                        </p>
+                    </div>
                 </div>
             ) : (
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '1rem' }}>
@@ -327,30 +369,46 @@ export default function ProgramList({ athleteId, initialPrograms }: { athleteId:
                     const isAnyDropdownOpen = isTransferOpen || isCopyOpen;
 
                     return (
-                        <div key={p.id} className="glass-panel" style={{ position: 'relative', padding: '1.25rem' }}>
+                        <div
+                            key={p.id}
+                            style={{
+                                position: 'relative',
+                                padding: '1.25rem',
+                                borderRadius: 16,
+                                background: 'linear-gradient(180deg, rgba(30, 41, 59, 0.35) 0%, rgba(15, 23, 42, 0.55) 100%)',
+                                border: '1px solid rgba(255, 255, 255, 0.08)',
+                                boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.05)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                            }}
+                        >
                             {/* Delete X */}
                             <button
                                 onClick={() => handleDelete(p.id, p.name)}
                                 className="chat-press"
                                 style={{
-                                    position: 'absolute', top: '10px', right: '10px',
-                                    background: 'transparent', border: 'none',
-                                    color: 'var(--secondary-foreground)', fontSize: '1.2rem',
-                                    cursor: 'pointer', zIndex: 10
+                                    position: 'absolute', top: '12px', right: '12px',
+                                    background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)',
+                                    borderRadius: 6, width: 24, height: 24,
+                                    color: 'var(--secondary-foreground)', fontSize: '1rem',
+                                    cursor: 'pointer', zIndex: 10,
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    lineHeight: 1,
                                 }}
                                 title="Delete Program"
                             >
                                 ×
                             </button>
 
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem', paddingRight: '1rem' }}>
-                                <h3 style={{ fontSize: '1.15rem', fontWeight: 600, color: 'var(--foreground)' }}>{p.name}</h3>
-                                <span className="glass-badge" style={{ fontSize: '0.75rem', color: 'var(--primary)', borderColor: 'rgba(125, 135, 210, 0.3)' }}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.4rem', paddingRight: '1.75rem', gap: 8 }}>
+                                <h3 style={{ fontSize: '1.08rem', fontWeight: 700, color: 'var(--foreground)', margin: 0, lineHeight: 1.3 }}>{p.name}</h3>
+                                <span className="glass-badge" style={{ fontSize: '0.72rem', color: 'var(--primary)', borderColor: 'rgba(125, 135, 210, 0.3)', flexShrink: 0 }}>
                                     {activeWeekCount(p.weeks)} Weeks
                                 </span>
                             </div>
-                            <div style={{ fontSize: '0.85rem', color: 'var(--secondary-foreground)', marginBottom: '1rem' }}>
-                                {activeDateRange(p.startDate, p.weeks)}
+                            <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginBottom: '1.25rem', display: 'flex', alignItems: 'center', gap: 5 }}>
+                                <Calendar size={13} style={{ opacity: 0.7 }} />
+                                <span>{activeDateRange(p.startDate, p.weeks)}</span>
                             </div>
 
                             {/* Action buttons */}
@@ -358,7 +416,7 @@ export default function ProgramList({ athleteId, initialPrograms }: { athleteId:
                                 <Link
                                     href={`/dashboard/athletes/${athleteId}/programs/${p.id}`}
                                     className="glass-button chat-press"
-                                    style={{ flex: 1, textAlign: 'center', fontSize: '0.8rem', padding: '0.45rem 0.5rem' }}
+                                    style={{ flex: 1, textAlign: 'center', fontSize: '0.8rem', padding: '0.45rem 0.5rem', fontWeight: 600 }}
                                 >
                                     Edit
                                 </Link>

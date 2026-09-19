@@ -167,13 +167,35 @@ export default function MasterProgramCalendar({
     const weekDays = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
     return (
-        <div className="glass-panel" style={{ padding: '0', overflow: 'hidden', border: '1px solid var(--card-border)' }}>
-            <div style={{ padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--card-border)', background: 'var(--card-bg)' }}>
-                <button onClick={prevMonth} className="btn-icon">←</button>
-                <span style={{ fontWeight: 700, fontSize: '1.1rem', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
+        <div style={{ borderRadius: 14, overflow: 'hidden', border: '1px solid rgba(255, 255, 255, 0.08)', background: 'rgba(15, 23, 42, 0.45)' }}>
+            <div style={{ padding: '0.85rem 1.25rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', background: 'rgba(255, 255, 255, 0.025)' }}>
+                <button
+                    onClick={prevMonth}
+                    className="chat-press"
+                    style={{
+                        width: 32, height: 32, borderRadius: 8,
+                        background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)',
+                        color: 'var(--foreground)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '0.9rem',
+                    }}
+                >
+                    ←
+                </button>
+                <span style={{ fontWeight: 700, fontSize: '1.02rem', letterSpacing: '0.04em', textTransform: 'uppercase', color: 'var(--foreground)' }}>
                     {currentMonth.toLocaleString('default', { month: 'long', year: 'numeric' })}
                 </span>
-                <button onClick={nextMonth} className="btn-icon">→</button>
+                <button
+                    onClick={nextMonth}
+                    className="chat-press"
+                    style={{
+                        width: 32, height: 32, borderRadius: 8,
+                        background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)',
+                        color: 'var(--foreground)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: '0.9rem',
+                    }}
+                >
+                    →
+                </button>
             </div>
 
             <div style={{ overflowX: 'hidden', boxSizing: 'border-box' }}>

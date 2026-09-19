@@ -180,7 +180,7 @@ export default function PRToggle({
     }
 
     return (
-        <div style={{ display: 'contents' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%' }}>
             {/* Toggle button */}
             <button
                 onClick={handleOpen}
@@ -194,7 +194,7 @@ export default function PRToggle({
                     borderRadius: 12, padding: '9px 14px', cursor: 'pointer',
                     color: '#fbbf24', fontSize: '0.82rem', fontWeight: 700,
                     boxShadow: open ? '0 0 14px rgba(251, 191, 36, 0.2)' : 'none',
-                    transition: 'all 0.16s var(--ease-out)', flex: 1, justifyContent: 'center',
+                    transition: 'all 0.16s var(--ease-out)', width: '100%', justifyContent: 'center',
                 }}
             >
                 <Trophy size={14} />
@@ -204,7 +204,7 @@ export default function PRToggle({
             {/* Expanded PR form */}
             {open && !saved && (
                 <div style={{
-                    flexBasis: '100%', order: 10, padding: 14,
+                    padding: 14,
                     background: 'linear-gradient(180deg, rgba(28, 24, 18, 0.88) 0%, rgba(16, 14, 12, 0.96) 100%)',
                     backdropFilter: 'blur(16px)',
                     WebkitBackdropFilter: 'blur(16px)',

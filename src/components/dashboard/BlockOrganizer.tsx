@@ -2,7 +2,7 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { GripVertical } from 'lucide-react';
+import { GripVertical, Calendar, Target, Edit3, Sparkles } from 'lucide-react';
 
 export default function PeriodizationPlanner({ athlete }) {
     const router = useRouter();
@@ -398,33 +398,60 @@ export default function PeriodizationPlanner({ athlete }) {
     if (!athlete) return null;
 
     return (
-        <div className="glass-panel" style={{ marginBottom: '2rem', padding: '1.5rem' }}>
+        <div style={{ width: '100%' }}>
 
-            {/* Header */}
-            <div className="planner-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem' }}>
+            {/* Context & Actions Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.25rem', flexWrap: 'wrap', gap: '1rem' }}>
                 <div>
-                    <h2 style={{ fontSize: '1.25rem', fontWeight: 600, color: 'var(--foreground)' }}>Meet Planner</h2>
-                    <p style={{ color: 'var(--secondary-foreground)', fontSize: '0.85rem' }}>Mapping the roadmap to {meetName || 'Victory'}</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--foreground)' }}>
+                            {meetName || 'Target Competition'}
+                        </span>
+                        {meetDate && (
+                            <span className="glass-badge" style={{ fontSize: '0.75rem', borderColor: 'rgba(56, 189, 248, 0.3)', color: '#38bdf8' }}>
+                                {new Date(meetDate).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                            </span>
+                        )}
+                    </div>
+                    <p style={{ color: 'var(--secondary-foreground)', fontSize: '0.8rem', margin: '3px 0 0' }}>
+                        {meetDate ? 'Lead-up periodization schedule and preparation phases' : 'No competition date configured yet'}
+                    </p>
                 </div>
 
-                {/* Days Out Counter */}
-                {daysOutData && (
-                    <div className="glass-panel" style={{ textAlign: 'center', padding: '0.65rem 1.25rem', borderRadius: '12px' }}>
-                        <div style={{ fontSize: '1.75rem', fontWeight: 700, color: 'var(--primary)', lineHeight: 1, textShadow: '0 0 16px rgba(125, 135, 210, 0.4)' }}>
-                            {Math.abs(daysOutData.totalDays)}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                    {daysOutData && (
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 10,
+                            padding: '6px 14px',
+                            borderRadius: 12,
+                            background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.12) 0%, rgba(59, 130, 246, 0.1) 100%)',
+                            border: '1px solid rgba(6, 182, 212, 0.3)',
+                            boxShadow: '0 0 16px rgba(6, 182, 212, 0.15)',
+                        }}>
+                            <div style={{ fontSize: '1.4rem', fontWeight: 800, color: '#38bdf8', lineHeight: 1 }}>
+                                {Math.abs(daysOutData.totalDays)}
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column' }}>
+                                <span style={{ fontSize: '0.65rem', textTransform: 'uppercase', letterSpacing: '0.08em', fontWeight: 700, color: 'rgba(255,255,255,0.85)' }}>
+                                    {daysOutData.totalDays >= 0 ? 'Days Out' : 'Days Since'}
+                                </span>
+                                <span style={{ fontSize: '0.65rem', color: 'var(--secondary-foreground)' }}>
+                                    {daysOutData.weeks}w {daysOutData.days}d
+                                </span>
+                            </div>
                         </div>
-                        <div style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--secondary-foreground)', marginTop: 4 }}>
-                            {daysOutData.totalDays >= 0 ? 'Days Out' : 'Days Since'}
-                        </div>
-                    </div>
-                )}
-            </div>
-
-            {/* Action Bar */}
-            <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'flex-end' }}>
-                <button onClick={() => setIsEditing(!isEditing)} className="glass-button chat-press" style={{ fontSize: '0.85rem' }}>
-                    {isEditing ? 'Cancel Editing' : 'Edit Plan & Meet'}
-                </button>
+                    )}
+                    <button
+                        onClick={() => setIsEditing(!isEditing)}
+                        className="glass-button chat-press"
+                        style={{ fontSize: '0.82rem', padding: '0.45rem 0.9rem', display: 'flex', alignItems: 'center', gap: 6 }}
+                    >
+                        <Edit3 size={14} />
+                        <span>{isEditing ? 'Cancel Editing' : 'Edit Plan & Meet'}</span>
+                    </button>
+                </div>
             </div>
 
             {/* Editor Mode */}
@@ -659,19 +686,69 @@ export default function PeriodizationPlanner({ athlete }) {
 
             {/* Weekly Table View */}
             {!meetDate ? (
-                <div style={{ textAlign: 'center', padding: '4rem', color: 'var(--muted)', background: 'var(--secondary)', borderRadius: '2rem' }}>
-                    <div style={{ fontSize: '2rem', marginBottom: '1rem', opacity: 0.5 }}>🌌</div>
-                    <div>Initialize Meet Date to map the trajectory.</div>
+                <div
+                    style={{
+                        textAlign: 'center',
+                        padding: '3.5rem 1.5rem',
+                        borderRadius: 16,
+                        background: 'linear-gradient(180deg, rgba(30, 41, 59, 0.25) 0%, rgba(15, 23, 42, 0.45) 100%)',
+                        border: '1px dashed rgba(255, 255, 255, 0.12)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 12,
+                    }}
+                >
+                    <div
+                        style={{
+                            width: 52,
+                            height: 52,
+                            borderRadius: 14,
+                            background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.15) 0%, rgba(125, 135, 210, 0.15) 100%)',
+                            border: '1px solid rgba(56, 189, 248, 0.3)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            boxShadow: '0 0 20px rgba(56, 189, 248, 0.15)',
+                        }}
+                    >
+                        <Target size={26} style={{ color: '#38bdf8' }} />
+                    </div>
+                    <div>
+                        <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--foreground)' }}>
+                            No Competition Trajectory Initialized
+                        </div>
+                        <p style={{ color: 'var(--secondary-foreground)', fontSize: '0.82rem', margin: '4px 0 0', maxWidth: 420 }}>
+                            Set your target meet date to automatically map preparation blocks, peak phase duration, and reverse-schedule the cycle.
+                        </p>
+                    </div>
+                    <button
+                        onClick={() => setIsEditing(true)}
+                        className="glass-button glass-button-primary chat-press"
+                        style={{
+                            marginTop: 6,
+                            fontSize: '0.85rem',
+                            fontWeight: 600,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            padding: '0.55rem 1.25rem',
+                        }}
+                    >
+                        <Calendar size={15} />
+                        <span>Initialize Meet Date & Plan</span>
+                    </button>
                 </div>
             ) : (
-                <div style={{ overflowX: 'auto', borderRadius: '1rem', border: '1px solid var(--card-border)', paddingBottom: '0.5rem' }}>
+                <div style={{ overflowX: 'auto', borderRadius: 14, border: '1px solid rgba(255, 255, 255, 0.08)', background: 'rgba(15, 23, 42, 0.45)', paddingBottom: '0.5rem' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.9rem', minWidth: '600px' }}>
                         <thead>
-                            <tr style={{ background: 'var(--card-bg)', borderBottom: '1px solid var(--card-border)' }}>
-                                <th style={{ padding: '1rem', textAlign: 'left', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.75rem' }}>Timeline</th>
-                                <th style={{ padding: '1rem', textAlign: 'left', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.75rem' }}>Date</th>
-                                <th style={{ padding: '1rem', textAlign: 'left', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.75rem' }}>Phase Objective</th>
-                                <th style={{ padding: '1rem', textAlign: 'left', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', fontSize: '0.75rem' }}>Notes</th>
+                            <tr style={{ background: 'rgba(255, 255, 255, 0.03)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                                <th style={{ padding: '0.85rem 1rem', textAlign: 'left', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.72rem', fontWeight: 700 }}>Timeline</th>
+                                <th style={{ padding: '0.85rem 1rem', textAlign: 'left', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.72rem', fontWeight: 700 }}>Date</th>
+                                <th style={{ padding: '0.85rem 1rem', textAlign: 'left', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.72rem', fontWeight: 700 }}>Phase Objective</th>
+                                <th style={{ padding: '0.85rem 1rem', textAlign: 'left', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.06em', fontSize: '0.72rem', fontWeight: 700 }}>Notes</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -679,11 +756,12 @@ export default function PeriodizationPlanner({ athlete }) {
                                 <tr
                                     key={i}
                                     style={{
-                                        borderBottom: '1px solid rgba(148, 163, 184, 0.05)',
+                                        borderBottom: '1px solid rgba(148, 163, 184, 0.06)',
+                                        transition: 'background 0.15s',
                                     }}
                                 >
-                                    <td style={{ padding: '1rem', color: 'var(--primary)', fontWeight: 500 }}>{row.weekName}</td>
-                                    <td style={{ padding: '1rem', fontFamily: 'monospace', color: 'rgba(255,255,255,0.7)' }}>
+                                    <td style={{ padding: '0.85rem 1rem', color: 'var(--primary)', fontWeight: 600, fontSize: '0.85rem' }}>{row.weekName}</td>
+                                    <td style={{ padding: '0.85rem 1rem', fontFamily: 'monospace', color: 'rgba(255,255,255,0.7)', fontSize: '0.82rem' }}>
                                         {row.date.toLocaleDateString(undefined, { month: '2-digit', day: '2-digit' })}
                                         <span style={{ opacity: 0.3, marginLeft: '4px' }}>'{row.date.getFullYear().toString().substr(2)}</span>
                                     </td>
@@ -694,14 +772,14 @@ export default function PeriodizationPlanner({ athlete }) {
                                             <td
                                                 rowSpan={row.blockSpan}
                                                 style={{
-                                                    padding: '0.25rem', // Slight padding for card separation
+                                                    padding: '0.35rem 0.5rem',
                                                     verticalAlign: 'top',
                                                     height: '1px'
                                                 }}
                                             >
                                                 <div style={{
-                                                    background: 'var(--card-bg)',
-                                                    border: '1px solid var(--card-border)',
+                                                    background: 'rgba(255, 255, 255, 0.03)',
+                                                    border: '1px solid rgba(255, 255, 255, 0.08)',
                                                     borderLeft: `3px solid ${row.blockColor}`,
                                                     color: 'var(--foreground)',
                                                     height: '100%',
@@ -711,13 +789,13 @@ export default function PeriodizationPlanner({ athlete }) {
                                                     flexDirection: 'column',
                                                     justifyContent: 'center',
                                                     alignItems: 'flex-start',
-                                                    borderRadius: '8px',
+                                                    borderRadius: '10px',
                                                     position: 'relative',
                                                     overflow: 'hidden'
                                                 }}>
-                                                    <div style={{ fontSize: '0.85rem', fontWeight: 600 }}>{row.blockName}</div>
-                                                    <div style={{ fontSize: '0.7rem', fontWeight: 500, color: 'var(--secondary-foreground)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                                        <span style={{ background: 'rgba(255,255,255,0.05)', padding: '2px 6px', borderRadius: '4px' }}>{row.blockSpan} WEEKS</span>
+                                                    <div style={{ fontSize: '0.85rem', fontWeight: 700 }}>{row.blockName}</div>
+                                                    <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--secondary-foreground)', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                        <span style={{ background: 'rgba(255,255,255,0.06)', padding: '2px 7px', borderRadius: '4px', border: '1px solid rgba(255,255,255,0.06)' }}>{row.blockSpan} WEEKS</span>
                                                     </div>
                                                 </div>
                                             </td>
@@ -727,28 +805,27 @@ export default function PeriodizationPlanner({ athlete }) {
                                                 style={{
                                                     padding: '0.75rem 1rem',
                                                     verticalAlign: 'top',
-                                                    color: 'rgba(255,255,255,0.8)',
+                                                    color: 'rgba(255,255,255,0.85)',
                                                     fontSize: '0.85rem',
-                                                    lineHeight: 1.4,
-                                                    fontStyle: 'italic',
-                                                    borderLeft: '1px solid rgba(148, 163, 184, 0.1)',
+                                                    lineHeight: 1.45,
+                                                    borderLeft: '1px solid rgba(148, 163, 184, 0.08)',
                                                     whiteSpace: 'pre-wrap'
                                                 }}
                                             >
-                                                {row.blockNotes || <span style={{ opacity: 0.3 }}>No notes</span>}
+                                                {row.blockNotes || <span style={{ opacity: 0.3, fontStyle: 'italic' }}>No notes</span>}
                                             </td>
                                         </>
                                     )}
                                 </tr>
                             ))}
                             {/* Meet Row */}
-                            <tr style={{ background: 'var(--card-bg)' }}>
-                                <td style={{ padding: '1.25rem 1rem', fontWeight: 600, color: 'var(--foreground)', fontSize: '0.85rem' }}>MEET WEEK</td>
-                                <td style={{ padding: '1.25rem 1rem', fontWeight: 500, fontFamily: 'monospace', color: 'var(--secondary-foreground)' }}>
+                            <tr style={{ background: 'linear-gradient(90deg, rgba(56, 189, 248, 0.08) 0%, rgba(125, 135, 210, 0.08) 100%)', borderTop: '1px solid rgba(56, 189, 248, 0.2)' }}>
+                                <td style={{ padding: '1rem', fontWeight: 700, color: '#38bdf8', fontSize: '0.85rem', letterSpacing: '0.05em' }}>MEET WEEK</td>
+                                <td style={{ padding: '1rem', fontWeight: 600, fontFamily: 'monospace', color: 'rgba(255,255,255,0.85)', fontSize: '0.85rem' }}>
                                     {new Date(meetDate).toLocaleDateString(undefined, { month: '2-digit', day: '2-digit', year: '2-digit' })}
                                 </td>
-                                <td colSpan={2} style={{ padding: '1.25rem 1rem', color: 'var(--primary)', fontWeight: 600, textAlign: 'center', fontSize: '0.85rem', letterSpacing: '0.05em' }}>
-                                    COMPETITION DAY
+                                <td colSpan={2} style={{ padding: '1rem', color: '#38bdf8', fontWeight: 700, textAlign: 'center', fontSize: '0.85rem', letterSpacing: '0.08em' }}>
+                                    🏆 COMPETITION DAY
                                 </td>
                             </tr>
                         </tbody>

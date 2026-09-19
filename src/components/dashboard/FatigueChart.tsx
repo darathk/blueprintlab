@@ -118,7 +118,7 @@ export default function FatigueChart({ readinessLogs }: Props) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {/* Stats Summary */}
             {stats && (
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10 }}>
                     {[
                         {
                             label: 'Latest Readiness',
@@ -145,11 +145,21 @@ export default function FatigueChart({ readinessLogs }: Props) {
                             color: '#7d87d2',
                         },
                     ].map(s => (
-                        <div key={s.label} className="glass-panel" style={{ flex: '1 1 110px', background: 'var(--glass-surface-2)', border: `1px solid ${s.color}35`, borderRadius: 12, padding: '12px 16px' }}>
-                            <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.04em' }}>{s.label}</div>
+                        <div
+                            key={s.label}
+                            style={{
+                                background: 'linear-gradient(180deg, rgba(30, 41, 59, 0.35) 0%, rgba(15, 23, 42, 0.55) 100%)',
+                                border: '1px solid rgba(255, 255, 255, 0.08)',
+                                borderTop: `3px solid ${s.color}`,
+                                boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.05)',
+                                borderRadius: 14,
+                                padding: '12px 14px',
+                            }}
+                        >
+                            <div style={{ fontSize: 10, color: 'var(--secondary-foreground)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.label}</div>
                             <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginTop: 4 }}>
-                                <span style={{ fontSize: 22, fontWeight: 800, color: s.color }}>{s.value}</span>
-                                <span style={{ fontSize: 11, color: 'var(--secondary-foreground)' }}>{s.sub}</span>
+                                <span style={{ fontSize: 20, fontWeight: 800, color: s.color, lineHeight: 1.1 }}>{s.value}</span>
+                                <span style={{ fontSize: 11, color: 'var(--secondary-foreground)', fontWeight: 500 }}>{s.sub}</span>
                             </div>
                         </div>
                     ))}
@@ -157,7 +167,7 @@ export default function FatigueChart({ readinessLogs }: Props) {
             )}
 
             {/* Chart Container */}
-            <div className="glass-panel" style={{ background: 'var(--glass-surface-1)', borderRadius: 14, border: '1px solid var(--glass-border)', padding: '16px 8px 8px' }}>
+            <div style={{ background: 'rgba(15, 23, 42, 0.45)', borderRadius: 14, border: '1px solid rgba(255, 255, 255, 0.08)', padding: '16px 10px 10px' }}>
                 {/* Controls */}
                 <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, paddingLeft: 12, paddingRight: 12, marginBottom: 12, alignItems: 'center' }}>
                     {/* View toggle */}

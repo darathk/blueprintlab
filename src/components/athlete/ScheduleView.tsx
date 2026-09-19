@@ -1405,39 +1405,53 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                     transition: 'background 0.16s ease'
                                                                 }}
                                                             >
-                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0, paddingRight: 8 }}>
                                                                     <div style={{
                                                                         width: 4,
-                                                                        height: 22,
+                                                                        height: 24,
                                                                         borderRadius: 2,
                                                                         background: catColor,
                                                                         boxShadow: `0 0 10px ${catColor}55`,
+                                                                        flexShrink: 0,
+                                                                        alignSelf: 'center',
                                                                     }} />
-                                                                    <span style={{ fontSize: '1rem', color: '#ffffff', fontWeight: 600, letterSpacing: '-0.01em' }}>
-                                                                        {exerciseData?.name || ex?.name}
-                                                                    </span>
-                                                                    {(() => {
-                                                                        const planned = plannedTopSets[sKey]?.[exerciseData?.name || ex?.name];
-                                                                        if (!planned || (!planned.weight && !planned.reps)) return null;
-                                                                        return (
+                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, minWidth: 0 }}>
+                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', minWidth: 0 }}>
                                                                             <span style={{
-                                                                                fontSize: '0.72rem',
-                                                                                padding: '3px 10px',
-                                                                                borderRadius: 8,
-                                                                                background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(99, 102, 241, 0.2))',
-                                                                                border: '1px solid rgba(56, 189, 248, 0.45)',
-                                                                                color: '#38bdf8',
+                                                                                fontSize: '0.98rem',
+                                                                                color: '#ffffff',
                                                                                 fontWeight: 600,
-                                                                                display: 'inline-flex',
-                                                                                alignItems: 'center',
-                                                                                gap: 5,
-                                                                                boxShadow: '0 2px 8px rgba(56, 189, 248, 0.2)'
+                                                                                letterSpacing: '-0.01em',
+                                                                                lineHeight: 1.35,
+                                                                                wordBreak: 'break-word',
                                                                             }}>
-                                                                                🎯 Planned: {planned.weight ? `${planned.weight} ${planned.unit || unit}` : ''}{planned.reps ? ` × ${planned.reps}` : ''}{planned.rpe ? ` @ ${planned.rpe}` : ''}
+                                                                                {exerciseData?.name || ex?.name}
                                                                             </span>
-                                                                        );
-                                                                    })()}
-                                                                    {isLocked && <span style={{ fontSize: '0.8rem' }}>🔒</span>}
+                                                                            {isLocked && <span style={{ fontSize: '0.8rem', flexShrink: 0 }}>🔒</span>}
+                                                                        </div>
+                                                                        {(() => {
+                                                                            const planned = plannedTopSets[sKey]?.[exerciseData?.name || ex?.name];
+                                                                            if (!planned || (!planned.weight && !planned.reps)) return null;
+                                                                            return (
+                                                                                <div style={{
+                                                                                    fontSize: '0.72rem',
+                                                                                    padding: '3px 10px',
+                                                                                    borderRadius: 8,
+                                                                                    background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(99, 102, 241, 0.2))',
+                                                                                    border: '1px solid rgba(56, 189, 248, 0.45)',
+                                                                                    color: '#38bdf8',
+                                                                                    fontWeight: 600,
+                                                                                    display: 'inline-flex',
+                                                                                    alignItems: 'center',
+                                                                                    gap: 5,
+                                                                                    width: 'fit-content',
+                                                                                    boxShadow: '0 2px 8px rgba(56, 189, 248, 0.2)'
+                                                                                }}>
+                                                                                    🎯 Planned: {planned.weight ? `${planned.weight} ${planned.unit || unit}` : ''}{planned.reps ? ` × ${planned.reps}` : ''}{planned.rpe ? ` @ ${planned.rpe}` : ''}
+                                                                                </div>
+                                                                            );
+                                                                        })()}
+                                                                    </div>
                                                                 </div>
                                                                 <div style={{
                                                                     width: 30,
@@ -1805,11 +1819,11 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                 <div style={{
                                                                                     border: '1px solid rgba(255, 255, 255, 0.08)',
                                                                                     borderRadius: 16,
-                                                                                    padding: '16px',
+                                                                                    padding: '14px',
                                                                                     background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)',
                                                                                     boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.06)'
                                                                                 }}>
-                                                                                    <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#ffffff', marginBottom: '14px', letterSpacing: '-0.01em' }}>Exercise Actions</div>
+                                                                                    <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#ffffff', marginBottom: '12px', letterSpacing: '-0.01em' }}>Exercise Actions</div>
                                                                                     <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                                                                         <ExerciseFeedback
                                                                                             athleteId={athleteId}
@@ -1842,23 +1856,59 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                 <div style={{
                                                                                     border: '1px solid rgba(255, 255, 255, 0.08)',
                                                                                     borderRadius: 16,
-                                                                                    padding: '16px',
+                                                                                    padding: '14px',
                                                                                     background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)',
                                                                                     boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.06)'
                                                                                 }}>
-                                                                                    <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#ffffff', marginBottom: '14px', letterSpacing: '-0.01em' }}>Performance Stats</div>
-                                                                                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '0.85rem' }}>
-                                                                                        <div style={{ background: 'linear-gradient(135deg, rgba(125, 135, 210, 0.15) 0%, rgba(168, 85, 247, 0.1) 100%)', border: '1px solid rgba(125, 135, 210, 0.3)', padding: '6px 14px', borderRadius: 12, color: '#c4b5fd', fontWeight: 700 }}>
-                                                                                            E1RM: {toDisplay(maxE1RM)} {exerciseData?.unit || unit}
+                                                                                    <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#ffffff', marginBottom: '12px', letterSpacing: '-0.01em' }}>Performance Stats</div>
+                                                                                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '8px' }}>
+                                                                                        <div style={{
+                                                                                            background: 'linear-gradient(135deg, rgba(125, 135, 210, 0.16) 0%, rgba(168, 85, 247, 0.1) 100%)',
+                                                                                            border: '1px solid rgba(125, 135, 210, 0.35)',
+                                                                                            padding: '9px 12px',
+                                                                                            borderRadius: 12,
+                                                                                            display: 'flex',
+                                                                                            flexDirection: 'column',
+                                                                                            gap: 2,
+                                                                                        }}>
+                                                                                            <span style={{ fontSize: '0.66rem', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>Estimated 1RM</span>
+                                                                                            <span style={{ fontSize: '0.96rem', color: '#c4b5fd', fontWeight: 800 }}>{toDisplay(maxE1RM)} {exerciseData?.unit || unit}</span>
                                                                                         </div>
-                                                                                        <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '6px 14px', borderRadius: 12, color: 'var(--foreground)', fontWeight: 600 }}>
-                                                                                            Total SI: {exStress.total.toFixed(2)}
+                                                                                        <div style={{
+                                                                                            background: 'rgba(255, 255, 255, 0.035)',
+                                                                                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                                                            padding: '9px 12px',
+                                                                                            borderRadius: 12,
+                                                                                            display: 'flex',
+                                                                                            flexDirection: 'column',
+                                                                                            gap: 2,
+                                                                                        }}>
+                                                                                            <span style={{ fontSize: '0.66rem', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>Total SI</span>
+                                                                                            <span style={{ fontSize: '0.96rem', color: '#ffffff', fontWeight: 800 }}>{exStress.total.toFixed(2)}</span>
                                                                                         </div>
-                                                                                        <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '6px 14px', borderRadius: 12, color: 'var(--foreground)', fontWeight: 600 }}>
-                                                                                            Peripheral SI: {exStress.peripheral.toFixed(2)}
+                                                                                        <div style={{
+                                                                                            background: 'rgba(255, 255, 255, 0.035)',
+                                                                                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                                                            padding: '9px 12px',
+                                                                                            borderRadius: 12,
+                                                                                            display: 'flex',
+                                                                                            flexDirection: 'column',
+                                                                                            gap: 2,
+                                                                                        }}>
+                                                                                            <span style={{ fontSize: '0.66rem', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>Peripheral SI</span>
+                                                                                            <span style={{ fontSize: '0.96rem', color: '#ffffff', fontWeight: 800 }}>{exStress.peripheral.toFixed(2)}</span>
                                                                                         </div>
-                                                                                        <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '6px 14px', borderRadius: 12, color: 'var(--foreground)', fontWeight: 600 }}>
-                                                                                            Central SI: {exStress.central.toFixed(2)}
+                                                                                        <div style={{
+                                                                                            background: 'rgba(255, 255, 255, 0.035)',
+                                                                                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                                                            padding: '9px 12px',
+                                                                                            borderRadius: 12,
+                                                                                            display: 'flex',
+                                                                                            flexDirection: 'column',
+                                                                                            gap: 2,
+                                                                                        }}>
+                                                                                            <span style={{ fontSize: '0.66rem', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>Central SI</span>
+                                                                                            <span style={{ fontSize: '0.96rem', color: '#ffffff', fontWeight: 800 }}>{exStress.central.toFixed(2)}</span>
                                                                                         </div>
                                                                                     </div>
                                                                                 </div>
@@ -2612,39 +2662,53 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                 transition: 'background 0.16s ease'
                                                                             }}
                                                                         >
-                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0, paddingRight: 8 }}>
                                                                                 <div style={{
                                                                                     width: 4,
-                                                                                    height: 22,
+                                                                                    height: 24,
                                                                                     borderRadius: 2,
                                                                                     background: catColor,
                                                                                     boxShadow: `0 0 10px ${catColor}55`,
+                                                                                    flexShrink: 0,
+                                                                                    alignSelf: 'center',
                                                                                 }} />
-                                                                                <span style={{ fontSize: '1rem', color: '#ffffff', fontWeight: 600, letterSpacing: '-0.01em' }}>
-                                                                                    {exerciseData?.name || ex?.name}
-                                                                                </span>
-                                                                                {(() => {
-                                                                                    const planned = plannedTopSets[sKey]?.[exerciseData?.name || ex?.name];
-                                                                                    if (!planned || (!planned.weight && !planned.reps)) return null;
-                                                                                    return (
+                                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: 4, flex: 1, minWidth: 0 }}>
+                                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', minWidth: 0 }}>
                                                                                         <span style={{
-                                                                                            fontSize: '0.72rem',
-                                                                                            padding: '3px 10px',
-                                                                                            borderRadius: 8,
-                                                                                            background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(99, 102, 241, 0.2))',
-                                                                                            border: '1px solid rgba(56, 189, 248, 0.45)',
-                                                                                            color: '#38bdf8',
+                                                                                            fontSize: '0.98rem',
+                                                                                            color: '#ffffff',
                                                                                             fontWeight: 600,
-                                                                                            display: 'inline-flex',
-                                                                                            alignItems: 'center',
-                                                                                            gap: 5,
-                                                                                            boxShadow: '0 2px 8px rgba(56, 189, 248, 0.2)'
+                                                                                            letterSpacing: '-0.01em',
+                                                                                            lineHeight: 1.35,
+                                                                                            wordBreak: 'break-word',
                                                                                         }}>
-                                                                                            🎯 Planned: {planned.weight ? `${planned.weight} ${planned.unit || unit}` : ''}{planned.reps ? ` × ${planned.reps}` : ''}{planned.rpe ? ` @ ${planned.rpe}` : ''}
+                                                                                            {exerciseData?.name || ex?.name}
                                                                                         </span>
-                                                                                    );
-                                                                                })()}
-                                                                                {isLocked && <span style={{ fontSize: '0.8rem' }}>🔒</span>}
+                                                                                        {isLocked && <span style={{ fontSize: '0.8rem', flexShrink: 0 }}>🔒</span>}
+                                                                                    </div>
+                                                                                    {(() => {
+                                                                                        const planned = plannedTopSets[sKey]?.[exerciseData?.name || ex?.name];
+                                                                                        if (!planned || (!planned.weight && !planned.reps)) return null;
+                                                                                        return (
+                                                                                            <div style={{
+                                                                                                fontSize: '0.72rem',
+                                                                                                padding: '3px 10px',
+                                                                                                borderRadius: 8,
+                                                                                                background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(99, 102, 241, 0.2))',
+                                                                                                border: '1px solid rgba(56, 189, 248, 0.45)',
+                                                                                                color: '#38bdf8',
+                                                                                                fontWeight: 600,
+                                                                                                display: 'inline-flex',
+                                                                                                alignItems: 'center',
+                                                                                                gap: 5,
+                                                                                                width: 'fit-content',
+                                                                                                boxShadow: '0 2px 8px rgba(56, 189, 248, 0.2)'
+                                                                                            }}>
+                                                                                                🎯 Planned: {planned.weight ? `${planned.weight} ${planned.unit || unit}` : ''}{planned.reps ? ` × ${planned.reps}` : ''}{planned.rpe ? ` @ ${planned.rpe}` : ''}
+                                                                                            </div>
+                                                                                        );
+                                                                                    })()}
+                                                                                </div>
                                                                             </div>
                                                                             <div style={{
                                                                                 width: 30,
@@ -3011,11 +3075,11 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                             <div style={{
                                                                                                 border: '1px solid rgba(255, 255, 255, 0.08)',
                                                                                                 borderRadius: 16,
-                                                                                                padding: '16px',
+                                                                                                padding: '14px',
                                                                                                 background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)',
                                                                                                 boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.06)'
                                                                                             }}>
-                                                                                                <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#ffffff', marginBottom: '14px', letterSpacing: '-0.01em' }}>Exercise Actions</div>
+                                                                                                <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#ffffff', marginBottom: '12px', letterSpacing: '-0.01em' }}>Exercise Actions</div>
                                                                                                 <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                                                                                                     <ExerciseFeedback
                                                                                                         athleteId={athleteId}
@@ -3048,23 +3112,59 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                             <div style={{
                                                                                                 border: '1px solid rgba(255, 255, 255, 0.08)',
                                                                                                 borderRadius: 16,
-                                                                                                padding: '16px',
+                                                                                                padding: '14px',
                                                                                                 background: 'linear-gradient(180deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%)',
                                                                                                 boxShadow: '0 4px 16px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.06)'
                                                                                             }}>
-                                                                                                <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#ffffff', marginBottom: '14px', letterSpacing: '-0.01em' }}>Performance Stats</div>
-                                                                                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', fontSize: '0.85rem' }}>
-                                                                                                    <div style={{ background: 'linear-gradient(135deg, rgba(125, 135, 210, 0.15) 0%, rgba(168, 85, 247, 0.1) 100%)', border: '1px solid rgba(125, 135, 210, 0.3)', padding: '6px 14px', borderRadius: 12, color: '#c4b5fd', fontWeight: 700 }}>
-                                                                                                        E1RM: {toDisplay(maxE1RM)} {exerciseData?.unit || unit}
+                                                                                                <div style={{ fontSize: '0.92rem', fontWeight: 700, color: '#ffffff', marginBottom: '12px', letterSpacing: '-0.01em' }}>Performance Stats</div>
+                                                                                                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: '8px' }}>
+                                                                                                    <div style={{
+                                                                                                        background: 'linear-gradient(135deg, rgba(125, 135, 210, 0.16) 0%, rgba(168, 85, 247, 0.1) 100%)',
+                                                                                                        border: '1px solid rgba(125, 135, 210, 0.35)',
+                                                                                                        padding: '9px 12px',
+                                                                                                        borderRadius: 12,
+                                                                                                        display: 'flex',
+                                                                                                        flexDirection: 'column',
+                                                                                                        gap: 2,
+                                                                                                    }}>
+                                                                                                        <span style={{ fontSize: '0.66rem', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>Estimated 1RM</span>
+                                                                                                        <span style={{ fontSize: '0.96rem', color: '#c4b5fd', fontWeight: 800 }}>{toDisplay(maxE1RM)} {exerciseData?.unit || unit}</span>
                                                                                                     </div>
-                                                                                                    <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '6px 14px', borderRadius: 12, color: 'var(--foreground)', fontWeight: 600 }}>
-                                                                                                        Total SI: {exStress.total.toFixed(2)}
+                                                                                                    <div style={{
+                                                                                                        background: 'rgba(255, 255, 255, 0.035)',
+                                                                                                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                                                                        padding: '9px 12px',
+                                                                                                        borderRadius: 12,
+                                                                                                        display: 'flex',
+                                                                                                        flexDirection: 'column',
+                                                                                                        gap: 2,
+                                                                                                    }}>
+                                                                                                        <span style={{ fontSize: '0.66rem', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>Total SI</span>
+                                                                                                        <span style={{ fontSize: '0.96rem', color: '#ffffff', fontWeight: 800 }}>{exStress.total.toFixed(2)}</span>
                                                                                                     </div>
-                                                                                                    <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '6px 14px', borderRadius: 12, color: 'var(--foreground)', fontWeight: 600 }}>
-                                                                                                        Peripheral SI: {exStress.peripheral.toFixed(2)}
+                                                                                                    <div style={{
+                                                                                                        background: 'rgba(255, 255, 255, 0.035)',
+                                                                                                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                                                                        padding: '9px 12px',
+                                                                                                        borderRadius: 12,
+                                                                                                        display: 'flex',
+                                                                                                        flexDirection: 'column',
+                                                                                                        gap: 2,
+                                                                                                    }}>
+                                                                                                        <span style={{ fontSize: '0.66rem', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>Peripheral SI</span>
+                                                                                                        <span style={{ fontSize: '0.96rem', color: '#ffffff', fontWeight: 800 }}>{exStress.peripheral.toFixed(2)}</span>
                                                                                                     </div>
-                                                                                                    <div style={{ background: 'rgba(255, 255, 255, 0.04)', border: '1px solid rgba(255, 255, 255, 0.08)', padding: '6px 14px', borderRadius: 12, color: 'var(--foreground)', fontWeight: 600 }}>
-                                                                                                        Central SI: {exStress.central.toFixed(2)}
+                                                                                                    <div style={{
+                                                                                                        background: 'rgba(255, 255, 255, 0.035)',
+                                                                                                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                                                                                                        padding: '9px 12px',
+                                                                                                        borderRadius: 12,
+                                                                                                        display: 'flex',
+                                                                                                        flexDirection: 'column',
+                                                                                                        gap: 2,
+                                                                                                    }}>
+                                                                                                        <span style={{ fontSize: '0.66rem', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.04em', fontWeight: 600 }}>Central SI</span>
+                                                                                                        <span style={{ fontSize: '0.96rem', color: '#ffffff', fontWeight: 800 }}>{exStress.central.toFixed(2)}</span>
                                                                                                     </div>
                                                                                                 </div>
                                                                                             </div>

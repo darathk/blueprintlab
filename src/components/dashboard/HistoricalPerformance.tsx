@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Papa from 'papaparse';
-import { Upload, Trash2, Plus, X } from 'lucide-react';
+import { Upload, Trash2, Plus, X, History } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { calculateDots } from '@/lib/dots';
 
@@ -306,17 +306,24 @@ export default function HistoricalPerformance({ athlete }) {
 
             {/* All-Time PRs */}
             {allTimePRs && (
-                <div className="glass-panel" style={{
-                    borderRadius: 16,
-                    padding: '1.5rem',
-                    marginBottom: '2rem',
-                }}>
-                    <div style={{ marginBottom: '1rem' }}>
-                        <h3 style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--secondary-foreground)', margin: 0 }}>
-                            All-Time PRs
+                <div
+                    style={{
+                        borderRadius: 16,
+                        padding: '1.25rem',
+                        marginBottom: '1.5rem',
+                        background: 'linear-gradient(180deg, rgba(30, 41, 59, 0.3) 0%, rgba(15, 23, 42, 0.45) 100%)',
+                        border: '1px solid rgba(255, 255, 255, 0.08)',
+                    }}
+                >
+                    <div style={{ marginBottom: '0.85rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <h3 style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--secondary-foreground)', margin: 0 }}>
+                            All-Time Competition PRs
                         </h3>
+                        <span style={{ fontSize: '0.72rem', color: 'var(--secondary-foreground)', opacity: 0.7 }}>
+                            Official Meet Records
+                        </span>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10 }}>
                         {[
                             { label: 'Squat', data: allTimePRs.squat, color: '#7d87d2' },
                             { label: 'Bench', data: allTimePRs.bench, color: '#a855f7' },
@@ -324,24 +331,52 @@ export default function HistoricalPerformance({ athlete }) {
                             { label: 'Total', data: allTimePRs.total, color: 'var(--primary)' },
                             { label: 'DOTS', data: allTimePRs.dots, color: '#f59e0b' },
                         ].map(item => (
-                            <div key={item.label} className="glass-panel" style={{ textAlign: 'center', padding: '14px 10px', background: 'var(--glass-surface-2)', borderRadius: 12, border: '1px solid var(--glass-border)' }}>
-                                <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 6 }}>{item.label}</div>
-                                <div style={{ fontSize: 20, fontWeight: 800, color: item.color }}>
-                                    {item.data.value > 0 ? (
-                                        <>
-                                            {item.data.value.toFixed(item.label === 'DOTS' ? 2 : 1)}
-                                            {item.label !== 'DOTS' && (
-                                                <span style={{ fontSize: '0.65em', color: 'var(--secondary-foreground)', marginLeft: '6px', fontWeight: 600 }}>
-                                                    ({(item.data.value * 2.20462).toFixed(1)} lbs)
-                                                </span>
-                                            )}
-                                        </>
-                                    ) : '—'}
+                            <div
+                                key={item.label}
+                                style={{
+                                    textAlign: 'center',
+                                    padding: '12px 10px',
+                                    background: 'rgba(255, 255, 255, 0.03)',
+                                    borderRadius: 12,
+                                    border: '1px solid rgba(255, 255, 255, 0.07)',
+                                    borderTop: `3px solid ${item.color}`,
+                                    display: 'flex',
+                                    flexDirection: 'column',
+                                    justifyContent: 'space-between',
+                                    minHeight: 100,
+                                }}
+                            >
+                                <div style={{ fontSize: 10, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.06em', fontWeight: 700 }}>
+                                    {item.label}
                                 </div>
-                                {item.data.value > 0 && (
-                                    <div style={{ fontSize: 10, color: 'var(--foreground)', opacity: 0.9, marginTop: 6, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontWeight: 'bold' }} title={item.data.meetName}>
+                                <div style={{ margin: '4px 0' }}>
+                                    <div style={{ fontSize: 20, fontWeight: 800, color: item.color, lineHeight: 1.1 }}>
+                                        {item.data.value > 0 ? (
+                                            item.label === 'DOTS' ? item.data.value.toFixed(2) : `${item.data.value.toFixed(1)} kg`
+                                        ) : '—'}
+                                    </div>
+                                    {item.data.value > 0 && item.label !== 'DOTS' && (
+                                        <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', fontWeight: 600, marginTop: 2 }}>
+                                            {(item.data.value * 2.20462).toFixed(1)} lbs
+                                        </div>
+                                    )}
+                                </div>
+                                {item.data.value > 0 ? (
+                                    <div
+                                        style={{
+                                            fontSize: 10,
+                                            color: 'rgba(255,255,255,0.75)',
+                                            whiteSpace: 'nowrap',
+                                            overflow: 'hidden',
+                                            textOverflow: 'ellipsis',
+                                            fontWeight: 500,
+                                        }}
+                                        title={`${item.data.meetName} (${item.data.date})`}
+                                    >
                                         {item.data.meetName}
                                     </div>
+                                ) : (
+                                    <div style={{ fontSize: 10, color: 'rgba(255,255,255,0.3)' }}>No record</div>
                                 )}
                             </div>
                         ))}
@@ -351,7 +386,7 @@ export default function HistoricalPerformance({ athlete }) {
 
             {/* Chart */}
             {pastMeets.length > 0 && (
-                <div style={{ background: 'rgba(15,23,42,0.4)', borderRadius: 12, border: '1px solid rgba(255,255,255,0.07)', padding: '16px 8px 8px', marginBottom: '2rem' }}>
+                <div style={{ background: 'rgba(15,23,42,0.45)', borderRadius: 14, border: '1px solid rgba(255,255,255,0.08)', padding: '16px 12px 12px', marginBottom: '1.5rem' }}>
                     <div style={{ paddingLeft: '1rem', paddingBottom: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                             <span style={{ color: 'var(--primary)' }}>///</span> Meet Progression
@@ -447,39 +482,73 @@ export default function HistoricalPerformance({ athlete }) {
             {error && <div style={{ color: '#ef4444', marginBottom: '1rem', fontSize: '0.9rem' }}>{error}</div>}
 
             {pastMeets.length === 0 ? (
-                <div style={{ padding: '3rem 1rem', textAlign: 'center', border: '1px dashed var(--card-border)', borderRadius: '0.5rem', color: 'var(--secondary-foreground)' }}>
-                    No historical meet data imported.
+                <div
+                    style={{
+                        padding: '3rem 1.5rem',
+                        textAlign: 'center',
+                        borderRadius: 16,
+                        background: 'linear-gradient(180deg, rgba(30, 41, 59, 0.25) 0%, rgba(15, 23, 42, 0.45) 100%)',
+                        border: '1px dashed rgba(255, 255, 255, 0.12)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: 12,
+                    }}
+                >
+                    <div
+                        style={{
+                            width: 48,
+                            height: 48,
+                            borderRadius: 12,
+                            background: 'linear-gradient(135deg, rgba(236, 72, 153, 0.15) 0%, rgba(125, 135, 210, 0.15) 100%)',
+                            border: '1px solid rgba(236, 72, 153, 0.3)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                        }}
+                    >
+                        <History size={24} style={{ color: '#ec4899' }} />
+                    </div>
+                    <div>
+                        <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--foreground)' }}>
+                            No Historical Meets Logged
+                        </div>
+                        <p style={{ color: 'var(--secondary-foreground)', fontSize: '0.82rem', margin: '4px 0 0', maxWidth: 400 }}>
+                            Upload OpenPowerlifting CSV exports or manually enter past competition attempts to track DOTs and 1RM progression over time.
+                        </p>
+                    </div>
                 </div>
             ) : (
-                <div style={{ overflowX: 'auto', border: '1px solid var(--card-border)', borderRadius: '0.5rem', background: 'var(--card-bg)' }}>
+                <div style={{ overflowX: 'auto', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 14, background: 'rgba(15, 23, 42, 0.45)' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                         <thead>
-                            <tr style={{ background: 'rgba(255,255,255,0.05)', borderBottom: '1px solid var(--card-border)' }}>
-                                <th style={{ padding: '0.75rem 1rem', fontSize: '0.85rem', color: 'var(--secondary-foreground)' }}>Date</th>
-                                <th style={{ padding: '0.75rem 1rem', fontSize: '0.85rem', color: 'var(--secondary-foreground)' }}>Meet</th>
-                                <th style={{ padding: '0.75rem 1rem', fontSize: '0.85rem', color: 'var(--secondary-foreground)', textAlign: 'right' }}>BW (kg)</th>
-                                <th style={{ padding: '0.75rem 1rem', fontSize: '0.85rem', color: 'var(--secondary-foreground)', textAlign: 'right' }}>Squat</th>
-                                <th style={{ padding: '0.75rem 1rem', fontSize: '0.85rem', color: 'var(--secondary-foreground)', textAlign: 'right' }}>Bench</th>
-                                <th style={{ padding: '0.75rem 1rem', fontSize: '0.85rem', color: 'var(--secondary-foreground)', textAlign: 'right' }}>Deadlift</th>
-                                <th style={{ padding: '0.75rem 1rem', fontSize: '0.85rem', color: 'var(--primary)', textAlign: 'right', fontWeight: 600 }}>Total</th>
-                                <th style={{ padding: '0.75rem 1rem', fontSize: '0.85rem', color: 'var(--secondary-foreground)', textAlign: 'right' }}>Dots</th>
-                                <th style={{ padding: '0.75rem 1rem', width: '40px' }}></th>
+                            <tr style={{ background: 'rgba(255, 255, 255, 0.03)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
+                                <th style={{ padding: '0.85rem 1rem', fontSize: '0.75rem', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Date</th>
+                                <th style={{ padding: '0.85rem 1rem', fontSize: '0.75rem', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Meet</th>
+                                <th style={{ padding: '0.85rem 1rem', fontSize: '0.75rem', color: 'var(--secondary-foreground)', textAlign: 'right', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>BW (kg)</th>
+                                <th style={{ padding: '0.85rem 1rem', fontSize: '0.75rem', color: 'var(--secondary-foreground)', textAlign: 'right', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Squat</th>
+                                <th style={{ padding: '0.85rem 1rem', fontSize: '0.75rem', color: 'var(--secondary-foreground)', textAlign: 'right', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Bench</th>
+                                <th style={{ padding: '0.85rem 1rem', fontSize: '0.75rem', color: 'var(--secondary-foreground)', textAlign: 'right', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Deadlift</th>
+                                <th style={{ padding: '0.85rem 1rem', fontSize: '0.75rem', color: 'var(--primary)', textAlign: 'right', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total</th>
+                                <th style={{ padding: '0.85rem 1rem', fontSize: '0.75rem', color: 'var(--secondary-foreground)', textAlign: 'right', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Dots</th>
+                                <th style={{ padding: '0.85rem 1rem', width: '40px' }}></th>
                             </tr>
                         </thead>
                         <tbody>
                             {pastMeets.map((meet, index) => (
-                                <tr key={meet.id || index} style={{ borderBottom: index < pastMeets.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none' }}>
-                                    <td style={{ padding: '0.75rem 1rem', fontSize: '0.9rem', whiteSpace: 'nowrap' }}>{meet.date}</td>
-                                    <td style={{ padding: '0.75rem 1rem', fontSize: '0.9rem', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} title={meet.meetName}>{meet.meetName}</td>
-                                    <td style={{ padding: '0.75rem 1rem', fontSize: '0.9rem', textAlign: 'right', color: 'var(--secondary-foreground)' }}>{meet.bodyweight}</td>
-                                    <td style={{ padding: '0.75rem 1rem', fontSize: '0.9rem', textAlign: 'right' }}>{meet.squat}</td>
-                                    <td style={{ padding: '0.75rem 1rem', fontSize: '0.9rem', textAlign: 'right' }}>{meet.bench}</td>
-                                    <td style={{ padding: '0.75rem 1rem', fontSize: '0.9rem', textAlign: 'right' }}>{meet.deadlift}</td>
-                                    <td style={{ padding: '0.75rem 1rem', fontSize: '0.95rem', textAlign: 'right', fontWeight: 600, color: 'var(--primary)' }}>{meet.total}</td>
-                                    <td style={{ padding: '0.75rem 1rem', fontSize: '0.9rem', textAlign: 'right', color: 'var(--secondary-foreground)' }}>{meet.dots.toFixed(2)}</td>
-                                    <td style={{ padding: '0.75rem 1rem', textAlign: 'right' }}>
+                                <tr key={meet.id || index} style={{ borderBottom: index < pastMeets.length - 1 ? '1px solid rgba(255, 255, 255, 0.05)' : 'none' }}>
+                                    <td style={{ padding: '0.85rem 1rem', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>{meet.date}</td>
+                                    <td style={{ padding: '0.85rem 1rem', fontSize: '0.85rem', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }} title={meet.meetName}>{meet.meetName}</td>
+                                    <td style={{ padding: '0.85rem 1rem', fontSize: '0.85rem', textAlign: 'right', color: 'var(--secondary-foreground)', fontFamily: 'monospace' }}>{meet.bodyweight}</td>
+                                    <td style={{ padding: '0.85rem 1rem', fontSize: '0.85rem', textAlign: 'right', fontFamily: 'monospace' }}>{meet.squat}</td>
+                                    <td style={{ padding: '0.85rem 1rem', fontSize: '0.85rem', textAlign: 'right', fontFamily: 'monospace' }}>{meet.bench}</td>
+                                    <td style={{ padding: '0.85rem 1rem', fontSize: '0.85rem', textAlign: 'right', fontFamily: 'monospace' }}>{meet.deadlift}</td>
+                                    <td style={{ padding: '0.85rem 1rem', fontSize: '0.9rem', textAlign: 'right', fontWeight: 700, color: 'var(--primary)', fontFamily: 'monospace' }}>{meet.total}</td>
+                                    <td style={{ padding: '0.85rem 1rem', fontSize: '0.85rem', textAlign: 'right', color: 'var(--secondary-foreground)', fontFamily: 'monospace' }}>{meet.dots.toFixed(2)}</td>
+                                    <td style={{ padding: '0.85rem 1rem', textAlign: 'right' }}>
                                         <button onClick={() => deleteMeet(meet.id)} style={{ color: '#ef4444', opacity: 0.7, cursor: 'pointer', background: 'none', border: 'none' }} title="Remove Meet">
-                                            <Trash2 size={16} />
+                                            <Trash2 size={15} />
                                         </button>
                                     </td>
                                 </tr>
