@@ -38,7 +38,6 @@ export const LB_PLATE_SPECS: Record<number, PlateSpec> = {
 export function getPlateSpec(w: number, unit: 'kg' | 'lb'): PlateSpec {
     const specs = unit === 'kg' ? KG_PLATE_SPECS : LB_PLATE_SPECS;
     if (specs[w]) return specs[w];
-    // Fallback match nearest or default
     return {
         weight: w,
         color: '#94a3b8',
@@ -68,20 +67,21 @@ export default function BarbellVisualizer({
     onRemovePlate,
     isInteractive = false,
 }: BarbellVisualizerProps) {
+    const svgWidth = 440;
     const svgHeight = 320;
     const centerY = svgHeight / 2;
 
-    // Dimensions for sleeve
-    const shaftX = 30;
-    const shaftWidth = 50;
+    // Dimensions for sleeve & shaft
+    const shaftX = 35;
+    const shaftWidth = 55;
     const shaftHeight = 24;
 
     const innerCollarX = shaftX + shaftWidth;
-    const innerCollarWidth = 24;
-    const innerCollarHeight = 70;
+    const innerCollarWidth = 22;
+    const innerCollarHeight = 72;
 
     const sleeveStartX = innerCollarX + innerCollarWidth;
-    const sleeveLength = 260;
+    const sleeveLength = 275;
     const sleeveHeight = 32;
 
     // Calculate positions of plates
@@ -89,22 +89,20 @@ export default function BarbellVisualizer({
     const renderedPlates = plates.map((w, index) => {
         const spec = getPlateSpec(w, unit);
         const x = currentX;
-        currentX += spec.width + 1.5; // slight separation
+        currentX += spec.width + 1.5;
         return { ...spec, x, index };
     });
 
     const collarX = currentX + 2;
-    const collarWidth = 24;
+    const collarWidth = 22;
     const collarHeight = 64;
 
-    const totalContentWidth = Math.max(380, includeCollars ? collarX + collarWidth + 40 : currentX + 40);
-
     return (
-        <div className="w-full h-full flex flex-col items-center justify-center select-none" style={{ minHeight: 280 }}>
+        <div className="w-full flex items-center justify-center select-none py-2">
             <svg
-                viewBox={`0 0 ${totalContentWidth} ${svgHeight}`}
-                className="w-full h-auto max-h-[300px] overflow-visible"
-                style={{ filter: 'drop-shadow(0 12px 24px rgba(0,0,0,0.5))' }}
+                viewBox={`0 0 ${svgWidth} ${svgHeight}`}
+                className="w-full h-auto max-w-[440px] max-h-[290px] overflow-visible"
+                style={{ filter: 'drop-shadow(0 10px 25px rgba(0,0,0,0.5))' }}
             >
                 <defs>
                     {/* Metallic Bar Shaft Gradient */}
@@ -162,10 +160,9 @@ export default function BarbellVisualizer({
                     stroke="#1e293b"
                     strokeWidth="1"
                 />
-                {/* Knurling micro-pattern tick lines */}
-                <line x1={shaftX + 10} y1={centerY - shaftHeight / 2} x2={shaftX + 10} y2={centerY + shaftHeight / 2} stroke="#334155" strokeWidth="1" strokeDasharray="1,2" />
-                <line x1={shaftX + 25} y1={centerY - shaftHeight / 2} x2={shaftX + 25} y2={centerY + shaftHeight / 2} stroke="#334155" strokeWidth="1" strokeDasharray="1,2" />
-                <line x1={shaftX + 40} y1={centerY - shaftHeight / 2} x2={shaftX + 40} y2={centerY + shaftHeight / 2} stroke="#334155" strokeWidth="1" strokeDasharray="1,2" />
+                <line x1={shaftX + 12} y1={centerY - shaftHeight / 2} x2={shaftX + 12} y2={centerY + shaftHeight / 2} stroke="#334155" strokeWidth="1" strokeDasharray="1,2" />
+                <line x1={shaftX + 28} y1={centerY - shaftHeight / 2} x2={shaftX + 28} y2={centerY + shaftHeight / 2} stroke="#334155" strokeWidth="1" strokeDasharray="1,2" />
+                <line x1={shaftX + 44} y1={centerY - shaftHeight / 2} x2={shaftX + 44} y2={centerY + shaftHeight / 2} stroke="#334155" strokeWidth="1" strokeDasharray="1,2" />
 
                 {/* 2. Barbell Inner Stopper Collar */}
                 <g>
@@ -179,7 +176,6 @@ export default function BarbellVisualizer({
                         stroke="#1c1917"
                         strokeWidth="1.5"
                     />
-                    {/* Ring highlight on stopper */}
                     <line
                         x1={innerCollarX + 4}
                         y1={centerY - innerCollarHeight / 2 + 3}
@@ -222,8 +218,8 @@ export default function BarbellVisualizer({
                             key={`${plate.weight}_${plate.index}`}
                             filter="url(#plateShadow)"
                             onClick={() => onRemovePlate && onRemovePlate(plate.index)}
-                            style={{ cursor: isClickable ? 'pointer' : 'default', transition: 'transform 0.15s ease' }}
-                            className={isClickable ? 'hover:opacity-90 active:scale-95' : ''}
+                            style={{ cursor: isClickable ? 'pointer' : 'default' }}
+                            className={isClickable ? 'hover:opacity-90 active:scale-95 transition-opacity' : ''}
                         >
                             <defs>
                                 <linearGradient id={gradId} x1="0%" y1="0%" x2="0%" y2="100%">
@@ -246,7 +242,7 @@ export default function BarbellVisualizer({
                                 strokeWidth="1.5"
                             />
 
-                            {/* Inner rim indentation simulation (competition disc groove) */}
+                            {/* Inner rim groove */}
                             <rect
                                 x={plate.x + 2}
                                 y={topY + 6}
@@ -282,10 +278,9 @@ export default function BarbellVisualizer({
                     );
                 })}
 
-                {/* 5. Calibrated Competition Collars (2.5 kg each) */}
+                {/* 5. Calibrated Competition Collars */}
                 {includeCollars && (
                     <g filter="url(#plateShadow)">
-                        {/* Main collar ring body */}
                         <rect
                             x={collarX}
                             y={centerY - collarHeight / 2}
@@ -296,9 +291,8 @@ export default function BarbellVisualizer({
                             stroke="#334155"
                             strokeWidth="1.5"
                         />
-                        {/* Lock clamp handle / screw on top */}
                         <rect
-                            x={collarX + 8}
+                            x={collarX + 7}
                             y={centerY - collarHeight / 2 - 12}
                             width={8}
                             height={13}
@@ -308,18 +302,17 @@ export default function BarbellVisualizer({
                             strokeWidth="1"
                         />
                         <line
-                            x1={collarX + 4}
+                            x1={collarX + 3}
                             y1={centerY - collarHeight / 2 - 12}
-                            x2={collarX + 20}
+                            x2={collarX + 19}
                             y2={centerY - collarHeight / 2 - 12}
                             stroke="#64748b"
                             strokeWidth="3"
                             strokeLinecap="round"
                         />
-                        {/* Knurled grip grooves on collar */}
-                        <line x1={collarX + 6} y1={centerY - collarHeight / 2 + 4} x2={collarX + 6} y2={centerY + collarHeight / 2 - 4} stroke="rgba(0,0,0,0.25)" strokeWidth="1.5" />
-                        <line x1={collarX + 12} y1={centerY - collarHeight / 2 + 4} x2={collarX + 12} y2={centerY + collarHeight / 2 - 4} stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" />
-                        <line x1={collarX + 18} y1={centerY - collarHeight / 2 + 4} x2={collarX + 18} y2={centerY + collarHeight / 2 - 4} stroke="rgba(0,0,0,0.25)" strokeWidth="1.5" />
+                        <line x1={collarX + 5} y1={centerY - collarHeight / 2 + 4} x2={collarX + 5} y2={centerY + collarHeight / 2 - 4} stroke="rgba(0,0,0,0.25)" strokeWidth="1.5" />
+                        <line x1={collarX + 11} y1={centerY - collarHeight / 2 + 4} x2={collarX + 11} y2={centerY + collarHeight / 2 - 4} stroke="rgba(255,255,255,0.4)" strokeWidth="1.5" />
+                        <line x1={collarX + 17} y1={centerY - collarHeight / 2 + 4} x2={collarX + 17} y2={centerY + collarHeight / 2 - 4} stroke="rgba(0,0,0,0.25)" strokeWidth="1.5" />
                     </g>
                 )}
             </svg>

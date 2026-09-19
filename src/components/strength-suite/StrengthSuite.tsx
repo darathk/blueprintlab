@@ -45,8 +45,8 @@ export default function StrengthSuite({
 
     return (
         <div className="w-full flex flex-col items-center">
-            {/* Top Navigation Capsule Pill Bar exact to Screenshots */}
-            <div className="w-full max-w-4xl flex items-center justify-between mb-8 px-2">
+            {/* Top Navigation Capsule Pill Bar */}
+            <div className="w-full max-w-5xl flex items-center justify-between mb-8 px-2">
                 <div className="flex-1 flex justify-center">
                     <div
                         className="inline-flex items-center gap-1 p-1.5 rounded-2xl overflow-x-auto max-w-full"
