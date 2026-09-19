@@ -6,7 +6,8 @@ import Link from 'next/link';
 import AthleteNav from '@/components/athlete/AthleteNav';
 import MobileBottomNav, { NavItem } from '@/components/navigation/MobileBottomNav';
 import AppSetupBubble from '@/components/notifications/AppSetupBubble';
-import { LayoutDashboard, MessageSquare, Medal, Target, Settings, Search, Video } from 'lucide-react';
+import { LayoutDashboard, MessageSquare, Medal, Target, Settings, Search, Video, Zap } from 'lucide-react';
+import { MASTER_COACH_ID, SELF_ATHLETE_ID, SELF_COACH_EMAILS } from '@/lib/auth-cache';
 
 export default async function AthletePortalLayout({
     children,
@@ -18,8 +19,16 @@ export default async function AthletePortalLayout({
     const user = await currentUser();
     if (!user) redirect('/sign-in');
 
-    const email = (user.primaryEmailAddress?.emailAddress || '').toLowerCase();
+    const email = (user.primaryEmailAddress?.emailAddress || '').toLowerCase().trim();
     const { id } = await params;
+
+    const isSelfCoach = SELF_COACH_EMAILS.includes(email);
+    const isSelfAthleteAccess = isSelfCoach && id === SELF_ATHLETE_ID;
+
+    // If attempting to view master coach profile as an athlete, bounce to the self-coached athlete dashboard
+    if (id === MASTER_COACH_ID) {
+        redirect(`/athlete/${SELF_ATHLETE_ID}/dashboard`);
+    }
 
     // Fetch athlete and unread count in parallel
     const [requestedAthlete, unreadCount] = await Promise.all([
@@ -42,26 +51,29 @@ export default async function AthletePortalLayout({
             select: { id: true, role: true }
         });
 
-        // If they are a coach, redirect to the coach dashboard
-        // Coaches should NOT be in the athlete portal side of things
-        if (loggedInUser?.role === 'coach') {
+        // If this is a self-coach accessing their athlete persona, grant immediate access
+        if (isSelfAthleteAccess) {
+            // Permitted!
+        } else if (loggedInUser?.role === 'coach') {
+            // Regular coaches shouldn't lurk in other athlete portals
             redirect('/dashboard');
-        }
-
-        // If they are an athlete trying to snoop on another athlete, block them
-        if (loggedInUser) {
+        } else if (loggedInUser) {
+            // If they are an athlete trying to snoop on another athlete, block them
             redirect(`/athlete/${loggedInUser.id}/dashboard`);
         }
     } else {
         // Even if they ARE the requested athlete, if their role is coach,
-        // they should still go to the dashboard (prevents "Combined Chat" view)
-        if (requestedAthlete.role === 'coach') {
+        // they should still go to the dashboard unless it's self-athlete mode
+        if (requestedAthlete.role === 'coach' && !isSelfAthleteAccess) {
             redirect('/dashboard');
         }
     }
 
+    const canSwitchToCoach = isSelfCoach;
+
     const athleteNavItems: NavItem[] = [
         { label: 'Dashboard', href: `/athlete/${id}/dashboard`, icon: <LayoutDashboard size={26} /> },
+        ...(canSwitchToCoach ? [{ label: 'Coach Mode', href: '/dashboard', icon: <Zap size={26} /> }] : []),
         { label: 'Messages', href: `/athlete/${id}/chat`, icon: <MessageSquare size={26} />, unreadCount },
         { label: 'Tutorials', href: `/athlete/${id}/tutorials`, icon: <Video size={26} /> },
         { label: 'Board', href: `/athlete/${id}/leaderboard`, icon: <Medal size={26} /> },
@@ -70,7 +82,7 @@ export default async function AthletePortalLayout({
 
     if (requestedAthlete.meetAttempts) {
         // Insert right after Messages
-        athleteNavItems.splice(2, 0, { label: 'Meet', href: `/athlete/${id}/meet`, icon: <Target size={26} /> });
+        athleteNavItems.splice(canSwitchToCoach ? 3 : 2, 0, { label: 'Meet', href: `/athlete/${id}/meet`, icon: <Target size={26} /> });
     }
 
     return (
@@ -89,7 +101,7 @@ export default async function AthletePortalLayout({
                         <span className="hidden md:inline whitespace-nowrap" style={{ marginLeft: '1.5rem', fontWeight: 400, color: 'var(--secondary-foreground)', fontSize: '1rem', borderLeft: '1px solid var(--card-border)', paddingLeft: '1.5rem' }}>{requestedAthlete.name}'s Portal</span>
                     </div>
                     <div className="hidden md:flex" style={{ gap: '1.5rem', alignItems: 'center', flexShrink: 0 }}>
-                        <AthleteNav id={id} unreadCount={unreadCount} userId={id} />
+                        <AthleteNav id={id} unreadCount={unreadCount} userId={id} canSwitchToCoach={canSwitchToCoach} />
                         <div style={{ borderLeft: '1px solid var(--card-border)', paddingLeft: '1.5rem', display: 'flex', alignItems: 'center' }}>
                             <UserButton afterSignOutUrl="/sign-in" />
                         </div>

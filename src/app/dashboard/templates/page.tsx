@@ -4,6 +4,8 @@ import { Suspense } from 'react';
 import { getAthletes } from '@/lib/storage';
 import dynamic from 'next/dynamic';
 
+import { getCoachRecord } from '@/lib/auth-cache';
+
 const TemplateLibrary = dynamic(() => import('@/components/dashboard/TemplateLibrary'), {
     loading: () => <div style={{ textAlign: 'center', padding: '50px', color: 'var(--muted)' }}>Loading templates...</div>
 });
@@ -23,12 +25,9 @@ export default async function TemplatesPage() {
     if (!user) return null;
 
     const email = (user.primaryEmailAddress?.emailAddress || '').toLowerCase();
-    const coach = await prisma.athlete.findFirst({
-        where: { email: { equals: email, mode: 'insensitive' } },
-        select: { id: true, role: true }
-    });
+    const coach = await getCoachRecord(email);
 
-    if (!coach || coach.role !== 'coach') return null;
+    if (!coach) return null;
 
     return (
         <div>

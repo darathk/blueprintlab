@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useUnreadCount } from '@/components/notifications/UnreadBadge';
 
-export default function AthleteNav({ id, unreadCount, userId }: { id: string; unreadCount: number; userId?: string }) {
+export default function AthleteNav({ id, unreadCount, userId, canSwitchToCoach }: { id: string; unreadCount: number; userId?: string; canSwitchToCoach?: boolean }) {
     const pathname = usePathname();
     const chatPath = `/athlete/${id}/chat`;
     const isActive = pathname === chatPath;
@@ -14,7 +14,33 @@ export default function AthleteNav({ id, unreadCount, userId }: { id: string; un
     const displayUnread = liveUnread;
 
     return (
-        <div style={{ display: 'flex', gap: '1.5rem', alignItems: 'center', flexShrink: 0 }}>
+        <div style={{ display: 'flex', gap: '1.25rem', alignItems: 'center', flexShrink: 0 }}>
+            {canSwitchToCoach && (
+                <Link 
+                    prefetch={true} 
+                    href="/dashboard" 
+                    className="chat-press"
+                    title="Switch to Coach Command Center"
+                    style={{
+                        fontSize: '0.8125rem',
+                        fontWeight: 700,
+                        color: '#38bdf8',
+                        textDecoration: 'none',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.45rem',
+                        padding: '0.45rem 1rem',
+                        borderRadius: '9999px',
+                        background: 'linear-gradient(135deg, rgba(6, 182, 212, 0.18) 0%, rgba(59, 130, 246, 0.15) 100%)',
+                        border: '1px solid rgba(6, 182, 212, 0.4)',
+                        boxShadow: '0 0 16px rgba(6, 182, 212, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.15)',
+                        transition: 'all 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
+                    }}
+                >
+                    <span style={{ fontSize: '0.95rem' }}>⚡</span>
+                    <span>Coach Mode</span>
+                </Link>
+            )}
             <Link prefetch={true} href={leaderboardPath} style={{
                 fontSize: '0.9rem',
                 fontWeight: 600,

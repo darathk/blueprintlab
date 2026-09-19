@@ -4,8 +4,9 @@ import { prisma } from '@/lib/prisma';
 import Link from 'next/link';
 import MeetDayClient from './MeetDayClient';
 import MeetAttempts from '@/components/dashboard/MeetAttempts';
+import { getCoachRecord } from '@/lib/auth-cache';
 
-export default async function MeetDayAthletePage({
+export default async function LifterMeetDayPage({
     params,
 }: {
     params: Promise<{ id: string }>;
@@ -16,12 +17,9 @@ export default async function MeetDayAthletePage({
     if (!user) redirect('/sign-in');
 
     const email = (user.primaryEmailAddress?.emailAddress || '').toLowerCase();
-    const coach = await prisma.athlete.findFirst({
-        where: { email: { equals: email, mode: 'insensitive' } },
-        select: { id: true, role: true },
-    });
+    const coach = await getCoachRecord(email);
 
-    if (!coach || coach.role !== 'coach') redirect('/');
+    if (!coach) redirect('/');
 
     const [athlete, allAthletes] = await Promise.all([
         prisma.athlete.findUnique({

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/api-auth';
+import { MASTER_COACH_ID } from '@/lib/auth-cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +19,7 @@ export async function GET(request: Request) {
         }
 
         // Verify the requester is the coach
-        if (coachId !== auth.user.id) {
+        if (coachId !== auth.user.id && !(auth.isSelfCoach && coachId === MASTER_COACH_ID)) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 

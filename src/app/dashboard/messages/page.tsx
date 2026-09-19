@@ -3,6 +3,7 @@ import { currentUser } from '@clerk/nextjs/server';
 import { redirect } from 'next/navigation';
 import { CoachInbox } from '@/components/chat/ClientCoachInbox';
 import { getCoachInbox, getMessagesByAthlete, getAthletePositions } from '@/lib/storage';
+import { getCoachRecord } from '@/lib/auth-cache';
 
 export default async function MessagesPage({ searchParams }: { searchParams: Promise<{ athleteId?: string }> }) {
     const params = await searchParams;
@@ -13,10 +14,7 @@ export default async function MessagesPage({ searchParams }: { searchParams: Pro
     if (!clerkUser) redirect('/sign-in');
 
     const email = (clerkUser.primaryEmailAddress?.emailAddress || '').toLowerCase();
-    const coach = await prisma.athlete.findFirst({
-        where: { email: { equals: email, mode: 'insensitive' }, role: 'coach' },
-        select: { id: true, name: true, email: true, role: true }
-    });
+    const coach = await getCoachRecord(email);
 
     if (!coach) {
         redirect('/dashboard');

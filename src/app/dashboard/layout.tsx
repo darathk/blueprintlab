@@ -5,7 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { cache } from 'react';
 import TopNavigation from '@/components/dashboard/TopNavigation';
 import MobileBottomNav, { NavItem } from '@/components/navigation/MobileBottomNav';
-import { Home, MessageSquare, Hammer, Medal, Settings, ClipboardList, BookTemplate, Star, Target, Video, DollarSign } from 'lucide-react';
+import { Home, MessageSquare, Hammer, Medal, Settings, ClipboardList, BookTemplate, Star, Target, Video, DollarSign, Dumbbell } from 'lucide-react';
 import { UserButton } from '@clerk/nextjs';
 import { getCoachAuthState } from '@/lib/auth-cache';
 
@@ -14,7 +14,7 @@ export default async function DashboardLayout({
 }: {
     children: React.ReactNode
 }) {
-    const { isCoach, isOwner, user, athleteId, unreadCount } = await getCoachAuthState();
+    const { isCoach, isOwner, user, athleteId, selfAthleteId, unreadCount } = await getCoachAuthState();
 
     if (!user) redirect('/sign-in');
 
@@ -28,6 +28,7 @@ export default async function DashboardLayout({
 
     const coachNavItems: NavItem[] = [
         { label: 'Home', href: '/dashboard', icon: <Home size={26} /> },
+        ...(selfAthleteId ? [{ label: 'Workout Log', href: `/athlete/${selfAthleteId}/dashboard`, icon: <Dumbbell size={26} /> }] : []),
         { label: 'Messages', href: '/dashboard/messages', icon: <MessageSquare size={26} />, unreadCount },
         { label: 'Tutorials', href: '/dashboard/tutorials', icon: <Video size={26} /> },
         { label: 'Revenue', href: '/dashboard/revenue', icon: <DollarSign size={26} /> },
@@ -63,7 +64,7 @@ export default async function DashboardLayout({
                     </Link>
 
                     <div className="hidden md:flex items-center">
-                        <TopNavigation isOwner={isOwner} unreadCount={unreadCount} userId={athleteId || undefined} />
+                        <TopNavigation isOwner={isOwner} unreadCount={unreadCount} userId={athleteId || undefined} selfAthleteId={selfAthleteId || undefined} />
                     </div>
 
                     <div className="md:hidden flex items-center">

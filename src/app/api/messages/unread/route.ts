@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireAuth } from '@/lib/api-auth';
+import { MASTER_COACH_ID, SELF_ATHLETE_ID } from '@/lib/auth-cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,7 +19,7 @@ export async function GET(request: Request) {
         }
 
         // Users can only check their own unread count
-        if (userId !== auth.user.id) {
+        if (userId !== auth.user.id && !(auth.isSelfCoach && (userId === MASTER_COACH_ID || userId === SELF_ATHLETE_ID))) {
             return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
         }
 

@@ -2,6 +2,7 @@ import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { currentUser } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
+import { getCoachRecord } from '@/lib/auth-cache';
 
 function getDaysOut(dateStr: string | null | undefined): number | null {
     if (!dateStr) return null;
@@ -35,12 +36,9 @@ export default async function MeetDayPage() {
     if (!user) redirect('/sign-in');
 
     const email = (user.primaryEmailAddress?.emailAddress || '').toLowerCase();
-    const coach = await prisma.athlete.findFirst({
-        where: { email: { equals: email, mode: 'insensitive' } },
-        select: { id: true, role: true },
-    });
+    const coach = await getCoachRecord(email);
 
-    if (!coach || coach.role !== 'coach') redirect('/');
+    if (!coach) redirect('/');
 
     const allAthletes = await prisma.athlete.findMany({
         where: { coachId: coach.id },
