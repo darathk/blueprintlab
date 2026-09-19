@@ -360,14 +360,23 @@ export default function MaxTab() {
                             </h4>
                         </div>
 
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left" style={{ borderCollapse: 'separate', borderSpacing: '0 6px' }}>
+                        <div className="overflow-x-auto no-scrollbar">
+                            <table className="w-full text-left" style={{ borderCollapse: 'separate', borderSpacing: '0 5px' }}>
                                 <thead>
-                                    <tr className="text-xs uppercase tracking-wider text-zinc-400">
-                                        <th className="px-5 py-3 font-semibold">Percentage</th>
-                                        <th className="px-5 py-3 font-semibold">Weight ({unit})</th>
-                                        <th className="px-5 py-3 font-semibold">Est. Reps</th>
-                                        <th className="px-5 py-3 font-semibold">Zone</th>
+                                    <tr className="text-[11px] sm:text-xs uppercase tracking-wider text-zinc-400">
+                                        <th className="px-2.5 sm:px-5 py-2 sm:py-3 font-bold text-center sm:text-left">
+                                            <span className="sm:hidden">%</span>
+                                            <span className="hidden sm:inline">Percentage</span>
+                                        </th>
+                                        <th className="px-2.5 sm:px-5 py-2 sm:py-3 font-bold text-center sm:text-left">
+                                            <span className="sm:hidden">Weight</span>
+                                            <span className="hidden sm:inline">Weight ({unit})</span>
+                                        </th>
+                                        <th className="px-2 sm:px-5 py-2 sm:py-3 font-bold text-center sm:text-left">
+                                            <span className="sm:hidden">Reps</span>
+                                            <span className="hidden sm:inline">Est. Reps</span>
+                                        </th>
+                                        <th className="px-2.5 sm:px-5 py-2 sm:py-3 font-bold text-right sm:text-left">Zone</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -408,22 +417,22 @@ export default function MaxTab() {
                                                     border: pct === 100 ? '1px solid rgba(239, 68, 68, 0.25)' : '1px solid rgba(255, 255, 255, 0.04)',
                                                 }}
                                             >
-                                                <td className="px-5 py-3.5 rounded-l-xl">
-                                                    <span className={`text-sm font-extrabold ${pct === 100 ? 'text-red-400' : 'text-white'}`}>
+                                                <td className="px-2.5 sm:px-5 py-2 sm:py-3.5 rounded-l-xl text-center sm:text-left">
+                                                    <span className={`text-xs sm:text-sm font-black ${pct === 100 ? 'text-red-400' : 'text-white'}`}>
                                                         {pct}%
                                                     </span>
                                                 </td>
-                                                <td className="px-5 py-3.5">
-                                                    <span className="text-base sm:text-lg font-black text-white">
-                                                        {w} <span className="text-xs font-bold text-white/50">{unit}</span>
+                                                <td className="px-2.5 sm:px-5 py-2 sm:py-3.5 text-center sm:text-left whitespace-nowrap">
+                                                    <span className="text-sm sm:text-lg font-black text-white">
+                                                        {w} <span className="text-[10px] sm:text-xs font-bold text-white/50">{unit}</span>
                                                     </span>
                                                 </td>
-                                                <td className="px-5 py-3.5 text-xs sm:text-sm font-semibold text-zinc-300">
+                                                <td className="px-2 sm:px-5 py-2 sm:py-3.5 text-[11px] sm:text-sm font-semibold text-zinc-300 text-center sm:text-left whitespace-nowrap">
                                                     {repText}
                                                 </td>
-                                                <td className="px-5 py-3.5 rounded-r-xl">
+                                                <td className="px-2.5 sm:px-5 py-2 sm:py-3.5 rounded-r-xl text-right sm:text-left">
                                                     <span
-                                                        className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-bold"
+                                                        className="inline-flex items-center px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full text-[10px] sm:text-xs font-bold whitespace-nowrap"
                                                         style={{
                                                             color: zoneColor,
                                                             background: zoneBg,

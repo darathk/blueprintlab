@@ -48,34 +48,29 @@ export default function LiftDensity({ logs }) {
 
     return (
         <div className="glass-panel" style={{ marginBottom: '2rem', padding: 0, overflow: 'hidden', borderRadius: 16 }}>
-            <div style={{ padding: '1.25rem 1.5rem', background: 'var(--glass-surface-2)', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <h3 style={{ margin: 0, color: 'var(--foreground)', fontSize: '1.15rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+            <div className="px-3.5 sm:px-6 py-3 sm:py-4" style={{ background: 'var(--glass-surface-2)', borderBottom: '1px solid var(--glass-border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 style={{ margin: 0, color: 'var(--foreground)', fontSize: '1rem sm:1.15rem', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                     <span style={{ color: 'var(--primary)', textShadow: '0 0 16px rgba(125, 135, 210, 0.4)' }}>///</span> All Lift Density Data
                     <InfoTooltip text="Displays a heatmap of rep ranges for every exercise performed during the block. Color intensity (green -> yellow -> red) shows how frequently you hit each rep count." />
                 </h3>
             </div>
 
-            <div style={{ overflowX: 'auto' }}>
+            <div className="overflow-x-auto no-scrollbar">
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
                     <thead>
                         <tr style={{ background: 'var(--glass-surface-3)', color: 'var(--foreground)', borderBottom: '1px solid var(--glass-border)' }}>
-                            <th style={{ padding: '0.6rem 1rem', textAlign: 'left', minWidth: '160px', position: 'sticky', left: 0, background: 'var(--glass-surface-3)', zIndex: 10, borderRight: '1px solid var(--glass-border)', fontSize: '0.75rem', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Exercise</th>
+                            <th className="px-2.5 sm:px-4 py-2 sm:py-2.5 text-left min-w-[120px] sm:min-w-[160px] sticky left-0 z-10 text-[11px] sm:text-xs uppercase tracking-wider" style={{ background: 'var(--glass-surface-3)', borderRight: '1px solid var(--glass-border)' }}>Exercise</th>
                             {Array.from({ length: 15 }, (_, i) => i + 1).map(rep => (
-                                <th key={rep} style={{ padding: '0.6rem 0.25rem', width: '36px', textAlign: 'center', fontSize: '0.78rem', fontWeight: 600 }}>{rep}</th>
+                                <th key={rep} className="py-2 px-1 w-[26px] sm:w-[36px] text-center text-[10px] sm:text-xs font-semibold">{rep}</th>
                             ))}
                         </tr>
                     </thead>
                     <tbody>
                         {data.map((row, idx) => (
                             <tr key={row.name} style={{ background: idx % 2 === 0 ? 'transparent' : 'rgba(125, 135, 210, 0.03)', borderBottom: '1px solid var(--glass-border)' }}>
-                                <td style={{
-                                    padding: '0.75rem 1rem',
-                                    fontWeight: 600,
+                                <td className="px-2.5 sm:px-4 py-2 sm:py-2.5 font-semibold sticky left-0 z-5 text-xs sm:text-sm" style={{
                                     borderRight: '1px solid var(--glass-border)',
-                                    position: 'sticky',
-                                    left: 0,
                                     background: 'var(--glass-surface-2)',
-                                    zIndex: 5,
                                     color: 'var(--foreground)'
                                 }}>
                                     {row.name}
@@ -83,14 +78,14 @@ export default function LiftDensity({ logs }) {
                                 {Array.from({ length: 15 }, (_, i) => i + 1).map(rep => {
                                     const count = row.counts[rep] || 0;
                                     return (
-                                        <td key={rep} style={{ textAlign: 'center', borderRight: '1px solid var(--glass-border)', padding: '4px' }}>
+                                        <td key={rep} className="p-0.5 sm:p-1 text-center" style={{ borderRight: '1px solid var(--glass-border)' }}>
                                             {count > 0 && (
                                                 <div style={{
-                                                    width: '24px', height: '24px', borderRadius: '50%',
+                                                    width: '20px', height: '20px', borderRadius: '50%',
                                                     background: getColor(count),
                                                     margin: '0 auto',
                                                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                                    fontSize: '0.7rem', color: 'black', fontWeight: 'bold',
+                                                    fontSize: '0.65rem', color: 'black', fontWeight: 'bold',
                                                     boxShadow: '0 0 8px rgba(0,0,0,0.3)'
                                                 }}>
                                                     {count > 1 ? count : ''}

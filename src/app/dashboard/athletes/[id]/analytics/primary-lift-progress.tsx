@@ -25,27 +25,21 @@ export default function PrimaryLiftProgress({ logs }) {
     ];
 
     return (
-        <div className="glass-panel" style={{ padding: '1.5rem' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem' }}>
+        <div className="glass-panel p-3.5 sm:p-6">
+            <div className="flex flex-col sm:flex-row justify-between sm:items-center mb-4 sm:mb-6 gap-3">
                 <h2 style={{ fontSize: '1.25rem', color: 'var(--foreground)', fontWeight: 600 }}>Primary Lift Progress</h2>
 
                 {/* Filter Controls */}
-                <div style={{ display: 'flex', gap: '0.25rem', background: 'var(--glass-surface-2)', padding: '3px', borderRadius: '20px', border: '1px solid var(--glass-border)' }}>
+                <div className="flex flex-wrap gap-1 bg-white/[0.04] p-1 rounded-full border border-white/10 self-start sm:self-auto">
                     {ranges.map(range => (
                         <button
                             key={range.value}
                             onClick={() => setTimeRange(range.value)}
-                            className="chat-press"
+                            className="chat-press px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-semibold rounded-full transition-all"
                             style={{
-                                background: timeRange === range.value ? 'rgba(125, 135, 210, 0.2)' : 'transparent',
+                                background: timeRange === range.value ? 'rgba(125, 135, 210, 0.25)' : 'transparent',
                                 color: timeRange === range.value ? '#fff' : 'var(--secondary-foreground)',
                                 border: timeRange === range.value ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid transparent',
-                                padding: '0.35rem 0.85rem',
-                                borderRadius: '16px',
-                                fontSize: '0.78rem',
-                                cursor: 'pointer',
-                                fontWeight: 600,
-                                transition: 'all 0.16s var(--ease-out)',
                                 boxShadow: timeRange === range.value ? '0 0 10px rgba(125, 135, 210, 0.25)' : 'none'
                             }}
                         >
@@ -55,32 +49,36 @@ export default function PrimaryLiftProgress({ logs }) {
                 </div>
             </div>
 
-            <div style={{ display: 'grid', gap: '3rem' }}>
+            <div className="grid gap-6 sm:gap-10">
                 {lifts.map(lift => (
                     <div key={lift.key}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem' }}>
-                            <div style={{ width: '12px', height: '12px', borderRadius: '50%', background: lift.color }}></div>
-                            <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>{lift.key}</h3>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.75rem' }}>
+                            <div style={{ width: '10px', height: '10px', borderRadius: '50%', background: lift.color }}></div>
+                            <h3 style={{ fontSize: '1rem', fontWeight: 600 }}>{lift.key}</h3>
                         </div>
 
-                        <div style={{ height: '250px', width: '100%' }}>
+                        <div className="h-[200px] sm:h-[250px] w-full">
                             {data[lift.key].length > 0 ? (
-                                <ResponsiveContainer>
-                                    <LineChart data={data[lift.key]} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <LineChart data={data[lift.key]} margin={{ top: 5, right: 10, bottom: 5, left: -14 }}>
                                         <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
                                         <XAxis
                                             dataKey="displayDate"
-                                            style={{ fontSize: '0.75rem', opacity: 0.7 }}
+                                            style={{ fontSize: '0.7rem', opacity: 0.7 }}
                                             tick={{ fill: 'var(--secondary-foreground)' }}
+                                            axisLine={false}
+                                            tickLine={false}
                                         />
                                         <YAxis
                                             domain={['dataMin - 20', 'dataMax + 20']}
-                                            style={{ fontSize: '0.75rem', opacity: 0.7 }}
+                                            style={{ fontSize: '0.7rem', opacity: 0.7 }}
                                             tick={{ fill: 'var(--secondary-foreground)' }}
-                                            width={40}
+                                            width={34}
+                                            axisLine={false}
+                                            tickLine={false}
                                         />
                                         <Tooltip
-                                            contentStyle={{ background: '#1c1c1c', border: '1px solid #333', fontSize: '0.9rem' }}
+                                            contentStyle={{ background: '#1c1c1c', border: '1px solid #333', fontSize: '0.85rem' }}
                                             labelStyle={{ color: '#888' }}
                                             itemStyle={{ color: lift.color }}
                                             formatter={(value) => [`${value} lbs`, lift.key]}
@@ -89,9 +87,9 @@ export default function PrimaryLiftProgress({ logs }) {
                                             type="monotone"
                                             dataKey="value"
                                             stroke={lift.color}
-                                            strokeWidth={3}
-                                            dot={{ r: 4, fill: '#1c1c1c', strokeWidth: 2 }}
-                                            activeDot={{ r: 6 }}
+                                            strokeWidth={2.5}
+                                            dot={{ r: 3, fill: '#1c1c1c', strokeWidth: 2 }}
+                                            activeDot={{ r: 5 }}
                                         />
                                     </LineChart>
                                 </ResponsiveContainer>

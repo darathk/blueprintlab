@@ -118,7 +118,7 @@ export default function FatigueChart({ readinessLogs }: Props) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             {/* Stats Summary */}
             {stats && (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10 }}>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
                     {[
                         {
                             label: 'Latest Readiness',
@@ -147,19 +147,18 @@ export default function FatigueChart({ readinessLogs }: Props) {
                     ].map(s => (
                         <div
                             key={s.label}
+                            className="p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl"
                             style={{
                                 background: 'linear-gradient(180deg, rgba(30, 41, 59, 0.35) 0%, rgba(15, 23, 42, 0.55) 100%)',
                                 border: '1px solid rgba(255, 255, 255, 0.08)',
                                 borderTop: `3px solid ${s.color}`,
                                 boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.05)',
-                                borderRadius: 14,
-                                padding: '12px 14px',
                             }}
                         >
                             <div style={{ fontSize: 10, color: 'var(--secondary-foreground)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.label}</div>
                             <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginTop: 4 }}>
-                                <span style={{ fontSize: 20, fontWeight: 800, color: s.color, lineHeight: 1.1 }}>{s.value}</span>
-                                <span style={{ fontSize: 11, color: 'var(--secondary-foreground)', fontWeight: 500 }}>{s.sub}</span>
+                                <span className="text-lg sm:text-2xl font-black leading-tight" style={{ color: s.color }}>{s.value}</span>
+                                <span style={{ fontSize: 10, color: 'var(--secondary-foreground)', fontWeight: 500 }}>{s.sub}</span>
                             </div>
                         </div>
                     ))}
@@ -167,18 +166,18 @@ export default function FatigueChart({ readinessLogs }: Props) {
             )}
 
             {/* Chart Container */}
-            <div style={{ background: 'rgba(15, 23, 42, 0.45)', borderRadius: 14, border: '1px solid rgba(255, 255, 255, 0.08)', padding: '16px 10px 10px' }}>
+            <div className="rounded-xl sm:rounded-2xl border border-white/10 p-2 sm:p-4" style={{ background: 'rgba(15, 23, 42, 0.45)' }}>
                 {/* Controls */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10, paddingLeft: 12, paddingRight: 12, marginBottom: 12, alignItems: 'center' }}>
+                <div className="flex justify-between flex-wrap gap-2 px-1 sm:px-3 mb-3 items-center">
                     {/* View toggle */}
                     <div style={{ display: 'flex', background: 'var(--glass-surface-2)', borderRadius: '20px', padding: '3px', border: '1px solid var(--glass-border)' }}>
                         <button onClick={() => setShowRadar(false)} className="chat-press" style={{
-                            padding: '4px 14px', borderRadius: '16px', border: !showRadar ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid transparent', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                            padding: '3px 12px', borderRadius: '16px', border: !showRadar ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid transparent', fontSize: 11, fontWeight: 600, cursor: 'pointer',
                             background: !showRadar ? 'rgba(125, 135, 210, 0.2)' : 'transparent', color: !showRadar ? '#fff' : 'var(--secondary-foreground)',
                             transition: 'all 0.16s var(--ease-out)'
                         }}>Trend</button>
                         <button onClick={() => setShowRadar(true)} className="chat-press" style={{
-                            padding: '4px 14px', borderRadius: '16px', border: showRadar ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid transparent', fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                            padding: '3px 12px', borderRadius: '16px', border: showRadar ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid transparent', fontSize: 11, fontWeight: 600, cursor: 'pointer',
                             background: showRadar ? 'rgba(125, 135, 210, 0.2)' : 'transparent', color: showRadar ? '#fff' : 'var(--secondary-foreground)',
                             transition: 'all 0.16s var(--ease-out)'
                         }}>Radar</button>
@@ -188,9 +187,9 @@ export default function FatigueChart({ readinessLogs }: Props) {
                     <div style={{ display: 'flex', background: 'var(--glass-surface-2)', borderRadius: '20px', padding: '3px', border: '1px solid var(--glass-border)' }}>
                         {Object.keys(TIMELINES).map(tl => (
                             <button key={tl} onClick={() => setTimeline(tl)} className="chat-press" style={{
-                                padding: '4px 10px', background: timeline === tl ? 'rgba(125, 135, 210, 0.2)' : 'transparent',
+                                padding: '3px 8px', background: timeline === tl ? 'rgba(125, 135, 210, 0.2)' : 'transparent',
                                 color: timeline === tl ? '#fff' : 'var(--foreground)', border: timeline === tl ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid transparent', cursor: 'pointer',
-                                fontSize: 11, fontWeight: 700, borderRadius: '16px', transition: 'all 0.16s var(--ease-out)',
+                                fontSize: 10, fontWeight: 700, borderRadius: '16px', transition: 'all 0.16s var(--ease-out)',
                                 boxShadow: timeline === tl ? '0 0 10px rgba(125,135,210,0.25)' : 'none',
                             }}>{tl}</button>
                         ))}
@@ -199,13 +198,13 @@ export default function FatigueChart({ readinessLogs }: Props) {
 
                 {/* Metric toggles */}
                 {!showRadar && (
-                    <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', paddingLeft: 12, paddingRight: 12, marginBottom: 12 }}>
+                    <div className="flex gap-1.5 flex-wrap px-1 sm:px-3 mb-3">
                         {METRICS.map(m => (
                             <button key={m.key} onClick={() => toggleMetric(m.key)} style={{
-                                padding: '3px 10px', borderRadius: 6, border: `1px solid ${m.color}`,
+                                padding: '3px 8px', borderRadius: 6, border: `1px solid ${m.color}`,
                                 background: activeMetrics[m.key] ? `${m.color}22` : 'transparent',
                                 color: activeMetrics[m.key] ? m.color : 'rgba(255,255,255,0.3)',
-                                fontSize: 11, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s',
+                                fontSize: 10, fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s',
                             }}>{m.label}</button>
                         ))}
                     </div>
@@ -213,56 +212,60 @@ export default function FatigueChart({ readinessLogs }: Props) {
 
                 {/* Trend Chart */}
                 {!showRadar ? (
-                    <ResponsiveContainer width="100%" height={280}>
-                        <AreaChart data={filteredData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                            <defs>
-                                {METRICS.map(m => (
-                                    <linearGradient key={m.key} id={`grad-${m.key}`} x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor={m.color} stopOpacity={0.3} />
-                                        <stop offset="95%" stopColor={m.color} stopOpacity={0} />
-                                    </linearGradient>
+                    <div className="h-[220px] sm:h-[280px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <AreaChart data={filteredData} margin={{ top: 8, right: 10, left: -16, bottom: 0 }}>
+                                <defs>
+                                    {METRICS.map(m => (
+                                        <linearGradient key={m.key} id={`grad-${m.key}`} x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor={m.color} stopOpacity={0.3} />
+                                            <stop offset="95%" stopColor={m.color} stopOpacity={0} />
+                                        </linearGradient>
+                                    ))}
+                                </defs>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                                <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} height={26} />
+                                <YAxis domain={[0, 5]} ticks={[1, 2, 3, 4, 5]} tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} width={26} />
+                                <Tooltip content={<CustomTooltip />} />
+                                {METRICS.map(m => activeMetrics[m.key] && (
+                                    <Area
+                                        key={m.key}
+                                        type="monotone"
+                                        dataKey={m.key}
+                                        name={m.label}
+                                        stroke={m.color}
+                                        strokeWidth={2}
+                                        fill={`url(#grad-${m.key})`}
+                                        dot={{ r: 3, fill: m.color }}
+                                        activeDot={{ r: 5 }}
+                                        connectNulls
+                                    />
                                 ))}
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                            <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} height={35} />
-                            <YAxis domain={[0, 5]} ticks={[1, 2, 3, 4, 5]} tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={30} />
-                            <Tooltip content={<CustomTooltip />} />
-                            {METRICS.map(m => activeMetrics[m.key] && (
-                                <Area
-                                    key={m.key}
-                                    type="monotone"
-                                    dataKey={m.key}
-                                    name={m.label}
-                                    stroke={m.color}
-                                    strokeWidth={2}
-                                    fill={`url(#grad-${m.key})`}
-                                    dot={{ r: 3, fill: m.color }}
-                                    activeDot={{ r: 5 }}
-                                    connectNulls
-                                />
-                            ))}
-                        </AreaChart>
-                    </ResponsiveContainer>
+                            </AreaChart>
+                        </ResponsiveContainer>
+                    </div>
                 ) : (
                     /* Radar Chart */
                     latestScores && (
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                            <ResponsiveContainer width="100%" height={300}>
-                                <RadarChart data={latestScores} cx="50%" cy="50%" outerRadius="75%">
-                                    <PolarGrid stroke="rgba(255,255,255,0.1)" />
-                                    <PolarAngleAxis dataKey="metric" tick={{ fill: '#94a3b8', fontSize: 11 }} />
-                                    <PolarRadiusAxis angle={90} domain={[0, 5]} tick={{ fill: '#64748b', fontSize: 10 }} />
-                                    <Radar
-                                        name="Readiness"
-                                        dataKey="value"
-                                        stroke="#7d87d2"
-                                        strokeWidth={2}
-                                        fill="#7d87d2"
-                                        fillOpacity={0.25}
-                                        dot={{ r: 4, fill: '#7d87d2' }}
-                                    />
-                                </RadarChart>
-                            </ResponsiveContainer>
+                            <div className="h-[240px] sm:h-[300px] w-full">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <RadarChart data={latestScores} cx="50%" cy="50%" outerRadius="75%">
+                                        <PolarGrid stroke="rgba(255,255,255,0.1)" />
+                                        <PolarAngleAxis dataKey="metric" tick={{ fill: '#94a3b8', fontSize: 10 }} />
+                                        <PolarRadiusAxis angle={90} domain={[0, 5]} tick={{ fill: '#64748b', fontSize: 9 }} />
+                                        <Radar
+                                            name="Readiness"
+                                            dataKey="value"
+                                            stroke="#7d87d2"
+                                            strokeWidth={2}
+                                            fill="#7d87d2"
+                                            fillOpacity={0.25}
+                                            dot={{ r: 3, fill: '#7d87d2' }}
+                                        />
+                                    </RadarChart>
+                                </ResponsiveContainer>
+                            </div>
                             <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', marginTop: -8 }}>
                                 Latest check-in: {filteredData[filteredData.length - 1]?.date}
                             </div>

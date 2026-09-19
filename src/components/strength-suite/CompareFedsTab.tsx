@@ -175,21 +175,19 @@ export default function CompareFedsTab() {
                         boxShadow: '0 0 0 0.5px rgba(255, 255, 255, 0.04), 0 16px 48px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.1)',
                     }}
                 >
-                    <div className="overflow-x-auto">
+                    <div className="overflow-x-auto no-scrollbar">
                         <table className="w-full text-left" style={{ borderCollapse: 'collapse' }}>
                             <thead>
                                 <tr style={{ borderBottom: '1px solid rgba(255, 255, 255, 0.1)' }}>
                                     <th
+                                        className="p-2.5 sm:p-5 min-w-[115px] sm:min-w-[200px] text-xs sm:text-[0.85rem]"
                                         style={{
-                                            padding: '16px 20px',
-                                            minWidth: '220px',
                                             background: 'rgba(16, 16, 24, 0.96)',
                                             backdropFilter: 'blur(12px)',
                                             position: 'sticky',
                                             left: 0,
                                             zIndex: 2,
                                             fontWeight: 800,
-                                            fontSize: '0.85rem',
                                             color: '#ffffff',
                                         }}
                                     >
@@ -198,19 +196,18 @@ export default function CompareFedsTab() {
                                     {visibleFeds.map((fed) => (
                                         <th
                                             key={fed.id}
+                                            className="p-2.5 sm:p-5 min-w-[115px] sm:min-w-[160px]"
                                             style={{
-                                                padding: '16px 20px',
-                                                minWidth: '160px',
                                                 verticalAlign: 'top',
                                                 borderLeft: '1px solid rgba(255, 255, 255, 0.06)',
                                             }}
                                         >
                                             <div className="flex flex-col">
-                                                <span style={{ fontSize: '0.85rem', fontWeight: 800, color: '#ef4444' }}>
+                                                <span className="text-xs sm:text-[0.85rem] font-extrabold text-red-500">
                                                     {fed.fullName}
                                                 </span>
                                                 {fed.affiliate && (
-                                                    <span style={{ fontSize: '0.7rem', color: '#f87171', fontStyle: 'italic', marginTop: '2px' }}>
+                                                    <span className="text-[10px] sm:text-[0.7rem] text-red-400 italic mt-0.5">
                                                         {fed.affiliate}
                                                     </span>
                                                 )}
@@ -232,10 +229,9 @@ export default function CompareFedsTab() {
                                         >
                                             {/* Sticky Category Name Column */}
                                             <td
+                                                className="p-2.5 sm:p-5 min-w-[115px] sm:min-w-[200px] text-xs sm:text-[0.85rem]"
                                                 style={{
-                                                    padding: '16px 20px',
                                                     fontWeight: 700,
-                                                    fontSize: '0.85rem',
                                                     color: '#ffffff',
                                                     position: 'sticky',
                                                     left: 0,
@@ -264,9 +260,8 @@ export default function CompareFedsTab() {
                                                 return (
                                                     <td
                                                         key={fed.id}
+                                                        className="p-2.5 sm:p-5 min-w-[115px] sm:min-w-[160px] text-xs sm:text-[0.85rem]"
                                                         style={{
-                                                            padding: '16px 20px',
-                                                            fontSize: '0.85rem',
                                                             color: valColor,
                                                             fontWeight: isYes || isRequired ? 800 : 500,
                                                             borderLeft: '1px solid rgba(255, 255, 255, 0.04)',

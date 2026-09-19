@@ -195,7 +195,7 @@ export default function DotsChart({ athleteId, logs, programs = [], initialGende
         <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
 
             {/* Profile Assignment Panel */}
-            <div style={{ background: 'rgba(15,23,42,0.5)', backdropFilter: 'blur(12px)', border: '1px solid rgba(255,255,255,0.08)', borderRadius: 12, padding: '16px 20px' }}>
+            <div className="p-3.5 sm:p-5 rounded-xl border border-white/10" style={{ background: 'rgba(15,23,42,0.5)', backdropFilter: 'blur(12px)' }}>
                 <h3 style={{ margin: '0 0 14px', fontSize: 14, fontWeight: 600, color: 'var(--foreground)', letterSpacing: '0.05em', textTransform: 'uppercase' }}>
                     Athlete DOTs Profile
                 </h3>
@@ -286,7 +286,7 @@ export default function DotsChart({ athleteId, logs, programs = [], initialGende
                 ];
 
                 return (
-                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: 10, marginBottom: '1.25rem' }}>
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-2.5 mb-4 sm:mb-5">
                         {cards.map(s => {
                             const pctColor = s.pct == null ? 'var(--secondary-foreground)'
                                 : s.pct > 0 ? '#10b981'
@@ -296,20 +296,16 @@ export default function DotsChart({ athleteId, logs, programs = [], initialGende
                             return (
                                 <div
                                     key={s.label}
+                                    className="p-2.5 sm:p-3.5 rounded-xl sm:rounded-2xl flex flex-col justify-between"
                                     style={{
                                         background: 'linear-gradient(180deg, rgba(30, 41, 59, 0.35) 0%, rgba(15, 23, 42, 0.55) 100%)',
                                         border: '1px solid rgba(255, 255, 255, 0.08)',
                                         borderTop: `3px solid ${s.color}`,
                                         boxShadow: 'inset 0 1px 0 0 rgba(255, 255, 255, 0.05)',
-                                        borderRadius: 14,
-                                        padding: '12px 14px',
-                                        display: 'flex',
-                                        flexDirection: 'column',
-                                        justifyContent: 'space-between',
                                     }}
                                 >
                                     <div style={{ fontSize: 10, color: 'var(--secondary-foreground)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>{s.label}</div>
-                                    <div style={{ fontSize: 20, fontWeight: 800, color: s.color, marginTop: 4, lineHeight: 1.1 }}>{s.value}</div>
+                                    <div className="text-lg sm:text-2xl font-black mt-1 leading-tight" style={{ color: s.color }}>{s.value}</div>
                                     <div style={{ fontSize: 10, fontWeight: 600, color: pctColor, marginTop: 4, minHeight: 14 }}>
                                         {s.pct == null ? '' : `${arrow} ${Math.abs(s.pct).toFixed(1)}%`}
                                     </div>
@@ -321,125 +317,118 @@ export default function DotsChart({ athleteId, logs, programs = [], initialGende
             })()}
 
             {/* Chart Area */}
-            <div style={{ background: 'rgba(15, 23, 42, 0.45)', borderRadius: 14, border: '1px solid rgba(255, 255, 255, 0.08)', padding: '16px 10px 10px' }}>
+            <div className="rounded-xl sm:rounded-2xl border border-white/10 p-2 sm:p-4" style={{ background: 'rgba(15, 23, 42, 0.45)' }}>
                 {/* Controls Row 1: Mission Filter and Timeline */}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '1.5rem', flexWrap: 'wrap', gap: '1rem', alignItems: 'center', paddingLeft: 12, paddingRight: 12 }}>
-                        {/* Program Filter */}
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                            <label style={{ fontSize: '0.8125rem', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Mission Filter:</label>
-                            <div style={{ position: 'relative' }}>
-                                <select
-                                    className="glass-input"
-                                    style={{ width: 'auto', padding: '0.45rem 2rem 0.45rem 1rem', appearance: 'none', color: 'var(--primary)', fontWeight: 600 }}
-                                    value={selectedProgramId}
-                                    onChange={(e) => setSelectedProgramId(e.target.value)}
-                                >
-                                    <option value="ALL">All Missions</option>
-                                    {Array.isArray(programs) && [...programs].sort((a, b) => {
-                                        const dateA = new Date(a.startDate || a.createdAt || 0).getTime();
-                                        const dateB = new Date(b.startDate || b.createdAt || 0).getTime();
-                                        return dateB - dateA;
-                                    }).map(p => (
-                                        <option key={p.id} value={p.id}>{p.name}</option>
-                                    ))}
-                                </select>
-                                <div style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--primary)', fontSize: '0.8rem' }}>▼</div>
-                            </div>
-                        </div>
-
-                        {/* Timeline */}
-                        <div style={{ display: 'flex', background: 'var(--glass-surface-2)', borderRadius: '20px', padding: '3px', border: '1px solid var(--glass-border)' }}>
-                            {Object.keys(TIMELINES).map(tl => (
-                                <button
-                                    key={tl}
-                                    onClick={() => setTimeline(tl)}
-                                    className="chat-press"
-                                    style={{
-                                        padding: '0.35rem 0.85rem',
-                                        background: timeline === tl ? 'rgba(125, 135, 210, 0.2)' : 'transparent',
-                                        color: timeline === tl ? '#fff' : 'var(--secondary-foreground)',
-                                        border: timeline === tl ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid transparent',
-                                        cursor: 'pointer',
-                                        fontSize: '0.75rem',
-                                        fontWeight: 600,
-                                        borderRadius: '16px',
-                                        transition: 'all 0.16s var(--ease-out)',
-                                        boxShadow: timeline === tl ? '0 0 10px rgba(125, 135, 210, 0.25)' : 'none'
-                                    }}
-                                >
-                                    {tl}
-                                </button>
-                            ))}
-                        </div>
-                    </div>
-
-                    {/* Controls Row 2: Line toggles */}
-                    <div style={{ display: 'flex', justifyContent: 'flex-start', flexWrap: 'wrap', gap: 8, paddingLeft: 12, paddingRight: 12, marginBottom: 14 }}>
-                        {/* Line toggles */}
-                        <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                            {[
-                                { key: 'squat', label: 'Squat' },
-                                { key: 'bench', label: 'Bench' },
-                                { key: 'deadlift', label: 'Deadlift' },
-                                { key: 'totalLbs', label: 'Total E1RM' },
-                                { key: 'dots', label: 'DOTs' },
-                            ].map(({ key, label }) => {
-                                const k = key as keyof typeof activeLines;
-                                const color = CHART_COLORS[k];
-                                return (
-                                    <button key={key} onClick={() => toggleLine(k)} style={{
-                                        padding: '4px 10px', borderRadius: 6, border: `1px solid ${color}`,
-                                        background: activeLines[k] ? `${color}22` : 'transparent',
-                                        color: activeLines[k] ? color : 'rgba(255,255,255,0.3)',
-                                        fontSize: 11, fontWeight: 600, cursor: 'pointer', transition: 'all 0.15s',
-                                    }}>
-                                        {label}
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    {data.length === 0 ? (
-                        <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--secondary-foreground)', fontSize: 14, background: 'rgba(15,23,42,0.3)', borderRadius: 12, border: '1px dashed rgba(255,255,255,0.08)', margin: '0 12px 12px' }}>
-                            <div style={{ fontSize: 32, marginBottom: 10 }}>🏋️</div>
-                            <div style={{ fontWeight: 600, marginBottom: 5 }}>No competition lift data {timeline !== 'ALL' ? `in the last ${timeline}` : 'yet'}</div>
-                            <div style={{ fontSize: 12, opacity: 0.7 }}>Sessions with <strong>Squat</strong>, <strong>Competition Bench</strong>, or <strong>Deadlift</strong> logged with weight &amp; reps will appear here.</div>
-                        </div>
-                    ) : (
-                        <>
-                            <ResponsiveContainer width="100%" height={300}>
-                        <AreaChart data={data} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
-                            <defs>
-                                {Object.entries(CHART_COLORS).map(([key, color]) => (
-                                    <linearGradient key={key} id={`dots-grad-${key}`} x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor={color} stopOpacity={0.3} />
-                                        <stop offset="95%" stopColor={color} stopOpacity={0} />
-                                    </linearGradient>
+                <div className="flex flex-col sm:flex-row justify-between mb-3 sm:mb-5 flex-wrap gap-2.5 sm:gap-4 items-start sm:items-center px-1 sm:px-2">
+                    {/* Program Filter */}
+                    <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                        <label className="text-[11px] sm:text-xs uppercase tracking-wider text-slate-400 font-bold shrink-0">Mission:</label>
+                        <div className="relative flex-1 sm:flex-initial">
+                            <select
+                                className="glass-input w-full sm:w-auto text-xs sm:text-sm py-1.5 pl-3 pr-7 text-indigo-400 font-semibold"
+                                style={{ appearance: 'none' }}
+                                value={selectedProgramId}
+                                onChange={(e) => setSelectedProgramId(e.target.value)}
+                            >
+                                <option value="ALL">All Missions</option>
+                                {Array.isArray(programs) && [...programs].sort((a, b) => {
+                                    const dateA = new Date(a.startDate || a.createdAt || 0).getTime();
+                                    const dateB = new Date(b.startDate || b.createdAt || 0).getTime();
+                                    return dateB - dateA;
+                                }).map(p => (
+                                    <option key={p.id} value={p.id}>{p.name}</option>
                                 ))}
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                            <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} label={{ value: 'Date', position: 'insideBottom', offset: -2, fill: '#64748b', fontSize: 10 }} height={40} />
-                            <YAxis yAxisId="lbs" tick={{ fill: '#94a3b8', fontSize: 11 }} axisLine={false} tickLine={false} width={62} label={{ value: 'E1RM (lbs)', angle: -90, position: 'insideLeft', offset: 10, fill: '#94a3b8', fontSize: 10 }} />
-                            <YAxis yAxisId="total" hide={true} domain={['auto', 'auto']} />
-                            <YAxis yAxisId="dots" orientation="right" domain={['auto', 'auto']} tick={{ fill: CHART_COLORS.dots, fontSize: 11 }} axisLine={false} tickLine={false} width={58} label={{ value: 'DOTs Score', angle: 90, position: 'insideRight', offset: -4, fill: CHART_COLORS.dots, fontSize: 10 }} />
-                            <Tooltip content={<CustomTooltip />} />
-                            {activeLines.squat && <Area yAxisId="lbs" type="monotone" dataKey="squat" name="Squat E1RM" stroke={CHART_COLORS.squat} strokeWidth={2} fill={`url(#dots-grad-squat)`} dot={{ r: 4, fill: CHART_COLORS.squat }} activeDot={{ r: 6 }} connectNulls />}
-                            {activeLines.bench && <Area yAxisId="lbs" type="monotone" dataKey="bench" name="Bench E1RM" stroke={CHART_COLORS.bench} strokeWidth={2} fill={`url(#dots-grad-bench)`} dot={{ r: 4, fill: CHART_COLORS.bench }} activeDot={{ r: 6 }} connectNulls />}
-                            {activeLines.deadlift && <Area yAxisId="lbs" type="monotone" dataKey="deadlift" name="Deadlift E1RM" stroke={CHART_COLORS.deadlift} strokeWidth={2} fill={`url(#dots-grad-deadlift)`} dot={{ r: 4, fill: CHART_COLORS.deadlift }} activeDot={{ r: 6 }} connectNulls />}
-                            {activeLines.totalLbs && <Area yAxisId="total" type="monotone" dataKey="totalLbs" name="Total E1RM" stroke={CHART_COLORS.totalLbs} strokeWidth={2.5} fill={`url(#dots-grad-totalLbs)`} dot={{ r: 4, fill: CHART_COLORS.totalLbs }} activeDot={{ r: 6 }} connectNulls />}
-                            {activeLines.dots && genderKey && wc > 0 && (
-                                <Area yAxisId="dots" type="monotone" dataKey="dots" name="DOTs Score" stroke={CHART_COLORS.dots} strokeWidth={2.5} fill={`url(#dots-grad-dots)`} dot={{ r: 4, fill: CHART_COLORS.dots }} activeDot={{ r: 6 }} connectNulls />
-                            )}
-                        </AreaChart>
-                            </ResponsiveContainer>
+                            </select>
+                            <div style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--primary)', fontSize: '0.75rem' }}>▼</div>
+                        </div>
+                    </div>
 
-                            <div style={{ textAlign: 'center', fontSize: 10, color: 'rgba(148,163,184,0.5)', marginTop: 4 }}>
-                                Each dot = a logged session · {data.length} session{data.length !== 1 ? 's' : ''} shown
-                            </div>
-                        </>
-                    )}
+                    {/* Timeline */}
+                    <div className="flex flex-wrap self-start sm:self-auto bg-white/[0.04] p-0.5 rounded-full border border-white/10">
+                        {Object.keys(TIMELINES).map(tl => (
+                            <button
+                                key={tl}
+                                onClick={() => setTimeline(tl)}
+                                className="chat-press px-2.5 sm:px-3 py-1 text-[11px] sm:text-xs font-semibold rounded-full transition-all"
+                                style={{
+                                    background: timeline === tl ? 'rgba(125, 135, 210, 0.25)' : 'transparent',
+                                    color: timeline === tl ? '#fff' : 'var(--secondary-foreground)',
+                                    border: timeline === tl ? '1px solid rgba(125, 135, 210, 0.4)' : '1px solid transparent',
+                                    boxShadow: timeline === tl ? '0 0 10px rgba(125, 135, 210, 0.25)' : 'none'
+                                }}
+                            >
+                                {tl}
+                            </button>
+                        ))}
+                    </div>
                 </div>
+
+                {/* Controls Row 2: Line toggles */}
+                <div className="flex flex-wrap gap-1.5 sm:gap-2 px-1 sm:px-2 mb-3">
+                    {[
+                        { key: 'squat', label: 'Squat' },
+                        { key: 'bench', label: 'Bench' },
+                        { key: 'deadlift', label: 'Deadlift' },
+                        { key: 'totalLbs', label: 'Total E1RM' },
+                        { key: 'dots', label: 'DOTs' },
+                    ].map(({ key, label }) => {
+                        const k = key as keyof typeof activeLines;
+                        const color = CHART_COLORS[k];
+                        return (
+                            <button key={key} onClick={() => toggleLine(k)} style={{
+                                padding: '3px 8px', borderRadius: 6, border: `1px solid ${color}`,
+                                background: activeLines[k] ? `${color}22` : 'transparent',
+                                color: activeLines[k] ? color : 'rgba(255,255,255,0.3)',
+                                fontSize: 10, fontWeight: 700, cursor: 'pointer', transition: 'all 0.15s',
+                            }}>
+                                {label}
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {data.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--secondary-foreground)', fontSize: 14, background: 'rgba(15,23,42,0.3)', borderRadius: 12, border: '1px dashed rgba(255,255,255,0.08)', margin: '0 12px 12px' }}>
+                        <div style={{ fontSize: 32, marginBottom: 10 }}>🏋️</div>
+                        <div style={{ fontWeight: 600, marginBottom: 5 }}>No competition lift data {timeline !== 'ALL' ? `in the last ${timeline}` : 'yet'}</div>
+                        <div style={{ fontSize: 12, opacity: 0.7 }}>Sessions with <strong>Squat</strong>, <strong>Competition Bench</strong>, or <strong>Deadlift</strong> logged with weight &amp; reps will appear here.</div>
+                    </div>
+                ) : (
+                    <>
+                        <div className="h-[240px] sm:h-[300px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart data={data} margin={{ top: 8, right: 10, left: -14, bottom: 0 }}>
+                                    <defs>
+                                        {Object.entries(CHART_COLORS).map(([key, color]) => (
+                                            <linearGradient key={key} id={`dots-grad-${key}`} x1="0" y1="0" x2="0" y2="1">
+                                                <stop offset="5%" stopColor={color} stopOpacity={0.3} />
+                                                <stop offset="95%" stopColor={color} stopOpacity={0} />
+                                            </linearGradient>
+                                        ))}
+                                    </defs>
+                                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
+                                    <XAxis dataKey="date" tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} height={26} />
+                                    <YAxis yAxisId="lbs" tick={{ fill: '#94a3b8', fontSize: 10 }} axisLine={false} tickLine={false} width={38} />
+                                    <YAxis yAxisId="total" hide={true} domain={['auto', 'auto']} />
+                                    <YAxis yAxisId="dots" orientation="right" domain={['auto', 'auto']} tick={{ fill: CHART_COLORS.dots, fontSize: 10 }} axisLine={false} tickLine={false} width={34} />
+                                    <Tooltip content={<CustomTooltip />} />
+                                    {activeLines.squat && <Area yAxisId="lbs" type="monotone" dataKey="squat" name="Squat E1RM" stroke={CHART_COLORS.squat} strokeWidth={2} fill={`url(#dots-grad-squat)`} dot={{ r: 3, fill: CHART_COLORS.squat }} activeDot={{ r: 5 }} connectNulls />}
+                                    {activeLines.bench && <Area yAxisId="lbs" type="monotone" dataKey="bench" name="Bench E1RM" stroke={CHART_COLORS.bench} strokeWidth={2} fill={`url(#dots-grad-bench)`} dot={{ r: 3, fill: CHART_COLORS.bench }} activeDot={{ r: 5 }} connectNulls />}
+                                    {activeLines.deadlift && <Area yAxisId="lbs" type="monotone" dataKey="deadlift" name="Deadlift E1RM" stroke={CHART_COLORS.deadlift} strokeWidth={2} fill={`url(#dots-grad-deadlift)`} dot={{ r: 3, fill: CHART_COLORS.deadlift }} activeDot={{ r: 5 }} connectNulls />}
+                                    {activeLines.totalLbs && <Area yAxisId="total" type="monotone" dataKey="totalLbs" name="Total E1RM" stroke={CHART_COLORS.totalLbs} strokeWidth={2.5} fill={`url(#dots-grad-totalLbs)`} dot={{ r: 3, fill: CHART_COLORS.totalLbs }} activeDot={{ r: 5 }} connectNulls />}
+                                    {activeLines.dots && genderKey && wc > 0 && (
+                                        <Area yAxisId="dots" type="monotone" dataKey="dots" name="DOTs Score" stroke={CHART_COLORS.dots} strokeWidth={2.5} fill={`url(#dots-grad-dots)`} dot={{ r: 3, fill: CHART_COLORS.dots }} activeDot={{ r: 5 }} connectNulls />
+                                    )}
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
+
+                        <div style={{ textAlign: 'center', fontSize: 10, color: 'rgba(148,163,184,0.5)', marginTop: 4 }}>
+                            Each dot = a logged session · {data.length} session{data.length !== 1 ? 's' : ''} shown
+                        </div>
+                    </>
+                )}
+            </div>
         </div>
     );
 }

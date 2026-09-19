@@ -113,13 +113,13 @@ export default function BlockImprovements({ logs, dateRange, programs }) {
     }, [logs, activeLift, programs]);
 
     return (
-        <div className="glass-panel" style={{ marginBottom: '2rem', padding: '1.75rem', borderRadius: 16 }}>
-            <h3 style={{ borderBottom: '1px solid var(--glass-border)', paddingBottom: '1rem', marginBottom: '1.5rem', color: 'var(--foreground)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.25rem', fontWeight: 700 }}>
+        <div className="glass-panel p-3.5 sm:p-7 rounded-2xl mb-6 sm:mb-8">
+            <h3 className="pb-3 sm:pb-4 mb-4 sm:mb-6" style={{ borderBottom: '1px solid var(--glass-border)', color: 'var(--foreground)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.05rem sm:1.25rem', fontWeight: 700 }}>
                 <span style={{ color: 'var(--primary)', textShadow: '0 0 16px rgba(125, 135, 210, 0.4)' }}>///</span> Block Performance Trajectory
                 <InfoTooltip text="Visualizes your estimated 1 Rep Max (e1RM) progression for the primary competition lifts throughout the block. This helps you track strength trends over time." />
             </h3>
 
-            <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '2rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <div className="flex gap-2 sm:gap-3 mb-4 sm:mb-6 justify-center flex-wrap">
                 {['Squat', 'Bench', 'Deadlift'].map(lift => {
                     const isSelected = activeLift === lift;
 
@@ -127,19 +127,12 @@ export default function BlockImprovements({ logs, dateRange, programs }) {
                         <button
                             key={lift}
                             onClick={() => setActiveLift(lift)}
-                            className="chat-press"
+                            className="chat-press px-4 sm:px-6 py-1.5 sm:py-2 text-xs sm:text-sm font-bold uppercase rounded-full transition-all"
                             style={{
-                                padding: '0.55rem 1.75rem',
                                 background: isSelected ? 'rgba(125, 135, 210, 0.22)' : 'var(--glass-surface-2)',
                                 color: isSelected ? '#ffffff' : 'var(--secondary-foreground)',
                                 border: isSelected ? '1px solid rgba(125, 135, 210, 0.5)' : '1px solid var(--glass-border)',
-                                borderRadius: '20px',
-                                cursor: 'pointer',
-                                fontWeight: 700,
-                                transition: 'all 0.16s var(--ease-out)',
-                                fontSize: '0.88rem',
                                 boxShadow: isSelected ? '0 0 14px rgba(125, 135, 210, 0.3)' : 'none',
-                                textTransform: 'uppercase'
                             }}
                         >
                             {lift}
@@ -148,25 +141,26 @@ export default function BlockImprovements({ logs, dateRange, programs }) {
                 })}
             </div>
 
-            <div style={{ height: '350px', width: '100%', marginTop: '1rem' }}>
+            <div className="h-[240px] sm:h-[350px] w-full mt-2 sm:mt-4">
                 <ResponsiveContainer width="100%" height="100%">
-                    <LineChart data={data}>
+                    <LineChart data={data} margin={{ top: 8, right: 10, left: -16, bottom: 5 }}>
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.1)" vertical={false} />
                         <XAxis
                             dataKey="label"
                             stroke="var(--secondary-foreground)"
-                            fontSize={11}
-                            tickMargin={15}
+                            fontSize={10}
+                            tickMargin={10}
                             axisLine={false}
                             tickLine={false}
-                            interval={0} // Show all ticks
+                            interval="preserveStartEnd"
                         />
                         <YAxis
                             stroke="var(--secondary-foreground)"
                             domain={['dataMin - 20', 'dataMax + 20']}
-                            fontSize={11}
+                            fontSize={10}
                             axisLine={false}
                             tickLine={false}
+                            width={34}
                             tickFormatter={(val) => `${val}`}
                         />
                         <Tooltip

@@ -440,42 +440,42 @@ export default function HistoricalPerformance({ athlete }) {
                         })}
                     </div>
 
-                    <ResponsiveContainer width="100%" height={320}>
-                        <LineChart data={chartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
-                            <XAxis
-                                dataKey="date"
-                                tick={{ fill: '#94a3b8', fontSize: 11 }}
-                                axisLine={false}
-                                tickLine={false}
-                                tickFormatter={(val) => new Date(val).toLocaleDateString(undefined, { month: 'short', year: '2-digit' })}
-                            />
-                            <YAxis
-                                yAxisId="weight"
-                                tick={{ fill: '#94a3b8', fontSize: 11 }}
-                                axisLine={false}
-                                tickLine={false}
-                                width={50}
-                                label={{ value: `Weight (${unit})`, angle: -90, position: 'insideLeft', offset: -5, fill: '#94a3b8', fontSize: 10 }}
-                            />
-                            <YAxis
-                                yAxisId="dots"
-                                orientation="right"
-                                tick={{ fill: CHART_COLORS.dots, fontSize: 11 }}
-                                axisLine={false}
-                                tickLine={false}
-                                width={50}
-                                label={{ value: 'DOTs', angle: 90, position: 'insideRight', offset: 0, fill: CHART_COLORS.dots, fontSize: 10 }}
-                            />
-                            <Tooltip content={<CustomHistoricalTooltip />} />
+                    <div className="h-[240px] sm:h-[320px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={chartData} margin={{ top: 8, right: 10, left: -14, bottom: 0 }}>
+                                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" vertical={false} />
+                                <XAxis
+                                    dataKey="date"
+                                    tick={{ fill: '#94a3b8', fontSize: 10 }}
+                                    axisLine={false}
+                                    tickLine={false}
+                                    tickFormatter={(val) => new Date(val).toLocaleDateString(undefined, { month: 'short', year: '2-digit' })}
+                                />
+                                <YAxis
+                                    yAxisId="weight"
+                                    tick={{ fill: '#94a3b8', fontSize: 10 }}
+                                    axisLine={false}
+                                    tickLine={false}
+                                    width={38}
+                                />
+                                <YAxis
+                                    yAxisId="dots"
+                                    orientation="right"
+                                    tick={{ fill: CHART_COLORS.dots, fontSize: 10 }}
+                                    axisLine={false}
+                                    tickLine={false}
+                                    width={34}
+                                />
+                                <Tooltip content={<CustomHistoricalTooltip />} />
 
-                            {activeLines.squat && <Line yAxisId="weight" type="monotone" dataKey="squatDisp" name="Squat" stroke={CHART_COLORS.squat} strokeWidth={2} dot={{ r: 3, fill: CHART_COLORS.squat }} activeDot={{ r: 5 }} />}
-                            {activeLines.bench && <Line yAxisId="weight" type="monotone" dataKey="benchDisp" name="Bench" stroke={CHART_COLORS.bench} strokeWidth={2} dot={{ r: 3, fill: CHART_COLORS.bench }} activeDot={{ r: 5 }} />}
-                            {activeLines.deadlift && <Line yAxisId="weight" type="monotone" dataKey="deadliftDisp" name="Deadlift" stroke={CHART_COLORS.deadlift} strokeWidth={2} dot={{ r: 3, fill: CHART_COLORS.deadlift }} activeDot={{ r: 5 }} />}
-                            {activeLines.total && <Line yAxisId="weight" type="monotone" dataKey="totalDisp" name="Total" stroke={CHART_COLORS.total} strokeWidth={3} dot={{ r: 4, fill: CHART_COLORS.total }} activeDot={{ r: 6 }} />}
-                            {activeLines.dots && <Line yAxisId="dots" type="monotone" dataKey="dots" name="DOTs Score" stroke={CHART_COLORS.dots} strokeWidth={2} dot={{ r: 3, fill: CHART_COLORS.dots }} activeDot={{ r: 5 }} />}
-                        </LineChart>
-                    </ResponsiveContainer>
+                                {activeLines.squat && <Line yAxisId="weight" type="monotone" dataKey="squatDisp" name="Squat" stroke={CHART_COLORS.squat} strokeWidth={2} dot={{ r: 3, fill: CHART_COLORS.squat }} activeDot={{ r: 5 }} />}
+                                {activeLines.bench && <Line yAxisId="weight" type="monotone" dataKey="benchDisp" name="Bench" stroke={CHART_COLORS.bench} strokeWidth={2} dot={{ r: 3, fill: CHART_COLORS.bench }} activeDot={{ r: 5 }} />}
+                                {activeLines.deadlift && <Line yAxisId="weight" type="monotone" dataKey="deadliftDisp" name="Deadlift" stroke={CHART_COLORS.deadlift} strokeWidth={2} dot={{ r: 3, fill: CHART_COLORS.deadlift }} activeDot={{ r: 5 }} />}
+                                {activeLines.total && <Line yAxisId="weight" type="monotone" dataKey="totalDisp" name="Total" stroke={CHART_COLORS.total} strokeWidth={2.5} dot={{ r: 3, fill: CHART_COLORS.total }} activeDot={{ r: 5 }} />}
+                                {activeLines.dots && <Line yAxisId="dots" type="monotone" dataKey="dots" name="DOTs Score" stroke={CHART_COLORS.dots} strokeWidth={2} dot={{ r: 3, fill: CHART_COLORS.dots }} activeDot={{ r: 5 }} />}
+                            </LineChart>
+                        </ResponsiveContainer>
+                    </div>
                 </div>
             )}
 
@@ -520,35 +520,35 @@ export default function HistoricalPerformance({ athlete }) {
                     </div>
                 </div>
             ) : (
-                <div style={{ overflowX: 'auto', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 14, background: 'rgba(15, 23, 42, 0.45)' }}>
+                <div className="overflow-x-auto no-scrollbar border border-white/10 rounded-xl" style={{ background: 'rgba(15, 23, 42, 0.45)' }}>
                     <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
                         <thead>
                             <tr style={{ background: 'rgba(255, 255, 255, 0.03)', borderBottom: '1px solid rgba(255, 255, 255, 0.08)' }}>
-                                <th style={{ padding: '0.85rem 1rem', fontSize: '0.75rem', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Date</th>
-                                <th style={{ padding: '0.85rem 1rem', fontSize: '0.75rem', color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Meet</th>
-                                <th style={{ padding: '0.85rem 1rem', fontSize: '0.75rem', color: 'var(--secondary-foreground)', textAlign: 'right', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>BW (kg)</th>
-                                <th style={{ padding: '0.85rem 1rem', fontSize: '0.75rem', color: 'var(--secondary-foreground)', textAlign: 'right', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Squat</th>
-                                <th style={{ padding: '0.85rem 1rem', fontSize: '0.75rem', color: 'var(--secondary-foreground)', textAlign: 'right', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Bench</th>
-                                <th style={{ padding: '0.85rem 1rem', fontSize: '0.75rem', color: 'var(--secondary-foreground)', textAlign: 'right', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Deadlift</th>
-                                <th style={{ padding: '0.85rem 1rem', fontSize: '0.75rem', color: 'var(--primary)', textAlign: 'right', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em' }}>Total</th>
-                                <th style={{ padding: '0.85rem 1rem', fontSize: '0.75rem', color: 'var(--secondary-foreground)', textAlign: 'right', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 700 }}>Dots</th>
-                                <th style={{ padding: '0.85rem 1rem', width: '40px' }}></th>
+                                <th className="px-2.5 sm:px-4 py-2 sm:py-3 text-[10px] sm:text-xs text-slate-400 uppercase tracking-wider font-bold">Date</th>
+                                <th className="px-2.5 sm:px-4 py-2 sm:py-3 text-[10px] sm:text-xs text-slate-400 uppercase tracking-wider font-bold">Meet</th>
+                                <th className="px-2 sm:px-4 py-2 sm:py-3 text-[10px] sm:text-xs text-slate-400 uppercase tracking-wider font-bold text-right">BW</th>
+                                <th className="px-2 sm:px-4 py-2 sm:py-3 text-[10px] sm:text-xs text-slate-400 uppercase tracking-wider font-bold text-right">Squat</th>
+                                <th className="px-2 sm:px-4 py-2 sm:py-3 text-[10px] sm:text-xs text-slate-400 uppercase tracking-wider font-bold text-right">Bench</th>
+                                <th className="px-2 sm:px-4 py-2 sm:py-3 text-[10px] sm:text-xs text-slate-400 uppercase tracking-wider font-bold text-right">Deadlift</th>
+                                <th className="px-2 sm:px-4 py-2 sm:py-3 text-[10px] sm:text-xs text-indigo-400 uppercase tracking-wider font-bold text-right">Total</th>
+                                <th className="px-2 sm:px-4 py-2 sm:py-3 text-[10px] sm:text-xs text-slate-400 uppercase tracking-wider font-bold text-right">Dots</th>
+                                <th className="px-2 py-2 w-8"></th>
                             </tr>
                         </thead>
                         <tbody>
                             {pastMeets.map((meet, index) => (
                                 <tr key={meet.id || index} style={{ borderBottom: index < pastMeets.length - 1 ? '1px solid rgba(255, 255, 255, 0.05)' : 'none' }}>
-                                    <td style={{ padding: '0.85rem 1rem', fontSize: '0.85rem', whiteSpace: 'nowrap' }}>{meet.date}</td>
-                                    <td style={{ padding: '0.85rem 1rem', fontSize: '0.85rem', maxWidth: '150px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontWeight: 600 }} title={meet.meetName}>{meet.meetName}</td>
-                                    <td style={{ padding: '0.85rem 1rem', fontSize: '0.85rem', textAlign: 'right', color: 'var(--secondary-foreground)', fontFamily: 'monospace' }}>{meet.bodyweight}</td>
-                                    <td style={{ padding: '0.85rem 1rem', fontSize: '0.85rem', textAlign: 'right', fontFamily: 'monospace' }}>{meet.squat}</td>
-                                    <td style={{ padding: '0.85rem 1rem', fontSize: '0.85rem', textAlign: 'right', fontFamily: 'monospace' }}>{meet.bench}</td>
-                                    <td style={{ padding: '0.85rem 1rem', fontSize: '0.85rem', textAlign: 'right', fontFamily: 'monospace' }}>{meet.deadlift}</td>
-                                    <td style={{ padding: '0.85rem 1rem', fontSize: '0.9rem', textAlign: 'right', fontWeight: 700, color: 'var(--primary)', fontFamily: 'monospace' }}>{meet.total}</td>
-                                    <td style={{ padding: '0.85rem 1rem', fontSize: '0.85rem', textAlign: 'right', color: 'var(--secondary-foreground)', fontFamily: 'monospace' }}>{meet.dots.toFixed(2)}</td>
-                                    <td style={{ padding: '0.85rem 1rem', textAlign: 'right' }}>
+                                    <td className="px-2.5 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm whitespace-nowrap">{meet.date}</td>
+                                    <td className="px-2.5 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm max-w-[120px] sm:max-w-[150px] truncate font-semibold" title={meet.meetName}>{meet.meetName}</td>
+                                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right text-slate-400 font-mono">{meet.bodyweight}</td>
+                                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right font-mono">{meet.squat}</td>
+                                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right font-mono">{meet.bench}</td>
+                                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right font-mono">{meet.deadlift}</td>
+                                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right font-bold text-indigo-400 font-mono">{meet.total}</td>
+                                    <td className="px-2 sm:px-4 py-2 sm:py-3 text-xs sm:text-sm text-right text-slate-400 font-mono">{meet.dots.toFixed(2)}</td>
+                                    <td className="px-2 py-2 text-right">
                                         <button onClick={() => deleteMeet(meet.id)} style={{ color: '#ef4444', opacity: 0.7, cursor: 'pointer', background: 'none', border: 'none' }} title="Remove Meet">
-                                            <Trash2 size={15} />
+                                            <Trash2 size={14} />
                                         </button>
                                     </td>
                                 </tr>

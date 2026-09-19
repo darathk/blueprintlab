@@ -99,12 +99,12 @@ export default function CompStats({ logs, programs }) {
 
         return (
             <tr style={{ borderBottom: '1px solid var(--glass-border)', background: isTotal ? 'rgba(125, 135, 210, 0.06)' : 'transparent' }}>
-                <td style={{ padding: '0.9rem 1.25rem', fontWeight: 700, color: isTotal ? 'var(--primary)' : 'var(--foreground)' }}>{label}</td>
-                <td style={{ padding: '0.9rem 1.25rem', color: 'var(--secondary-foreground)' }}>{row.start.toFixed(1)} lbs</td>
-                <td style={{ padding: '0.9rem 1.25rem', color: 'var(--secondary-foreground)' }}>{row.peak.toFixed(1)} lbs</td>
-                <td style={{ padding: '0.9rem 1.25rem', color: 'var(--secondary-foreground)' }}>{row.end.toFixed(1)} lbs</td>
-                <td style={{ padding: '0.9rem 1.25rem', fontWeight: 700, color: isPositive ? 'var(--success)' : 'var(--danger)' }}>
-                    {isPositive ? '+' : ''}{change.toFixed(1)} {key === 'Wilks' ? '' : 'lbs'}
+                <td className="px-2.5 sm:px-5 py-2 sm:py-3 font-bold text-xs sm:text-sm" style={{ color: isTotal ? 'var(--primary)' : 'var(--foreground)' }}>{label}</td>
+                <td className="px-2 sm:px-5 py-2 sm:py-3 text-xs sm:text-sm whitespace-nowrap" style={{ color: 'var(--secondary-foreground)' }}>{row.start.toFixed(1)} <span className="text-[10px] sm:text-xs text-white/50">lbs</span></td>
+                <td className="px-2 sm:px-5 py-2 sm:py-3 text-xs sm:text-sm whitespace-nowrap" style={{ color: 'var(--secondary-foreground)' }}>{row.peak.toFixed(1)} <span className="text-[10px] sm:text-xs text-white/50">lbs</span></td>
+                <td className="px-2 sm:px-5 py-2 sm:py-3 text-xs sm:text-sm whitespace-nowrap" style={{ color: 'var(--secondary-foreground)' }}>{row.end.toFixed(1)} <span className="text-[10px] sm:text-xs text-white/50">lbs</span></td>
+                <td className="px-2.5 sm:px-5 py-2 sm:py-3 font-bold text-xs sm:text-sm whitespace-nowrap" style={{ color: isPositive ? 'var(--success)' : 'var(--danger)' }}>
+                    {isPositive ? '+' : ''}{change.toFixed(1)} <span className="text-[10px] sm:text-xs text-white/50">{key === 'Wilks' ? '' : 'lbs'}</span>
                 </td>
             </tr>
         );
@@ -112,19 +112,19 @@ export default function CompStats({ logs, programs }) {
 
     return (
         <div className="glass-panel" style={{ marginBottom: '2rem', padding: 0, overflow: 'hidden', borderRadius: 16 }}>
-            <h3 style={{ padding: '1.25rem 1.5rem', background: 'var(--glass-surface-2)', margin: 0, color: 'var(--foreground)', borderBottom: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1.15rem', fontWeight: 700 }}>
+            <h3 className="px-3.5 sm:px-6 py-3 sm:py-4" style={{ background: 'var(--glass-surface-2)', margin: 0, color: 'var(--foreground)', borderBottom: '1px solid var(--glass-border)', display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '1rem sm:1.15rem', fontWeight: 700 }}>
                 <span style={{ color: 'var(--primary)', textShadow: '0 0 16px rgba(125, 135, 210, 0.4)' }}>///</span> Mission Telemetry Specs
                 <InfoTooltip text="Analyzes your e1RM at the Start, Peak, and End of the block. 'Delta' shows the total gain or loss from the beginning to the end of the block." />
             </h3>
-            <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.88rem' }}>
+            <div className="overflow-x-auto no-scrollbar">
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                     <thead style={{ background: 'var(--glass-surface-3)', borderBottom: '1px solid var(--glass-border)', color: 'var(--secondary-foreground)' }}>
                         <tr>
-                            <th style={{ padding: '0.75rem 1.25rem', textAlign: 'left', textTransform: 'uppercase', fontSize: '0.72rem', letterSpacing: '0.05em' }}>Metric</th>
-                            <th style={{ padding: '0.75rem 1.25rem', textAlign: 'left', textTransform: 'uppercase', fontSize: '0.72rem', letterSpacing: '0.05em' }}>Start</th>
-                            <th style={{ padding: '0.75rem 1.25rem', textAlign: 'left', textTransform: 'uppercase', fontSize: '0.72rem', letterSpacing: '0.05em' }}>Peak</th>
-                            <th style={{ padding: '0.75rem 1.25rem', textAlign: 'left', textTransform: 'uppercase', fontSize: '0.72rem', letterSpacing: '0.05em' }}>End</th>
-                            <th style={{ padding: '0.75rem 1.25rem', textAlign: 'left', textTransform: 'uppercase', fontSize: '0.72rem', letterSpacing: '0.05em' }}>Delta</th>
+                            <th className="px-2.5 sm:px-5 py-2 sm:py-3 text-left uppercase text-[10px] sm:text-xs tracking-wider">Metric</th>
+                            <th className="px-2 sm:px-5 py-2 sm:py-3 text-left uppercase text-[10px] sm:text-xs tracking-wider">Start</th>
+                            <th className="px-2 sm:px-5 py-2 sm:py-3 text-left uppercase text-[10px] sm:text-xs tracking-wider">Peak</th>
+                            <th className="px-2 sm:px-5 py-2 sm:py-3 text-left uppercase text-[10px] sm:text-xs tracking-wider">End</th>
+                            <th className="px-2.5 sm:px-5 py-2 sm:py-3 text-left uppercase text-[10px] sm:text-xs tracking-wider">Delta</th>
                         </tr>
                     </thead>
                     <tbody>
