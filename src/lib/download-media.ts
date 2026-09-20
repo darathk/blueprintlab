@@ -64,7 +64,11 @@ export async function downloadMediaFile({
             }
 
             const contentType = response.headers.get('content-type') || (cleanFilename.endsWith('.mov') ? 'video/quicktime' : 'video/mp4');
-            blob = new Blob(chunks, { type: contentType });
+            if (chunks.length > 0) {
+                blob = new Blob(chunks as BlobPart[], { type: contentType });
+            } else {
+                blob = await response.blob();
+            }
         } else {
             blob = await response.blob();
         }

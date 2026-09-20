@@ -58,3 +58,6 @@ RESTful routes under `/api/athletes`, `/api/programs`, `/api/logs`, `/api/messag
 ### Environment Variables
 
 Required: `DATABASE_URL`, `DIRECT_URL`, `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `NEXT_PUBLIC_ADMIN_EMAIL`, `ADMIN_EMAIL`, `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
+## Deployment Rule
+**CRITICAL**: Always push changes to Vercel once new changes or edits are done by running `npx vercel --prod --yes`.

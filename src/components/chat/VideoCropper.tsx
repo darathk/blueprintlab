@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Check, Play, Scissors } from 'lucide-react';
 

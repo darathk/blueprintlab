@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, height=1080">
+<title>BlueprintLab Athlete Promo</title>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<style>
+body {
+    margin: 0;
+    width: 1920px;
+    height: 1080px;
+    background: #0a0a0a;
+    background-image: 
+        radial-gradient(ellipse at 50% 0%, rgba(6, 182, 212, 0.1) 0%, transparent 60%),
+        radial-gradient(ellipse at 50% 100%, rgba(168, 85, 247, 0.1) 0%, #0a0a0a 100%);
+    color: #f8fafc;
+    font-family: Inter, system-ui, sans-serif;
+    overflow: hidden;
+}
+.clip {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+}
+.headline { font-size: 80px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 16px; text-align: center; }
+.subhead { font-size: 32px; color: #94a3b8; margin: 0; text-align: center; font-weight: 500; }
+.text-cyan { color: #06b6d4; }
+.text-purple { color: #a855f7; }
+
+/* UI Elements */
+.glass-panel {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 24px;
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(12px);
+    padding: 32px;
+}
+.mobile-frame {
+    width: 440px;
+    height: 700px;
+    border-radius: 40px;
+    border: 8px solid #1e293b;
+    background: #0f172a;
+    position: relative;
+    overflow: hidden;
+    margin-top: 40px;
+    box-shadow: 0 24px 60px rgba(0,0,0,0.8);
+}
+.mobile-header { padding: 24px; font-size: 24px; font-weight: 700; border-bottom: 1px solid rgba(255,255,255,0.1); }
+
+.log-row { display: flex; gap: 12px; margin: 16px 24px; }
+.log-input { flex: 1; background: rgba(255,255,255,0.05); border-radius: 8px; padding: 12px; text-align: center; font-weight: 600; font-size: 18px; border: 1px solid rgba(255,255,255,0.1); }
+.log-input.active { border-color: #06b6d4; background: rgba(6,182,212,0.1); }
+
+.chat-bubble { max-width: 80%; padding: 16px 20px; border-radius: 20px; margin: 12px 24px; font-size: 18px; line-height: 1.4; }
+.chat-coach { background: rgba(6,182,212,0.15); border: 1px solid rgba(6,182,212,0.3); border-bottom-left-radius: 4px; align-self: flex-start; }
+.chat-athlete { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-bottom-right-radius: 4px; align-self: flex-end; margin-left: auto; }
+
+.chart-bar { width: 40px; border-radius: 6px 6px 0 0; background: linear-gradient(to top, #a855f7, #06b6d4); }
+.chart-container { display: flex; align-items: flex-end; gap: 16px; height: 200px; padding: 24px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+
+.attempt-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 32px; width: 1000px;}
+.attempt-card { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 24px; text-align: center; }
+.attempt-title { font-size: 14px; text-transform: uppercase; letter-spacing: 2px; color: #94a3b8; margin-bottom: 16px; font-weight: 700; }
+.attempt-weight { font-size: 48px; font-weight: 800; color: #fff; }
+.attempt-card.conservative .attempt-weight { color: #10b981; }
+.attempt-card.planned .attempt-weight { color: #06b6d4; }
+.attempt-card.reach .attempt-weight { color: #a855f7; }
+
+.btn-cta { background: linear-gradient(135deg, #06b6d4, #3b82f6); padding: 20px 48px; border-radius: 100px; font-size: 28px; font-weight: 800; color: white; text-transform: uppercase; letter-spacing: 1px; box-shadow: 0 10px 30px rgba(6,182,212,0.4); margin-top: 48px; }
+
+</style>
+</head>
+<body>
+    <div id="root" data-composition-id="main" data-width="1920" data-height="1080" data-duration="35">
+        <audio id="bgm" src="assets/music/bgm.mp3" data-start="0" data-duration="35"></audio>
+
+        <!-- SCENE 1: Hook -->
+        <div id="scene1" class="clip" data-start="0" data-duration="5">
+            <h1 class="headline" style="font-size: 100px;">Stop Guessing.<br><span class="text-cyan">Start Executing.</span></h1>
+            <p class="subhead">The ultimate platform for serious strength athletes.</p>
+        </div>
+
+        <!-- SCENE 2: Workout Logger -->
+        <div id="scene2" class="clip" data-start="5" data-duration="7">
+            <div style="display: flex; gap: 80px; align-items: center;">
+                <div style="max-width: 600px;">
+                    <h1 class="headline" style="text-align: left;">Precision<br>Logging</h1>
+                    <p class="subhead" style="text-align: left;">Track every set, rep, and RPE. Auto-calculate plate math instantly.</p>
+                </div>
+                <div class="mobile-frame" id="phone-logger">
+                    <div class="mobile-header">Squat - Day 1</div>
+                    <div style="padding: 16px 24px; color: #94a3b8; font-size: 14px; text-transform: uppercase; font-weight: 700;">Set 1 • Target: 405 x 5 @ 8</div>
+                    <div class="log-row">
+                        <div class="log-input" style="flex: 2;">405 lbs</div>
+                        <div class="log-input">5 reps</div>
+                        <div class="log-input">@ 8</div>
+                    </div>
+                    <div class="log-row">
+                        <div class="log-input active" style="flex: 2;">425 lbs</div>
+                        <div class="log-input active">5 reps</div>
+                        <div class="log-input active">@ 8.5</div>
+                    </div>
+                    <!-- Plate loader visual -->
+                    <div id="plate-loader" style="margin: 24px; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); border-radius: 12px; padding: 16px; text-align: center;">
+                        <div style="font-size: 14px; color: #10b981; font-weight: 700; margin-bottom: 8px;">PLATE MATH: 425 LBS</div>
+                        <div style="display: flex; justify-content: center; gap: 4px;">
+                            <div style="width: 12px; height: 60px; background: #94a3b8; border-radius: 2px;"></div> <!-- Collar -->
+                            <div style="width: 20px; height: 100px; background: #ef4444; border-radius: 4px;"></div> <!-- 55 -->
+                            <div style="width: 20px; height: 100px; background: #ef4444; border-radius: 4px;"></div> <!-- 55 -->
+                            <div style="width: 20px; height: 100px; background: #ef4444; border-radius: 4px;"></div> <!-- 55 -->
+                            <div style="width: 14px; height: 70px; background: #3b82f6; border-radius: 4px;"></div> <!-- 10 -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCENE 3: Coach Chat -->
+        <div id="scene3" class="clip" data-start="12" data-duration="6">
+            <div style="display: flex; flex-direction: row-reverse; gap: 80px; align-items: center;">
+                <div style="max-width: 600px;">
+                    <h1 class="headline" style="text-align: left;">Direct<br><span class="text-purple">Access</span></h1>
+                    <p class="subhead" style="text-align: left;">In-app messaging and video form checks with your coach.</p>
+                </div>
+                <div class="mobile-frame" id="phone-chat" style="display: flex; flex-direction: column;">
+                    <div class="mobile-header">Coach</div>
+                    <div style="flex: 1; padding-top: 16px; display: flex; flex-direction: column;">
+                        <div class="chat-bubble chat-athlete bubble-1">Here's my top single from today. Felt heavy out of the hole.</div>
+                        <div class="chat-bubble chat-athlete bubble-2" style="background: rgba(255,255,255,0.02); padding: 8px;">
+                            <div style="width: 100%; height: 120px; background: #1e293b; border-radius: 12px; display: flex; align-items: center; justify-content: center;">
+                                <div style="width: 40px; height: 40px; background: rgba(255,255,255,0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center;">▶</div>
+                            </div>
+                        </div>
+                        <div class="chat-bubble chat-coach bubble-3">Depth is perfect. You're shifting forward slightly—keep your chest up. Add 5kg next week!</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCENE 4: Analytics -->
+        <div id="scene4" class="clip" data-start="18" data-duration="6">
+            <h1 class="headline">Track Every <span class="text-cyan">Metric</span></h1>
+            <p class="subhead">Advanced E1RM modeling & fatigue management.</p>
+            
+            <div class="glass-panel" style="margin-top: 40px; width: 800px;">
+                <div style="font-size: 18px; font-weight: 700; color: #94a3b8; margin-bottom: 24px;">Squat Estimated 1RM Trend</div>
+                <div class="chart-container">
+                    <div class="chart-bar bar-1" style="height: 40%;"></div>
+                    <div class="chart-bar bar-2" style="height: 50%;"></div>
+                    <div class="chart-bar bar-3" style="height: 45%;"></div>
+                    <div class="chart-bar bar-4" style="height: 60%;"></div>
+                    <div class="chart-bar bar-5" style="height: 55%;"></div>
+                    <div class="chart-bar bar-6" style="height: 75%;"></div>
+                    <div class="chart-bar bar-7" style="height: 70%;"></div>
+                    <div class="chart-bar bar-8" style="height: 90%;"></div>
+                    <div class="chart-bar bar-9" style="height: 100%;"></div>
+                </div>
+                <div style="display: flex; justify-content: space-between; margin-top: 16px; color: #64748b; font-size: 14px;">
+                    <span>Week 1</span>
+                    <span>Week 9</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCENE 5: Meet Strategy -->
+        <div id="scene5" class="clip" data-start="24" data-duration="6">
+            <h1 class="headline">Automated <span class="text-purple">Meet Strategy</span></h1>
+            <p class="subhead">Never guess your attempts on the platform.</p>
+
+            <div class="attempt-grid">
+                <div class="attempt-card conservative card-con">
+                    <div class="attempt-title">Conservative</div>
+                    <div class="attempt-weight">620<span style="font-size:24px; color:#64748b;">kg</span></div>
+                    <div style="font-size:14px; color:#64748b; margin-top:8px;">Safe 9/9 Total</div>
+                </div>
+                <div class="attempt-card planned card-pln" style="transform: scale(1.1); box-shadow: 0 0 40px rgba(6,182,212,0.2); border-color: rgba(6,182,212,0.4);">
+                    <div class="attempt-title" style="color: #06b6d4;">Planned</div>
+                    <div class="attempt-weight">642.5<span style="font-size:24px; color:#64748b;">kg</span></div>
+                    <div style="font-size:14px; color:#64748b; margin-top:8px;">Target Total</div>
+                </div>
+                <div class="attempt-card reach card-rch">
+                    <div class="attempt-title">Reach</div>
+                    <div class="attempt-weight">655<span style="font-size:24px; color:#64748b;">kg</span></div>
+                    <div style="font-size:14px; color:#64748b; margin-top:8px;">Aggressive Total</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SCENE 6: Outro -->
+        <div id="scene6" class="clip" data-start="30" data-duration="5">
+            <h1 class="headline" style="font-size: 120px;">Blueprint<span class="text-cyan">Lab</span></h1>
+            <p class="subhead" style="font-size: 40px; color: #fff;">Level up your total.</p>
+            <div class="btn-cta">Apply For Coaching</div>
+        </div>
+
+    </div>
+
+    <script>
+        const tl = gsap.timeline({ paused: true });
+        
+        // Audio fade
+        tl.to("#bgm", { volume: 1, duration: 0 }, 0);
+        tl.to("#bgm", { volume: 0, duration: 2 }, 33);
+
+        // Scene 1: Hook
+        tl.to("#scene1", { opacity: 1, duration: 0 }, 0);
+        tl.fromTo("#scene1 h1", { y: 60, opacity: 0 }, { y: 0, opacity: 1, duration: 1.2, ease: "power4.out" }, 0.5);
+        tl.fromTo("#scene1 p", { y: 30, opacity: 0 }, { y: 0, opacity: 1, duration: 1.2, ease: "power4.out" }, 0.8);
+        tl.to("#scene1", { opacity: 0, scale: 1.1, duration: 0.8, ease: "power2.inOut" }, 4.2);
+
+        // Scene 2: Logger
+        tl.to("#scene2", { opacity: 1, duration: 0 }, 5);
+        tl.fromTo("#scene2 h1", { x: -40, opacity: 0 }, { x: 0, opacity: 1, duration: 1, ease: "power3.out" }, 5.2);
+        tl.fromTo("#scene2 p", { x: -40, opacity: 0 }, { x: 0, opacity: 1, duration: 1, ease: "power3.out" }, 5.4);
+        tl.fromTo("#phone-logger", { y: 100, opacity: 0, rotationX: 15 }, { y: 0, opacity: 1, rotationX: 0, duration: 1.2, ease: "back.out(1.2)" }, 5.6);
+        tl.fromTo(".log-input.active", { scale: 0.9, opacity: 0 }, { scale: 1, opacity: 1, stagger: 0.1, duration: 0.5, ease: "back.out(2)" }, 6.8);
+        tl.fromTo("#plate-loader", { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 0.6, ease: "power2.out" }, 7.5);
+        tl.fromTo("#plate-loader div div", { scaleY: 0 }, { scaleY: 1, stagger: 0.1, duration: 0.6, ease: "back.out(1.5)" }, 7.8);
+        tl.to("#scene2", { opacity: 0, y: -50, duration: 0.8, ease: "power2.inOut" }, 11.2);
+
+        // Scene 3: Chat
+        tl.to("#scene3", { opacity: 1, duration: 0 }, 12);
+        tl.fromTo("#scene3 h1", { x: 40, opacity: 0 }, { x: 0, opacity: 1, duration: 1, ease: "power3.out" }, 12.2);
+        tl.fromTo("#scene3 p", { x: 40, opacity: 0 }, { x: 0, opacity: 1, duration: 1, ease: "power3.out" }, 12.4);
+        tl.fromTo("#phone-chat", { y: 100, opacity: 0, rotationX: -15 }, { y: 0, opacity: 1, rotationX: 0, duration: 1.2, ease: "back.out(1.2)" }, 12.6);
+        tl.fromTo(".bubble-1", { y: 20, opacity: 0, scale: 0.9 }, { y: 0, opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.5)" }, 13.5);
+        tl.fromTo(".bubble-2", { y: 20, opacity: 0, scale: 0.9 }, { y: 0, opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.5)" }, 14.2);
+        tl.fromTo(".bubble-3", { y: 20, opacity: 0, scale: 0.9 }, { y: 0, opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.5)" }, 15.5);
+        tl.to("#scene3", { opacity: 0, y: -50, duration: 0.8, ease: "power2.inOut" }, 17.2);
+
+        // Scene 4: Analytics
+        tl.to("#scene4", { opacity: 1, duration: 0 }, 18);
+        tl.fromTo("#scene4 h1", { y: -40, opacity: 0 }, { y: 0, opacity: 1, duration: 1, ease: "power3.out" }, 18.2);
+        tl.fromTo("#scene4 p", { y: -20, opacity: 0 }, { y: 0, opacity: 1, duration: 1, ease: "power3.out" }, 18.4);
+        tl.fromTo(".glass-panel", { scale: 0.9, opacity: 0 }, { scale: 1, opacity: 1, duration: 1, ease: "power3.out" }, 18.6);
+        tl.fromTo(".chart-bar", { scaleY: 0, transformOrigin: "bottom" }, { scaleY: 1, stagger: 0.08, duration: 1, ease: "elastic.out(1, 0.5)" }, 19.2);
+        tl.to("#scene4", { opacity: 0, scale: 1.1, duration: 0.8, ease: "power2.inOut" }, 23.2);
+
+        // Scene 5: Meet Strategy
+        tl.to("#scene5", { opacity: 1, duration: 0 }, 24);
+        tl.fromTo("#scene5 h1", { y: -40, opacity: 0 }, { y: 0, opacity: 1, duration: 1, ease: "power3.out" }, 24.2);
+        tl.fromTo("#scene5 p", { y: -20, opacity: 0 }, { y: 0, opacity: 1, duration: 1, ease: "power3.out" }, 24.4);
+        tl.fromTo(".card-con", { x: -50, opacity: 0 }, { x: 0, opacity: 1, duration: 0.8, ease: "back.out(1.2)" }, 25.0);
+        tl.fromTo(".card-pln", { y: 50, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, ease: "back.out(1.2)" }, 25.4);
+        tl.fromTo(".card-rch", { x: 50, opacity: 0 }, { x: 0, opacity: 1, duration: 0.8, ease: "back.out(1.2)" }, 25.8);
+        tl.to("#scene5", { opacity: 0, scale: 0.9, duration: 0.8, ease: "power2.inOut" }, 29.2);
+
+        // Scene 6: Outro
+        tl.to("#scene6", { opacity: 1, duration: 0 }, 30);
+        tl.fromTo("#scene6 h1", { scale: 0.8, opacity: 0 }, { scale: 1, opacity: 1, duration: 1.5, ease: "power4.out" }, 30.2);
+        tl.fromTo("#scene6 p", { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 1, ease: "power3.out" }, 30.8);
+        tl.fromTo(".btn-cta", { y: 30, opacity: 0, scale: 0.9 }, { y: 0, opacity: 1, scale: 1, duration: 1, ease: "back.out(1.5)" }, 31.5);
+        tl.to(".btn-cta", { scale: 1.05, duration: 1.5, yoyo: true, repeat: -1, ease: "sine.inOut" }, 32.5);
+        tl.to("#scene6", { opacity: 0, duration: 1 }, 34.0);
+
+        window.__timelines["main"] = tl;
+    </script>
+</body>
+</html>

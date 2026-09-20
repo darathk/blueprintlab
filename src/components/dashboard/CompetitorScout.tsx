@@ -738,11 +738,11 @@ function LiveMeetTrackerCard({ comp, onUpdate }: { comp: CompetitorProfile, onUp
         setLiveData(comp.liveData || { squat: {}, bench: {}, deadlift: {} });
     }, [comp.id, comp.liveData]);
 
-    const handleUpdate = (lift: keyof CompetitorLiveData, attempt: 'attempt1'|'attempt2'|'attempt3', field: 'kg'|'status', value: any) => {
+    const handleUpdate = (lift: 'squat' | 'bench' | 'deadlift', attempt: 'attempt1'|'attempt2'|'attempt3', field: 'kg'|'status', value: any) => {
         const newData = { ...liveData };
-        if (!newData[lift]) newData[lift] = {};
-        if (!newData[lift][attempt]) newData[lift][attempt] = { kg: 0, status: 'pending' };
-        (newData[lift] as any)[attempt][field] = value;
+        if (!newData[lift]) (newData as any)[lift] = {};
+        if (!(newData as any)[lift][attempt]) (newData as any)[lift][attempt] = { kg: 0, status: 'pending' };
+        (newData as any)[lift][attempt][field] = value;
         setLiveData(newData);
         onUpdate({ ...comp, liveData: newData });
     };

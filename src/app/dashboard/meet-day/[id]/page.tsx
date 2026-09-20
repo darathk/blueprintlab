@@ -30,6 +30,7 @@ export default async function LifterMeetDayPage({
                 meetAttempts: true,
                 pastMeets: true,
                 nextMeetName: true,
+                nextMeetDate: true,
                 weightClass: true,
                 gender: true,
                 federation: true,

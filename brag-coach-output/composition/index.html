@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1920, height=1080">
+<title>BlueprintLab Brag Video</title>
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<style>
+body {
+    margin: 0;
+    width: 1920px;
+    height: 1080px;
+    background: #0a0a0a;
+    background-image: 
+        radial-gradient(ellipse at 50% 0%, rgba(125, 135, 210, 0.15) 0%, transparent 60%),
+        radial-gradient(ellipse at 50% 100%, #111111 0%, #0a0a0a 100%);
+    color: #f8fafc;
+    font-family: Inter, system-ui, sans-serif;
+    overflow: hidden;
+}
+.clip {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+}
+.text-highlight { color: #7d87d2; }
+.card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px;
+    padding: 2rem;
+    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.4);
+}
+h1 { font-size: 80px; font-weight: 800; letter-spacing: -0.02em; margin-bottom: 24px; text-align: center; }
+p { font-size: 32px; color: #94a3b8; margin: 0; }
+</style>
+</head>
+<body>
+    <div id="root" data-composition-id="main" data-width="1920" data-height="1080" data-duration="19">
+        <audio id="bgm" src="assets/music/vol-1.mp3" data-start="0" data-duration="19"></audio>
+
+        <div id="scene1" class="clip" data-start="0" data-duration="5">
+            <h1>The <span class="text-highlight">Command Center</span></h1>
+            <p>For elite strength coaches.</p>
+        </div>
+
+        <div id="scene2" class="clip" data-start="5" data-duration="6">
+            <h1>Real-Time <span class="text-highlight">Analytics</span></h1>
+            <p>Track fatigue, volume, and estimated 1RM instantly.</p>
+            <div class="card" style="margin-top: 60px; display: flex; gap: 40px;">
+                <div style="width: 300px; height: 160px; background: linear-gradient(135deg, #7d87d2, #6b75c0); border-radius: 12px; box-shadow: 0 0 20px rgba(125, 135, 210, 0.3);"></div>
+                <div style="width: 300px; height: 160px; background: linear-gradient(135deg, #a855f7, #9333ea); border-radius: 12px; box-shadow: 0 0 20px rgba(168, 85, 247, 0.3);"></div>
+                <div style="width: 300px; height: 160px; background: linear-gradient(135deg, #10b981, #059669); border-radius: 12px; box-shadow: 0 0 20px rgba(16, 185, 129, 0.3);"></div>
+            </div>
+        </div>
+
+        <div id="scene3" class="clip" data-start="11" data-duration="5">
+            <h1>Automated <span class="text-highlight">Attempt Strategy</span></h1>
+            <p>Never guess on meet day again.</p>
+        </div>
+
+        <div id="scene4" class="clip" data-start="16" data-duration="3">
+            <h1 style="font-size: 140px; letter-spacing: -0.04em;">Blueprint<span class="text-highlight">Lab</span></h1>
+        </div>
+    </div>
+
+    <script>
+        const tl = gsap.timeline({ paused: true });
+        
+        // Audio
+        tl.to("#bgm", { volume: 1, duration: 0 }, 0);
+        tl.to("#bgm", { volume: 0, duration: 2 }, 17);
+
+        // Scene 1
+        tl.to("#scene1", { opacity: 1, duration: 0 }, 0);
+        tl.fromTo("#scene1 h1", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 1, ease: "power3.out" }, 0.5);
+        tl.fromTo("#scene1 p", { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 1, ease: "power3.out" }, 0.8);
+        tl.to("#scene1", { opacity: 0, scale: 0.95, duration: 0.8, ease: "power2.inOut" }, 4.2);
+
+        // Scene 2
+        tl.to("#scene2", { opacity: 1, duration: 0 }, 5);
+        tl.fromTo("#scene2 h1", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 1, ease: "power3.out" }, 5.2);
+        tl.fromTo("#scene2 p", { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 1, ease: "power3.out" }, 5.5);
+        tl.fromTo("#scene2 .card div", { y: 40, opacity: 0 }, { y: 0, opacity: 1, stagger: 0.15, duration: 0.8, ease: "back.out(1.5)" }, 6.0);
+        tl.to("#scene2", { opacity: 0, scale: 0.95, duration: 0.8, ease: "power2.inOut" }, 10.2);
+
+        // Scene 3
+        tl.to("#scene3", { opacity: 1, duration: 0 }, 11);
+        tl.fromTo("#scene3 h1", { y: 40, opacity: 0 }, { y: 0, opacity: 1, duration: 1, ease: "power3.out" }, 11.2);
+        tl.fromTo("#scene3 p", { y: 20, opacity: 0 }, { y: 0, opacity: 1, duration: 1, ease: "power3.out" }, 11.5);
+        tl.to("#scene3", { opacity: 0, scale: 0.95, duration: 0.8, ease: "power2.inOut" }, 15.2);
+
+        // Scene 4
+        tl.to("#scene4", { opacity: 1, duration: 0 }, 16);
+        tl.fromTo("#scene4 h1", { scale: 0.8, opacity: 0 }, { scale: 1, opacity: 1, duration: 1.5, ease: "power4.out" }, 16.0);
+        tl.to("#scene4", { opacity: 0, duration: 1 }, 18.0);
+
+        window.__timelines["main"] = tl;
+    </script>
+</body>
+</html>

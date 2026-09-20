@@ -65,8 +65,7 @@ export async function POST(request: Request) {
                 name: programName || template.name,
                 startDate: newStartDate,
                 weeks: clonedWeeks,
-                status: 'active',
-                templateId: template.id
+                status: 'active'
             },
         }));
 
