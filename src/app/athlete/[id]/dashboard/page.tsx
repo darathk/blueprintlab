@@ -109,7 +109,7 @@ export default async function AthleteDashboard({ params }) {
                 </div>
             </header>
 
-            {athlete.coachId && (
+            {athlete.coachId && !isJayseng && (
                 <div style={{ padding: '0 1rem' }}>
                     <AnnouncementBanner coachId={athlete.coachId} />
                 </div>

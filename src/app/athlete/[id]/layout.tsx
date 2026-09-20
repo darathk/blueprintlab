@@ -88,7 +88,7 @@ export default async function AthletePortalLayout({
 
     return (
         <div style={{ minHeight: '100dvh', display: 'flex', flexDirection: 'column', background: 'var(--background)' }}>
-            <header className="athlete-portal-header border-b border-[var(--card-border)] rounded-none border-t-0 border-l-0 border-r-0 sticky top-0 z-[100] w-full" style={{
+            <header className="athlete-portal-header hidden border-b border-[var(--card-border)] rounded-none border-t-0 border-l-0 border-r-0 sticky top-0 z-[100] w-full" style={{
                 height: 'var(--header-height)',
                 background: 'rgba(10, 10, 10, 0.85)',
                 backdropFilter: 'blur(16px)',
@@ -113,11 +113,11 @@ export default async function AthletePortalLayout({
                     </div>
                 </div>
             </header>
-            <main className="athlete-main" style={{ flex: 1 }}>
+            <main className="athlete-main" style={{ flex: 1, paddingBottom: '80px' }}>
                 {children}
             </main>
             <AppSetupBubble />
-            <MobileBottomNav items={[...athleteNavItems, { label: 'Settings', href: `/athlete/${id}/settings`, icon: <Settings size={26} /> }]} className="mobile-bottom-nav" userId={id} />
+            <MobileBottomNav items={[...athleteNavItems, { label: 'Settings', href: `/athlete/${id}/settings`, icon: <Settings size={26} /> }]} className="mobile-bottom-nav" userId={id} showOnDesktop={true} />
         </div>
     );
 }

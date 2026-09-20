@@ -13,7 +13,7 @@ export interface NavItem {
     unreadCount?: number;
 }
 
-export default function MobileBottomNav({ items, children, className, userId }: { items: NavItem[], children?: React.ReactNode, className?: string, userId?: string }) {
+export default function MobileBottomNav({ items, children, className, userId, showOnDesktop = false }: { items: NavItem[], children?: React.ReactNode, className?: string, userId?: string, showOnDesktop?: boolean }) {
     const pathname = usePathname();
     const serverUnread = items.reduce((sum, item) => sum + (item.unreadCount || 0), 0);
     const liveUnread = useUnreadCount(userId || '', serverUnread);
@@ -38,6 +38,14 @@ export default function MobileBottomNav({ items, children, className, userId }: 
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [isOpen]);
 
+    const handleItemClick = (e: React.MouseEvent, href: string) => {
+        if (pathname === href) {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        setIsOpen(false);
+    };
+
     const isActive = (href: string) => {
         if (href === '/dashboard' && pathname === '/dashboard') return true;
         if (href !== '/dashboard' && pathname.startsWith(href)) return true;
@@ -45,20 +53,26 @@ export default function MobileBottomNav({ items, children, className, userId }: 
         return false;
     };
 
-    // Inject live unread count into the Messages item
+    const mainItems = items.slice(0, 4);
+    const menuItems = items.slice(4);
+
+    // Override the unread count for messages using real-time data
     const enrichedItems = items.map(item => {
-        if (item.unreadCount !== undefined && item.label === 'Messages') {
-            return { ...item, unreadCount: userId ? liveUnread : item.unreadCount };
+        if (item.label === 'Messages') {
+            return { ...item, unreadCount: liveUnread };
         }
         return item;
     });
 
+    const enrichedMainItems = enrichedItems.slice(0, 4);
+    const enrichedMenuItems = enrichedItems.slice(4);
+    const menuHasUnread = enrichedMenuItems.some(item => (item.unreadCount || 0) > 0);
     const totalUnread = enrichedItems.reduce((sum, item) => sum + (item.unreadCount || 0), 0);
 
     return (
         <nav
-            ref={navRef}
-            className={`md:hidden ${className || ''}`}
+            ref={navRef as any}
+            className={`${showOnDesktop ? '' : 'md:hidden'} ${className || ''}`}
             style={{
                 position: 'fixed',
                 bottom: 'env(safe-area-inset-bottom, 20px)',
