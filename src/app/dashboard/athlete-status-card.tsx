@@ -167,7 +167,7 @@ export default function AthleteStatusCard({ athlete, progress, daysSinceLastLog 
                     {/* Email – inline edit */}
                     {editingEmail ? (
                         <div
-                            onClick={(e) => e.stopPropagation()}
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
                             style={{ marginTop: '0.4rem', display: 'flex', flexDirection: 'column', gap: '0.3rem' }}
                         >
                             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
@@ -198,7 +198,7 @@ export default function AthleteStatusCard({ athlete, progress, daysSinceLastLog 
                                     {emailSaving ? '...' : 'Save'}
                                 </button>
                                 <button
-                                    onClick={(e) => { e.stopPropagation(); setEditingEmail(false); setEmailValue(athlete.email || ''); setEmailError(''); }}
+                                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingEmail(false); setEmailValue(athlete.email || ''); setEmailError(''); }}
                                     className="glass-button chat-press"
                                     style={{
                                         fontSize: '0.75rem', padding: '4px 8px',
@@ -213,7 +213,7 @@ export default function AthleteStatusCard({ athlete, progress, daysSinceLastLog 
                         </div>
                     ) : (
                         <div
-                            onClick={(e) => { e.stopPropagation(); setEditingEmail(true); }}
+                            onClick={(e) => { e.preventDefault(); e.stopPropagation(); setEditingEmail(true); }}
                             style={{
                                 marginTop: '0.3rem', fontSize: '0.8rem', color: 'var(--secondary-foreground)',
                                 display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer',

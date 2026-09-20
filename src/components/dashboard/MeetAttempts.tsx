@@ -277,23 +277,37 @@ export default function MeetAttempts({
         setExportingLift(liftKey);
         try {
             const html2canvas = (await import('html2canvas')).default;
-            // Wait for React to render the off-screen element
-            await new Promise(r => setTimeout(r, 100));
+            // Wait for React 19 concurrent rendering to flush the off-screen element
+            await new Promise(r => setTimeout(r, 300));
             const element = document.getElementById(`export-${liftKey}`);
             if (!element) throw new Error('Could not find content to export');
+
+            // Scroll to top to avoid html2canvas offset bugs
+            window.scrollTo(0, 0);
 
             const canvas = await html2canvas(element, {
                 backgroundColor: '#09090b',
                 scale: 2,
                 useCORS: true,
                 logging: false,
+                windowWidth: 700,
+                windowHeight: element.scrollHeight + 100,
             });
 
-            const image = canvas.toDataURL('image/jpeg', 0.9);
+            // Use blob + objectURL for cross-browser (Safari, Brave) compatibility
+            const blob = await new Promise<Blob | null>(resolve =>
+                canvas.toBlob(resolve, 'image/jpeg', 0.92)
+            );
+            if (!blob) throw new Error('Failed to generate image');
+
+            const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
-            link.href = image;
+            link.href = url;
             link.download = `${athlete.name}_${liftKey}_Attempts.jpg`;
+            document.body.appendChild(link);
             link.click();
+            document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(url), 5000);
         } catch (err) {
             console.error('Failed to export lift:', err);
             alert('Failed to export lift. Please try again.');
@@ -307,9 +321,11 @@ export default function MeetAttempts({
         setExporting(true);
         try {
             const html2canvas = (await import('html2canvas')).default;
-            await new Promise(r => setTimeout(r, 100));
+            await new Promise(r => setTimeout(r, 300));
             const element = document.getElementById('competitor-scout-report');
             if (!element) throw new Error('Could not find content to export');
+
+            window.scrollTo(0, 0);
 
             const canvas = await html2canvas(element, {
                 backgroundColor: '#09090b',
@@ -317,13 +333,23 @@ export default function MeetAttempts({
                 useCORS: true,
                 logging: false,
                 ignoreElements: (node) => node.tagName === 'BUTTON' && node.textContent?.includes('Export'),
+                windowWidth: element.scrollWidth + 100,
+                windowHeight: element.scrollHeight + 100,
             });
 
-            const image = canvas.toDataURL('image/jpeg', 0.9);
+            const blob = await new Promise<Blob | null>(resolve =>
+                canvas.toBlob(resolve, 'image/jpeg', 0.92)
+            );
+            if (!blob) throw new Error('Failed to generate image');
+
+            const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
-            link.href = image;
+            link.href = url;
             link.download = `${athlete.name}_Scouting_Report.jpg`;
+            document.body.appendChild(link);
             link.click();
+            document.body.removeChild(link);
+            setTimeout(() => URL.revokeObjectURL(url), 5000);
         } catch (err) {
             console.error('Failed to export photo:', err);
             alert('Failed to export photo. Please try again.');
@@ -1232,14 +1258,14 @@ export default function MeetAttempts({
 
             {/* Off-screen Export Container */}
             {exportingLift && (
-                <div style={{ position: 'absolute', top: -9999, left: -9999, pointerEvents: 'none' }}>
+                <div style={{ position: 'fixed', top: 0, left: 0, opacity: 0, pointerEvents: 'none', zIndex: -1 }}>
                     <div id={`export-${exportingLift}`} style={{ width: 600, background: '#09090b', padding: '24px 32px', borderRadius: 16, color: '#fff', fontFamily: 'system-ui, sans-serif' }}>
                         {/* Header */}
                         <div style={{ textAlign: 'center', marginBottom: 24 }}>
-                            <div style={{ fontSize: 24, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--primary)' }}>
+                            <div style={{ fontSize: 24, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#7d87d2' }}>
                                 {athlete.name} - {exportingLift.toUpperCase()}
                             </div>
-                            <div style={{ fontSize: 14, color: 'var(--secondary-foreground)', marginTop: 4 }}>
+                            <div style={{ fontSize: 14, color: '#a1a1aa', marginTop: 4 }}>
                                 {meetMeta.meetName || 'Upcoming Meet'} • {meetMeta.meetDate || ''} • BW: {meetMeta.bodyweight}kg
                             </div>
                         </div>
@@ -1248,14 +1274,14 @@ export default function MeetAttempts({
                         <div style={{ display: 'flex', gap: 16, marginBottom: 24 }}>
                             {/* PR */}
                             <div style={{ flex: 1, background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 16, textAlign: 'center' }}>
-                                <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Previous Highest</div>
+                                <div style={{ fontSize: 11, color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Previous Highest</div>
                                 <div style={{ fontSize: 24, fontWeight: 800, color: '#10b981' }}>
                                     {allTimePRs?.[exportingLift]?.value > 0 ? `${allTimePRs[exportingLift].value} kg` : '—'}
                                 </div>
                             </div>
                             {/* Projected Total */}
                             <div style={{ flex: 1, background: 'rgba(255,255,255,0.05)', borderRadius: 12, padding: 16, textAlign: 'center' }}>
-                                <div style={{ fontSize: 11, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Projected 9/9 Total</div>
+                                <div style={{ fontSize: 11, color: '#a1a1aa', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 4 }}>Projected 9/9 Total</div>
                                 <div style={{ fontSize: 24, fontWeight: 800, color: '#f59e0b' }}>
                                     {projections.find(p => p.key === 'planned')?.total || '—'} kg
                                 </div>
@@ -1265,8 +1291,8 @@ export default function MeetAttempts({
                         {/* Warm-ups */}
                         {data[exportingLift].warmups && data[exportingLift].warmups.trim() !== '' && (
                             <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 16, marginBottom: 24 }}>
-                                <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Warm-ups</div>
-                                <div style={{ fontSize: 14, color: 'var(--foreground)', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
+                                <div style={{ fontSize: 14, fontWeight: 800, color: '#7d87d2', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Warm-ups</div>
+                                <div style={{ fontSize: 14, color: '#ffffff', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>
                                     {data[exportingLift].warmups}
                                 </div>
                             </div>
@@ -1278,7 +1304,7 @@ export default function MeetAttempts({
                                 const attemptData = data[exportingLift][attemptKey];
                                 return (
                                     <div key={attemptKey} style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 12, padding: 16 }}>
-                                        <div style={{ fontSize: 14, fontWeight: 800, color: 'var(--primary)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12, textAlign: 'center' }}>{label}</div>
+                                        <div style={{ fontSize: 14, fontWeight: 800, color: '#7d87d2', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12, textAlign: 'center' }}>{label}</div>
                                         
                                         {/* Row for CON/PLN/RCH */}
                                         <div style={{ display: 'flex', gap: 12 }}>
@@ -1287,12 +1313,12 @@ export default function MeetAttempts({
                                                     <div style={{ fontSize: 10, textAlign: 'center', color: opt.color, marginBottom: 4, textTransform: 'uppercase', fontWeight: 700 }}>{opt.label}</div>
                                                     <div style={{ display: 'flex', background: 'rgba(0,0,0,0.3)', borderRadius: 8, border: `1px solid ${opt.color}40`, overflow: 'hidden' }}>
                                                         <div style={{ flex: 1, padding: 8, textAlign: 'center', borderRight: '1px solid rgba(255,255,255,0.1)' }}>
-                                                            <div style={{ fontSize: 16, fontWeight: 700 }}>{attemptData[opt.key].kg || '-'}</div>
-                                                            <div style={{ fontSize: 9, color: 'var(--secondary-foreground)' }}>KG</div>
+                                                            <div style={{ fontSize: 16, fontWeight: 700, color: '#ffffff' }}>{attemptData[opt.key].kg || '-'}</div>
+                                                            <div style={{ fontSize: 9, color: '#a1a1aa' }}>KG</div>
                                                         </div>
                                                         <div style={{ flex: 1, padding: 8, textAlign: 'center' }}>
-                                                            <div style={{ fontSize: 16, fontWeight: 700 }}>{attemptData[opt.key].lbs || '-'}</div>
-                                                            <div style={{ fontSize: 9, color: 'var(--secondary-foreground)' }}>LBS</div>
+                                                            <div style={{ fontSize: 16, fontWeight: 700, color: '#ffffff' }}>{attemptData[opt.key].lbs || '-'}</div>
+                                                            <div style={{ fontSize: 9, color: '#a1a1aa' }}>LBS</div>
                                                         </div>
                                                     </div>
                                                 </div>
