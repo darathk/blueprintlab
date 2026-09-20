@@ -175,6 +175,7 @@ export async function GET(request: Request) {
             where: {
                 coachId,
                 role: 'athlete',
+                status: 'active',
                 NOT: [
                     { email: { equals: 'jayseng123@gmail.com', mode: 'insensitive' } },
                     { id: '34e1fad4-5c1b-40e4-9173-5a0f63d1c547' }

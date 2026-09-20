@@ -62,9 +62,9 @@ export async function GET(request: Request) {
             if ('error' in access) return access.error;
             where.athleteId = athleteId;
         } else if (coachId || auth.isCoach) {
-            // Coach fetching all their athletes' PRs
+            // Coach fetching all their active athletes' PRs
             const athletes = await prisma.athlete.findMany({
-                where: { coachId: auth.user.id },
+                where: { coachId: auth.user.id, status: 'active' },
                 select: { id: true },
             });
             where.athleteId = { in: athletes.map(a => a.id) };
