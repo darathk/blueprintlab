@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { currentUser } from '@clerk/nextjs/server';
 import { requireAuth, requireCoach } from '@/lib/api-auth';
+import { revalidatePath } from 'next/cache';
 
 export const dynamic = 'force-dynamic';
 
@@ -74,6 +75,8 @@ export async function POST(request: Request) {
                         ...(pastMeets !== undefined && { pastMeets }),
                     }
                 });
+                revalidatePath('/dashboard');
+                revalidatePath('/dashboard/athletes');
                 return NextResponse.json(athlete);
             }
         }
@@ -116,6 +119,8 @@ export async function POST(request: Request) {
                         pastMeets: pastMeets !== undefined ? pastMeets : existingUser.pastMeets,
                     }
                 });
+                revalidatePath('/dashboard');
+                revalidatePath('/dashboard/athletes');
                 return NextResponse.json(athlete);
             }
 
@@ -159,6 +164,8 @@ export async function POST(request: Request) {
             }
         });
 
+        revalidatePath('/dashboard');
+        revalidatePath('/dashboard/athletes');
         return NextResponse.json(athlete);
     } catch (error) {
         console.error('Error updating athlete:', error);
