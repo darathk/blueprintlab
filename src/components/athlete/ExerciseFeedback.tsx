@@ -372,10 +372,9 @@ export default function ExerciseFeedback({
                     <textarea
                         ref={(el) => {
                             if (el && open) {
-                                // Place cursor at the end and scroll down
+                                // Place cursor at the end without triggering whole-page scroll jerk
                                 el.selectionStart = el.selectionEnd = el.value.length;
                                 el.scrollTop = el.scrollHeight;
-                                el.focus();
                             }
                         }}
                         value={message}
@@ -713,30 +712,49 @@ export default function ExerciseFeedback({
                         </div>
 
                         {/* Bottom Action Area */}
+                        {/* Bottom Action Area with Glass Styling */}
                         <div style={{
-                            background: 'var(--card-bg, #111b21)',
-                            padding: '12px 14px',
+                            background: 'rgba(12, 15, 24, 0.88)',
+                            backdropFilter: 'blur(20px)',
+                            WebkitBackdropFilter: 'blur(20px)',
+                            borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                            padding: '14px 16px',
                             display: 'flex',
                             flexDirection: 'column',
-                            gap: 10,
+                            gap: 12,
                         }}>
                             {/* File thumbnails strip */}
                             {stagedFiles.length >= 1 && (
-                                <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 2 }}>
+                                <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 4 }}>
                                     {stagedFileUrls.map((url, i) => (
                                         <div
                                             key={i}
-                                            onClick={() => setStagedPreviewIndex(i)}
+                                            onMouseDown={(e) => e.preventDefault()}
+                                            onPointerDown={(e) => {
+                                                e.preventDefault();
+                                                if (document.activeElement instanceof HTMLElement) {
+                                                    document.activeElement.blur();
+                                                }
+                                                setStagedPreviewIndex(i);
+                                            }}
+                                            onClick={() => {
+                                                if (document.activeElement instanceof HTMLElement) {
+                                                    document.activeElement.blur();
+                                                }
+                                                setStagedPreviewIndex(i);
+                                            }}
                                             style={{
-                                                width: 50,
-                                                height: 50,
-                                                borderRadius: 8,
+                                                width: 54,
+                                                height: 54,
+                                                borderRadius: 10,
                                                 overflow: 'hidden',
-                                                border: i === stagedPreviewIndex ? '2px solid var(--primary, #6366f1)' : '1.5px solid rgba(255, 255, 255, 0.1)',
+                                                border: i === stagedPreviewIndex ? '2px solid var(--primary, #818cf8)' : '1px solid rgba(255, 255, 255, 0.12)',
+                                                boxShadow: i === stagedPreviewIndex ? '0 0 12px rgba(129, 140, 248, 0.35)' : 'none',
                                                 cursor: 'pointer',
                                                 flexShrink: 0,
                                                 position: 'relative',
-                                                transition: 'all 0.15s ease',
+                                                transition: 'all 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
+                                                transform: i === stagedPreviewIndex ? 'scale(1.04)' : 'scale(1)',
                                             }}
                                         >
                                             {stagedFiles[i] && getSafeMimeType(stagedFiles[i]).startsWith('video/') ? (

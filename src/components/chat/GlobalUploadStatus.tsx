@@ -33,24 +33,24 @@ export default function GlobalUploadStatus() {
         }
     };
 
-    // Banner colors & messaging
+    // Enhanced Glass Theme colors & messaging
     const isError = errors.length > 0 && inFlight.length === 0;
     const bgColor = isError
-        ? 'rgba(239, 68, 68, 0.12)'
+        ? 'rgba(30, 12, 16, 0.9)'
         : allDone
-            ? 'rgba(16, 185, 129, 0.12)'
-            : 'rgba(99, 102, 241, 0.12)';
+            ? 'rgba(8, 30, 20, 0.9)'
+            : 'rgba(12, 16, 30, 0.9)';
     const borderColor = isError
-        ? 'rgba(239, 68, 68, 0.35)'
+        ? 'rgba(239, 68, 68, 0.4)'
         : allDone
-            ? 'rgba(16, 185, 129, 0.35)'
-            : 'rgba(99, 102, 241, 0.35)';
+            ? 'rgba(16, 185, 129, 0.4)'
+            : 'rgba(129, 140, 248, 0.35)';
     const accentColor = isError ? '#ef4444' : allDone ? '#10b981' : '#818cf8';
     const barGradient = isError
         ? 'linear-gradient(90deg, #ef4444, #f87171)'
         : allDone
             ? 'linear-gradient(90deg, #10b981, #34d399)'
-            : 'linear-gradient(90deg, #6366f1, #a855f7, #6366f1)';
+            : 'linear-gradient(90deg, #6366f1, #38bdf8, #818cf8)';
 
     return (
         <>

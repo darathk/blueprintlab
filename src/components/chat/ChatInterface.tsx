@@ -2394,34 +2394,42 @@ export default function ChatInterface({
                     flexDirection: 'column',
                     animation: 'fadeIn 0.2s ease'
                 }}>
-                    {/* Top Bar */}
+                    {/* Top Bar with Glass Design */}
                     <div style={{
                         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                        padding: '12px 16px',
+                        padding: '12px 18px',
                         paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))',
-                        color: '#fff', background: 'var(--card-bg)'
+                        color: '#fff',
+                        background: 'rgba(12, 15, 24, 0.82)',
+                        backdropFilter: 'blur(20px)',
+                        WebkitBackdropFilter: 'blur(20px)',
+                        borderBottom: '1px solid rgba(255, 255, 255, 0.08)'
                     }}>
-                        <button onClick={() => clearStagedMedia()} className="chat-press" style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center' }}>
-                            <X size={26} />
+                        <button onClick={() => clearStagedMedia()} className="chat-press" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff', cursor: 'pointer', width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <X size={20} />
                         </button>
-                        <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+                        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
                             {stagedFiles[stagedPreviewIndex]?.type.startsWith('video/') && (
                                 <button
                                     onClick={() => setCropFile(stagedFiles[stagedPreviewIndex])}
                                     className="chat-press"
                                     style={{
-                                        background: 'rgba(125,135,210,0.18)', border: '1px solid rgba(125,135,210,0.3)', color: '#fff', cursor: 'pointer',
-                                        display: 'flex', alignItems: 'center', gap: 6, padding: '6px 14px',
-                                        borderRadius: 20
+                                        background: 'linear-gradient(135deg, rgba(99, 102, 241, 0.22) 0%, rgba(168, 85, 247, 0.18) 100%)',
+                                        border: '1px solid rgba(129, 140, 248, 0.4)',
+                                        color: '#fff', cursor: 'pointer',
+                                        display: 'flex', alignItems: 'center', gap: 6, padding: '7px 16px',
+                                        borderRadius: 20,
+                                        boxShadow: '0 0 16px rgba(99, 102, 241, 0.25)',
+                                        transition: 'all 0.16s ease'
                                     }}
                                 >
-                                    <Scissors size={18} color="var(--primary)" />
-                                    <span style={{ fontSize: 13, color: 'var(--primary)', fontWeight: 600 }}>Trim</span>
+                                    <Scissors size={16} color="var(--primary, #818cf8)" />
+                                    <span style={{ fontSize: 13, color: '#e0e7ff', fontWeight: 700 }}>Trim</span>
                                 </button>
                             )}
-                            <div style={{ border: '1px solid rgba(255,255,255,0.25)', borderRadius: 4, padding: '1px 5px', fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.75)' }}>HD</div>
-                            <button onClick={() => fileRef.current?.click()} className="chat-press" style={{ background: 'none', border: 'none', color: 'var(--secondary-foreground)', cursor: 'pointer', padding: 4, display: 'flex', alignItems: 'center' }}>
-                                <Paperclip size={22} />
+                            <div style={{ border: '1px solid rgba(255,255,255,0.2)', borderRadius: 6, padding: '2px 7px', fontSize: 10, fontWeight: 800, color: 'rgba(255,255,255,0.85)', background: 'rgba(255,255,255,0.04)' }}>HD</div>
+                            <button onClick={() => fileRef.current?.click()} className="chat-press" style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--secondary-foreground)', cursor: 'pointer', width: 36, height: 36, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <Paperclip size={18} />
                             </button>
                         </div>
                     </div>
@@ -2437,21 +2445,21 @@ export default function ChatInterface({
                                 playsInline
                                 webkit-playsinline="true"
                                 preload="auto"
-                                style={{ maxWidth: '100%', maxHeight: 'min(50vh, 380px)', borderRadius: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}
+                                style={{ maxWidth: '100%', maxHeight: 'min(50vh, 380px)', borderRadius: 14, boxShadow: '0 8px 32px rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.08)' }}
                             />
                         ) : stagedFiles[stagedPreviewIndex]?.type.startsWith('audio/') ? (
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: 40 }}>
-                                <div style={{ width: 100, height: 100, borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <div style={{ width: 100, height: 100, borderRadius: '50%', background: 'var(--primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 0 24px rgba(99,102,241,0.35)' }}>
                                     <Mic size={48} color="#fff" />
                                 </div>
-                                <span style={{ color: 'rgba(255,255,255,0.5)', fontSize: 14 }}>Voice Message</span>
+                                <span style={{ color: 'rgba(255,255,255,0.7)', fontSize: 14, fontWeight: 500 }}>Voice Message</span>
                                 <audio controls src={stagedFileUrls[stagedPreviewIndex]} style={{ marginTop: 16 }} />
                             </div>
                         ) : (
                             <img
                                 src={stagedFileUrls[stagedPreviewIndex]}
                                 alt=""
-                                style={{ maxWidth: '100%', maxHeight: 'min(50vh, 380px)', objectFit: 'contain', borderRadius: 12, boxShadow: '0 4px 20px rgba(0,0,0,0.5)' }}
+                                style={{ maxWidth: '100%', maxHeight: 'min(50vh, 380px)', objectFit: 'contain', borderRadius: 14, boxShadow: '0 8px 32px rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.08)' }}
                             />
                         )}
 
@@ -2459,38 +2467,66 @@ export default function ChatInterface({
                         {stagedFiles[stagedPreviewIndex]?.type.startsWith('video/') && (
                             <div style={{
                                 position: 'absolute', bottom: 12, right: 16,
-                                background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)',
-                                borderRadius: 10, padding: '3px 8px',
-                                fontSize: 11, color: 'rgba(255,255,255,0.85)', fontWeight: 600
+                                background: 'rgba(10,12,20,0.85)', backdropFilter: 'blur(10px)',
+                                border: '1px solid rgba(255,255,255,0.1)',
+                                borderRadius: 10, padding: '4px 10px',
+                                fontSize: 11, color: 'rgba(255,255,255,0.9)', fontWeight: 600
                             }}>
                                 {(stagedFiles[stagedPreviewIndex].size / (1024 * 1024)).toFixed(1)} MB
                             </div>
                         )}
                     </div>
 
-                    {/* Bottom Staging Area */}
-                    <div style={{ background: 'var(--card-bg)', padding: '12px 12px', paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))' }}>
+                    {/* Bottom Staging Area with Glass Styling */}
+                    <div style={{
+                        background: 'rgba(12, 15, 24, 0.88)',
+                        backdropFilter: 'blur(20px)',
+                        WebkitBackdropFilter: 'blur(20px)',
+                        borderTop: '1px solid rgba(255, 255, 255, 0.08)',
+                        padding: '14px 14px',
+                        paddingBottom: 'calc(14px + env(safe-area-inset-bottom, 0px))'
+                    }}>
                         {/* Mini Thumbnails Row (only show if multiple files) */}
                         {stagedFiles.length > 1 && (
-                            <div style={{ display: 'flex', gap: 8, paddingBottom: 12, overflowX: 'auto', paddingLeft: 4 }}>
+                            <div style={{ display: 'flex', gap: 10, paddingBottom: 14, overflowX: 'auto', paddingLeft: 4 }}>
                                 {stagedFileUrls.map((url, i) => (
-                                    <div key={i} onClick={() => setStagedPreviewIndex(i)} style={{
-                                        width: 54, height: 54, borderRadius: 8, overflow: 'hidden',
-                                        border: i === stagedPreviewIndex ? '2px solid var(--primary)' : '2px solid transparent',
-                                        cursor: 'pointer', flexShrink: 0, position: 'relative', transition: 'all 0.15s ease'
-                                    }}>
+                                    <div
+                                        key={i}
+                                        onMouseDown={(e) => e.preventDefault()}
+                                        onPointerDown={(e) => {
+                                            e.preventDefault();
+                                            if (document.activeElement instanceof HTMLElement) {
+                                                document.activeElement.blur();
+                                            }
+                                            setStagedPreviewIndex(i);
+                                        }}
+                                        onClick={() => {
+                                            if (document.activeElement instanceof HTMLElement) {
+                                                document.activeElement.blur();
+                                            }
+                                            setStagedPreviewIndex(i);
+                                        }}
+                                        style={{
+                                            width: 56, height: 56, borderRadius: 10, overflow: 'hidden',
+                                            border: i === stagedPreviewIndex ? '2px solid var(--primary, #818cf8)' : '1px solid rgba(255,255,255,0.12)',
+                                            boxShadow: i === stagedPreviewIndex ? '0 0 14px rgba(129, 140, 248, 0.4)' : 'none',
+                                            cursor: 'pointer', flexShrink: 0, position: 'relative',
+                                            transition: 'all 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
+                                            transform: i === stagedPreviewIndex ? 'scale(1.05)' : 'scale(1)'
+                                        }}
+                                    >
                                         {stagedFiles[i]?.type.startsWith('video/') ? (
                                             stagedPosters[i] ? (
-                                                <img src={stagedPosters[i]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: i === stagedPreviewIndex ? 1 : 0.5 }} />
+                                                <img src={stagedPosters[i]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: i === stagedPreviewIndex ? 1 : 0.55 }} />
                                             ) : (
-                                                <video src={url} muted playsInline preload="auto" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: i === stagedPreviewIndex ? 1 : 0.5 }} />
+                                                <video src={url} muted playsInline preload="auto" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: i === stagedPreviewIndex ? 1 : 0.55 }} />
                                             )
                                         ) : stagedFiles[i]?.type.startsWith('audio/') ? (
-                                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.05)', opacity: i === stagedPreviewIndex ? 1 : 0.5 }}>
+                                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.05)', opacity: i === stagedPreviewIndex ? 1 : 0.55 }}>
                                                 <Mic size={18} color="var(--secondary-foreground)" />
                                             </div>
                                         ) : (
-                                            <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: i === stagedPreviewIndex ? 1 : 0.5 }} />
+                                            <img src={url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: i === stagedPreviewIndex ? 1 : 0.55 }} />
                                         )}
                                         {/* Pre-upload progress bar */}
                                         {(() => {
@@ -2520,7 +2556,7 @@ export default function ChatInterface({
                                                     <div style={{
                                                         height: '100%',
                                                         width: `${pre.progress}%`,
-                                                        background: 'var(--primary)',
+                                                        background: 'var(--primary, #818cf8)',
                                                         borderRadius: '0 0 6px 6px',
                                                         transition: 'width 0.3s ease',
                                                     }} />
@@ -2529,13 +2565,13 @@ export default function ChatInterface({
                                         })()}
                                         <button onClick={(e) => { e.stopPropagation(); clearStagedMedia(i); if (stagedPreviewIndex >= stagedFiles.length - 1) setStagedPreviewIndex(Math.max(0, stagedFiles.length - 2)); }}
                                             className="chat-press"
-                                            style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(0,0,0,0.7)', border: 'none', borderRadius: '50%', color: '#fff', width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
+                                            style={{ position: 'absolute', top: 2, right: 2, background: 'rgba(0,0,0,0.75)', border: 'none', borderRadius: '50%', color: '#fff', width: 18, height: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}>
                                             <X size={10} />
                                         </button>
                                     </div>
                                 ))}
-                                <button onClick={() => fileRef.current?.click()} className="chat-press" style={{ width: 54, height: 54, borderRadius: 8, border: '2px dashed rgba(134,150,160,0.4)', background: 'none', color: 'var(--secondary-foreground)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
-                                    <div style={{ fontSize: 26, fontWeight: 300 }}>+</div>
+                                <button onClick={() => fileRef.current?.click()} className="chat-press" style={{ width: 56, height: 56, borderRadius: 10, border: '1.5px dashed rgba(255,255,255,0.25)', background: 'rgba(255,255,255,0.03)', color: 'var(--secondary-foreground)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}>
+                                    <div style={{ fontSize: 24, fontWeight: 300 }}>+</div>
                                 </button>
                             </div>
                         )}
@@ -2543,10 +2579,10 @@ export default function ChatInterface({
                         {/* Caption Input and Send */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                             <div style={{
-                                flex: 1, background: 'rgba(255,255,255,0.04)', borderRadius: 24, padding: '4px 16px',
+                                flex: 1, background: 'rgba(255,255,255,0.06)', borderRadius: 24, padding: '4px 16px',
                                 display: 'flex', alignItems: 'center', minHeight: 48,
-                                border: captionFocused ? '1px solid rgba(125, 135, 210, 0.35)' : '1px solid rgba(255,255,255,0.07)',
-                                boxShadow: captionFocused ? '0 0 0 3px rgba(125, 135, 210, 0.08)' : 'none',
+                                border: captionFocused ? '1px solid rgba(129, 140, 248, 0.5)' : '1px solid rgba(255,255,255,0.1)',
+                                boxShadow: captionFocused ? '0 0 16px rgba(129, 140, 248, 0.2)' : 'none',
                                 transition: 'border-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out)',
                             }}>
                                 <textarea
@@ -2556,6 +2592,7 @@ export default function ChatInterface({
                                     onBlur={() => setCaptionFocused(false)}
                                     placeholder="Add a caption..."
                                     rows={1}
+                                    autoFocus={false}
                                     enterKeyHint="send"
                                     autoCapitalize="sentences"
                                     autoCorrect="on"
