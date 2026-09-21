@@ -7,8 +7,9 @@ import { downloadMediaFile } from '@/lib/download-media';
 
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
+import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
-import { Mic, MoreVertical, Reply, Copy, Download, Paperclip, X, Send, Search, Scissors, Pencil, Play, Maximize, Minimize2, Plus, ChevronLeft } from 'lucide-react';
+import { Mic, MoreVertical, Reply, Copy, Download, Paperclip, X, Send, Search, Scissors, Pencil, Play, Maximize, Minimize2, Plus, ChevronLeft, Film } from 'lucide-react';
 const VideoCropper = dynamic(() => import('./VideoCropper'), { ssr: false });
 const EmojiPicker = dynamic(() => import('./EmojiPicker'), { ssr: false });
 const GifPicker = dynamic(() => import('./GifPicker'), { ssr: false });
@@ -747,6 +748,9 @@ export default function ChatInterface({
         router.prefetch('/dashboard');
         router.prefetch(`/athlete/${athleteId}/dashboard`);
     }, [router, athleteId]);
+
+    const [mounted, setMounted] = useState(false);
+    useEffect(() => { setMounted(true); }, []);
 
     const [messages, setMessages] = useState<Message[]>(initialMessages);
     const [newMessage, setNewMessage] = useState('');
@@ -2384,12 +2388,14 @@ export default function ChatInterface({
                 )}
             </div>
             {/* Full Screen Media Staging Overlay (WhatsApp-style) */}
-            {stagedFiles.length > 0 && (
+            {mounted && stagedFiles.length > 0 && createPortal(
                 <div style={{
                     position: 'fixed',
                     inset: 0,
-                    zIndex: 2000,
+                    zIndex: 99999,
                     background: 'var(--background)',
+                    height: '100dvh',
+                    maxHeight: '100dvh',
                     display: 'flex',
                     flexDirection: 'column',
                     animation: 'fadeIn 0.2s ease'
@@ -2400,7 +2406,7 @@ export default function ChatInterface({
                         padding: '12px 18px',
                         paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))',
                         color: '#fff',
-                        background: 'rgba(12, 15, 24, 0.82)',
+                        background: 'rgba(12, 15, 24, 0.85)',
                         backdropFilter: 'blur(20px)',
                         WebkitBackdropFilter: 'blur(20px)',
                         borderBottom: '1px solid rgba(255, 255, 255, 0.08)'
@@ -2409,7 +2415,7 @@ export default function ChatInterface({
                             <X size={20} />
                         </button>
                         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                            {stagedFiles[stagedPreviewIndex]?.type.startsWith('video/') && (
+                            {(stagedFiles[stagedPreviewIndex]?.type.startsWith('video/') || /\.(mp4|mov|webm|3gp|m4v|mkv)$/i.test(stagedFiles[stagedPreviewIndex]?.name || '')) && (
                                 <button
                                     onClick={() => setCropFile(stagedFiles[stagedPreviewIndex])}
                                     className="chat-press"
@@ -2436,7 +2442,7 @@ export default function ChatInterface({
 
                     {/* Main Preview Container */}
                     <div style={{ flex: 1, maxHeight: 'min(55vh, 420px)', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', overflow: 'hidden', padding: 16 }}>
-                        {stagedFiles[stagedPreviewIndex]?.type.startsWith('video/') ? (
+                        {(stagedFiles[stagedPreviewIndex]?.type.startsWith('video/') || /\.(mp4|mov|webm|3gp|m4v|mkv)$/i.test(stagedFiles[stagedPreviewIndex]?.name || '')) ? (
                             <video
                                 key={stagedFileUrls[stagedPreviewIndex]}
                                 src={stagedFileUrls[stagedPreviewIndex]}
@@ -2444,7 +2450,7 @@ export default function ChatInterface({
                                 controls
                                 playsInline
                                 webkit-playsinline="true"
-                                preload="auto"
+                                preload="metadata"
                                 style={{ maxWidth: '100%', maxHeight: 'min(50vh, 380px)', borderRadius: 14, boxShadow: '0 8px 32px rgba(0,0,0,0.6)', border: '1px solid rgba(255,255,255,0.08)' }}
                             />
                         ) : stagedFiles[stagedPreviewIndex]?.type.startsWith('audio/') ? (
@@ -2464,7 +2470,7 @@ export default function ChatInterface({
                         )}
 
                         {/* File info overlay */}
-                        {stagedFiles[stagedPreviewIndex]?.type.startsWith('video/') && (
+                        {(stagedFiles[stagedPreviewIndex]?.type.startsWith('video/') || /\.(mp4|mov|webm|3gp|m4v|mkv)$/i.test(stagedFiles[stagedPreviewIndex]?.name || '')) && (
                             <div style={{
                                 position: 'absolute', bottom: 12, right: 16,
                                 background: 'rgba(10,12,20,0.85)', backdropFilter: 'blur(10px)',
@@ -2479,12 +2485,13 @@ export default function ChatInterface({
 
                     {/* Bottom Staging Area with Glass Styling */}
                     <div style={{
-                        background: 'rgba(12, 15, 24, 0.88)',
-                        backdropFilter: 'blur(20px)',
-                        WebkitBackdropFilter: 'blur(20px)',
+                        background: 'rgba(12, 15, 24, 0.92)',
+                        backdropFilter: 'blur(24px)',
+                        WebkitBackdropFilter: 'blur(24px)',
                         borderTop: '1px solid rgba(255, 255, 255, 0.08)',
                         padding: '14px 14px',
-                        paddingBottom: 'calc(14px + env(safe-area-inset-bottom, 0px))'
+                        paddingBottom: 'calc(14px + env(safe-area-inset-bottom, 0px))',
+                        marginTop: 'auto'
                     }}>
                         {/* Mini Thumbnails Row (only show if multiple files) */}
                         {stagedFiles.length > 1 && (
@@ -2492,34 +2499,23 @@ export default function ChatInterface({
                                 {stagedFileUrls.map((url, i) => (
                                     <div
                                         key={i}
-                                        onMouseDown={(e) => e.preventDefault()}
-                                        onPointerDown={(e) => {
-                                            e.preventDefault();
-                                            if (document.activeElement instanceof HTMLElement) {
-                                                document.activeElement.blur();
-                                            }
-                                            setStagedPreviewIndex(i);
-                                        }}
-                                        onClick={() => {
-                                            if (document.activeElement instanceof HTMLElement) {
-                                                document.activeElement.blur();
-                                            }
-                                            setStagedPreviewIndex(i);
-                                        }}
+                                        onClick={() => setStagedPreviewIndex(i)}
                                         style={{
                                             width: 56, height: 56, borderRadius: 10, overflow: 'hidden',
                                             border: i === stagedPreviewIndex ? '2px solid var(--primary, #818cf8)' : '1px solid rgba(255,255,255,0.12)',
                                             boxShadow: i === stagedPreviewIndex ? '0 0 14px rgba(129, 140, 248, 0.4)' : 'none',
                                             cursor: 'pointer', flexShrink: 0, position: 'relative',
-                                            transition: 'all 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
+                                            transition: 'all 0.15s ease',
                                             transform: i === stagedPreviewIndex ? 'scale(1.05)' : 'scale(1)'
                                         }}
                                     >
-                                        {stagedFiles[i]?.type.startsWith('video/') ? (
+                                        {(stagedFiles[i]?.type.startsWith('video/') || /\.(mp4|mov|webm|3gp|m4v|mkv)$/i.test(stagedFiles[i]?.name || '')) ? (
                                             stagedPosters[i] ? (
                                                 <img src={stagedPosters[i]} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: i === stagedPreviewIndex ? 1 : 0.55 }} />
                                             ) : (
-                                                <video src={url} muted playsInline preload="auto" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: i === stagedPreviewIndex ? 1 : 0.55 }} />
+                                                <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.06)', opacity: i === stagedPreviewIndex ? 1 : 0.55 }}>
+                                                    <Film size={18} color="var(--primary, #818cf8)" />
+                                                </div>
                                             )
                                         ) : stagedFiles[i]?.type.startsWith('audio/') ? (
                                             <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(255,255,255,0.05)', opacity: i === stagedPreviewIndex ? 1 : 0.55 }}>
@@ -2578,13 +2574,19 @@ export default function ChatInterface({
 
                         {/* Caption Input and Send */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                            <div style={{
-                                flex: 1, background: 'rgba(255,255,255,0.06)', borderRadius: 24, padding: '4px 16px',
-                                display: 'flex', alignItems: 'center', minHeight: 48,
-                                border: captionFocused ? '1px solid rgba(129, 140, 248, 0.5)' : '1px solid rgba(255,255,255,0.1)',
-                                boxShadow: captionFocused ? '0 0 16px rgba(129, 140, 248, 0.2)' : 'none',
-                                transition: 'border-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out)',
-                            }}>
+                            <div
+                                onClick={(e) => {
+                                    const ta = e.currentTarget.querySelector('textarea');
+                                    if (ta) ta.focus();
+                                }}
+                                style={{
+                                    flex: 1, background: 'rgba(255,255,255,0.08)', borderRadius: 24, padding: '4px 16px',
+                                    display: 'flex', alignItems: 'center', minHeight: 48, cursor: 'text',
+                                    border: captionFocused ? '1px solid rgba(129, 140, 248, 0.6)' : '1px solid rgba(255,255,255,0.14)',
+                                    boxShadow: captionFocused ? '0 0 16px rgba(129, 140, 248, 0.25)' : 'none',
+                                    transition: 'border-color 200ms var(--ease-out), box-shadow 200ms var(--ease-out)',
+                                }}
+                            >
                                 <textarea
                                     value={newMessage}
                                     onChange={e => setNewMessage(e.target.value)}
@@ -2592,12 +2594,15 @@ export default function ChatInterface({
                                     onBlur={() => setCaptionFocused(false)}
                                     placeholder="Add a caption..."
                                     rows={1}
-                                    autoFocus={false}
                                     enterKeyHint="send"
                                     autoCapitalize="sentences"
                                     autoCorrect="on"
                                     spellCheck={true}
-                                    style={{ flex: 1, background: 'transparent', border: 'none', color: 'var(--foreground)', outline: 'none', fontSize: 16, padding: '8px 0', resize: 'none', lineHeight: '1.4', fontFamily: 'inherit' }}
+                                    style={{
+                                        flex: 1, background: 'transparent', border: 'none', color: '#ffffff',
+                                        outline: 'none', fontSize: 16, padding: '8px 0', resize: 'none',
+                                        lineHeight: '1.4', fontFamily: 'inherit', WebkitUserSelect: 'text', userSelect: 'text',
+                                    }}
                                     onPaste={handlePaste}
                                     onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
                                 />
@@ -2643,7 +2648,8 @@ export default function ChatInterface({
                             })()}
                         </div>
                     </div>
-                </div>
+                </div>,
+                document.body
             )}
         </div>
     );

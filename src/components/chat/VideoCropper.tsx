@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { X, Check, Play, Scissors, Clock, Film } from 'lucide-react';
 
 interface Props {
@@ -12,6 +13,7 @@ interface Props {
 type CropperStatus = 'loading' | 'thumbnailing' | 'ready' | 'error';
 
 export default function VideoCropper({ file, onCancel, onComplete }: Props) {
+    const [mounted, setMounted] = useState(false);
     const [videoUrl, setVideoUrl] = useState<string>('');
     const [duration, setDuration] = useState(0);
     const [startTime, setStartTime] = useState(0);
@@ -22,6 +24,10 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
     const [fileSize, setFileSize] = useState('');
     const [status, setStatus] = useState<CropperStatus>('loading');
     const [activeDrag, setActiveDrag] = useState<'start' | 'end' | null>(null);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     // Drag state stored in refs for window-level 60fps listeners
     const draggingRef = useRef<'start' | 'end' | null>(null);
@@ -289,20 +295,19 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
     const currentPct = duration > 0 ? (currentTime / duration) * 100 : 0;
     const isTrimmed = Math.abs(startTime) > 0.1 || Math.abs(endTime - duration) > 0.1;
 
-    if (!videoUrl) return null;
+    if (!videoUrl || !mounted) return null;
 
-    return (
+    return createPortal(
         <div style={{
             position: 'fixed',
             inset: 0,
-            zIndex: 9999,
+            zIndex: 999999,
             background: 'radial-gradient(ellipse at 50% 15%, rgba(20, 24, 40, 0.98) 0%, rgba(8, 10, 16, 0.99) 100%)',
             backdropFilter: 'blur(30px)',
             WebkitBackdropFilter: 'blur(30px)',
             display: 'flex',
             flexDirection: 'column',
             color: '#fff',
-            touchAction: 'none',
             userSelect: 'none',
             animation: 'fadeIn 0.2s ease',
         }}>
@@ -746,6 +751,7 @@ export default function VideoCropper({ file, onCancel, onComplete }: Props) {
                     <span>Tip: Drag handles to adjust clip duration</span>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
