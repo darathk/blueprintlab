@@ -941,15 +941,36 @@ export default function ProgramWeeklyView({
     // ──── Helpers for Delta Display ────
     const grandDelta = totalTarget > 0 ? stressMetrics.grandTotal - totalTarget : null;
 
-    const renderDeltaCell = (delta: number | null) => {
+    const renderDeltaCell = (delta: number | null, target?: number, actual?: number) => {
         if (delta === null) return <span style={{ opacity: 0.3 }}>—</span>;
+        
+        let color = '#22c55e';
+        let deltaStr = '✓ 0.0';
         if (delta > 0.05) {
-            return <span style={{ color: '#ef4444', fontWeight: 800 }}>+{delta.toFixed(1)}</span>;
+            color = '#ef4444';
+            deltaStr = `+${delta.toFixed(1)}`;
+        } else if (delta < -0.05) {
+            color = '#06b6d4';
+            deltaStr = delta.toFixed(1);
         }
-        if (delta < -0.05) {
-            return <span style={{ color: '#06b6d4', fontWeight: 800 }}>{delta.toFixed(1)}</span>;
-        }
-        return <span style={{ color: '#22c55e', fontWeight: 800 }}>✓ 0.0</span>;
+
+        const actualVal = actual !== undefined ? actual : (target && delta !== null ? target + delta : 0);
+        const pct = (target && target > 0) ? Math.round((actualVal / target) * 100) : null;
+
+        const titleText = (target && target > 0)
+            ? `Target: ${target.toFixed(1)} | Actual: ${actualVal.toFixed(1)} | Delta: ${deltaStr} | ${pct}% of target`
+            : undefined;
+
+        return (
+            <span style={{ color, fontWeight: 800, whiteSpace: 'nowrap' }} title={titleText}>
+                {deltaStr}
+                {pct !== null && (
+                    <span style={{ opacity: 0.75, fontWeight: 600, fontSize: '0.82em', marginLeft: '3px' }}>
+                        / {pct}%
+                    </span>
+                )}
+            </span>
+        );
     };
 
     return (
@@ -1194,7 +1215,7 @@ export default function ProgramWeeklyView({
                                         Delta (Diff)
                                     </td>
                                     <td style={{ textAlign: 'center', padding: '5px 14px' }}>
-                                        {renderDeltaCell(grandDelta)}
+                                        {renderDeltaCell(grandDelta, totalTarget, stressMetrics.grandTotal)}
                                     </td>
                                     {METRIC_CATS.map(c => {
                                         const actual = stressMetrics.stats[c]?.total || 0;
@@ -1202,7 +1223,7 @@ export default function ProgramWeeklyView({
                                         const delta = target !== undefined ? actual - target : null;
                                         return (
                                             <td key={c} style={{ textAlign: 'center', padding: '5px 14px' }}>
-                                                {renderDeltaCell(delta)}
+                                                {renderDeltaCell(delta, target, actual)}
                                             </td>
                                         );
                                     })}
