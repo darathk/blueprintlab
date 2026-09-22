@@ -566,16 +566,20 @@ export default function ProgramWeeklyView({
         }
     }, [setWeeks]);
 
-    const clearDay = useCallback((dayNum: number) => {
-        if (!confirm('Clear all exercises from this day?')) return;
+    const deleteSession = useCallback((dayNum: number, sessionName?: string) => {
+        const displayName = sessionName?.trim() || `Session on Day ${dayNum}`;
+        if (!confirm(`Are you sure you want to delete "${displayName}"? This will remove the session and all its exercises.`)) return;
         setWeeks((prev: any[]) => prev.map(w => {
             if (w.weekNumber !== currentWeekNum) return w;
             return {
                 ...w,
-                sessions: w.sessions.filter((s: any) => Number(s.day) !== Number(dayNum)),
+                sessions: (w.sessions || []).filter((s: any) => Number(s.day) !== Number(dayNum)),
             };
         }));
-    }, [currentWeekNum, setWeeks]);
+        showToast(`Deleted "${displayName}"`);
+    }, [currentWeekNum, setWeeks, showToast]);
+
+    const clearDay = deleteSession;
 
     const handleCopySession = useCallback((sessionToCopy: any, dayLabel: string) => {
         if (!sessionToCopy) return;
@@ -1391,15 +1395,22 @@ export default function ProgramWeeklyView({
                                     )}
                                     {session && (
                                         <button
-                                            onClick={() => clearDay(dayNum)}
-                                            title="Clear day"
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                deleteSession(dayNum, session.name);
+                                            }}
+                                            title="Delete Session"
+                                            aria-label="Delete Session"
                                             style={{
                                                 background: 'transparent', border: 'none',
                                                 color: 'var(--secondary-foreground)', cursor: 'pointer',
                                                 padding: '4px', fontSize: '0.7rem', opacity: 0.6,
+                                                borderRadius: '4px', display: 'flex', alignItems: 'center',
+                                                transition: 'all 0.15s ease',
                                             }}
-                                            onMouseOver={e => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.opacity = '1'; }}
-                                            onMouseOut={e => { e.currentTarget.style.color = 'var(--secondary-foreground)'; e.currentTarget.style.opacity = '0.6'; }}
+                                            onMouseOver={e => { e.currentTarget.style.color = '#ef4444'; e.currentTarget.style.opacity = '1'; e.currentTarget.style.background = 'rgba(239, 68, 68, 0.1)'; }}
+                                            onMouseOut={e => { e.currentTarget.style.color = 'var(--secondary-foreground)'; e.currentTarget.style.opacity = '0.6'; e.currentTarget.style.background = 'transparent'; }}
                                         >
                                             <Trash2 size={13} />
                                         </button>
@@ -1475,6 +1486,40 @@ export default function ProgramWeeklyView({
                                             padding: '2px 0',
                                         }}
                                     />
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            deleteSession(dayNum, session.name);
+                                        }}
+                                        title="Delete Session"
+                                        aria-label="Delete Session"
+                                        style={{
+                                            background: 'transparent',
+                                            border: 'none',
+                                            color: 'var(--secondary-foreground)',
+                                            cursor: 'pointer',
+                                            padding: '4px',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            opacity: 0.6,
+                                            borderRadius: '4px',
+                                            transition: 'all 0.15s ease',
+                                            flexShrink: 0,
+                                        }}
+                                        onMouseOver={e => {
+                                            e.currentTarget.style.color = '#ef4444';
+                                            e.currentTarget.style.opacity = '1';
+                                            e.currentTarget.style.background = 'rgba(239, 68, 68, 0.12)';
+                                        }}
+                                        onMouseOut={e => {
+                                            e.currentTarget.style.color = 'var(--secondary-foreground)';
+                                            e.currentTarget.style.opacity = '0.6';
+                                            e.currentTarget.style.background = 'transparent';
+                                        }}
+                                    >
+                                        <Trash2 size={14} />
+                                    </button>
                                 </div>
                             )}
 
