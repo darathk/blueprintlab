@@ -1987,6 +1987,7 @@ export default function ProgramWeeklyView({
                     weeks={weeks}
                     currentWeekNum={currentWeekNum}
                     exerciseDB={initialExercises}
+                    liftTargets={liftTargets}
                     onApplyPivot={handleApplyPivot}
                 />
             )}

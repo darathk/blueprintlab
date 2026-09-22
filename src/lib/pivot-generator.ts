@@ -268,6 +268,7 @@ export interface GeneratePivotOptions {
     stances: PivotStanceConfig;
     exerciseDB?: Record<string, any>;
     customDays?: number[]; // Optional list of days [1, 2, 4, 5]
+    customBaselineStress?: { knee: number; hip: number; pushH: number };
 }
 
 /**
@@ -279,14 +280,30 @@ export function generatePivotWeek({
     stances,
     exerciseDB,
     customDays,
+    customBaselineStress,
 }: GeneratePivotOptions): PivotGenerationResult {
     const rawSessions = referenceWeek?.sessions || [];
-    const baselineStress = calculateWeekMovementStress(rawSessions, exerciseDB);
+    const calculatedBaseline = calculateWeekMovementStress(rawSessions, exerciseDB);
 
-    // If baseline stress is zero (empty reference week), supply powerlifting sensible defaults
-    const baselineKnee = baselineStress.knee > 0 ? baselineStress.knee : 9.0;
-    const baselineHip = baselineStress.hip > 0 ? baselineStress.hip : 7.0;
-    const baselinePushH = baselineStress.pushH > 0 ? baselineStress.pushH : 11.0;
+    // Use custom baseline if provided, else calculated from reference week, else powerlifting defaults
+    const baselineKnee = customBaselineStress && customBaselineStress.knee > 0
+        ? customBaselineStress.knee
+        : (calculatedBaseline.knee > 0 ? calculatedBaseline.knee : 9.0);
+
+    const baselineHip = customBaselineStress && customBaselineStress.hip > 0
+        ? customBaselineStress.hip
+        : (calculatedBaseline.hip > 0 ? calculatedBaseline.hip : 7.0);
+
+    const baselinePushH = customBaselineStress && customBaselineStress.pushH > 0
+        ? customBaselineStress.pushH
+        : (calculatedBaseline.pushH > 0 ? calculatedBaseline.pushH : 11.0);
+
+    const baselineStress: MovementStressBreakdown = {
+        knee: Math.round(baselineKnee * 10) / 10,
+        hip: Math.round(baselineHip * 10) / 10,
+        pushH: Math.round(baselinePushH * 10) / 10,
+        total: Math.round((baselineKnee + baselineHip + baselinePushH) * 10) / 10,
+    };
 
     const targetKnee = Math.round(baselineKnee * targetRatio * 10) / 10;
     const targetHip = Math.round(baselineHip * targetRatio * 10) / 10;

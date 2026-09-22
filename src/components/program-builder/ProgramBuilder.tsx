@@ -3815,6 +3815,7 @@ export default function ProgramBuilder({
                     weeks={weeks}
                     currentWeekNum={weeklyActiveWeekNum || 1}
                     exerciseDB={initialExercises}
+                    liftTargets={liftTargets}
                     onApplyPivot={handleApplyPivot}
                 />
             )}

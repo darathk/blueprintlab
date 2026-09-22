@@ -1,15 +1,17 @@
 'use client';
 
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
-import { Shuffle, Check, X, ArrowRight, Activity, Dumbbell, Sparkles, SlidersHorizontal, Info } from 'lucide-react';
+import { Shuffle, Check, X, ArrowRight, Activity, Dumbbell, Sparkles, SlidersHorizontal, Info, Target, Calendar } from 'lucide-react';
 import {
     generatePivotWeek,
     calculateWeekMovementStress,
     detectCompetitionStances,
+    resolveCategory,
     PivotStanceConfig,
     MovementStressBreakdown,
     PivotGenerationResult
 } from '@/lib/pivot-generator';
+import { EXERCISE_CATEGORIES } from '@/lib/exercise-db';
 
 interface PivotRandomizerModalProps {
     isOpen: boolean;
@@ -17,6 +19,7 @@ interface PivotRandomizerModalProps {
     weeks: any[];
     currentWeekNum: number;
     exerciseDB?: Record<string, any>;
+    liftTargets?: Record<string, { timeToPeak: string; stressTarget: string }>;
     onApplyPivot: (newSessions: any[], targetWeekNum: number, replaceExisting: boolean) => void;
 }
 
@@ -26,6 +29,7 @@ export default function PivotRandomizerModal({
     weeks = [],
     currentWeekNum = 1,
     exerciseDB,
+    liftTargets,
     onApplyPivot,
 }: PivotRandomizerModalProps) {
     // Determine default reference week (preceding week if available, else current week)
@@ -61,6 +65,63 @@ export default function PivotRandomizerModal({
         return weeks.find(w => w.weekNumber === selectedRefWeekNum) || weeks[0] || { weekNumber: 1, sessions: [] };
     }, [weeks, selectedRefWeekNum]);
 
+    // Parse athlete Lift Targets by category
+    const parsedLiftTargets = useMemo(() => {
+        if (!liftTargets) return null;
+        let knee = 0;
+        let hip = 0;
+        let pushH = 0;
+
+        Object.entries(liftTargets).forEach(([lift, { stressTarget }]) => {
+            const val = parseFloat(stressTarget) || 0;
+            if (val <= 0) return;
+            const cat = resolveCategory(lift, exerciseDB);
+            if (cat === EXERCISE_CATEGORIES.KNEE) knee += val;
+            else if (cat === EXERCISE_CATEGORIES.HIP) hip += val;
+            else if (cat === EXERCISE_CATEGORIES.PUSH_HORIZONTAL) pushH += val;
+        });
+
+        if (knee === 0 && hip === 0 && pushH === 0) return null;
+        return {
+            knee: Math.round(knee * 10) / 10,
+            hip: Math.round(hip * 10) / 10,
+            pushH: Math.round(pushH * 10) / 10,
+        };
+    }, [liftTargets, exerciseDB]);
+
+    // Calculate baseline stress directly from reference week sessions
+    const referenceWeekCalculated = useMemo(() => {
+        return calculateWeekMovementStress(referenceWeek.sessions || [], exerciseDB);
+    }, [referenceWeek, exerciseDB]);
+
+    // Stress source state: 'lift_targets' | 'reference_week' | 'custom'
+    const [stressSource, setStressSource] = useState<'lift_targets' | 'reference_week' | 'custom'>(() => {
+        return parsedLiftTargets ? 'lift_targets' : 'reference_week';
+    });
+
+    // Editable Baseline Stress Index inputs for Knee, Hip, Push-H
+    const [inputKnee, setInputKnee] = useState<string>('');
+    const [inputHip, setInputHip] = useState<string>('');
+    const [inputPushH, setInputPushH] = useState<string>('');
+
+    // Sync input values when reference week or parsedLiftTargets change
+    useEffect(() => {
+        if (!isOpen) return;
+
+        if (stressSource === 'lift_targets' && parsedLiftTargets) {
+            setInputKnee(String(parsedLiftTargets.knee || 9.0));
+            setInputHip(String(parsedLiftTargets.hip || 7.0));
+            setInputPushH(String(parsedLiftTargets.pushH || 11.0));
+        } else if (stressSource === 'reference_week') {
+            const baseKnee = referenceWeekCalculated.knee > 0 ? referenceWeekCalculated.knee : 9.0;
+            const baseHip = referenceWeekCalculated.hip > 0 ? referenceWeekCalculated.hip : 7.0;
+            const basePushH = referenceWeekCalculated.pushH > 0 ? referenceWeekCalculated.pushH : 11.0;
+            setInputKnee(String(baseKnee));
+            setInputHip(String(baseHip));
+            setInputPushH(String(basePushH));
+        }
+    }, [isOpen, stressSource, parsedLiftTargets, referenceWeekCalculated]);
+
     // On initial open or reference week change, detect athlete stances from reference sessions
     useEffect(() => {
         if (isOpen && referenceWeek) {
@@ -70,7 +131,19 @@ export default function PivotRandomizerModal({
         }
     }, [isOpen, referenceWeek, defaultRefWeekNum]);
 
-    // Procedural generation result based on settings + randomSeed
+    // Build custom baseline stress object from coach inputs
+    const activeCustomBaseline = useMemo(() => {
+        const k = parseFloat(inputKnee);
+        const h = parseFloat(inputHip);
+        const p = parseFloat(inputPushH);
+        return {
+            knee: !isNaN(k) && k > 0 ? k : 9.0,
+            hip: !isNaN(h) && h > 0 ? h : 7.0,
+            pushH: !isNaN(p) && p > 0 ? p : 11.0,
+        };
+    }, [inputKnee, inputHip, inputPushH]);
+
+    // Procedural generation result based on settings, custom baseline stress & randomSeed
     const generationResult = useMemo<PivotGenerationResult>(() => {
         // randomSeed triggers re-computation
         void randomSeed;
@@ -79,8 +152,9 @@ export default function PivotRandomizerModal({
             targetRatio,
             stances,
             exerciseDB,
+            customBaselineStress: activeCustomBaseline,
         });
-    }, [referenceWeek, targetRatio, stances, exerciseDB, randomSeed]);
+    }, [referenceWeek, targetRatio, stances, exerciseDB, activeCustomBaseline, randomSeed]);
 
     const handleRandomize = useCallback(() => {
         setIsGenerating(true);
@@ -127,8 +201,8 @@ export default function PivotRandomizerModal({
                     border: '1px solid rgba(168, 85, 247, 0.35)',
                     borderRadius: '16px',
                     width: '100%',
-                    maxWidth: '1020px',
-                    maxHeight: '92vh',
+                    maxWidth: '1040px',
+                    maxHeight: '94vh',
                     display: 'flex',
                     flexDirection: 'column',
                     boxShadow: '0 25px 60px -15px rgba(168, 85, 247, 0.25), 0 0 40px rgba(0, 0, 0, 0.6)',
@@ -171,7 +245,7 @@ export default function PivotRandomizerModal({
                                 </span>
                             </h2>
                             <p style={{ margin: 0, fontSize: '0.76rem', color: 'var(--secondary-foreground, #94a3b8)', marginTop: '2px' }}>
-                                Procedural variation generator • Opposite-stance desensitization • Motor skill preservation
+                                Procedural variation generator • Opposite-stance desensitization • Editable lift SI inputs
                             </p>
                         </div>
                     </div>
@@ -214,7 +288,7 @@ export default function PivotRandomizerModal({
                         {/* Reference Week Selector */}
                         <div>
                             <label style={{ display: 'block', fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--secondary-foreground, #94a3b8)', marginBottom: '5px' }}>
-                                Baseline Reference Week
+                                Schedule & Day Template
                             </label>
                             <select
                                 value={selectedRefWeekNum}
@@ -345,40 +419,119 @@ export default function PivotRandomizerModal({
                                 }}
                             >
                                 <Check size={14} style={{ color: '#10b981' }} />
-                                <span>Maintains Close Grip, Larsen & Spoto bar groove</span>
+                                <span>Close Grip, Larsen & Spoto bar groove</span>
                             </div>
                         </div>
                     </div>
 
-                    {/* ── Stress Target Breakdown Cards ── */}
+                    {/* ── Stress Calibration & Baseline SI Inputs ── */}
                     <div>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px', flexWrap: 'wrap', gap: '8px' }}>
                             <span style={{ fontSize: '0.75rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--secondary-foreground, #94a3b8)' }}>
-                                Movement Pattern Stress Calibration (Target: 50%)
+                                Movement Pattern Stress Calibration (Target: 50% Deload)
                             </span>
-                            <span style={{ fontSize: '0.72rem', color: 'var(--secondary-foreground, #94a3b8)' }}>
-                                Reference Week: <strong style={{ color: '#fff' }}>Week {selectedRefWeekNum}</strong>
-                            </span>
+
+                            {/* Source Quick Preset Switchers */}
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                {parsedLiftTargets && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            setStressSource('lift_targets');
+                                            setInputKnee(String(parsedLiftTargets.knee));
+                                            setInputHip(String(parsedLiftTargets.hip));
+                                            setInputPushH(String(parsedLiftTargets.pushH));
+                                        }}
+                                        style={{
+                                            background: stressSource === 'lift_targets' ? 'rgba(6, 182, 212, 0.2)' : 'rgba(255, 255, 255, 0.04)',
+                                            border: stressSource === 'lift_targets' ? '1px solid var(--primary, #06b6d4)' : '1px solid rgba(255, 255, 255, 0.1)',
+                                            color: stressSource === 'lift_targets' ? 'var(--primary, #06b6d4)' : 'var(--secondary-foreground, #94a3b8)',
+                                            borderRadius: '6px',
+                                            padding: '3px 8px',
+                                            fontSize: '0.72rem',
+                                            fontWeight: 600,
+                                            cursor: 'pointer',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 4,
+                                        }}
+                                    >
+                                        <Target size={12} /> Use Lift Targets ({parsedLiftTargets.knee}/{parsedLiftTargets.hip}/{parsedLiftTargets.pushH})
+                                    </button>
+                                )}
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setStressSource('reference_week');
+                                        const baseK = referenceWeekCalculated.knee > 0 ? referenceWeekCalculated.knee : 9.0;
+                                        const baseH = referenceWeekCalculated.hip > 0 ? referenceWeekCalculated.hip : 7.0;
+                                        const baseP = referenceWeekCalculated.pushH > 0 ? referenceWeekCalculated.pushH : 11.0;
+                                        setInputKnee(String(baseK));
+                                        setInputHip(String(baseH));
+                                        setInputPushH(String(baseP));
+                                    }}
+                                    style={{
+                                        background: stressSource === 'reference_week' ? 'rgba(168, 85, 247, 0.2)' : 'rgba(255, 255, 255, 0.04)',
+                                        border: stressSource === 'reference_week' ? '1px solid #c084fc' : '1px solid rgba(255, 255, 255, 0.1)',
+                                        color: stressSource === 'reference_week' ? '#c084fc' : 'var(--secondary-foreground, #94a3b8)',
+                                        borderRadius: '6px',
+                                        padding: '3px 8px',
+                                        fontSize: '0.72rem',
+                                        fontWeight: 600,
+                                        cursor: 'pointer',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: 4,
+                                    }}
+                                >
+                                    <Calendar size={12} /> Week {selectedRefWeekNum} Actual
+                                </button>
+                            </div>
                         </div>
 
+                        {/* 4 Stress Cards with Direct Editable Inputs */}
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
                             {/* Knee Stress Card */}
                             <div style={{ background: 'rgba(255, 255, 255, 0.03)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: '10px', padding: '10px 12px' }}>
                                 <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--primary, #06b6d4)', textTransform: 'uppercase', marginBottom: '4px' }}>
                                     Knee (Squat)
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-                                    <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fff' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '4px 0' }}>
+                                    <span style={{ fontSize: '0.68rem', color: 'var(--secondary-foreground, #94a3b8)', fontWeight: 600 }}>Base SI:</span>
+                                    <input
+                                        type="number"
+                                        step="0.5"
+                                        min="0"
+                                        value={inputKnee}
+                                        onChange={e => {
+                                            setInputKnee(e.target.value);
+                                            setStressSource('custom');
+                                        }}
+                                        style={{
+                                            width: '68px',
+                                            background: 'rgba(0, 0, 0, 0.45)',
+                                            border: '1px solid rgba(6, 182, 212, 0.4)',
+                                            borderRadius: '5px',
+                                            color: '#fff',
+                                            fontSize: '0.85rem',
+                                            fontWeight: 800,
+                                            padding: '2px 6px',
+                                            outline: 'none',
+                                        }}
+                                    />
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '6px' }}>
+                                    <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#fff' }}>
                                         {generatedStress.knee}
                                     </span>
-                                    <span style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground, #94a3b8)' }}>
-                                        / {targetStress.knee} target
+                                    <span style={{ fontSize: '0.74rem', color: 'var(--secondary-foreground, #94a3b8)' }}>
+                                        / {targetStress.knee} target (50%)
                                     </span>
                                 </div>
                                 <div style={{ fontSize: '0.68rem', color: 'var(--secondary-foreground, #94a3b8)', marginTop: '4px', display: 'flex', justifyContent: 'space-between' }}>
-                                    <span>Base: {baselineStress.knee}</span>
+                                    <span>Target: 50%</span>
                                     <span style={{ color: '#10b981', fontWeight: 700 }}>
-                                        {getMatchPercent(generatedStress.knee, targetStress.knee)}%
+                                        {getMatchPercent(generatedStress.knee, targetStress.knee)}% match
                                     </span>
                                 </div>
                             </div>
@@ -388,18 +541,42 @@ export default function PivotRandomizerModal({
                                 <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#f59e0b', textTransform: 'uppercase', marginBottom: '4px' }}>
                                     Hip (Deadlift)
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-                                    <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fff' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '4px 0' }}>
+                                    <span style={{ fontSize: '0.68rem', color: 'var(--secondary-foreground, #94a3b8)', fontWeight: 600 }}>Base SI:</span>
+                                    <input
+                                        type="number"
+                                        step="0.5"
+                                        min="0"
+                                        value={inputHip}
+                                        onChange={e => {
+                                            setInputHip(e.target.value);
+                                            setStressSource('custom');
+                                        }}
+                                        style={{
+                                            width: '68px',
+                                            background: 'rgba(0, 0, 0, 0.45)',
+                                            border: '1px solid rgba(245, 158, 11, 0.4)',
+                                            borderRadius: '5px',
+                                            color: '#fff',
+                                            fontSize: '0.85rem',
+                                            fontWeight: 800,
+                                            padding: '2px 6px',
+                                            outline: 'none',
+                                        }}
+                                    />
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '6px' }}>
+                                    <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#fff' }}>
                                         {generatedStress.hip}
                                     </span>
-                                    <span style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground, #94a3b8)' }}>
-                                        / {targetStress.hip} target
+                                    <span style={{ fontSize: '0.74rem', color: 'var(--secondary-foreground, #94a3b8)' }}>
+                                        / {targetStress.hip} target (50%)
                                     </span>
                                 </div>
                                 <div style={{ fontSize: '0.68rem', color: 'var(--secondary-foreground, #94a3b8)', marginTop: '4px', display: 'flex', justifyContent: 'space-between' }}>
-                                    <span>Base: {baselineStress.hip}</span>
+                                    <span>Target: 50%</span>
                                     <span style={{ color: '#10b981', fontWeight: 700 }}>
-                                        {getMatchPercent(generatedStress.hip, targetStress.hip)}%
+                                        {getMatchPercent(generatedStress.hip, targetStress.hip)}% match
                                     </span>
                                 </div>
                             </div>
@@ -409,18 +586,42 @@ export default function PivotRandomizerModal({
                                 <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#a855f7', textTransform: 'uppercase', marginBottom: '4px' }}>
                                     Horizontal Push
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-                                    <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fff' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', margin: '4px 0' }}>
+                                    <span style={{ fontSize: '0.68rem', color: 'var(--secondary-foreground, #94a3b8)', fontWeight: 600 }}>Base SI:</span>
+                                    <input
+                                        type="number"
+                                        step="0.5"
+                                        min="0"
+                                        value={inputPushH}
+                                        onChange={e => {
+                                            setInputPushH(e.target.value);
+                                            setStressSource('custom');
+                                        }}
+                                        style={{
+                                            width: '68px',
+                                            background: 'rgba(0, 0, 0, 0.45)',
+                                            border: '1px solid rgba(168, 85, 247, 0.4)',
+                                            borderRadius: '5px',
+                                            color: '#fff',
+                                            fontSize: '0.85rem',
+                                            fontWeight: 800,
+                                            padding: '2px 6px',
+                                            outline: 'none',
+                                        }}
+                                    />
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '6px' }}>
+                                    <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#fff' }}>
                                         {generatedStress.pushH}
                                     </span>
-                                    <span style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground, #94a3b8)' }}>
-                                        / {targetStress.pushH} target
+                                    <span style={{ fontSize: '0.74rem', color: 'var(--secondary-foreground, #94a3b8)' }}>
+                                        / {targetStress.pushH} target (50%)
                                     </span>
                                 </div>
                                 <div style={{ fontSize: '0.68rem', color: 'var(--secondary-foreground, #94a3b8)', marginTop: '4px', display: 'flex', justifyContent: 'space-between' }}>
-                                    <span>Base: {baselineStress.pushH}</span>
+                                    <span>Target: 50%</span>
                                     <span style={{ color: '#10b981', fontWeight: 700 }}>
-                                        {getMatchPercent(generatedStress.pushH, targetStress.pushH)}%
+                                        {getMatchPercent(generatedStress.pushH, targetStress.pushH)}% match
                                     </span>
                                 </div>
                             </div>
@@ -430,18 +631,21 @@ export default function PivotRandomizerModal({
                                 <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#10b981', textTransform: 'uppercase', marginBottom: '4px' }}>
                                     Total Deload Stress
                                 </div>
-                                <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px' }}>
-                                    <span style={{ fontSize: '1.25rem', fontWeight: 800, color: '#fff' }}>
+                                <div style={{ fontSize: '0.68rem', color: 'var(--secondary-foreground, #94a3b8)', margin: '4px 0' }}>
+                                    Base Sum: <strong style={{ color: '#fff' }}>{baselineStress.total} SI</strong>
+                                </div>
+                                <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginTop: '6px' }}>
+                                    <span style={{ fontSize: '1.2rem', fontWeight: 800, color: '#fff' }}>
                                         {generatedStress.total}
                                     </span>
-                                    <span style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground, #94a3b8)' }}>
-                                        / {targetStress.total} target
+                                    <span style={{ fontSize: '0.74rem', color: 'var(--secondary-foreground, #94a3b8)' }}>
+                                        / {targetStress.total} target (50%)
                                     </span>
                                 </div>
                                 <div style={{ fontSize: '0.68rem', color: 'var(--secondary-foreground, #94a3b8)', marginTop: '4px', display: 'flex', justifyContent: 'space-between' }}>
-                                    <span>Base: {baselineStress.total}</span>
+                                    <span>Total: 50%</span>
                                     <span style={{ color: '#10b981', fontWeight: 700 }}>
-                                        {getMatchPercent(generatedStress.total, targetStress.total)}%
+                                        {getMatchPercent(generatedStress.total, targetStress.total)}% match
                                     </span>
                                 </div>
                             </div>
