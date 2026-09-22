@@ -13,7 +13,7 @@ interface Props {
     unit: string;
     targetNextWeek?: boolean;
     totalWeeks?: number;
-    onSaved?: () => void;
+    onSaved?: (targetSessionId?: string) => void;
 }
 
 interface TopSetData {
@@ -51,7 +51,7 @@ export default function PlannedTopSetInput({
             setLoaded(true);
             return;
         }
-        fetch(`/api/top-sets?athleteId=${athleteId}&sessionId=${targetSessionId}`)
+        fetch(`/api/top-sets?athleteId=${athleteId}&sessionId=${targetSessionId}&programId=${programId}&weekNum=${targetWeekNum}&dayNum=${dayNum}`)
             .then(r => r.ok ? r.json() : [])
             .then(data => {
                 const existing: Record<string, TopSetData> = {};
@@ -123,7 +123,7 @@ export default function PlannedTopSetInput({
             });
             setInitialLoadedKeys(newLoadedKeys);
             setSaved(true);
-            if (onSaved) onSaved();
+            if (onSaved) onSaved(targetSessionId);
         } catch (e) {
             console.error('Top set save error:', e);
             alert('Failed to save planned top sets');

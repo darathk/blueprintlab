@@ -128,6 +128,10 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const athleteId = searchParams.get('athleteId');
     const sessionId = searchParams.get('sessionId');
+    const programId = searchParams.get('programId');
+    const weekNum = searchParams.get('weekNum');
+    const dayNum = searchParams.get('dayNum');
+    const legacyKey = searchParams.get('legacyKey');
 
     try {
         const where: any = {};
@@ -146,7 +150,31 @@ export async function GET(request: Request) {
             where.athleteId = auth.user.id;
         }
 
-        if (sessionId) where.sessionId = sessionId;
+        if (sessionId) {
+            const possibleSessionIds = [sessionId];
+            if (legacyKey && legacyKey !== sessionId) {
+                possibleSessionIds.push(legacyKey);
+            }
+            const m = sessionId.match(/^(.+)_w(\d+)_d(\d+)$/);
+            if (m) {
+                const [, pId, wn, dn] = m;
+                where.OR = [
+                    { sessionId: { in: possibleSessionIds } },
+                    { programId: pId, weekNum: parseInt(wn), dayNum: parseInt(dn) }
+                ];
+            } else if (programId && weekNum && dayNum) {
+                where.OR = [
+                    { sessionId: { in: possibleSessionIds } },
+                    { programId, weekNum: parseInt(weekNum), dayNum: parseInt(dayNum) }
+                ];
+            } else {
+                where.sessionId = { in: possibleSessionIds };
+            }
+        } else if (programId && weekNum && dayNum) {
+            where.programId = programId;
+            where.weekNum = parseInt(weekNum);
+            where.dayNum = parseInt(dayNum);
+        }
 
         const topSets = await prisma.plannedTopSet.findMany({
             where,
@@ -193,8 +221,23 @@ export async function DELETE(request: Request) {
             const access = await requireAccessToAthlete(athleteId, auth);
             if ('error' in access) return access.error;
 
-            const deleteWhere: any = { athleteId, sessionId };
+            const possibleSessionIds = [sessionId];
+            const legacyKeyParam = searchParams.get('legacyKey');
+            if (legacyKeyParam && legacyKeyParam !== sessionId) possibleSessionIds.push(legacyKeyParam);
+
+            const m = sessionId.match(/^(.+)_w(\d+)_d(\d+)$/);
+            const deleteWhere: any = { athleteId };
             if (exerciseName) deleteWhere.exerciseName = exerciseName;
+
+            if (m) {
+                const [, pId, wn, dn] = m;
+                deleteWhere.OR = [
+                    { sessionId: { in: possibleSessionIds } },
+                    { programId: pId, weekNum: parseInt(wn), dayNum: parseInt(dn) }
+                ];
+            } else {
+                deleteWhere.sessionId = { in: possibleSessionIds };
+            }
 
             await prisma.plannedTopSet.deleteMany({ where: deleteWhere });
             return NextResponse.json({ success: true });

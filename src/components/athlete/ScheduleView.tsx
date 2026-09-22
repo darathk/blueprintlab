@@ -226,10 +226,15 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
     const [activeTabs, setActiveTabs] = useState<Record<string, 'previous' | 'prescribed' | 'actual'>>({});
     const [plannedTopSets, setPlannedTopSets] = useState<Record<string, Record<string, any>>>({});
 
-    const fetchPlannedTopSetsForSession = useCallback(async (sKey: string) => {
+    const fetchPlannedTopSetsForSession = useCallback(async (sKey: string, legacyKey?: string, progId?: string, wn?: number, dn?: number) => {
         if (!athleteId || !sKey) return;
         try {
-            const res = await fetch(`/api/top-sets?athleteId=${athleteId}&sessionId=${sKey}`);
+            let url = `/api/top-sets?athleteId=${athleteId}&sessionId=${encodeURIComponent(sKey)}`;
+            if (legacyKey && legacyKey !== sKey) url += `&legacyKey=${encodeURIComponent(legacyKey)}`;
+            if (progId) url += `&programId=${encodeURIComponent(progId)}`;
+            if (wn) url += `&weekNum=${wn}`;
+            if (dn) url += `&dayNum=${dn}`;
+            const res = await fetch(url);
             if (res.ok) {
                 const data = await res.json();
                 const mapping: Record<string, any> = {};
@@ -238,21 +243,16 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                         mapping[ts.exerciseName] = ts;
                     }
                 });
-                setPlannedTopSets(prev => ({ ...prev, [sKey]: mapping }));
+                setPlannedTopSets(prev => ({
+                    ...prev,
+                    [sKey]: mapping,
+                    ...(legacyKey ? { [legacyKey]: mapping } : {})
+                }));
             }
         } catch (e) {
             console.error('Failed to fetch planned top sets for session', sKey, e);
         }
     }, [athleteId]);
-
-    // Automatically fetch planned top sets for open sessions
-    useEffect(() => {
-        openSessions.forEach(sKey => {
-            if (!plannedTopSets[sKey]) {
-                fetchPlannedTopSetsForSession(sKey);
-            }
-        });
-    }, [openSessions, fetchPlannedTopSetsForSession, plannedTopSets]);
 
     const markSessionReady = useCallback((sKey: string) => {
         setReadySessions(prev => {
@@ -718,6 +718,21 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
         }
     }, []);
 
+    // Automatically fetch planned top sets for sessions on selected date and open sessions
+    useEffect(() => {
+        const sessionsOnDate = sessionsByDate[selectedDate] || [];
+        sessionsOnDate.forEach(({ sKey, legacyKey, program, weekNum, session }: any) => {
+            if (!plannedTopSets[sKey] && (!legacyKey || !plannedTopSets[legacyKey])) {
+                fetchPlannedTopSetsForSession(sKey, legacyKey, program?.id, weekNum, session?.day || 1);
+            }
+        });
+        openSessions.forEach(sKey => {
+            if (!plannedTopSets[sKey]) {
+                fetchPlannedTopSetsForSession(sKey);
+            }
+        });
+    }, [selectedDate, sessionsByDate, openSessions, fetchPlannedTopSetsForSession, plannedTopSets]);
+
     // Sessions for the currently selected date
     const selectedDateSessions = sessionsByDate[selectedDate] || [];
 
@@ -1085,6 +1100,32 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                     In Progress
                                                                 </span>
                                                             ) : null}
+
+                                                            {/* Planned Top Set Indicator Badge */}
+                                                            {(() => {
+                                                                const sessionPlanned = plannedTopSets[sKey] || plannedTopSets[legacyKey] || {};
+                                                                const plannedExNames = Object.keys(sessionPlanned).filter(k => sessionPlanned[k]?.weight || sessionPlanned[k]?.reps);
+                                                                if (plannedExNames.length === 0) return null;
+                                                                return (
+                                                                    <span style={{
+                                                                        fontSize: '0.68rem',
+                                                                        fontWeight: 700,
+                                                                        padding: '2px 9px',
+                                                                        borderRadius: 9999,
+                                                                        background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.22) 0%, rgba(99, 102, 241, 0.18) 100%)',
+                                                                        color: '#38bdf8',
+                                                                        border: '1px solid rgba(56, 189, 248, 0.5)',
+                                                                        display: 'inline-flex',
+                                                                        alignItems: 'center',
+                                                                        gap: 4,
+                                                                        boxShadow: '0 0 10px rgba(56, 189, 248, 0.25)',
+                                                                    }}>
+                                                                        🎯 {plannedExNames.length === 1
+                                                                            ? `Planned: ${plannedExNames[0]} ${sessionPlanned[plannedExNames[0]].weight ? sessionPlanned[plannedExNames[0]].weight + (sessionPlanned[plannedExNames[0]].unit || unit) : ''}`
+                                                                            : `${plannedExNames.length} Planned Top Sets`}
+                                                                    </span>
+                                                                );
+                                                            })()}
                                                         </div>
 
                                                         {/* Metadata Row */}
@@ -1656,6 +1697,9 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
 
                                                                     {/* Column Headers */}
                                                                     <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8, fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)' }}>
+                                                                        <span style={{ width: '20px', textAlign: 'center', fontSize: '0.72rem', color: 'rgba(255, 255, 255, 0.4)' }}>
+                                                                            #
+                                                                        </span>
                                                                         <span style={{ flex: 1, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
                                                                             Weight
                                                                             <div style={{ display: 'flex', background: 'rgba(0, 0, 0, 0.35)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 10, padding: 2, cursor: 'pointer' }}>
@@ -1685,7 +1729,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                         </span>
                                                                         <span style={{ flex: 1, textAlign: 'center' }}>Reps</span>
                                                                         <span style={{ flex: 1, textAlign: 'center' }}>RPE</span>
-                                                                        {(!activeTabs[exKey] || activeTabs[exKey] === 'actual') && <div style={{ width: '40px' }} />}
+                                                                        <div style={{ width: '36px' }} />
                                                                     </div>
 
                                                                     {/* Set Rows */}
@@ -1695,108 +1739,233 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                         const prev = getPrevSets(exerciseData?.name || ex?.name, sKey);
                                                                         const prevSet = prev?.sets?.[setIdx];
                                                                         const currentTab = activeTabs[exKey] || 'actual';
+                                                                        const curUnit = exerciseData?.unit || unit;
+                                                                        const planned = setIdx === 0 ? (plannedTopSets[sKey]?.[exerciseData?.name || ex?.name] || plannedTopSets[legacyKey]?.[exerciseData?.name || ex?.name]) : null;
+                                                                        const isPlannedTopSet = !!(planned && (planned.weight || planned.reps || planned.rpe));
 
                                                                         return (
-                                                                            <div key={setIdx} style={{ display: 'flex', alignItems: 'center', padding: '6px 0', gap: '8px', borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                                                                                {currentTab === 'previous' && (
-                                                                                    <div style={{ display: 'flex', flex: 1, gap: '8px' }}>
-                                                                                        {(['weight', 'reps', 'rpe'] as const).map(f => (
-                                                                                            <div key={f} style={{ flex: 1, padding: '8px 10px', border: '1px solid rgba(125,135,210,0.3)', borderRadius: '10px', background: 'rgba(125,135,210,0.08)', textAlign: 'center', color: '#c4b5fd', fontWeight: 600, fontSize: '0.95rem' }}>
-                                                                                                {prevSet ? (prevSet[f] || '-') : '-'}
-                                                                                            </div>
-                                                                                        ))}
-                                                                                    </div>
-                                                                                )}
-                                                                                {currentTab === 'prescribed' && (
-                                                                                    <div style={{ display: 'flex', flex: 1, gap: '8px' }}>
-                                                                                        {(['weight', 'reps', 'rpe'] as const).map(f => (
-                                                                                            <div key={f} style={{ flex: 1, padding: '8px 10px', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', background: 'rgba(255, 255, 255, 0.03)', textAlign: 'center', color: '#ffffff', fontWeight: 600, fontSize: '0.95rem' }}>
-                                                                                                {target[f] || '-'}
-                                                                                            </div>
-                                                                                        ))}
-                                                                                    </div>
-                                                                                )}
-                                                                                {currentTab === 'actual' && (
-                                                                                    <>
-                                                                                        <div style={{ display: 'flex', flex: 1, alignItems: 'center', gap: '8px' }}>
-                                                                                            {['weight', 'reps', 'rpe'].map(f => {
-                                                                                                return (
-                                                                                                    <div key={f} style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
-                                                                                                        <input type="number" inputMode="decimal" step="any"
-                                                                                                            value={actual[f]}
-                                                                                                            onChange={e => updateSet(sKey, exIdx, setIdx, f, e.target.value, program.id)}
-                                                                                                            onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
-                                                                                                            placeholder={f === 'weight' ? (target[f] || '') : ''}
-                                                                                                            style={{
-                                                                                                                flex: 1, padding: '8px 10px',
-                                                                                                                border: '1px solid rgba(255, 255, 255, 0.12)',
-                                                                                                                borderRadius: '10px',
-                                                                                                                background: 'rgba(0, 0, 0, 0.35)',
-                                                                                                                textAlign: 'center', fontSize: '0.98rem',
-                                                                                                                fontWeight: 600,
-                                                                                                                color: '#ffffff', width: '100%', outline: 'none',
-                                                                                                                boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.4)',
-                                                                                                                paddingRight: f === 'weight' ? '32px' : '10px',
-                                                                                                                transition: 'border-color 0.2s',
-                                                                                                            }}
-                                                                                                        />
-                                                                                                        {f === 'weight' && (
-                                                                                                            <span style={{ position: 'absolute', right: '10px', fontSize: '0.72rem', color: 'var(--secondary-foreground)', opacity: 0.7, pointerEvents: 'none', fontWeight: 600 }}>
-                                                                                                                {exerciseData?.unit || unit}
-                                                                                                            </span>
-                                                                                                        )}
-                                                                                                    </div>
-                                                                                                );
-                                                                                            })}
+                                                                            <div key={setIdx} style={{ display: 'flex', flexDirection: 'column', gap: '3px', padding: '6px 0', borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                                                                                {currentTab === 'previous' ? (
+                                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                                        <span style={{ width: '20px', fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255, 255, 255, 0.4)', textAlign: 'center', flexShrink: 0 }}>
+                                                                                            {setIdx + 1}
+                                                                                        </span>
+                                                                                        <div style={{ display: 'flex', flex: 1, gap: '8px' }}>
+                                                                                            {(['weight', 'reps', 'rpe'] as const).map(f => (
+                                                                                                <div key={f} style={{ flex: 1, padding: '8px 10px', border: '1px solid rgba(125,135,210,0.3)', borderRadius: '10px', background: 'rgba(125,135,210,0.08)', textAlign: 'center', color: '#c4b5fd', fontWeight: 600, fontSize: '0.95rem' }}>
+                                                                                                    {prevSet ? (prevSet[f] || '-') : '-'}
+                                                                                                </div>
+                                                                                            ))}
                                                                                         </div>
-                                                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', width: '36px', flexShrink: 0 }}>
-                                                                                            <button
-                                                                                                type="button"
-                                                                                                title="Copy prescribed target to actual"
-                                                                                                onClick={() => {
-                                                                                                    if (!editState[sKey]) initEdit(sKey, exercises, log);
-                                                                                                    copyTargetToActual(sKey, exIdx, setIdx, program.id);
-                                                                                                }}
-                                                                                                style={{
-                                                                                                    padding: '3px 0',
-                                                                                                    fontSize: '0.68rem',
-                                                                                                    fontWeight: 700,
-                                                                                                    borderRadius: '6px',
-                                                                                                    border: '1px solid rgba(125,135,210,0.4)',
-                                                                                                    background: 'linear-gradient(135deg, rgba(125,135,210,0.25), rgba(168,85,247,0.18))',
-                                                                                                    color: '#c4b5fd',
-                                                                                                    cursor: 'pointer',
-                                                                                                    textAlign: 'center',
-                                                                                                    lineHeight: 1.2,
-                                                                                                    boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
-                                                                                                }}
-                                                                                            >
-                                                                                                Rx
-                                                                                            </button>
-                                                                                            {setIdx > 0 && (
+                                                                                        <div style={{ width: '36px' }} />
+                                                                                    </div>
+                                                                                ) : currentTab === 'prescribed' ? (
+                                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                                        <span style={{ width: '20px', fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255, 255, 255, 0.4)', textAlign: 'center', flexShrink: 0 }}>
+                                                                                            {setIdx + 1}
+                                                                                        </span>
+                                                                                        <div style={{ display: 'flex', flex: 1, gap: '8px' }}>
+                                                                                            {(['weight', 'reps', 'rpe'] as const).map(f => (
+                                                                                                <div key={f} style={{ flex: 1, padding: '8px 10px', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', background: 'rgba(255, 255, 255, 0.03)', textAlign: 'center', color: '#ffffff', fontWeight: 600, fontSize: '0.95rem' }}>
+                                                                                                    {target[f] || '-'}
+                                                                                                </div>
+                                                                                            ))}
+                                                                                        </div>
+                                                                                        <div style={{ width: '36px' }} />
+                                                                                    </div>
+                                                                                ) : (
+                                                                                    <>
+                                                                                        {/* Stacked Prescribed Target Header */}
+                                                                                        <div style={{
+                                                                                            display: 'flex',
+                                                                                            alignItems: 'center',
+                                                                                            padding: '0 44px 0 28px',
+                                                                                            gap: '8px',
+                                                                                        }}>
+                                                                                            <div style={{
+                                                                                                flex: 1,
+                                                                                                textAlign: 'center',
+                                                                                                fontSize: '0.72rem',
+                                                                                                fontWeight: isPlannedTopSet && planned?.weight ? 700 : 600,
+                                                                                                color: isPlannedTopSet && planned?.weight ? '#38bdf8' : 'rgba(255, 255, 255, 0.45)',
+                                                                                                letterSpacing: '0.01em',
+                                                                                                whiteSpace: 'nowrap',
+                                                                                                overflow: 'hidden',
+                                                                                                textOverflow: 'ellipsis',
+                                                                                            }}>
+                                                                                                {isPlannedTopSet && planned?.weight
+                                                                                                    ? `🎯 ${planned.weight} ${planned.unit || curUnit} (Planned)`
+                                                                                                    : (target.weight ? `Rx: ${target.weight} ${curUnit}` : 'Rx: —')}
+                                                                                            </div>
+                                                                                            <div style={{
+                                                                                                flex: 1,
+                                                                                                textAlign: 'center',
+                                                                                                fontSize: '0.72rem',
+                                                                                                fontWeight: isPlannedTopSet && planned?.reps ? 700 : 600,
+                                                                                                color: isPlannedTopSet && planned?.reps ? '#38bdf8' : 'rgba(255, 255, 255, 0.45)',
+                                                                                                letterSpacing: '0.01em',
+                                                                                            }}>
+                                                                                                {isPlannedTopSet && planned?.reps
+                                                                                                    ? `🎯 ${planned.reps} reps`
+                                                                                                    : (target.reps ? `Rx: ${target.reps}` : 'Rx: —')}
+                                                                                            </div>
+                                                                                            <div style={{
+                                                                                                flex: 1,
+                                                                                                textAlign: 'center',
+                                                                                                fontSize: '0.72rem',
+                                                                                                fontWeight: isPlannedTopSet && planned?.rpe ? 700 : 600,
+                                                                                                color: isPlannedTopSet && planned?.rpe ? '#38bdf8' : 'rgba(255, 255, 255, 0.45)',
+                                                                                                letterSpacing: '0.01em',
+                                                                                            }}>
+                                                                                                {isPlannedTopSet && planned?.rpe
+                                                                                                    ? `🎯 @ ${planned.rpe}`
+                                                                                                    : (target.rpe ? `Rx: @ ${target.rpe}` : 'Rx: —')}
+                                                                                            </div>
+                                                                                        </div>
+
+                                                                                        {/* Inputs Row */}
+                                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+                                                                                            <span style={{
+                                                                                                width: '20px',
+                                                                                                fontSize: '0.75rem',
+                                                                                                fontWeight: 700,
+                                                                                                color: 'rgba(255, 255, 255, 0.4)',
+                                                                                                textAlign: 'center',
+                                                                                                flexShrink: 0,
+                                                                                            }}>
+                                                                                                {setIdx + 1}
+                                                                                            </span>
+
+                                                                                            <div style={{ display: 'flex', flex: 1, alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                                                                                                <input
+                                                                                                    type="number"
+                                                                                                    inputMode="decimal"
+                                                                                                    step="any"
+                                                                                                    value={actual.weight}
+                                                                                                    onChange={e => updateSet(sKey, exIdx, setIdx, 'weight', e.target.value, program.id)}
+                                                                                                    onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
+                                                                                                    placeholder={isPlannedTopSet && planned?.weight ? String(planned.weight) : (target.weight ? String(target.weight) : '—')}
+                                                                                                    style={{
+                                                                                                        flex: 1,
+                                                                                                        width: '100%',
+                                                                                                        minWidth: 0,
+                                                                                                        padding: '9px 6px',
+                                                                                                        border: '1px solid rgba(255, 255, 255, 0.12)',
+                                                                                                        borderRadius: '10px',
+                                                                                                        background: 'rgba(0, 0, 0, 0.35)',
+                                                                                                        textAlign: 'center',
+                                                                                                        fontSize: '0.98rem',
+                                                                                                        fontWeight: 600,
+                                                                                                        color: '#ffffff',
+                                                                                                        outline: 'none',
+                                                                                                        boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.4)',
+                                                                                                        fontVariantNumeric: 'tabular-nums',
+                                                                                                        transition: 'border-color 0.2s',
+                                                                                                    }}
+                                                                                                />
+                                                                                                <input
+                                                                                                    type="number"
+                                                                                                    inputMode="decimal"
+                                                                                                    step="any"
+                                                                                                    value={actual.reps}
+                                                                                                    onChange={e => updateSet(sKey, exIdx, setIdx, 'reps', e.target.value, program.id)}
+                                                                                                    onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
+                                                                                                    placeholder={isPlannedTopSet && planned?.reps ? String(planned.reps) : (target.reps ? String(target.reps) : '—')}
+                                                                                                    style={{
+                                                                                                        flex: 1,
+                                                                                                        width: '100%',
+                                                                                                        minWidth: 0,
+                                                                                                        padding: '9px 6px',
+                                                                                                        border: '1px solid rgba(255, 255, 255, 0.12)',
+                                                                                                        borderRadius: '10px',
+                                                                                                        background: 'rgba(0, 0, 0, 0.35)',
+                                                                                                        textAlign: 'center',
+                                                                                                        fontSize: '0.98rem',
+                                                                                                        fontWeight: 600,
+                                                                                                        color: '#ffffff',
+                                                                                                        outline: 'none',
+                                                                                                        boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.4)',
+                                                                                                        fontVariantNumeric: 'tabular-nums',
+                                                                                                        transition: 'border-color 0.2s',
+                                                                                                    }}
+                                                                                                />
+                                                                                                <input
+                                                                                                    type="number"
+                                                                                                    inputMode="decimal"
+                                                                                                    step="0.5"
+                                                                                                    value={actual.rpe}
+                                                                                                    onChange={e => updateSet(sKey, exIdx, setIdx, 'rpe', e.target.value, program.id)}
+                                                                                                    onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
+                                                                                                    placeholder={isPlannedTopSet && planned?.rpe ? String(planned.rpe) : (target.rpe ? String(target.rpe) : '—')}
+                                                                                                    style={{
+                                                                                                        flex: 1,
+                                                                                                        width: '100%',
+                                                                                                        minWidth: 0,
+                                                                                                        padding: '9px 6px',
+                                                                                                        border: '1px solid rgba(255, 255, 255, 0.12)',
+                                                                                                        borderRadius: '10px',
+                                                                                                        background: 'rgba(0, 0, 0, 0.35)',
+                                                                                                        textAlign: 'center',
+                                                                                                        fontSize: '0.98rem',
+                                                                                                        fontWeight: 600,
+                                                                                                        color: '#ffffff',
+                                                                                                        outline: 'none',
+                                                                                                        boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.4)',
+                                                                                                        fontVariantNumeric: 'tabular-nums',
+                                                                                                        transition: 'border-color 0.2s',
+                                                                                                    }}
+                                                                                                />
+                                                                                            </div>
+
+                                                                                            <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', width: '36px', flexShrink: 0 }}>
                                                                                                 <button
                                                                                                     type="button"
-                                                                                                    title="Copy previous set"
+                                                                                                    title="Copy prescribed target to actual"
                                                                                                     onClick={() => {
                                                                                                         if (!editState[sKey]) initEdit(sKey, exercises, log);
-                                                                                                        copyPrevSet(sKey, exIdx, setIdx, program.id);
+                                                                                                        copyTargetToActual(sKey, exIdx, setIdx, program.id);
                                                                                                     }}
                                                                                                     style={{
                                                                                                         padding: '3px 0',
                                                                                                         fontSize: '0.68rem',
-                                                                                                        fontWeight: 600,
+                                                                                                        fontWeight: 700,
                                                                                                         borderRadius: '6px',
-                                                                                                        border: '1px solid rgba(255,255,255,0.1)',
-                                                                                                        background: 'rgba(255,255,255,0.05)',
-                                                                                                        color: 'var(--secondary-foreground)',
+                                                                                                        border: '1px solid rgba(125,135,210,0.4)',
+                                                                                                        background: 'linear-gradient(135deg, rgba(125,135,210,0.25), rgba(168,85,247,0.18))',
+                                                                                                        color: '#c4b5fd',
                                                                                                         cursor: 'pointer',
                                                                                                         textAlign: 'center',
-                                                                                                        lineHeight: 1.2
+                                                                                                        lineHeight: 1.2,
+                                                                                                        boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
                                                                                                     }}
                                                                                                 >
-                                                                                                    Prev
+                                                                                                    Rx
                                                                                                 </button>
-                                                                                            )}
+                                                                                                {setIdx > 0 && (
+                                                                                                    <button
+                                                                                                        type="button"
+                                                                                                        title="Copy previous set"
+                                                                                                        onClick={() => {
+                                                                                                            if (!editState[sKey]) initEdit(sKey, exercises, log);
+                                                                                                            copyPrevSet(sKey, exIdx, setIdx, program.id);
+                                                                                                        }}
+                                                                                                        style={{
+                                                                                                            padding: '3px 0',
+                                                                                                            fontSize: '0.68rem',
+                                                                                                            fontWeight: 600,
+                                                                                                            borderRadius: '6px',
+                                                                                                            border: '1px solid rgba(255,255,255,0.1)',
+                                                                                                            background: 'rgba(255,255,255,0.05)',
+                                                                                                            color: 'var(--secondary-foreground)',
+                                                                                                            cursor: 'pointer',
+                                                                                                            textAlign: 'center',
+                                                                                                            lineHeight: 1.2
+                                                                                                        }}
+                                                                                                    >
+                                                                                                        Prev
+                                                                                                    </button>
+                                                                                                )}
+                                                                                            </div>
                                                                                         </div>
                                                                                     </>
                                                                                 )}
@@ -2369,6 +2538,32 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                 In Progress
                                                                             </span>
                                                                         ) : null}
+
+                                                                        {/* Planned Top Set Indicator Badge */}
+                                                                        {(() => {
+                                                                            const sessionPlanned = plannedTopSets[sKey] || plannedTopSets[legacyKey] || {};
+                                                                            const plannedExNames = Object.keys(sessionPlanned).filter(k => sessionPlanned[k]?.weight || sessionPlanned[k]?.reps);
+                                                                            if (plannedExNames.length === 0) return null;
+                                                                            return (
+                                                                                <span style={{
+                                                                                    fontSize: '0.68rem',
+                                                                                    fontWeight: 700,
+                                                                                    padding: '2px 9px',
+                                                                                    borderRadius: 9999,
+                                                                                    background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.22) 0%, rgba(99, 102, 241, 0.18) 100%)',
+                                                                                    color: '#38bdf8',
+                                                                                    border: '1px solid rgba(56, 189, 248, 0.5)',
+                                                                                    display: 'inline-flex',
+                                                                                    alignItems: 'center',
+                                                                                    gap: 4,
+                                                                                    boxShadow: '0 0 10px rgba(56, 189, 248, 0.25)',
+                                                                                }}>
+                                                                                    🎯 {plannedExNames.length === 1
+                                                                                        ? `Planned: ${plannedExNames[0]} ${sessionPlanned[plannedExNames[0]].weight ? sessionPlanned[plannedExNames[0]].weight + (sessionPlanned[plannedExNames[0]].unit || unit) : ''}`
+                                                                                        : `${plannedExNames.length} Planned Top Sets`}
+                                                                                </span>
+                                                                            );
+                                                                        })()}
                                                                     </div>
 
                                                                     {/* Metadata Row */}
@@ -2733,7 +2928,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                             <div style={{ padding: '14px 16px 18px 16px' }}>
                                                                                 {/* Planned top set banner */}
                                                                                 {(() => {
-                                                                                    const planned = plannedTopSets[sKey]?.[exerciseData?.name || ex?.name];
+                                                                                    const planned = plannedTopSets[sKey]?.[exerciseData?.name || ex?.name] || plannedTopSets[legacyKey]?.[exerciseData?.name || ex?.name];
                                                                                     if (!planned || (!planned.weight && !planned.reps)) return null;
                                                                                     return (
                                                                                         <div style={{
@@ -2911,7 +3106,11 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                     );
                                                                                 })()}
 
-                                                                                <div style={{ display: 'flex', alignItems: 'center', marginBottom: 8, fontSize: '0.8rem', fontWeight: 600, color: 'var(--secondary-foreground)' }}>
+                                                                                {/* Column header */}
+                                                                                <div style={{ display: 'flex', alignItems: 'center', padding: '4px 0 8px 0', fontSize: '0.72rem', color: 'var(--secondary-foreground)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                                                    <span style={{ width: '20px', textAlign: 'center', fontSize: '0.72rem', color: 'rgba(255, 255, 255, 0.4)' }}>
+                                                                                        #
+                                                                                    </span>
                                                                                     <span style={{ flex: 1, textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
                                                                                         Weight
                                                                                         <div style={{ display: 'flex', background: 'rgba(0, 0, 0, 0.35)', border: '1px solid rgba(255, 255, 255, 0.08)', borderRadius: 10, padding: 2, cursor: 'pointer' }}>
@@ -2941,7 +3140,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                     </span>
                                                                                     <span style={{ flex: 1, textAlign: 'center' }}>Reps</span>
                                                                                     <span style={{ flex: 1, textAlign: 'center' }}>RPE</span>
-                                                                                    {(!activeTabs[exKey] || activeTabs[exKey] === 'actual') && <div style={{ width: '40px' }} />}
+                                                                                    <div style={{ width: '36px' }} />
                                                                                 </div>
 
                                                                                 {/* Set rows */}
@@ -2951,108 +3150,233 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                     const prev = getPrevSets(exerciseData?.name || ex?.name, sKey);
                                                                                     const prevSet = prev?.sets?.[setIdx];
                                                                                     const currentTab = activeTabs[exKey] || 'actual';
+                                                                                    const curUnit = exerciseData?.unit || unit;
+                                                                                    const planned = setIdx === 0 ? (plannedTopSets[sKey]?.[exerciseData?.name || ex?.name] || plannedTopSets[legacyKey]?.[exerciseData?.name || ex?.name]) : null;
+                                                                                    const isPlannedTopSet = !!(planned && (planned.weight || planned.reps || planned.rpe));
 
                                                                                     return (
-                                                                                        <div key={setIdx} style={{ display: 'flex', alignItems: 'center', padding: '6px 0', gap: '8px', borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                                                                                            {currentTab === 'previous' && (
-                                                                                                <div style={{ display: 'flex', flex: 1, gap: '8px' }}>
-                                                                                                    {(['weight', 'reps', 'rpe'] as const).map(f => (
-                                                                                                        <div key={f} style={{ flex: 1, padding: '8px 10px', border: '1px solid rgba(125,135,210,0.3)', borderRadius: '10px', background: 'rgba(125,135,210,0.08)', textAlign: 'center', color: '#c4b5fd', fontWeight: 600, fontSize: '0.95rem' }}>
-                                                                                                            {prevSet ? (prevSet[f] || '-') : '-'}
-                                                                                                        </div>
-                                                                                                    ))}
-                                                                                                </div>
-                                                                                            )}
-                                                                                            {currentTab === 'prescribed' && (
-                                                                                                <div style={{ display: 'flex', flex: 1, gap: '8px' }}>
-                                                                                                    {(['weight', 'reps', 'rpe'] as const).map(f => (
-                                                                                                        <div key={f} style={{ flex: 1, padding: '8px 10px', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', background: 'rgba(255, 255, 255, 0.03)', textAlign: 'center', color: '#ffffff', fontWeight: 600, fontSize: '0.95rem' }}>
-                                                                                                            {target[f] || '-'}
-                                                                                                        </div>
-                                                                                                    ))}
-                                                                                                </div>
-                                                                                            )}
-                                                                                            {currentTab === 'actual' && (
-                                                                                                <>
+                                                                                        <div key={setIdx} style={{ display: 'flex', flexDirection: 'column', gap: '3px', padding: '6px 0', borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
+                                                                                            {currentTab === 'previous' ? (
+                                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                                                    <span style={{ width: '20px', fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255, 255, 255, 0.4)', textAlign: 'center', flexShrink: 0 }}>
+                                                                                                        {setIdx + 1}
+                                                                                                    </span>
                                                                                                     <div style={{ display: 'flex', flex: 1, gap: '8px' }}>
-                                                                                                        {['weight', 'reps', 'rpe'].map(f => {
-                                                                                                            return (
-                                                                                                                <div key={f} style={{ position: 'relative', flex: 1, display: 'flex', alignItems: 'center' }}>
-                                                                                                                    <input type="number" inputMode="decimal" step="any"
-                                                                                                                        value={actual[f]}
-                                                                                                                        onChange={e => updateSet(sKey, exIdx, setIdx, f, e.target.value, program.id)}
-                                                                                                                        onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
-                                                                                                                        placeholder={f === 'weight' ? (target[f] || '') : ''}
-                                                                                                                        style={{
-                                                                                                                            flex: 1, padding: '8px 10px',
-                                                                                                                            border: '1px solid rgba(255, 255, 255, 0.12)',
-                                                                                                                            borderRadius: '10px',
-                                                                                                                            background: 'rgba(0, 0, 0, 0.35)',
-                                                                                                                            textAlign: 'center', fontSize: '0.98rem',
-                                                                                                                            fontWeight: 600,
-                                                                                                                            color: '#ffffff', width: '100%', outline: 'none',
-                                                                                                                            boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.4)',
-                                                                                                                            paddingRight: f === 'weight' ? '32px' : '10px',
-                                                                                                                            transition: 'border-color 0.2s',
-                                                                                                                        }}
-                                                                                                                    />
-                                                                                                                    {f === 'weight' && (
-                                                                                                                        <span style={{ position: 'absolute', right: '10px', fontSize: '0.72rem', color: 'var(--secondary-foreground)', opacity: 0.7, pointerEvents: 'none', fontWeight: 600 }}>
-                                                                                                                            {exerciseData?.unit || unit}
-                                                                                                                        </span>
-                                                                                                                    )}
-                                                                                                                </div>
-                                                                                                            );
-                                                                                                        })}
+                                                                                                        {(['weight', 'reps', 'rpe'] as const).map(f => (
+                                                                                                            <div key={f} style={{ flex: 1, padding: '8px 10px', border: '1px solid rgba(125,135,210,0.3)', borderRadius: '10px', background: 'rgba(125,135,210,0.08)', textAlign: 'center', color: '#c4b5fd', fontWeight: 600, fontSize: '0.95rem' }}>
+                                                                                                                {prevSet ? (prevSet[f] || '-') : '-'}
+                                                                                                            </div>
+                                                                                                        ))}
                                                                                                     </div>
-                                                                                                    <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', width: '36px', flexShrink: 0 }}>
-                                                                                                        <button
-                                                                                                            type="button"
-                                                                                                            title="Copy prescribed target to actual"
-                                                                                                            onClick={() => {
-                                                                                                                if (!editState[sKey]) initEdit(sKey, exercises, log);
-                                                                                                                copyTargetToActual(sKey, exIdx, setIdx, program.id);
-                                                                                                            }}
-                                                                                                            style={{
-                                                                                                                padding: '3px 0',
-                                                                                                                fontSize: '0.68rem',
-                                                                                                                fontWeight: 700,
-                                                                                                                borderRadius: '6px',
-                                                                                                                border: '1px solid rgba(125,135,210,0.4)',
-                                                                                                                background: 'linear-gradient(135deg, rgba(125,135,210,0.25), rgba(168,85,247,0.18))',
-                                                                                                                color: '#c4b5fd',
-                                                                                                                cursor: 'pointer',
-                                                                                                                textAlign: 'center',
-                                                                                                                lineHeight: 1.2,
-                                                                                                                boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
-                                                                                                            }}
-                                                                                                        >
-                                                                                                            Rx
-                                                                                                        </button>
-                                                                                                        {setIdx > 0 && (
+                                                                                                    <div style={{ width: '36px' }} />
+                                                                                                </div>
+                                                                                            ) : currentTab === 'prescribed' ? (
+                                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                                                                    <span style={{ width: '20px', fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255, 255, 255, 0.4)', textAlign: 'center', flexShrink: 0 }}>
+                                                                                                        {setIdx + 1}
+                                                                                                    </span>
+                                                                                                    <div style={{ display: 'flex', flex: 1, gap: '8px' }}>
+                                                                                                        {(['weight', 'reps', 'rpe'] as const).map(f => (
+                                                                                                            <div key={f} style={{ flex: 1, padding: '8px 10px', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', background: 'rgba(255, 255, 255, 0.03)', textAlign: 'center', color: '#ffffff', fontWeight: 600, fontSize: '0.95rem' }}>
+                                                                                                                {target[f] || '-'}
+                                                                                                            </div>
+                                                                                                        ))}
+                                                                                                    </div>
+                                                                                                    <div style={{ width: '36px' }} />
+                                                                                                </div>
+                                                                                            ) : (
+                                                                                                <>
+                                                                                                    {/* Stacked Prescribed Target Header */}
+                                                                                                    <div style={{
+                                                                                                        display: 'flex',
+                                                                                                        alignItems: 'center',
+                                                                                                        padding: '0 44px 0 28px',
+                                                                                                        gap: '8px',
+                                                                                                    }}>
+                                                                                                        <div style={{
+                                                                                                            flex: 1,
+                                                                                                            textAlign: 'center',
+                                                                                                            fontSize: '0.72rem',
+                                                                                                            fontWeight: isPlannedTopSet && planned?.weight ? 700 : 600,
+                                                                                                            color: isPlannedTopSet && planned?.weight ? '#38bdf8' : 'rgba(255, 255, 255, 0.45)',
+                                                                                                            letterSpacing: '0.01em',
+                                                                                                            whiteSpace: 'nowrap',
+                                                                                                            overflow: 'hidden',
+                                                                                                            textOverflow: 'ellipsis',
+                                                                                                        }}>
+                                                                                                            {isPlannedTopSet && planned?.weight
+                                                                                                                ? `🎯 ${planned.weight} ${planned.unit || curUnit} (Planned)`
+                                                                                                                : (target.weight ? `Rx: ${target.weight} ${curUnit}` : 'Rx: —')}
+                                                                                                        </div>
+                                                                                                        <div style={{
+                                                                                                            flex: 1,
+                                                                                                            textAlign: 'center',
+                                                                                                            fontSize: '0.72rem',
+                                                                                                            fontWeight: isPlannedTopSet && planned?.reps ? 700 : 600,
+                                                                                                            color: isPlannedTopSet && planned?.reps ? '#38bdf8' : 'rgba(255, 255, 255, 0.45)',
+                                                                                                            letterSpacing: '0.01em',
+                                                                                                        }}>
+                                                                                                            {isPlannedTopSet && planned?.reps
+                                                                                                                ? `🎯 ${planned.reps} reps`
+                                                                                                                : (target.reps ? `Rx: ${target.reps}` : 'Rx: —')}
+                                                                                                        </div>
+                                                                                                        <div style={{
+                                                                                                            flex: 1,
+                                                                                                            textAlign: 'center',
+                                                                                                            fontSize: '0.72rem',
+                                                                                                            fontWeight: isPlannedTopSet && planned?.rpe ? 700 : 600,
+                                                                                                            color: isPlannedTopSet && planned?.rpe ? '#38bdf8' : 'rgba(255, 255, 255, 0.45)',
+                                                                                                            letterSpacing: '0.01em',
+                                                                                                        }}>
+                                                                                                            {isPlannedTopSet && planned?.rpe
+                                                                                                                ? `🎯 @ ${planned.rpe}`
+                                                                                                                : (target.rpe ? `Rx: @ ${target.rpe}` : 'Rx: —')}
+                                                                                                        </div>
+                                                                                                    </div>
+
+                                                                                                    {/* Inputs Row */}
+                                                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+                                                                                                        <span style={{
+                                                                                                            width: '20px',
+                                                                                                            fontSize: '0.75rem',
+                                                                                                            fontWeight: 700,
+                                                                                                            color: 'rgba(255, 255, 255, 0.4)',
+                                                                                                            textAlign: 'center',
+                                                                                                            flexShrink: 0,
+                                                                                                        }}>
+                                                                                                            {setIdx + 1}
+                                                                                                        </span>
+
+                                                                                                        <div style={{ display: 'flex', flex: 1, alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                                                                                                            <input
+                                                                                                                type="number"
+                                                                                                                inputMode="decimal"
+                                                                                                                step="any"
+                                                                                                                value={actual.weight}
+                                                                                                                onChange={e => updateSet(sKey, exIdx, setIdx, 'weight', e.target.value, program.id)}
+                                                                                                                onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
+                                                                                                                placeholder={isPlannedTopSet && planned?.weight ? String(planned.weight) : (target.weight ? String(target.weight) : '—')}
+                                                                                                                style={{
+                                                                                                                    flex: 1,
+                                                                                                                    width: '100%',
+                                                                                                                    minWidth: 0,
+                                                                                                                    padding: '9px 6px',
+                                                                                                                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                                                                                                                    borderRadius: '10px',
+                                                                                                                    background: 'rgba(0, 0, 0, 0.35)',
+                                                                                                                    textAlign: 'center',
+                                                                                                                    fontSize: '0.98rem',
+                                                                                                                    fontWeight: 600,
+                                                                                                                    color: '#ffffff',
+                                                                                                                    outline: 'none',
+                                                                                                                    boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.4)',
+                                                                                                                    fontVariantNumeric: 'tabular-nums',
+                                                                                                                    transition: 'border-color 0.2s',
+                                                                                                                }}
+                                                                                                            />
+                                                                                                            <input
+                                                                                                                type="number"
+                                                                                                                inputMode="decimal"
+                                                                                                                step="any"
+                                                                                                                value={actual.reps}
+                                                                                                                onChange={e => updateSet(sKey, exIdx, setIdx, 'reps', e.target.value, program.id)}
+                                                                                                                onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
+                                                                                                                placeholder={isPlannedTopSet && planned?.reps ? String(planned.reps) : (target.reps ? String(target.reps) : '—')}
+                                                                                                                style={{
+                                                                                                                    flex: 1,
+                                                                                                                    width: '100%',
+                                                                                                                    minWidth: 0,
+                                                                                                                    padding: '9px 6px',
+                                                                                                                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                                                                                                                    borderRadius: '10px',
+                                                                                                                    background: 'rgba(0, 0, 0, 0.35)',
+                                                                                                                    textAlign: 'center',
+                                                                                                                    fontSize: '0.98rem',
+                                                                                                                    fontWeight: 600,
+                                                                                                                    color: '#ffffff',
+                                                                                                                    outline: 'none',
+                                                                                                                    boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.4)',
+                                                                                                                    fontVariantNumeric: 'tabular-nums',
+                                                                                                                    transition: 'border-color 0.2s',
+                                                                                                                }}
+                                                                                                            />
+                                                                                                            <input
+                                                                                                                type="number"
+                                                                                                                inputMode="decimal"
+                                                                                                                step="0.5"
+                                                                                                                value={actual.rpe}
+                                                                                                                onChange={e => updateSet(sKey, exIdx, setIdx, 'rpe', e.target.value, program.id)}
+                                                                                                                onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
+                                                                                                                placeholder={isPlannedTopSet && planned?.rpe ? String(planned.rpe) : (target.rpe ? String(target.rpe) : '—')}
+                                                                                                                style={{
+                                                                                                                    flex: 1,
+                                                                                                                    width: '100%',
+                                                                                                                    minWidth: 0,
+                                                                                                                    padding: '9px 6px',
+                                                                                                                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                                                                                                                    borderRadius: '10px',
+                                                                                                                    background: 'rgba(0, 0, 0, 0.35)',
+                                                                                                                    textAlign: 'center',
+                                                                                                                    fontSize: '0.98rem',
+                                                                                                                    fontWeight: 600,
+                                                                                                                    color: '#ffffff',
+                                                                                                                    outline: 'none',
+                                                                                                                    boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.4)',
+                                                                                                                    fontVariantNumeric: 'tabular-nums',
+                                                                                                                    transition: 'border-color 0.2s',
+                                                                                                                }}
+                                                                                                            />
+                                                                                                        </div>
+
+                                                                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', width: '36px', flexShrink: 0 }}>
                                                                                                             <button
                                                                                                                 type="button"
-                                                                                                                title="Copy previous set"
+                                                                                                                title="Copy prescribed target to actual"
                                                                                                                 onClick={() => {
                                                                                                                     if (!editState[sKey]) initEdit(sKey, exercises, log);
-                                                                                                                    copyPrevSet(sKey, exIdx, setIdx, program.id);
+                                                                                                                    copyTargetToActual(sKey, exIdx, setIdx, program.id);
                                                                                                                 }}
                                                                                                                 style={{
                                                                                                                     padding: '3px 0',
                                                                                                                     fontSize: '0.68rem',
-                                                                                                                    fontWeight: 600,
+                                                                                                                    fontWeight: 700,
                                                                                                                     borderRadius: '6px',
-                                                                                                                    border: '1px solid rgba(255,255,255,0.1)',
-                                                                                                                    background: 'rgba(255,255,255,0.05)',
-                                                                                                                    color: 'var(--secondary-foreground)',
+                                                                                                                    border: '1px solid rgba(125,135,210,0.4)',
+                                                                                                                    background: 'linear-gradient(135deg, rgba(125,135,210,0.25), rgba(168,85,247,0.18))',
+                                                                                                                    color: '#c4b5fd',
                                                                                                                     cursor: 'pointer',
                                                                                                                     textAlign: 'center',
-                                                                                                                    lineHeight: 1.2
+                                                                                                                    lineHeight: 1.2,
+                                                                                                                    boxShadow: '0 2px 6px rgba(0,0,0,0.2)'
                                                                                                                 }}
                                                                                                             >
-                                                                                                                Prev
+                                                                                                                Rx
                                                                                                             </button>
-                                                                                                        )}
+                                                                                                            {setIdx > 0 && (
+                                                                                                                <button
+                                                                                                                    type="button"
+                                                                                                                    title="Copy previous set"
+                                                                                                                    onClick={() => {
+                                                                                                                        if (!editState[sKey]) initEdit(sKey, exercises, log);
+                                                                                                                        copyPrevSet(sKey, exIdx, setIdx, program.id);
+                                                                                                                    }}
+                                                                                                                    style={{
+                                                                                                                        padding: '3px 0',
+                                                                                                                        fontSize: '0.68rem',
+                                                                                                                        fontWeight: 600,
+                                                                                                                        borderRadius: '6px',
+                                                                                                                        border: '1px solid rgba(255,255,255,0.1)',
+                                                                                                                        background: 'rgba(255,255,255,0.05)',
+                                                                                                                        color: 'var(--secondary-foreground)',
+                                                                                                                        cursor: 'pointer',
+                                                                                                                        textAlign: 'center',
+                                                                                                                        lineHeight: 1.2
+                                                                                                                    }}
+                                                                                                                >
+                                                                                                                    Prev
+                                                                                                                </button>
+                                                                                                            )}
+                                                                                                        </div>
                                                                                                     </div>
                                                                                                 </>
                                                                                             )}
@@ -3190,7 +3514,13 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                         unit={unit}
                                                                         targetNextWeek={true}
                                                                         totalWeeks={program.weeks?.length || 0}
-                                                                        onSaved={() => fetchPlannedTopSetsForSession(sKey)}
+                                                                        onSaved={(targetSessionId) => {
+                                                                            fetchPlannedTopSetsForSession(sKey);
+                                                                            if (targetSessionId) fetchPlannedTopSetsForSession(targetSessionId);
+                                                                            const targetWeekNum = (weekNum || 1) + 1;
+                                                                            const nextLegacyKey = sessionKey(program.id, targetWeekNum, session.day || 1);
+                                                                            fetchPlannedTopSetsForSession(nextLegacyKey);
+                                                                        }}
                                                                     />
                                                                 </div>
                                                             )}
