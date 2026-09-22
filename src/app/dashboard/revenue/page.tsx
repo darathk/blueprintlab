@@ -1746,7 +1746,7 @@ export default function CoachRevenuePage() {
                                             alignItems: 'center',
                                         }}
                                     >
-                                        Active ({data.athletes.length})
+                                        All ({data.athletes.length})
                                     </button>
                                     {data.pastDueCount > 0 && (
                                         <button
@@ -1880,6 +1880,22 @@ export default function CoachRevenuePage() {
                                                         }}>
                                                             <Clock size={12} />
                                                             Trialing
+                                                        </span>
+                                                    ) : athlete.status === 'canceled' ? (
+                                                        <span style={{
+                                                            fontSize: '0.72rem',
+                                                            fontWeight: 700,
+                                                            padding: '4px 10px',
+                                                            borderRadius: '12px',
+                                                            background: 'rgba(148, 163, 184, 0.15)',
+                                                            color: '#94a3b8',
+                                                            border: '1px solid rgba(148, 163, 184, 0.3)',
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: '5px',
+                                                        }}>
+                                                            <AlertCircle size={12} />
+                                                            Canceled
                                                         </span>
                                                     ) : (
                                                         <span style={{

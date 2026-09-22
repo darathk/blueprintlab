@@ -58,6 +58,7 @@ interface StripeCharge {
     status: string;
     paid: boolean;
     refunded: boolean;
+    customer?: string | StripeCustomer | null;
     description?: string | null;
     billing_details?: {
         email?: string | null;
@@ -262,6 +263,7 @@ export async function GET(req: Request) {
             'josecoolblue@gmail.com': 'jose.j.vargas04@gmail.com',
             'raylabelle178@gmail.com': 'thejokerlabelle@gmail.com',
             'marcello.chicko@icloud.com': 'marcello.chicko@icloud.com',
+            'brian2x08@gmail.com': 'brian08946@gmail.com',
         };
 
         const normalizeString = (str: string): string => {
@@ -295,11 +297,47 @@ export async function GET(req: Request) {
             return `${formattedAmount} / ${interval}`;
         };
 
-        // 6. Filter strictly for Coach Darath's product and only active / trialing / past_due
-        // Exclude all cancelled, incomplete, and past subscriptions
+        // 6. Build complete customer registry for Coach Darath across ALL subscriptions
+        // (including canceled / past subscriptions so all historical & recent charges are properly mapped)
+        const coachCustomerIds = new Set<string>();
+        const coachCustomerEmails = new Set<string>();
+        const customerMap = new Map<string, { email: string; name: string }>();
+
+        allSubscriptions.forEach((sub) => {
+            const items = sub.items?.data || [];
+            const isCoachProduct = items.some((item) => {
+                const prodId = item.price?.product || item.plan?.product;
+                return prodId === targetProductId;
+            });
+            if (!isCoachProduct) return;
+
+            const customerObj = typeof sub.customer === 'object' ? sub.customer : null;
+            const custId = customerObj?.id || (typeof sub.customer === 'string' ? sub.customer : null);
+            const customerEmail = customerObj?.email?.toLowerCase()?.trim() || '';
+            const customerName = customerObj?.name || (customerObj as any)?.description || '';
+
+            if (custId) {
+                coachCustomerIds.add(custId);
+                if (!customerMap.has(custId) || (!customerMap.get(custId)?.email && customerEmail)) {
+                    customerMap.set(custId, {
+                        email: customerEmail || customerMap.get(custId)?.email || '',
+                        name: customerName || customerMap.get(custId)?.name || '',
+                    });
+                }
+            }
+            if (customerEmail) {
+                coachCustomerEmails.add(customerEmail);
+            }
+        });
+
+        // Filter subscriptions for Coach Darath's current cycle roster:
+        // Include active, trialing, past_due, or canceled subscriptions where the paid period extends into the future
+        const nowMs = Date.now();
         const coachDarathSubs = allSubscriptions.filter((sub) => {
-            if (sub.status === 'canceled' || sub.status === 'incomplete_expired') return false;
-            if (sub.status !== 'active' && sub.status !== 'trialing' && sub.status !== 'past_due') return false;
+            if (sub.status === 'incomplete_expired') return false;
+            const isActiveOrPastDue = sub.status === 'active' || sub.status === 'trialing' || sub.status === 'past_due';
+            const isCanceledWithActivePeriod = sub.status === 'canceled' && sub.current_period_end && (sub.current_period_end * 1000 > nowMs);
+            if (!isActiveOrPastDue && !isCanceledWithActivePeriod) return false;
             const items = sub.items?.data || [];
             return items.some((item) => {
                 const prodId = item.price?.product || item.plan?.product;
@@ -331,7 +369,6 @@ export async function GET(req: Request) {
         let pastDueCount = 0;
         let primaryCurrency = 'USD';
 
-        const coachCustomerEmails = new Set<string>();
         const matchedAthletes: any[] = [];
         const unmatchedSubscribers: any[] = [];
         const usedAthleteIds = new Set<string>();
@@ -484,16 +521,26 @@ export async function GET(req: Request) {
         // Sort matched athletes alphabetically by name
         matchedAthletes.sort((a, b) => a.name.localeCompare(b.name));
 
-        // 9. Calculate Gross Revenue This Month for Coach Darath's active customers
+        // 9. Calculate Gross Revenue This Month for Coach Darath's customers
         const nowDate = new Date();
         const startOfMonthTimestamp = Math.floor(new Date(nowDate.getFullYear(), nowDate.getMonth(), 1).getTime() / 1000);
         let grossThisMonthCents = 0;
         const filteredCharges: any[] = [];
 
         charges.forEach((ch) => {
-            const chEmail = ch.billing_details?.email?.toLowerCase()?.trim();
-            if (chEmail && coachCustomerEmails.has(chEmail)) {
-                filteredCharges.push(ch);
+            const custId = typeof ch.customer === 'string' ? ch.customer : ch.customer?.id;
+            const mappedCust = custId ? customerMap.get(custId) : null;
+            const chEmail = ch.billing_details?.email?.toLowerCase()?.trim() || mappedCust?.email?.toLowerCase()?.trim() || '';
+            const chName = ch.billing_details?.name || mappedCust?.name || null;
+
+            const isCoachCharge = (custId && coachCustomerIds.has(custId)) || (chEmail && coachCustomerEmails.has(chEmail));
+
+            if (isCoachCharge) {
+                filteredCharges.push({
+                    ...ch,
+                    _resolvedEmail: chEmail,
+                    _resolvedName: chName,
+                });
                 if (ch.status === 'succeeded' && ch.paid && !ch.refunded && ch.created >= startOfMonthTimestamp) {
                     grossThisMonthCents += ch.amount;
                 }
@@ -524,8 +571,8 @@ export async function GET(req: Request) {
                         day: chDate.getDate(),
                         status: ch.status,
                         paid: ch.paid,
-                        customerEmail: ch.billing_details?.email?.toLowerCase()?.trim() || '',
-                        customerName: ch.billing_details?.name || null,
+                        customerEmail: ch._resolvedEmail || ch.billing_details?.email?.toLowerCase()?.trim() || '',
+                        customerName: ch._resolvedName || ch.billing_details?.name || null,
                         description: ch.description || 'Subscription',
                         receiptUrl: ch.receipt_url || null,
                     });
