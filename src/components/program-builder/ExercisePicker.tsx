@@ -2,9 +2,21 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { EXERCISE_DB, EXERCISE_CATEGORIES } from '@/lib/exercise-db';
-import { Trash2 } from 'lucide-react';
+import { Trash2, ArrowLeftRight } from 'lucide-react';
 
-export default function ExercisePicker({ onDragStart, onAdd, initialExercises = null }: { onDragStart?: any, onAdd?: any, initialExercises?: any }) {
+export default function ExercisePicker({
+    onDragStart,
+    onAdd,
+    initialExercises = null,
+    replacementTarget = null,
+    onCancelReplacement = null,
+}: {
+    onDragStart?: any;
+    onAdd?: any;
+    initialExercises?: any;
+    replacementTarget?: { exerciseName: string; weekNum?: number; dayNum?: number } | null;
+    onCancelReplacement?: () => void;
+}) {
     // Combined DB state
     const [exerciseDB, setExerciseDB] = useState(initialExercises || {});
     const [searchTerm, setSearchTerm] = useState('');
@@ -159,6 +171,52 @@ export default function ExercisePicker({ onDragStart, onAdd, initialExercises = 
                 </button>
             </div>
 
+            {replacementTarget && (
+                <div style={{
+                    marginBottom: '0.75rem',
+                    padding: '0.65rem 0.75rem',
+                    background: 'rgba(6, 182, 212, 0.12)',
+                    border: '1px solid rgba(6, 182, 212, 0.4)',
+                    borderRadius: '8px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: '8px',
+                }}>
+                    <div style={{ minWidth: 0, flex: 1 }}>
+                        <div style={{ fontSize: '0.65rem', fontWeight: 700, color: 'var(--primary, #06b6d4)', textTransform: 'uppercase', letterSpacing: '0.06em', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                            <ArrowLeftRight size={11} /> Replace Mode
+                        </div>
+                        <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--foreground)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginTop: '1px' }}>
+                            Replacing <span style={{ color: '#fff', textDecoration: 'underline' }}>{replacementTarget.exerciseName}</span>
+                        </div>
+                        <div style={{ fontSize: '0.68rem', color: 'var(--secondary-foreground)', marginTop: '1px' }}>
+                            Click any exercise below to swap
+                        </div>
+                    </div>
+                    {onCancelReplacement && (
+                        <button
+                            type="button"
+                            onClick={onCancelReplacement}
+                            style={{
+                                background: 'rgba(255, 255, 255, 0.08)',
+                                border: '1px solid rgba(255, 255, 255, 0.15)',
+                                color: 'var(--foreground)',
+                                borderRadius: '4px',
+                                padding: '3px 8px',
+                                fontSize: '0.7rem',
+                                fontWeight: 600,
+                                cursor: 'pointer',
+                                flexShrink: 0,
+                            }}
+                            title="Cancel Replacement"
+                        >
+                            Cancel
+                        </button>
+                    )}
+                </div>
+            )}
+
             <input
                 className="glass-input"
                 placeholder="Search exercises..."
@@ -309,7 +367,25 @@ export default function ExercisePicker({ onDragStart, onAdd, initialExercises = 
                                                             <Trash2 size={13} />
                                                         </button>
                                                     )}
-                                                    <span style={{ fontSize: '1.2rem', lineHeight: 0, color: 'var(--accent)' }}>+</span>
+                                                    {replacementTarget ? (
+                                                        <span style={{
+                                                            fontSize: '0.7rem',
+                                                            fontWeight: 700,
+                                                            color: '#06b6d4',
+                                                            background: 'rgba(6, 182, 212, 0.15)',
+                                                            border: '1px solid rgba(6, 182, 212, 0.4)',
+                                                            borderRadius: '4px',
+                                                            padding: '2px 6px',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '3px',
+                                                            whiteSpace: 'nowrap',
+                                                        }}>
+                                                            <ArrowLeftRight size={11} /> Swap
+                                                        </span>
+                                                    ) : (
+                                                        <span style={{ fontSize: '1.2rem', lineHeight: 0, color: 'var(--accent)' }}>+</span>
+                                                    )}
                                                 </span>
                                             </div>
                                         );

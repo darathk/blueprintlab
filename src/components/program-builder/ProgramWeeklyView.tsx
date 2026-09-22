@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { calculateStress } from '@/lib/stress-index';
 import { getExerciseCategory } from '@/lib/exercise-db';
-import { Plus, Trash2, Copy, ChevronLeft, ChevronRight, CopyPlus, CheckCircle2, StickyNote, Activity, Calendar, GripVertical, ClipboardPaste, Shuffle } from 'lucide-react';
+import { Plus, Trash2, Copy, ChevronLeft, ChevronRight, CopyPlus, CheckCircle2, StickyNote, Activity, Calendar, GripVertical, ClipboardPaste, Shuffle, ArrowLeftRight, RefreshCw } from 'lucide-react';
 import PivotRandomizerModal from './PivotRandomizerModal';
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -59,6 +59,20 @@ interface WeeklyViewProps {
     setCurrentWeekNum?: (weekNum: number) => void;
     sessionClipboard?: any;
     onCopySession?: (session: any) => void;
+    selectedExerciseForReplacement?: {
+        weekNum?: number;
+        dayNum?: number;
+        exerciseIndex: number;
+        exerciseId?: string;
+        exerciseName: string;
+    } | null;
+    onSelectExerciseForReplacement?: (target: {
+        weekNum?: number;
+        dayNum?: number;
+        exerciseIndex: number;
+        exerciseId?: string;
+        exerciseName: string;
+    } | null) => void;
 }
 
 export default function ProgramWeeklyView({
@@ -75,6 +89,8 @@ export default function ProgramWeeklyView({
     setCurrentWeekNum: controlledSetWeekNum,
     sessionClipboard,
     onCopySession,
+    selectedExerciseForReplacement,
+    onSelectExerciseForReplacement,
 }: WeeklyViewProps) {
     // Week number state (controlled or internal)
     const [internalWeekNum, setInternalWeekNum] = useState(() => {
@@ -1740,6 +1756,10 @@ export default function ProgramWeeklyView({
                                     const catColor = CATEGORY_COLORS[ex.category || getExerciseCategory(ex.name || '')] || '#64748B';
                                     const isDragOverExercise = dropTargetDay === dayNum && dropTargetExIdx === exIdx;
                                     const protocol = formatSetsSummary(ex.sets || []);
+                                    const isSelectedForReplacement = !!(selectedExerciseForReplacement &&
+                                        selectedExerciseForReplacement.weekNum === currentWeekNum &&
+                                        selectedExerciseForReplacement.dayNum === dayNum &&
+                                        (selectedExerciseForReplacement.exerciseId === ex.id || selectedExerciseForReplacement.exerciseIndex === exIdx));
 
                                     return (
                                         <div
@@ -1756,19 +1776,42 @@ export default function ProgramWeeklyView({
                                             style={{
                                                 borderRadius: '8px',
                                                 overflow: 'hidden',
-                                                border: isDragOverExercise ? '2px solid var(--primary)' : '1px solid rgba(255,255,255,0.1)',
+                                                border: isSelectedForReplacement
+                                                    ? '2px solid #06b6d4'
+                                                    : (isDragOverExercise ? '2px solid var(--primary)' : '1px solid rgba(255,255,255,0.1)'),
                                                 background: 'rgba(20, 20, 26, 0.95)',
-                                                boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
-                                                transition: 'border 0.1s, transform 0.1s',
+                                                boxShadow: isSelectedForReplacement
+                                                    ? '0 0 16px rgba(6, 182, 212, 0.45)'
+                                                    : '0 2px 8px rgba(0,0,0,0.25)',
+                                                transition: 'border 0.15s, box-shadow 0.15s, transform 0.1s',
                                             }}
                                         >
                                             {/* Exercise Name Banner - Full text with word wrap & direct action buttons */}
-                                            <div style={{
-                                                background: catColor,
-                                                padding: '8px 10px',
-                                                display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-                                                cursor: 'grab', gap: '6px',
-                                            }}>
+                                            <div
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    onSelectDay(dayNum);
+                                                    if (isSelectedForReplacement) {
+                                                        onSelectExerciseForReplacement?.(null);
+                                                    } else {
+                                                        onSelectExerciseForReplacement?.({
+                                                            weekNum: currentWeekNum,
+                                                            dayNum,
+                                                            exerciseIndex: exIdx,
+                                                            exerciseId: ex.id,
+                                                            exerciseName: ex.name,
+                                                        });
+                                                    }
+                                                }}
+                                                style={{
+                                                    background: catColor,
+                                                    padding: '8px 10px',
+                                                    display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
+                                                    cursor: 'pointer', gap: '6px',
+                                                    borderBottom: isSelectedForReplacement ? '1px solid rgba(6, 182, 212, 0.4)' : 'none',
+                                                }}
+                                                title={isSelectedForReplacement ? "Click to cancel replacement" : "Click to select and replace with an exercise from Library"}
+                                            >
                                                 <div style={{
                                                     fontWeight: 700,
                                                     fontSize: '0.82rem',
@@ -1778,10 +1821,70 @@ export default function ProgramWeeklyView({
                                                     wordBreak: 'break-word',
                                                     whiteSpace: 'normal',
                                                     flex: 1,
+                                                    display: 'flex',
+                                                    flexDirection: 'column',
+                                                    gap: '4px',
                                                 }}>
-                                                    {ex.name}
+                                                    <span>{ex.name}</span>
+                                                    {isSelectedForReplacement && (
+                                                        <span style={{
+                                                            alignSelf: 'flex-start',
+                                                            background: '#06b6d4',
+                                                            color: '#000',
+                                                            fontSize: '0.62rem',
+                                                            fontWeight: 800,
+                                                            padding: '2px 6px',
+                                                            borderRadius: '4px',
+                                                            display: 'inline-flex',
+                                                            alignItems: 'center',
+                                                            gap: '3px',
+                                                            letterSpacing: '0.04em',
+                                                            boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
+                                                        }}>
+                                                            <RefreshCw size={10} style={{ animation: 'spin 2s linear infinite' }} />
+                                                            PICK IN LIBRARY TO REPLACE
+                                                        </span>
+                                                    )}
                                                 </div>
                                                 <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                                                    <button
+                                                        onClick={() => {
+                                                            if (isSelectedForReplacement) {
+                                                                onSelectExerciseForReplacement?.(null);
+                                                            } else {
+                                                                onSelectDay(dayNum);
+                                                                onSelectExerciseForReplacement?.({
+                                                                    weekNum: currentWeekNum,
+                                                                    dayNum,
+                                                                    exerciseIndex: exIdx,
+                                                                    exerciseId: ex.id,
+                                                                    exerciseName: ex.name,
+                                                                });
+                                                            }
+                                                        }}
+                                                        title={isSelectedForReplacement ? "Cancel Replacement" : "Select to Replace with an exercise from Library"}
+                                                        style={{
+                                                            background: isSelectedForReplacement ? '#06b6d4' : 'rgba(0,0,0,0.25)',
+                                                            border: 'none',
+                                                            color: isSelectedForReplacement ? '#000' : '#fff',
+                                                            cursor: 'pointer',
+                                                            padding: '4px 6px',
+                                                            borderRadius: '4px',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            gap: '3px',
+                                                            transition: 'all 0.15s',
+                                                        }}
+                                                        onMouseOver={e => {
+                                                            if (!isSelectedForReplacement) e.currentTarget.style.background = 'rgba(6, 182, 212, 0.4)';
+                                                        }}
+                                                        onMouseOut={e => {
+                                                            if (!isSelectedForReplacement) e.currentTarget.style.background = 'rgba(0,0,0,0.25)';
+                                                        }}
+                                                    >
+                                                        <ArrowLeftRight size={12} />
+                                                        {isSelectedForReplacement && <span style={{ fontSize: '0.65rem', fontWeight: 800 }}>Cancel</span>}
+                                                    </button>
                                                     <button
                                                         onClick={() => duplicateExercise(dayNum, exIdx)}
                                                         title="Duplicate Exercise"

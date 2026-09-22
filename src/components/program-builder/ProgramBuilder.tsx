@@ -10,7 +10,7 @@ import ProgramCalendarGrid from './ProgramCalendarGrid';
 import ProgramWeeklyView from './ProgramWeeklyView';
 import { calculateStress } from '@/lib/stress-index';
 import { getExerciseCategory } from '@/lib/exercise-db';
-import { Trash2, Plus, ArrowRight, ArrowDown, GripVertical, Check, MessageSquare, FileText, Activity, Save, RefreshCw, Layers, Copy, CopyPlus, Scissors, ClipboardPaste, ArrowUp, Zap, ExternalLink, Menu, X, Trophy, Calendar as CalendarIcon, CalendarPlus, LayoutGrid, BookOpen, StickyNote, Pin, LayoutDashboard, ChevronDown, ChevronRight } from 'lucide-react';
+import { Trash2, Plus, ArrowRight, ArrowDown, GripVertical, Check, MessageSquare, FileText, Activity, Save, RefreshCw, Layers, Copy, CopyPlus, Scissors, ClipboardPaste, ArrowUp, Zap, ExternalLink, Menu, X, Trophy, Calendar as CalendarIcon, CalendarPlus, LayoutGrid, BookOpen, StickyNote, Pin, LayoutDashboard, ChevronDown, ChevronRight, ArrowLeftRight } from 'lucide-react';
 import { useUser } from '@clerk/nextjs';
 
 const ChatInterface = dynamic(() => import('@/components/chat/ChatInterface'), {
@@ -193,7 +193,7 @@ const calculateDefaultStartDate = (existingPrograms: any[], initialData: any): s
 };
 
 // Exercise Component
-const BuilderExerciseCard = ({ exercise, onUpdate, onRemove, onDragStart, onDragOver, onDrop, onDragEnd, isDragOver }) => {
+const BuilderExerciseCard = ({ exercise, onUpdate, onRemove, onDragStart, onDragOver, onDrop, onDragEnd, isDragOver, isSelectedForReplacement = false, onSelectForReplacement = null }: any) => {
     const [isCollapsed, setIsCollapsed] = useState(false);
 
     const addSet = () => {
@@ -207,18 +207,18 @@ const BuilderExerciseCard = ({ exercise, onUpdate, onRemove, onDragStart, onDrag
         onUpdate('sets', newSets);
     };
 
-    const updateSet = (index, field, value) => {
+    const updateSet = (index: number, field: string, value: any) => {
         const newSets = [...exercise.sets];
         newSets[index][field] = value;
         onUpdate('sets', newSets);
     };
 
-    const removeSet = (index) => {
-        const newSets = exercise.sets.filter((_, i) => i !== index);
+    const removeSet = (index: number) => {
+        const newSets = exercise.sets.filter((_: any, i: number) => i !== index);
         onUpdate('sets', newSets);
     };
 
-    const copyPreviousSet = (index) => {
+    const copyPreviousSet = (index: number) => {
         if (index === 0) return;
         const prev = exercise.sets[index - 1];
         const newSets = [...exercise.sets];
@@ -235,17 +235,20 @@ const BuilderExerciseCard = ({ exercise, onUpdate, onRemove, onDragStart, onDrag
             onDragEnd={onDragEnd}
             style={{
                 background: 'var(--card-bg)',
-                border: isDragOver ? '2px solid var(--primary)' : '1px solid var(--card-border)',
+                border: isSelectedForReplacement
+                    ? '2px solid #06b6d4'
+                    : (isDragOver ? '2px solid var(--primary)' : '1px solid var(--card-border)'),
+                boxShadow: isSelectedForReplacement ? '0 0 14px rgba(6, 182, 212, 0.45)' : 'none',
                 borderRadius: 'var(--radius)',
                 overflow: 'hidden',
-                transition: 'border 0.15s, opacity 0.15s',
+                transition: 'border 0.15s, box-shadow 0.15s, opacity 0.15s',
             }}
         >
             {/* Header */}
             <div
                 style={{
                     padding: '0.75rem',
-                    background: 'rgba(255,255,255,0.05)',
+                    background: isSelectedForReplacement ? 'rgba(6, 182, 212, 0.1)' : 'rgba(255,255,255,0.05)',
                     display: 'flex',
                     justifyContent: 'space-between',
                     alignItems: 'center',
@@ -266,47 +269,89 @@ const BuilderExerciseCard = ({ exercise, onUpdate, onRemove, onDragStart, onDrag
                     }}>
                         {isCollapsed ? '+' : '-'}
                     </div>
-                    <span style={{ fontWeight: 600, color: 'var(--primary)' }}>{exercise.name}</span>
+                    <span style={{ fontWeight: 600, color: isSelectedForReplacement ? '#06b6d4' : 'var(--primary)' }}>{exercise.name}</span>
                     <span style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginLeft: '1rem' }}>
                         {exercise.sets.length} Sets
                     </span>
+                    {isSelectedForReplacement && (
+                        <span style={{
+                            background: '#06b6d4',
+                            color: '#000',
+                            fontSize: '0.62rem',
+                            fontWeight: 800,
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            marginLeft: '6px',
+                        }}>
+                            PICK IN LIBRARY TO REPLACE
+                        </span>
+                    )}
                 </div>
-                <button
-                    type="button"
-                    title={`Delete ${exercise.name}`}
-                    aria-label={`Delete ${exercise.name}`}
-                    onClick={(e) => {
-                        e.stopPropagation();
-                        if (confirm(`Delete "${exercise.name}" from this session?`)) {
-                            onRemove();
-                        }
-                    }}
-                    style={{
-                        background: 'rgba(239, 68, 68, 0.12)',
-                        border: '1px solid rgba(239, 68, 68, 0.4)',
-                        color: 'var(--error, #ef4444)',
-                        cursor: 'pointer',
-                        fontSize: '0.75rem',
-                        fontWeight: 700,
-                        padding: '4px 10px',
-                        borderRadius: '6px',
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '4px',
-                        transition: 'background 0.15s, border-color 0.15s',
-                    }}
-                    onMouseOver={e => {
-                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.25)';
-                        e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.8)';
-                    }}
-                    onMouseOut={e => {
-                        e.currentTarget.style.background = 'rgba(239, 68, 68, 0.12)';
-                        e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.4)';
-                    }}
-                >
-                    <Trash2 size={12} />
-                    Delete
-                </button>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    {onSelectForReplacement && (
+                        <button
+                            type="button"
+                            title={isSelectedForReplacement ? "Cancel replacement" : `Replace "${exercise.name}" from library`}
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onSelectForReplacement();
+                            }}
+                            style={{
+                                background: isSelectedForReplacement ? '#06b6d4' : 'rgba(6, 182, 212, 0.12)',
+                                border: '1px solid rgba(6, 182, 212, 0.4)',
+                                color: isSelectedForReplacement ? '#000' : '#06b6d4',
+                                cursor: 'pointer',
+                                fontSize: '0.75rem',
+                                fontWeight: 700,
+                                padding: '4px 8px',
+                                borderRadius: '6px',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                transition: 'all 0.15s',
+                            }}
+                        >
+                            <ArrowLeftRight size={12} />
+                            {isSelectedForReplacement ? 'Cancel' : 'Replace'}
+                        </button>
+                    )}
+                    <button
+                        type="button"
+                        title={`Delete ${exercise.name}`}
+                        aria-label={`Delete ${exercise.name}`}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm(`Delete "${exercise.name}" from this session?`)) {
+                                onRemove();
+                            }
+                        }}
+                        style={{
+                            background: 'rgba(239, 68, 68, 0.12)',
+                            border: '1px solid rgba(239, 68, 68, 0.4)',
+                            color: 'var(--error, #ef4444)',
+                            cursor: 'pointer',
+                            fontSize: '0.75rem',
+                            fontWeight: 700,
+                            padding: '4px 10px',
+                            borderRadius: '6px',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            transition: 'background 0.15s, border-color 0.15s',
+                        }}
+                        onMouseOver={e => {
+                            e.currentTarget.style.background = 'rgba(239, 68, 68, 0.25)';
+                            e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.8)';
+                        }}
+                        onMouseOut={e => {
+                            e.currentTarget.style.background = 'rgba(239, 68, 68, 0.12)';
+                            e.currentTarget.style.borderColor = 'rgba(239, 68, 68, 0.4)';
+                        }}
+                    >
+                        <Trash2 size={12} />
+                        Delete
+                    </button>
+                </div>
             </div>
 
             {/* Content */}
@@ -693,6 +738,34 @@ export default function ProgramBuilder({
 
     // Week overview drawer
     const [weekOverviewIndex, setWeekOverviewIndex] = useState<number | null>(null);
+
+    // Exercise replacement state: selected exercise to replace via exercise library
+    const [selectedExerciseForReplacement, setSelectedExerciseForReplacement] = useState<{
+        weekNum?: number;
+        dayNum?: number;
+        weekIndex?: number;
+        sessionIndex?: number;
+        exerciseIndex: number;
+        exerciseId?: string;
+        exerciseName: string;
+    } | null>(null);
+
+    const handleSelectExerciseForReplacement = (target: any) => {
+        setSelectedExerciseForReplacement(target);
+        if (target && !isSidebarOpen) {
+            setIsSidebarOpen(true);
+        }
+    };
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'Escape' && selectedExerciseForReplacement) {
+                setSelectedExerciseForReplacement(null);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [selectedExerciseForReplacement]);
 
     const { user } = useUser();
     const [coachNotes, setCoachNotes] = useState<any[]>(initialCoachNotes || []);
@@ -1247,6 +1320,64 @@ export default function ProgramBuilder({
         const newWeeks = [...weeks];
         newWeeks[w].sessions[s].exercises.unshift(newExercise);
         setWeeks(newWeeks);
+    };
+
+    const handleExerciseLibraryClick = (exerciseOrName: any) => {
+        const exerciseName = typeof exerciseOrName === 'string' ? exerciseOrName : exerciseOrName.name;
+        const exerciseCategory = (typeof exerciseOrName === 'object' && exerciseOrName.category)
+            ? exerciseOrName.category
+            : getExerciseCategory(exerciseName);
+
+        if (selectedExerciseForReplacement) {
+            const { weekNum, dayNum, weekIndex, sessionIndex, exerciseIndex, exerciseId, exerciseName: oldName } = selectedExerciseForReplacement;
+
+            if (weekNum !== undefined && dayNum !== undefined) {
+                // Weekly view replacement
+                setWeeks((prev: any[]) => prev.map(w => {
+                    if (w.weekNumber !== weekNum) return w;
+                    return {
+                        ...w,
+                        sessions: (w.sessions || []).map((s: any) => {
+                            if (Number(s.day) !== Number(dayNum)) return s;
+                            const newExercises = [...(s.exercises || [])];
+                            let targetIdx = exerciseIndex;
+                            if (exerciseId && (!newExercises[targetIdx] || newExercises[targetIdx].id !== exerciseId)) {
+                                targetIdx = newExercises.findIndex((ex: any) => ex.id === exerciseId);
+                            }
+                            if (targetIdx !== -1 && targetIdx < newExercises.length) {
+                                newExercises[targetIdx] = {
+                                    ...newExercises[targetIdx],
+                                    name: exerciseName,
+                                    category: exerciseCategory,
+                                };
+                            }
+                            return { ...s, exercises: newExercises };
+                        })
+                    };
+                }));
+            } else if (weekIndex !== undefined && sessionIndex !== undefined) {
+                // Monthly view drawer replacement
+                setWeeks((prev: any[]) => {
+                    const next = [...prev];
+                    if (next[weekIndex]?.sessions?.[sessionIndex]?.exercises?.[exerciseIndex]) {
+                        const ex = next[weekIndex].sessions[sessionIndex].exercises[exerciseIndex];
+                        next[weekIndex].sessions[sessionIndex].exercises[exerciseIndex] = {
+                            ...ex,
+                            name: exerciseName,
+                            category: exerciseCategory,
+                        };
+                    }
+                    return next;
+                });
+            }
+
+            showToast(`Replaced "${oldName}" with "${exerciseName}"`);
+            setSelectedExerciseForReplacement(null);
+            return;
+        }
+
+        // Normal exercise addition
+        addExerciseToActiveSession(exerciseOrName);
     };
 
     const updateExercise = (weekIndex, sessionIndex, exerciseIndex, field, value) => {
@@ -1958,7 +2089,13 @@ export default function ProgramBuilder({
                     order: calendarViewMode === 'weekly' ? 2 : 1, // On the right for weekly view!
                 }}>
                     <div style={{ flex: 1, overflow: 'hidden', minHeight: 0 }}>
-                        <ExercisePicker initialExercises={initialExercises} onAdd={addExerciseToActiveSession} onDragStart={() => { }} />
+                        <ExercisePicker
+                            initialExercises={initialExercises}
+                            onAdd={handleExerciseLibraryClick}
+                            replacementTarget={selectedExerciseForReplacement}
+                            onCancelReplacement={() => setSelectedExerciseForReplacement(null)}
+                            onDragStart={() => { }}
+                        />
                     </div>
                     {/* Lift Targets Panel - only in athlete-specific program builder */}
                     {athleteId && (
@@ -2429,6 +2566,8 @@ export default function ProgramBuilder({
                                     setCurrentWeekNum={setWeeklyActiveWeekNum}
                                     sessionClipboard={clipboard?.type === 'session' ? clipboard.data : null}
                                     onCopySession={copySessionDirect}
+                                    selectedExerciseForReplacement={selectedExerciseForReplacement}
+                                    onSelectExerciseForReplacement={handleSelectExerciseForReplacement}
                                 />
                             )}
                         </div>
@@ -2736,19 +2875,39 @@ export default function ProgramBuilder({
 
                         {/* Exercises */}
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                            {weeks[editingSession.w].sessions[editingSession.s].exercises.map((ex, exIndex) => (
-                                <BuilderExerciseCard
-                                    key={ex.id}
-                                    exercise={ex}
-                                    onUpdate={(field, val) => updateExercise(editingSession.w, editingSession.s, exIndex, field, val)}
-                                    onRemove={() => removeExercise(editingSession.w, editingSession.s, exIndex)}
-                                    onDragStart={() => handleExerciseDragStart(editingSession.w, editingSession.s, exIndex)}
-                                    onDragOver={(e) => handleExerciseDragOver(e, editingSession.w, editingSession.s, exIndex)}
-                                    onDrop={(e) => handleExerciseDrop(e, editingSession.w, editingSession.s, exIndex)}
-                                    onDragEnd={handleExerciseDragEnd}
-                                    isDragOver={dropTarget?.w === editingSession.w && dropTarget?.s === editingSession.s && dropTarget?.e === exIndex}
-                                />
-                            ))}
+                            {weeks[editingSession.w].sessions[editingSession.s].exercises.map((ex, exIndex) => {
+                                const isSelected = !!(selectedExerciseForReplacement &&
+                                    selectedExerciseForReplacement.weekIndex === editingSession.w &&
+                                    selectedExerciseForReplacement.sessionIndex === editingSession.s &&
+                                    (selectedExerciseForReplacement.exerciseId === ex.id || selectedExerciseForReplacement.exerciseIndex === exIndex));
+                                return (
+                                    <BuilderExerciseCard
+                                        key={ex.id}
+                                        exercise={ex}
+                                        isSelectedForReplacement={isSelected}
+                                        onSelectForReplacement={() => {
+                                            if (isSelected) {
+                                                setSelectedExerciseForReplacement(null);
+                                            } else {
+                                                handleSelectExerciseForReplacement({
+                                                    weekIndex: editingSession.w,
+                                                    sessionIndex: editingSession.s,
+                                                    exerciseIndex: exIndex,
+                                                    exerciseId: ex.id,
+                                                    exerciseName: ex.name,
+                                                });
+                                            }
+                                        }}
+                                        onUpdate={(field, val) => updateExercise(editingSession.w, editingSession.s, exIndex, field, val)}
+                                        onRemove={() => removeExercise(editingSession.w, editingSession.s, exIndex)}
+                                        onDragStart={() => handleExerciseDragStart(editingSession.w, editingSession.s, exIndex)}
+                                        onDragOver={(e) => handleExerciseDragOver(e, editingSession.w, editingSession.s, exIndex)}
+                                        onDrop={(e) => handleExerciseDrop(e, editingSession.w, editingSession.s, exIndex)}
+                                        onDragEnd={handleExerciseDragEnd}
+                                        isDragOver={dropTarget?.w === editingSession.w && dropTarget?.s === editingSession.s && dropTarget?.e === exIndex}
+                                    />
+                                );
+                            })}
                             {weeks[editingSession.w].sessions[editingSession.s].exercises.length === 0 && (
                                 <div
                                     onDragOver={e => { e.preventDefault(); }}
