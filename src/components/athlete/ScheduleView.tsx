@@ -1101,32 +1101,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                 </span>
                                                             ) : null}
 
-                                                            {/* Planned Top Set Indicator Badge */}
-                                                            {(() => {
-                                                                const sessionPlanned = plannedTopSets[sKey] || plannedTopSets[legacyKey] || {};
-                                                                const plannedExNames = Object.keys(sessionPlanned).filter(k => sessionPlanned[k]?.weight || sessionPlanned[k]?.reps);
-                                                                if (plannedExNames.length === 0) return null;
-                                                                return (
-                                                                    <span style={{
-                                                                        fontSize: '0.68rem',
-                                                                        fontWeight: 700,
-                                                                        padding: '2px 9px',
-                                                                        borderRadius: 9999,
-                                                                        background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.22) 0%, rgba(99, 102, 241, 0.18) 100%)',
-                                                                        color: '#38bdf8',
-                                                                        border: '1px solid rgba(56, 189, 248, 0.5)',
-                                                                        display: 'inline-flex',
-                                                                        alignItems: 'center',
-                                                                        gap: 4,
-                                                                        boxShadow: '0 0 10px rgba(56, 189, 248, 0.25)',
-                                                                    }}>
-                                                                        🎯 {plannedExNames.length === 1
-                                                                            ? `Planned: ${plannedExNames[0]} ${sessionPlanned[plannedExNames[0]].weight ? sessionPlanned[plannedExNames[0]].weight + (sessionPlanned[plannedExNames[0]].unit || unit) : ''}`
-                                                                            : `${plannedExNames.length} Planned Top Sets`}
-                                                                    </span>
-                                                                );
-                                                            })()}
-                                                        </div>
+                                                                </div>
 
                                                         {/* Metadata Row */}
                                                         <div style={{
@@ -1472,23 +1447,25 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                         </div>
                                                                         {(() => {
                                                                             const planned = plannedTopSets[sKey]?.[exerciseData?.name || ex?.name];
-                                                                            if (!planned || (!planned.weight && !planned.reps)) return null;
+                                                                            if (!planned || (!planned.weight && !planned.reps) || exOpen) return null;
                                                                             return (
                                                                                 <div style={{
                                                                                     fontSize: '0.72rem',
-                                                                                    padding: '3px 10px',
-                                                                                    borderRadius: 8,
-                                                                                    background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(99, 102, 241, 0.2))',
-                                                                                    border: '1px solid rgba(56, 189, 248, 0.45)',
+                                                                                    padding: '2px 8px',
+                                                                                    borderRadius: 6,
+                                                                                    background: 'rgba(56, 189, 248, 0.08)',
+                                                                                    border: '1px solid rgba(56, 189, 248, 0.2)',
                                                                                     color: '#38bdf8',
                                                                                     fontWeight: 600,
                                                                                     display: 'inline-flex',
                                                                                     alignItems: 'center',
-                                                                                    gap: 5,
+                                                                                    gap: 4,
                                                                                     width: 'fit-content',
-                                                                                    boxShadow: '0 2px 8px rgba(56, 189, 248, 0.2)'
                                                                                 }}>
-                                                                                    🎯 Planned: {planned.weight ? `${planned.weight} ${planned.unit || unit}` : ''}{planned.reps ? ` × ${planned.reps}` : ''}{planned.rpe ? ` @ ${planned.rpe}` : ''}
+                                                                                    <span>Top Set:</span>
+                                                                                    <span style={{ color: '#ffffff', fontWeight: 700 }}>
+                                                                                        {planned.weight ? `${planned.weight} ${planned.unit || unit}` : ''}{planned.reps ? ` × ${planned.reps}` : ''}{planned.rpe ? ` @ ${planned.rpe}` : ''}
+                                                                                    </span>
                                                                                 </div>
                                                                             );
                                                                         })()}
@@ -1523,17 +1500,27 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                 display: 'flex',
                                                                                 alignItems: 'center',
                                                                                 justifyContent: 'space-between',
-                                                                                padding: '10px 14px',
+                                                                                gap: 12,
+                                                                                padding: '9px 14px',
                                                                                 marginBottom: 12,
-                                                                                borderRadius: 12,
-                                                                                background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.12) 0%, rgba(99, 102, 241, 0.08) 100%)',
-                                                                                border: '1px solid rgba(56, 189, 248, 0.35)',
-                                                                                boxShadow: '0 4px 14px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+                                                                                borderRadius: 10,
+                                                                                background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.08) 0%, rgba(99, 102, 241, 0.04) 100%)',
+                                                                                border: '1px solid rgba(56, 189, 248, 0.22)',
+                                                                                borderLeft: '3px solid #38bdf8',
+                                                                                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.25)',
                                                                                 fontSize: '0.84rem',
                                                                             }}>
-                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#38bdf8', fontWeight: 600 }}>
-                                                                                    <span>🎯 Planned Top Set:</span>
-                                                                                    <span style={{ color: '#ffffff', fontWeight: 700 }}>
+                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flexWrap: 'wrap' }}>
+                                                                                    <span style={{
+                                                                                        fontSize: '0.68rem',
+                                                                                        fontWeight: 700,
+                                                                                        letterSpacing: '0.06em',
+                                                                                        color: '#38bdf8',
+                                                                                        textTransform: 'uppercase',
+                                                                                    }}>
+                                                                                        Planned Top Set
+                                                                                    </span>
+                                                                                    <span style={{ color: '#ffffff', fontWeight: 700, fontSize: '0.88rem' }}>
                                                                                         {planned.weight ? `${planned.weight} ${planned.unit || unit}` : ''}{planned.reps ? ` × ${planned.reps}` : ''}{planned.rpe ? ` @ ${planned.rpe}` : ''}
                                                                                     </span>
                                                                                 </div>
@@ -1554,16 +1541,16 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                         triggerAutoSave(sKey, program.id);
                                                                                     }}
                                                                                     style={{
-                                                                                        padding: '5px 12px',
-                                                                                        fontSize: '0.74rem',
-                                                                                        borderRadius: 8,
-                                                                                        border: '1px solid rgba(56, 189, 248, 0.5)',
-                                                                                        background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(99, 102, 241, 0.2))',
+                                                                                        padding: '4px 10px',
+                                                                                        fontSize: '0.72rem',
+                                                                                        borderRadius: 7,
+                                                                                        border: '1px solid rgba(56, 189, 248, 0.35)',
+                                                                                        background: 'rgba(56, 189, 248, 0.12)',
                                                                                         color: '#38bdf8',
                                                                                         cursor: 'pointer',
-                                                                                        fontWeight: 700,
-                                                                                        boxShadow: '0 2px 8px rgba(56, 189, 248, 0.25)',
-                                                                                        transition: 'all 0.18s ease'
+                                                                                        fontWeight: 600,
+                                                                                        flexShrink: 0,
+                                                                                        transition: 'all 0.15s ease'
                                                                                     }}
                                                                                 >
                                                                                     Fill Set 1
@@ -1794,7 +1781,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                 textOverflow: 'ellipsis',
                                                                                             }}>
                                                                                                 {isPlannedTopSet && planned?.weight
-                                                                                                    ? `🎯 ${planned.weight} ${planned.unit || curUnit} (Planned)`
+                                                                                                    ? `Plan: ${planned.weight} ${planned.unit || curUnit}`
                                                                                                     : (target.weight ? `Rx: ${target.weight} ${curUnit}` : 'Rx: —')}
                                                                                             </div>
                                                                                             <div style={{
@@ -1806,7 +1793,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                 letterSpacing: '0.01em',
                                                                                             }}>
                                                                                                 {isPlannedTopSet && planned?.reps
-                                                                                                    ? `🎯 ${planned.reps} reps`
+                                                                                                    ? `Plan: ${planned.reps} reps`
                                                                                                     : (target.reps ? `Rx: ${target.reps}` : 'Rx: —')}
                                                                                             </div>
                                                                                             <div style={{
@@ -1818,7 +1805,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                 letterSpacing: '0.01em',
                                                                                             }}>
                                                                                                 {isPlannedTopSet && planned?.rpe
-                                                                                                    ? `🎯 @ ${planned.rpe}`
+                                                                                                    ? `Plan: @ ${planned.rpe}`
                                                                                                     : (target.rpe ? `Rx: @ ${target.rpe}` : 'Rx: —')}
                                                                                             </div>
                                                                                         </div>
@@ -2539,32 +2526,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                             </span>
                                                                         ) : null}
 
-                                                                        {/* Planned Top Set Indicator Badge */}
-                                                                        {(() => {
-                                                                            const sessionPlanned = plannedTopSets[sKey] || plannedTopSets[legacyKey] || {};
-                                                                            const plannedExNames = Object.keys(sessionPlanned).filter(k => sessionPlanned[k]?.weight || sessionPlanned[k]?.reps);
-                                                                            if (plannedExNames.length === 0) return null;
-                                                                            return (
-                                                                                <span style={{
-                                                                                    fontSize: '0.68rem',
-                                                                                    fontWeight: 700,
-                                                                                    padding: '2px 9px',
-                                                                                    borderRadius: 9999,
-                                                                                    background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.22) 0%, rgba(99, 102, 241, 0.18) 100%)',
-                                                                                    color: '#38bdf8',
-                                                                                    border: '1px solid rgba(56, 189, 248, 0.5)',
-                                                                                    display: 'inline-flex',
-                                                                                    alignItems: 'center',
-                                                                                    gap: 4,
-                                                                                    boxShadow: '0 0 10px rgba(56, 189, 248, 0.25)',
-                                                                                }}>
-                                                                                    🎯 {plannedExNames.length === 1
-                                                                                        ? `Planned: ${plannedExNames[0]} ${sessionPlanned[plannedExNames[0]].weight ? sessionPlanned[plannedExNames[0]].weight + (sessionPlanned[plannedExNames[0]].unit || unit) : ''}`
-                                                                                        : `${plannedExNames.length} Planned Top Sets`}
-                                                                                </span>
-                                                                            );
-                                                                        })()}
-                                                                    </div>
+                                                                        </div>
 
                                                                     {/* Metadata Row */}
                                                                     <div style={{
@@ -2883,23 +2845,25 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                     </div>
                                                                                     {(() => {
                                                                                         const planned = plannedTopSets[sKey]?.[exerciseData?.name || ex?.name];
-                                                                                        if (!planned || (!planned.weight && !planned.reps)) return null;
+                                                                                        if (!planned || (!planned.weight && !planned.reps) || exOpen) return null;
                                                                                         return (
                                                                                             <div style={{
                                                                                                 fontSize: '0.72rem',
-                                                                                                padding: '3px 10px',
-                                                                                                borderRadius: 8,
-                                                                                                background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(99, 102, 241, 0.2))',
-                                                                                                border: '1px solid rgba(56, 189, 248, 0.45)',
+                                                                                                padding: '2px 8px',
+                                                                                                borderRadius: 6,
+                                                                                                background: 'rgba(56, 189, 248, 0.08)',
+                                                                                                border: '1px solid rgba(56, 189, 248, 0.2)',
                                                                                                 color: '#38bdf8',
                                                                                                 fontWeight: 600,
                                                                                                 display: 'inline-flex',
                                                                                                 alignItems: 'center',
-                                                                                                gap: 5,
+                                                                                                gap: 4,
                                                                                                 width: 'fit-content',
-                                                                                                boxShadow: '0 2px 8px rgba(56, 189, 248, 0.2)'
                                                                                             }}>
-                                                                                                🎯 Planned: {planned.weight ? `${planned.weight} ${planned.unit || unit}` : ''}{planned.reps ? ` × ${planned.reps}` : ''}{planned.rpe ? ` @ ${planned.rpe}` : ''}
+                                                                                                <span>Top Set:</span>
+                                                                                                <span style={{ color: '#ffffff', fontWeight: 700 }}>
+                                                                                                    {planned.weight ? `${planned.weight} ${planned.unit || unit}` : ''}{planned.reps ? ` × ${planned.reps}` : ''}{planned.rpe ? ` @ ${planned.rpe}` : ''}
+                                                                                                </span>
                                                                                             </div>
                                                                                         );
                                                                                     })()}
@@ -2935,17 +2899,27 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                             display: 'flex',
                                                                                             alignItems: 'center',
                                                                                             justifyContent: 'space-between',
-                                                                                            padding: '10px 14px',
+                                                                                            gap: 12,
+                                                                                            padding: '9px 14px',
                                                                                             marginBottom: 12,
-                                                                                            borderRadius: 12,
-                                                                                            background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.12) 0%, rgba(99, 102, 241, 0.08) 100%)',
-                                                                                            border: '1px solid rgba(56, 189, 248, 0.35)',
-                                                                                            boxShadow: '0 4px 14px rgba(0, 0, 0, 0.25), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+                                                                                            borderRadius: 10,
+                                                                                            background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.08) 0%, rgba(99, 102, 241, 0.04) 100%)',
+                                                                                            border: '1px solid rgba(56, 189, 248, 0.22)',
+                                                                                            borderLeft: '3px solid #38bdf8',
+                                                                                            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.25)',
                                                                                             fontSize: '0.84rem',
                                                                                         }}>
-                                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#38bdf8', fontWeight: 600 }}>
-                                                                                                <span>🎯 Planned Top Set:</span>
-                                                                                                <span style={{ color: '#ffffff', fontWeight: 700 }}>
+                                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flexWrap: 'wrap' }}>
+                                                                                                <span style={{
+                                                                                                    fontSize: '0.68rem',
+                                                                                                    fontWeight: 700,
+                                                                                                    letterSpacing: '0.06em',
+                                                                                                    color: '#38bdf8',
+                                                                                                    textTransform: 'uppercase',
+                                                                                                }}>
+                                                                                                    Planned Top Set
+                                                                                                </span>
+                                                                                                <span style={{ color: '#ffffff', fontWeight: 700, fontSize: '0.88rem' }}>
                                                                                                     {planned.weight ? `${planned.weight} ${planned.unit || unit}` : ''}{planned.reps ? ` × ${planned.reps}` : ''}{planned.rpe ? ` @ ${planned.rpe}` : ''}
                                                                                                 </span>
                                                                                             </div>
@@ -2966,16 +2940,16 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                     triggerAutoSave(sKey, program.id);
                                                                                                 }}
                                                                                                 style={{
-                                                                                                    padding: '5px 12px',
-                                                                                                    fontSize: '0.74rem',
-                                                                                                    borderRadius: 8,
-                                                                                                    border: '1px solid rgba(56, 189, 248, 0.5)',
-                                                                                                    background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.25), rgba(99, 102, 241, 0.2))',
+                                                                                                    padding: '4px 10px',
+                                                                                                    fontSize: '0.72rem',
+                                                                                                    borderRadius: 7,
+                                                                                                    border: '1px solid rgba(56, 189, 248, 0.35)',
+                                                                                                    background: 'rgba(56, 189, 248, 0.12)',
                                                                                                     color: '#38bdf8',
                                                                                                     cursor: 'pointer',
-                                                                                                    fontWeight: 700,
-                                                                                                    boxShadow: '0 2px 8px rgba(56, 189, 248, 0.25)',
-                                                                                                    transition: 'all 0.18s ease'
+                                                                                                    fontWeight: 600,
+                                                                                                    flexShrink: 0,
+                                                                                                    transition: 'all 0.15s ease'
                                                                                                 }}
                                                                                             >
                                                                                                 Fill Set 1
@@ -3205,7 +3179,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                             textOverflow: 'ellipsis',
                                                                                                         }}>
                                                                                                             {isPlannedTopSet && planned?.weight
-                                                                                                                ? `🎯 ${planned.weight} ${planned.unit || curUnit} (Planned)`
+                                                                                                                ? `Plan: ${planned.weight} ${planned.unit || curUnit}`
                                                                                                                 : (target.weight ? `Rx: ${target.weight} ${curUnit}` : 'Rx: —')}
                                                                                                         </div>
                                                                                                         <div style={{
@@ -3217,7 +3191,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                             letterSpacing: '0.01em',
                                                                                                         }}>
                                                                                                             {isPlannedTopSet && planned?.reps
-                                                                                                                ? `🎯 ${planned.reps} reps`
+                                                                                                                ? `Plan: ${planned.reps} reps`
                                                                                                                 : (target.reps ? `Rx: ${target.reps}` : 'Rx: —')}
                                                                                                         </div>
                                                                                                         <div style={{
@@ -3229,7 +3203,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                             letterSpacing: '0.01em',
                                                                                                         }}>
                                                                                                             {isPlannedTopSet && planned?.rpe
-                                                                                                                ? `🎯 @ ${planned.rpe}`
+                                                                                                                ? `Plan: @ ${planned.rpe}`
                                                                                                                 : (target.rpe ? `Rx: @ ${target.rpe}` : 'Rx: —')}
                                                                                                         </div>
                                                                                                     </div>

@@ -599,21 +599,24 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                         <h3 style={{ fontSize: '1rem', color: 'var(--primary)', fontWeight: 500, margin: 0 }}>{ex.name}</h3>
                                         {(() => {
                                             const planned = plannedTopSets[ex.name];
-                                            if (!planned || (!planned.weight && !planned.reps)) return null;
+                                            if (!planned || (!planned.weight && !planned.reps) || !ex.isCollapsed) return null;
                                             return (
                                                 <span style={{
                                                     fontSize: '0.72rem',
                                                     padding: '2px 8px',
                                                     borderRadius: 6,
-                                                    background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(99, 102, 241, 0.18))',
-                                                    border: '1px solid rgba(56, 189, 248, 0.4)',
+                                                    background: 'rgba(56, 189, 248, 0.08)',
+                                                    border: '1px solid rgba(56, 189, 248, 0.2)',
                                                     color: '#38bdf8',
                                                     fontWeight: 600,
                                                     display: 'inline-flex',
                                                     alignItems: 'center',
                                                     gap: 4
                                                 }}>
-                                                    🎯 Planned: {planned.weight ? `${planned.weight} ${planned.unit || unit}` : ''}{planned.reps ? ` × ${planned.reps}` : ''}{planned.rpe ? ` @ ${planned.rpe}` : ''}
+                                                    <span>Top Set:</span>
+                                                    <span style={{ color: '#ffffff', fontWeight: 700 }}>
+                                                        {planned.weight ? `${planned.weight} ${planned.unit || unit}` : ''}{planned.reps ? ` × ${planned.reps}` : ''}{planned.rpe ? ` @ ${planned.rpe}` : ''}
+                                                    </span>
                                                 </span>
                                             );
                                         })()}
@@ -641,17 +644,28 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                                     display: 'flex',
                                                     alignItems: 'center',
                                                     justifyContent: 'space-between',
-                                                    padding: '8px 12px',
+                                                    gap: 12,
+                                                    padding: '9px 14px',
                                                     marginBottom: '12px',
                                                     marginTop: '8px',
-                                                    borderRadius: '8px',
-                                                    background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.08), rgba(99, 102, 241, 0.06))',
-                                                    border: '1px solid rgba(56, 189, 248, 0.25)',
-                                                    fontSize: '0.82rem',
+                                                    borderRadius: '10px',
+                                                    background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.08) 0%, rgba(99, 102, 241, 0.04) 100%)',
+                                                    border: '1px solid rgba(56, 189, 248, 0.22)',
+                                                    borderLeft: '3px solid #38bdf8',
+                                                    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.25)',
+                                                    fontSize: '0.84rem',
                                                 }}>
-                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, color: '#38bdf8', fontWeight: 600 }}>
-                                                        <span>🎯 Planned Top Set:</span>
-                                                        <span style={{ color: 'var(--foreground)', fontWeight: 700 }}>
+                                                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0, flexWrap: 'wrap' }}>
+                                                        <span style={{
+                                                            fontSize: '0.68rem',
+                                                            fontWeight: 700,
+                                                            letterSpacing: '0.06em',
+                                                            color: '#38bdf8',
+                                                            textTransform: 'uppercase',
+                                                        }}>
+                                                            Planned Top Set
+                                                        </span>
+                                                        <span style={{ color: '#ffffff', fontWeight: 700, fontSize: '0.88rem' }}>
                                                             {planned.weight ? `${planned.weight} ${planned.unit || unit}` : ''}{planned.reps ? ` × ${planned.reps}` : ''}{planned.rpe ? ` @ ${planned.rpe}` : ''}
                                                         </span>
                                                     </div>
@@ -671,14 +685,16 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                                             });
                                                         }}
                                                         style={{
-                                                            padding: '3px 8px',
+                                                            padding: '4px 10px',
                                                             fontSize: '0.72rem',
-                                                            borderRadius: 6,
-                                                            border: '1px solid rgba(56, 189, 248, 0.4)',
-                                                            background: 'rgba(56, 189, 248, 0.15)',
+                                                            borderRadius: 7,
+                                                            border: '1px solid rgba(56, 189, 248, 0.35)',
+                                                            background: 'rgba(56, 189, 248, 0.12)',
                                                             color: '#38bdf8',
                                                             cursor: 'pointer',
                                                             fontWeight: 600,
+                                                            flexShrink: 0,
+                                                            transition: 'all 0.15s ease'
                                                         }}
                                                     >
                                                         Fill Set 1
@@ -811,7 +827,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                                                                                     textOverflow: 'ellipsis',
                                                                                                 }}>
                                                                                                     {isPlannedTopSet && planned?.weight
-                                                                                                        ? `🎯 ${planned.weight} ${planned.unit || unit} (Planned)`
+                                                                                                        ? `Plan: ${planned.weight} ${planned.unit || unit}`
                                                                                                         : (set.target.weight ? `Rx: ${set.target.weight} ${unit}` : 'Rx: —')}
                                                                                                 </div>
                                                                                                 <div style={{
@@ -823,7 +839,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                                                                                     letterSpacing: '0.01em',
                                                                                                 }}>
                                                                                                     {isPlannedTopSet && planned?.reps
-                                                                                                        ? `🎯 ${planned.reps} reps`
+                                                                                                        ? `Plan: ${planned.reps} reps`
                                                                                                         : (cleanReps ? `Rx: ${cleanReps}` : 'Rx: —')}
                                                                                                 </div>
                                                                                                 <div style={{
@@ -835,7 +851,7 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                                                                                     letterSpacing: '0.01em',
                                                                                                 }}>
                                                                                                     {isPlannedTopSet && planned?.rpe
-                                                                                                        ? `🎯 @ ${planned.rpe}`
+                                                                                                        ? `Plan: @ ${planned.rpe}`
                                                                                                         : (set.target.rpe ? `Rx: @ ${set.target.rpe}` : 'Rx: —')}
                                                                                                 </div>
                                                                                             </div>
