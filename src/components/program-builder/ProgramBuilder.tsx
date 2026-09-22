@@ -10,7 +10,8 @@ import ProgramCalendarGrid from './ProgramCalendarGrid';
 import ProgramWeeklyView from './ProgramWeeklyView';
 import { calculateStress } from '@/lib/stress-index';
 import { getExerciseCategory } from '@/lib/exercise-db';
-import { Trash2, Plus, ArrowRight, ArrowDown, GripVertical, Check, MessageSquare, FileText, Activity, Save, RefreshCw, Layers, Copy, CopyPlus, Scissors, ClipboardPaste, ArrowUp, Zap, ExternalLink, Menu, X, Trophy, Calendar as CalendarIcon, CalendarPlus, LayoutGrid, BookOpen, StickyNote, Pin, LayoutDashboard, ChevronDown, ChevronRight } from 'lucide-react';
+import { Trash2, Plus, ArrowRight, ArrowDown, GripVertical, Check, MessageSquare, FileText, Activity, Save, RefreshCw, Layers, Copy, CopyPlus, Scissors, ClipboardPaste, ArrowUp, Zap, ExternalLink, Menu, X, Trophy, Calendar as CalendarIcon, CalendarPlus, LayoutGrid, BookOpen, StickyNote, Pin, LayoutDashboard, ChevronDown, ChevronRight, Shuffle } from 'lucide-react';
+import PivotRandomizerModal from './PivotRandomizerModal';
 import { useUser } from '@clerk/nextjs';
 
 const ChatInterface = dynamic(() => import('@/components/chat/ChatInterface'), {
@@ -693,6 +694,24 @@ export default function ProgramBuilder({
 
     // Week overview drawer
     const [weekOverviewIndex, setWeekOverviewIndex] = useState<number | null>(null);
+
+    // Pivot Randomizer modal state
+    const [showPivotModal, setShowPivotModal] = useState<boolean>(false);
+
+    const handleApplyPivot = (newSessions: any[], targetWeekNum: number, replaceExisting: boolean) => {
+        setWeeks(prev => {
+            const exists = prev.find(w => w.weekNumber === targetWeekNum);
+            let updatedWeeks: any[];
+            if (exists) {
+                updatedWeeks = prev.map(w => w.weekNumber === targetWeekNum ? { ...w, sessions: newSessions } : w);
+            } else {
+                updatedWeeks = [...prev, { id: generateId(), weekNumber: targetWeekNum, sessions: newSessions }];
+            }
+            return updatedWeeks.sort((a, b) => a.weekNumber - b.weekNumber);
+        });
+        setWeeklyActiveWeekNum(targetWeekNum);
+        showToast(`Generated & applied Pivot Week (Week ${targetWeekNum})`);
+    };
 
     const { user } = useUser();
     const [coachNotes, setCoachNotes] = useState<any[]>(initialCoachNotes || []);
@@ -2348,6 +2367,36 @@ export default function ProgramBuilder({
                                     padding: '3px',
                                 }}>
                                     <button
+                                        onClick={() => setShowPivotModal(true)}
+                                        className="chat-press"
+                                        title="Generate Pivot / Deload Week (50% Stress Index)"
+                                        style={{
+                                            background: 'rgba(168, 85, 247, 0.12)',
+                                            border: '1px solid rgba(168, 85, 247, 0.35)',
+                                            color: '#c084fc',
+                                            borderRadius: '16px',
+                                            padding: '4px 14px',
+                                            cursor: 'pointer',
+                                            fontSize: '0.8rem',
+                                            fontWeight: 600,
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: 6,
+                                            marginRight: '6px',
+                                            transition: 'all 0.16s var(--ease-out)',
+                                        }}
+                                        onMouseOver={e => {
+                                            e.currentTarget.style.background = 'rgba(168, 85, 247, 0.22)';
+                                            e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.6)';
+                                        }}
+                                        onMouseOut={e => {
+                                            e.currentTarget.style.background = 'rgba(168, 85, 247, 0.12)';
+                                            e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.35)';
+                                        }}
+                                    >
+                                        <Shuffle size={14} /> Pivot Randomizer
+                                    </button>
+                                    <button
                                         onClick={() => setCalendarViewMode('monthly')}
                                         className="chat-press"
                                         style={{
@@ -3756,6 +3805,17 @@ export default function ProgramBuilder({
                     existingPrograms={existingPrograms}
                     athleteLogs={athleteLogs || []}
                     onClose={() => setReviewOpen(false)}
+                />
+            )}
+            {/* Pivot Randomizer Modal */}
+            {showPivotModal && (
+                <PivotRandomizerModal
+                    isOpen={showPivotModal}
+                    onClose={() => setShowPivotModal(false)}
+                    weeks={weeks}
+                    currentWeekNum={weeklyActiveWeekNum || 1}
+                    exerciseDB={initialExercises}
+                    onApplyPivot={handleApplyPivot}
                 />
             )}
         </div>

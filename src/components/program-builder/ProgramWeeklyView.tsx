@@ -3,7 +3,8 @@
 import { useState, useMemo, useCallback } from 'react';
 import { calculateStress } from '@/lib/stress-index';
 import { getExerciseCategory } from '@/lib/exercise-db';
-import { Plus, Trash2, Copy, ChevronLeft, ChevronRight, CopyPlus, CheckCircle2, StickyNote, Activity, Calendar, GripVertical, ClipboardPaste } from 'lucide-react';
+import { Plus, Trash2, Copy, ChevronLeft, ChevronRight, CopyPlus, CheckCircle2, StickyNote, Activity, Calendar, GripVertical, ClipboardPaste, Shuffle } from 'lucide-react';
+import PivotRandomizerModal from './PivotRandomizerModal';
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
 
@@ -100,6 +101,24 @@ export default function ProgramWeeklyView({
         setToastMessage(msg);
         setTimeout(() => setToastMessage(null), 2500);
     }, []);
+
+    // Pivot Randomizer modal state
+    const [showPivotModal, setShowPivotModal] = useState<boolean>(false);
+
+    const handleApplyPivot = useCallback((newSessions: any[], targetWeekNum: number, replaceExisting: boolean) => {
+        setWeeks((prev: any[]) => {
+            const exists = prev.find(w => w.weekNumber === targetWeekNum);
+            let updatedWeeks: any[];
+            if (exists) {
+                updatedWeeks = prev.map(w => w.weekNumber === targetWeekNum ? { ...w, sessions: newSessions } : w);
+            } else {
+                updatedWeeks = [...prev, { id: generateId(), weekNumber: targetWeekNum, sessions: newSessions }];
+            }
+            return updatedWeeks.sort((a, b) => a.weekNumber - b.weekNumber);
+        });
+        setCurrentWeekNum(targetWeekNum);
+        showToast(`Generated & applied Pivot Week (Week ${targetWeekNum})`);
+    }, [setCurrentWeekNum, setWeeks, showToast]);
 
     // Session clipboard state (internal or controlled via props)
     const [internalClipboard, setInternalClipboard] = useState<any>(null);
@@ -1041,6 +1060,35 @@ export default function ProgramWeeklyView({
                         </div>
                     )}
 
+                    <button
+                        onClick={() => setShowPivotModal(true)}
+                        title="Generate Pivot / Deload Week (50% Stress Index)"
+                        style={{
+                            background: 'rgba(168, 85, 247, 0.12)',
+                            border: '1px solid rgba(168, 85, 247, 0.35)',
+                            color: '#c084fc',
+                            borderRadius: '6px',
+                            padding: '6px 14px',
+                            cursor: 'pointer',
+                            fontSize: '0.8rem',
+                            fontWeight: 600,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 6,
+                            transition: 'all 0.15s ease',
+                        }}
+                        onMouseOver={e => {
+                            e.currentTarget.style.background = 'rgba(168, 85, 247, 0.22)';
+                            e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.6)';
+                        }}
+                        onMouseOut={e => {
+                            e.currentTarget.style.background = 'rgba(168, 85, 247, 0.12)';
+                            e.currentTarget.style.borderColor = 'rgba(168, 85, 247, 0.35)';
+                        }}
+                    >
+                        <Shuffle size={15} /> Pivot Randomizer
+                    </button>
+
                     <button onClick={duplicateWeekToNext} title="Duplicate this week to next" style={{
                         background: 'var(--card-bg)', border: '1px solid var(--card-border)',
                         color: 'var(--secondary-foreground)', borderRadius: '6px', padding: '6px 14px',
@@ -1931,6 +1979,16 @@ export default function ProgramWeeklyView({
                     <span style={{ fontSize: '1rem' }}>✓</span>
                     <span>{toastMessage}</span>
                 </div>
+            )}
+            {showPivotModal && (
+                <PivotRandomizerModal
+                    isOpen={showPivotModal}
+                    onClose={() => setShowPivotModal(false)}
+                    weeks={weeks}
+                    currentWeekNum={currentWeekNum}
+                    exerciseDB={initialExercises}
+                    onApplyPivot={handleApplyPivot}
+                />
             )}
         </div>
     );
