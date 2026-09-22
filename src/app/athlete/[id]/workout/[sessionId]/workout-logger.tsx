@@ -67,7 +67,6 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
     const savingInFlightRef = useRef(false);
     const pendingSaveRef = useRef(false);
     const [warmupDrills, setWarmupDrills] = useState(initialLog?.warmupDrills || sessionWarmupDrills || '');
-    const [activeTabs, setActiveTabs] = useState({});
     const [celebration, setCelebration] = useState<{ sessionName: string } | null>(null);
     const celebratedRef = useRef(false);
     
@@ -736,38 +735,6 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                             </div>
                                         )}
 
-                                        {/* TAB BAR */}
-                                                                        {(() => {
-                                                                            const currentTab = activeTabs[exIndex] || 'actual';
-                                                                            
-                                                                            return (
-                                                                                <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-                                                                                    <button
-                                                                                        onClick={() => setActiveTabs(prev => ({ ...prev, [exIndex]: 'prescribed' }))}
-                                                                                        style={{
-                                                                                            flex: 1, padding: '8px 4px', borderRadius: '8px', border: '1px solid var(--card-border)',
-                                                                                            background: currentTab === 'prescribed' ? 'var(--primary)' : 'var(--card-bg)',
-                                                                                            color: currentTab === 'prescribed' ? '#fff' : 'var(--foreground)',
-                                                                                            cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem', transition: 'all 0.2s'
-                                                                                        }}
-                                                                                    >
-                                                                                        Prescribed
-                                                                                    </button>
-                                                                                    <button
-                                                                                        onClick={() => setActiveTabs(prev => ({ ...prev, [exIndex]: 'actual' }))}
-                                                                                        style={{
-                                                                                            flex: 1, padding: '8px 4px', borderRadius: '8px', border: '1px solid var(--card-border)',
-                                                                                            background: currentTab === 'actual' ? 'var(--primary)' : 'var(--card-bg)',
-                                                                                            color: currentTab === 'actual' ? '#fff' : 'var(--foreground)',
-                                                                                            cursor: 'pointer', fontWeight: 600, fontSize: '0.8rem', transition: 'all 0.2s'
-                                                                                        }}
-                                                                                    >
-                                                                                        Actual
-                                                                                    </button>
-                                                                                </div>
-                                                                            );
-                                                                        })()}
-
                                                                         <div style={{ display: 'flex', alignItems: 'center', padding: '4px 0 8px 0', fontSize: '0.72rem', color: 'var(--secondary-foreground)', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                                                                             <span style={{ width: '20px', textAlign: 'center', fontSize: '0.72rem', color: 'rgba(255, 255, 255, 0.4)' }}>
                                                                                 #
@@ -782,189 +749,166 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                                                         {ex.sets.map((set, sIndex) => {
                                                                             const repsStr = String(set.target.reps);
                                                                             const cleanReps = repsStr.includes('-') ? repsStr.split('-')[0] : repsStr;
-                                                                            const currentTab = activeTabs[exIndex] || 'actual';
                                                                             const planned = sIndex === 0 ? plannedTopSets[ex.name] : null;
                                                                             const isPlannedTopSet = !!(planned && (planned.weight || planned.reps || planned.rpe));
 
                                                                             return (
                                                                                 <div key={sIndex} style={{ display: 'flex', flexDirection: 'column', gap: '3px', padding: '6px 0', borderBottom: '1px solid rgba(255, 255, 255, 0.05)' }}>
-                                                                                    {currentTab === 'prescribed' ? (
-                                                                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                                                            <span style={{ width: '20px', fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255, 255, 255, 0.4)', textAlign: 'center', flexShrink: 0 }}>
-                                                                                                {sIndex + 1}
-                                                                                            </span>
-                                                                                            <div style={{ display: 'flex', flex: 1, gap: '8px' }}>
-                                                                                                <div style={{ flex: 1, padding: '8px', border: '1px solid var(--card-border)', borderRadius: '6px', background: 'var(--card-bg)', textAlign: 'center', color: 'var(--foreground)', fontSize: '0.95rem', fontWeight: 600 }}>
-                                                                                                    {set.target.weight ? `${set.target.weight} ${unit}` : '-'}
-                                                                                                </div>
-                                                                                                <div style={{ flex: 1, padding: '8px', border: '1px solid var(--card-border)', borderRadius: '6px', background: 'var(--card-bg)', textAlign: 'center', color: 'var(--foreground)', fontSize: '0.95rem', fontWeight: 600 }}>
-                                                                                                    {cleanReps || '-'}
-                                                                                                </div>
-                                                                                                <div style={{ flex: 1, padding: '8px', border: '1px solid var(--card-border)', borderRadius: '6px', background: 'var(--card-bg)', textAlign: 'center', color: 'var(--foreground)', fontSize: '0.95rem', fontWeight: 600 }}>
-                                                                                                    {set.target.rpe || '-'}
-                                                                                                </div>
-                                                                                            </div>
-                                                                                            <div style={{ width: '32px' }} />
+                                                                                    {/* Stacked Prescribed Target Header */}
+                                                                                    <div style={{
+                                                                                        display: 'flex',
+                                                                                        alignItems: 'center',
+                                                                                        padding: '0 40px 0 28px',
+                                                                                        gap: '8px',
+                                                                                    }}>
+                                                                                        <div style={{
+                                                                                            flex: 1,
+                                                                                            textAlign: 'center',
+                                                                                            fontSize: '0.72rem',
+                                                                                            fontWeight: isPlannedTopSet && planned?.weight ? 700 : 600,
+                                                                                            color: isPlannedTopSet && planned?.weight ? '#38bdf8' : 'rgba(255, 255, 255, 0.45)',
+                                                                                            letterSpacing: '0.01em',
+                                                                                            whiteSpace: 'nowrap',
+                                                                                            overflow: 'hidden',
+                                                                                            textOverflow: 'ellipsis',
+                                                                                        }}>
+                                                                                            {isPlannedTopSet && planned?.weight
+                                                                                                ? `Plan: ${planned.weight} ${planned.unit || unit}`
+                                                                                                : (set.target.weight ? `Rx: ${set.target.weight} ${unit}` : 'Rx: —')}
                                                                                         </div>
-                                                                                    ) : (
-                                                                                        <>
-                                                                                            {/* Stacked Prescribed Target Header */}
-                                                                                            <div style={{
-                                                                                                display: 'flex',
-                                                                                                alignItems: 'center',
-                                                                                                padding: '0 40px 0 28px',
-                                                                                                gap: '8px',
-                                                                                            }}>
-                                                                                                <div style={{
-                                                                                                    flex: 1,
-                                                                                                    textAlign: 'center',
-                                                                                                    fontSize: '0.72rem',
-                                                                                                    fontWeight: isPlannedTopSet && planned?.weight ? 700 : 600,
-                                                                                                    color: isPlannedTopSet && planned?.weight ? '#38bdf8' : 'rgba(255, 255, 255, 0.45)',
-                                                                                                    letterSpacing: '0.01em',
-                                                                                                    whiteSpace: 'nowrap',
-                                                                                                    overflow: 'hidden',
-                                                                                                    textOverflow: 'ellipsis',
-                                                                                                }}>
-                                                                                                    {isPlannedTopSet && planned?.weight
-                                                                                                        ? `Plan: ${planned.weight} ${planned.unit || unit}`
-                                                                                                        : (set.target.weight ? `Rx: ${set.target.weight} ${unit}` : 'Rx: —')}
-                                                                                                </div>
-                                                                                                <div style={{
-                                                                                                    flex: 1,
-                                                                                                    textAlign: 'center',
-                                                                                                    fontSize: '0.72rem',
-                                                                                                    fontWeight: isPlannedTopSet && planned?.reps ? 700 : 600,
-                                                                                                    color: isPlannedTopSet && planned?.reps ? '#38bdf8' : 'rgba(255, 255, 255, 0.45)',
-                                                                                                    letterSpacing: '0.01em',
-                                                                                                }}>
-                                                                                                    {isPlannedTopSet && planned?.reps
-                                                                                                        ? `Plan: ${planned.reps} reps`
-                                                                                                        : (cleanReps ? `Rx: ${cleanReps}` : 'Rx: —')}
-                                                                                                </div>
-                                                                                                <div style={{
-                                                                                                    flex: 1,
-                                                                                                    textAlign: 'center',
-                                                                                                    fontSize: '0.72rem',
-                                                                                                    fontWeight: isPlannedTopSet && planned?.rpe ? 700 : 600,
-                                                                                                    color: isPlannedTopSet && planned?.rpe ? '#38bdf8' : 'rgba(255, 255, 255, 0.45)',
-                                                                                                    letterSpacing: '0.01em',
-                                                                                                }}>
-                                                                                                    {isPlannedTopSet && planned?.rpe
-                                                                                                        ? `Plan: @ ${planned.rpe}`
-                                                                                                        : (set.target.rpe ? `Rx: @ ${set.target.rpe}` : 'Rx: —')}
-                                                                                                </div>
-                                                                                            </div>
+                                                                                        <div style={{
+                                                                                            flex: 1,
+                                                                                            textAlign: 'center',
+                                                                                            fontSize: '0.72rem',
+                                                                                            fontWeight: isPlannedTopSet && planned?.reps ? 700 : 600,
+                                                                                            color: isPlannedTopSet && planned?.reps ? '#38bdf8' : 'rgba(255, 255, 255, 0.45)',
+                                                                                            letterSpacing: '0.01em',
+                                                                                        }}>
+                                                                                            {isPlannedTopSet && planned?.reps
+                                                                                                ? `Plan: ${planned.reps} reps`
+                                                                                                : (cleanReps ? `Rx: ${cleanReps}` : 'Rx: —')}
+                                                                                        </div>
+                                                                                        <div style={{
+                                                                                            flex: 1,
+                                                                                            textAlign: 'center',
+                                                                                            fontSize: '0.72rem',
+                                                                                            fontWeight: isPlannedTopSet && planned?.rpe ? 700 : 600,
+                                                                                            color: isPlannedTopSet && planned?.rpe ? '#38bdf8' : 'rgba(255, 255, 255, 0.45)',
+                                                                                            letterSpacing: '0.01em',
+                                                                                        }}>
+                                                                                            {isPlannedTopSet && planned?.rpe
+                                                                                                ? `Plan: @ ${planned.rpe}`
+                                                                                                : (set.target.rpe ? `Rx: @ ${set.target.rpe}` : 'Rx: —')}
+                                                                                        </div>
+                                                                                    </div>
 
-                                                                                            {/* Inputs Row */}
-                                                                                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
-                                                                                                <span style={{
-                                                                                                    width: '20px',
-                                                                                                    fontSize: '0.75rem',
-                                                                                                    fontWeight: 700,
-                                                                                                    color: 'rgba(255, 255, 255, 0.4)',
-                                                                                                    textAlign: 'center',
-                                                                                                    flexShrink: 0,
-                                                                                                }}>
-                                                                                                    {sIndex + 1}
-                                                                                                </span>
+                                                                                    {/* Inputs Row */}
+                                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+                                                                                        <span style={{
+                                                                                            width: '20px',
+                                                                                            fontSize: '0.75rem',
+                                                                                            fontWeight: 700,
+                                                                                            color: 'rgba(255, 255, 255, 0.4)',
+                                                                                            textAlign: 'center',
+                                                                                            flexShrink: 0,
+                                                                                        }}>
+                                                                                            {sIndex + 1}
+                                                                                        </span>
 
-                                                                                                <div style={{ display: 'flex', flex: 1, alignItems: 'center', gap: '8px', minWidth: 0 }}>
-                                                                                                    <WeightInput
-                                                                                                        internalValue={set.actual.weight}
-                                                                                                        unit={unit}
-                                                                                                        onChange={(val) => updateSet(exIndex, sIndex, 'weight', val)}
-                                                                                                        placeholder={isPlannedTopSet && planned?.weight ? String(planned.weight) : (set.target.weight ? String(set.target.weight) : '—')}
-                                                                                                        style={{
-                                                                                                            flex: 1,
-                                                                                                            width: '100%',
-                                                                                                            minWidth: 0,
-                                                                                                            padding: '9px 6px',
-                                                                                                            border: '1px solid rgba(255, 255, 255, 0.12)',
-                                                                                                            borderRadius: '10px',
-                                                                                                            background: 'rgba(0, 0, 0, 0.35)',
-                                                                                                            textAlign: 'center',
-                                                                                                            fontSize: '0.98rem',
-                                                                                                            fontWeight: 600,
-                                                                                                            color: '#ffffff',
-                                                                                                            outline: 'none',
-                                                                                                            boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.4)',
-                                                                                                            fontVariantNumeric: 'tabular-nums',
-                                                                                                            transition: 'border-color 0.2s',
-                                                                                                        }}
-                                                                                                    />
-                                                                                                    <input
-                                                                                                        type="number"
-                                                                                                        inputMode="decimal"
-                                                                                                        step="any"
-                                                                                                        value={set.actual.reps}
-                                                                                                        onChange={(e) => updateSet(exIndex, sIndex, 'reps', e.target.value)}
-                                                                                                        placeholder={isPlannedTopSet && planned?.reps ? String(planned.reps) : (cleanReps ? String(cleanReps) : '—')}
-                                                                                                        style={{
-                                                                                                            flex: 1,
-                                                                                                            width: '100%',
-                                                                                                            minWidth: 0,
-                                                                                                            padding: '9px 6px',
-                                                                                                            border: '1px solid rgba(255, 255, 255, 0.12)',
-                                                                                                            borderRadius: '10px',
-                                                                                                            background: 'rgba(0, 0, 0, 0.35)',
-                                                                                                            textAlign: 'center',
-                                                                                                            fontSize: '0.98rem',
-                                                                                                            fontWeight: 600,
-                                                                                                            color: '#ffffff',
-                                                                                                            outline: 'none',
-                                                                                                            boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.4)',
-                                                                                                            fontVariantNumeric: 'tabular-nums',
-                                                                                                            transition: 'border-color 0.2s',
-                                                                                                        }}
-                                                                                                    />
-                                                                                                    <input
-                                                                                                        type="number"
-                                                                                                        inputMode="decimal"
-                                                                                                        step="0.5"
-                                                                                                        value={set.actual.rpe}
-                                                                                                        onChange={(e) => updateSet(exIndex, sIndex, 'rpe', e.target.value)}
-                                                                                                        placeholder={isPlannedTopSet && planned?.rpe ? String(planned.rpe) : (set.target.rpe ? String(set.target.rpe) : '—')}
-                                                                                                        style={{
-                                                                                                            flex: 1,
-                                                                                                            width: '100%',
-                                                                                                            minWidth: 0,
-                                                                                                            padding: '9px 6px',
-                                                                                                            border: '1px solid rgba(255, 255, 255, 0.12)',
-                                                                                                            borderRadius: '10px',
-                                                                                                            background: 'rgba(0, 0, 0, 0.35)',
-                                                                                                            textAlign: 'center',
-                                                                                                            fontSize: '0.98rem',
-                                                                                                            fontWeight: 600,
-                                                                                                            color: '#ffffff',
-                                                                                                            outline: 'none',
-                                                                                                            boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.4)',
-                                                                                                            fontVariantNumeric: 'tabular-nums',
-                                                                                                            transition: 'border-color 0.2s',
-                                                                                                        }}
-                                                                                                    />
-                                                                                                </div>
-                                                                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', width: '32px', flexShrink: 0 }}>
-                                                                                                    <button
-                                                                                                        onClick={() => copyTargetToActual(exIndex, sIndex)}
-                                                                                                        title="Copy Prescribed"
-                                                                                                        style={{ background: 'var(--primary)', color: '#000', border: 'none', borderRadius: '6px', cursor: 'pointer', padding: '3px 0', fontSize: '0.68rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                                                                                    >
-                                                                                                        Rx
-                                                                                                    </button>
-                                                                                                    {sIndex > 0 && (
-                                                                                                        <button
-                                                                                                            onClick={() => copyPreviousSet(exIndex, sIndex)}
-                                                                                                            title="Copy Previous Set"
-                                                                                                            style={{ background: 'rgba(255, 255, 255, 0.08)', color: 'var(--foreground)', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '6px', cursor: 'pointer', padding: '3px 0', fontSize: '0.68rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-                                                                                                        >
-                                                                                                            Prev
-                                                                                                        </button>
-                                                                                                    )}
-                                                                                                </div>
-                                                                                            </div>
-                                                                                        </>
-                                                                                    )}
+                                                                                        <div style={{ display: 'flex', flex: 1, alignItems: 'center', gap: '8px', minWidth: 0 }}>
+                                                                                            <WeightInput
+                                                                                                internalValue={set.actual.weight}
+                                                                                                unit={unit}
+                                                                                                onChange={(val) => updateSet(exIndex, sIndex, 'weight', val)}
+                                                                                                placeholder=""
+                                                                                                style={{
+                                                                                                    flex: 1,
+                                                                                                    width: '100%',
+                                                                                                    minWidth: 0,
+                                                                                                    padding: '9px 6px',
+                                                                                                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                                                                                                    borderRadius: '10px',
+                                                                                                    background: 'rgba(0, 0, 0, 0.35)',
+                                                                                                    textAlign: 'center',
+                                                                                                    fontSize: '0.98rem',
+                                                                                                    fontWeight: 600,
+                                                                                                    color: '#ffffff',
+                                                                                                    outline: 'none',
+                                                                                                    boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.4)',
+                                                                                                    fontVariantNumeric: 'tabular-nums',
+                                                                                                    transition: 'border-color 0.2s',
+                                                                                                }}
+                                                                                            />
+                                                                                            <input
+                                                                                                type="number"
+                                                                                                inputMode="decimal"
+                                                                                                step="any"
+                                                                                                value={set.actual.reps}
+                                                                                                onChange={(e) => updateSet(exIndex, sIndex, 'reps', e.target.value)}
+                                                                                                placeholder=""
+                                                                                                style={{
+                                                                                                    flex: 1,
+                                                                                                    width: '100%',
+                                                                                                    minWidth: 0,
+                                                                                                    padding: '9px 6px',
+                                                                                                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                                                                                                    borderRadius: '10px',
+                                                                                                    background: 'rgba(0, 0, 0, 0.35)',
+                                                                                                    textAlign: 'center',
+                                                                                                    fontSize: '0.98rem',
+                                                                                                    fontWeight: 600,
+                                                                                                    color: '#ffffff',
+                                                                                                    outline: 'none',
+                                                                                                    boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.4)',
+                                                                                                    fontVariantNumeric: 'tabular-nums',
+                                                                                                    transition: 'border-color 0.2s',
+                                                                                                }}
+                                                                                            />
+                                                                                            <input
+                                                                                                type="number"
+                                                                                                inputMode="decimal"
+                                                                                                step="0.5"
+                                                                                                value={set.actual.rpe}
+                                                                                                onChange={(e) => updateSet(exIndex, sIndex, 'rpe', e.target.value)}
+                                                                                                placeholder=""
+                                                                                                style={{
+                                                                                                    flex: 1,
+                                                                                                    width: '100%',
+                                                                                                    minWidth: 0,
+                                                                                                    padding: '9px 6px',
+                                                                                                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                                                                                                    borderRadius: '10px',
+                                                                                                    background: 'rgba(0, 0, 0, 0.35)',
+                                                                                                    textAlign: 'center',
+                                                                                                    fontSize: '0.98rem',
+                                                                                                    fontWeight: 600,
+                                                                                                    color: '#ffffff',
+                                                                                                    outline: 'none',
+                                                                                                    boxShadow: 'inset 0 1px 2px rgba(0,0,0,0.4)',
+                                                                                                    fontVariantNumeric: 'tabular-nums',
+                                                                                                    transition: 'border-color 0.2s',
+                                                                                                }}
+                                                                                            />
+                                                                                        </div>
+                                                                                        <div style={{ display: 'flex', flexDirection: 'column', gap: '3px', width: '32px', flexShrink: 0 }}>
+                                                                                            <button
+                                                                                                onClick={() => copyTargetToActual(exIndex, sIndex)}
+                                                                                                title="Copy Prescribed"
+                                                                                                style={{ background: 'var(--primary)', color: '#000', border: 'none', borderRadius: '6px', cursor: 'pointer', padding: '3px 0', fontSize: '0.68rem', fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                                                            >
+                                                                                                Rx
+                                                                                            </button>
+                                                                                            {sIndex > 0 && (
+                                                                                                <button
+                                                                                                    onClick={() => copyPreviousSet(exIndex, sIndex)}
+                                                                                                    title="Copy Previous Set"
+                                                                                                    style={{ background: 'rgba(255, 255, 255, 0.08)', color: 'var(--foreground)', border: '1px solid rgba(255, 255, 255, 0.12)', borderRadius: '6px', cursor: 'pointer', padding: '3px 0', fontSize: '0.68rem', fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                                                                                                >
+                                                                                                    Prev
+                                                                                                </button>
+                                                                                            )}
+                                                                                        </div>
+                                                                                    </div>
                                                                                 </div>
                                                                             );
                                                                         })}

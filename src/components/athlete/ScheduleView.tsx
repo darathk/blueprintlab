@@ -223,7 +223,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
     const [readySessions, setReadySessions] = useState<Set<string>>(new Set());
     const [readinessPopup, setReadinessPopup] = useState<string | null>(null); // session key of popup
     const [shakeKey, setShakeKey] = useState<string | null>(null); // exercise key to shake
-    const [activeTabs, setActiveTabs] = useState<Record<string, 'previous' | 'prescribed' | 'actual'>>({});
+    const [activeTabs, setActiveTabs] = useState<Record<string, 'previous' | 'actual'>>({});
     const [plannedTopSets, setPlannedTopSets] = useState<Record<string, Record<string, any>>>({});
 
     const fetchPlannedTopSetsForSession = useCallback(async (sKey: string, legacyKey?: string, progId?: string, wn?: number, dn?: number) => {
@@ -1652,19 +1652,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                 >
                                                                                     {prevDateLabel ? `Prev: ${prevDateLabel}` : 'Previous'}
                                                                                 </button>
-                                                                                <button
-                                                                                    onClick={() => setActiveTabs(prev => ({ ...prev, [exKey]: 'prescribed' }))}
-                                                                                    style={{
-                                                                                        flex: 1, padding: '8px 6px', borderRadius: 10, border: 'none',
-                                                                                        background: currentTab === 'prescribed' ? 'linear-gradient(135deg, rgba(125, 135, 210, 0.35) 0%, rgba(168, 85, 247, 0.25) 100%)' : 'transparent',
-                                                                                        color: currentTab === 'prescribed' ? '#ffffff' : 'var(--secondary-foreground)',
-                                                                                        cursor: 'pointer', fontWeight: currentTab === 'prescribed' ? 700 : 500, fontSize: '0.8rem',
-                                                                                        boxShadow: currentTab === 'prescribed' ? '0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15)' : 'none',
-                                                                                        transition: 'all 0.18s ease'
-                                                                                    }}
-                                                                                >
-                                                                                    Prescribed
-                                                                                </button>
+
                                                                                 <button
                                                                                     onClick={() => setActiveTabs(prev => ({ ...prev, [exKey]: 'actual' }))}
                                                                                     style={{
@@ -1746,20 +1734,6 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                         </div>
                                                                                         <div style={{ width: '36px' }} />
                                                                                     </div>
-                                                                                ) : currentTab === 'prescribed' ? (
-                                                                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                                                        <span style={{ width: '20px', fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255, 255, 255, 0.4)', textAlign: 'center', flexShrink: 0 }}>
-                                                                                            {setIdx + 1}
-                                                                                        </span>
-                                                                                        <div style={{ display: 'flex', flex: 1, gap: '8px' }}>
-                                                                                            {(['weight', 'reps', 'rpe'] as const).map(f => (
-                                                                                                <div key={f} style={{ flex: 1, padding: '8px 10px', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', background: 'rgba(255, 255, 255, 0.03)', textAlign: 'center', color: '#ffffff', fontWeight: 600, fontSize: '0.95rem' }}>
-                                                                                                    {target[f] || '-'}
-                                                                                                </div>
-                                                                                            ))}
-                                                                                        </div>
-                                                                                        <div style={{ width: '36px' }} />
-                                                                                    </div>
                                                                                 ) : (
                                                                                     <>
                                                                                         {/* Stacked Prescribed Target Header */}
@@ -1831,7 +1805,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                     value={actual.weight}
                                                                                                     onChange={e => updateSet(sKey, exIdx, setIdx, 'weight', e.target.value, program.id)}
                                                                                                     onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
-                                                                                                    placeholder={isPlannedTopSet && planned?.weight ? String(planned.weight) : (target.weight ? String(target.weight) : '—')}
+                                                                                                    placeholder=""
                                                                                                     style={{
                                                                                                         flex: 1,
                                                                                                         width: '100%',
@@ -1857,7 +1831,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                     value={actual.reps}
                                                                                                     onChange={e => updateSet(sKey, exIdx, setIdx, 'reps', e.target.value, program.id)}
                                                                                                     onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
-                                                                                                    placeholder={isPlannedTopSet && planned?.reps ? String(planned.reps) : (target.reps ? String(target.reps) : '—')}
+                                                                                                    placeholder=""
                                                                                                     style={{
                                                                                                         flex: 1,
                                                                                                         width: '100%',
@@ -1883,7 +1857,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                     value={actual.rpe}
                                                                                                     onChange={e => updateSet(sKey, exIdx, setIdx, 'rpe', e.target.value, program.id)}
                                                                                                     onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
-                                                                                                    placeholder={isPlannedTopSet && planned?.rpe ? String(planned.rpe) : (target.rpe ? String(target.rpe) : '—')}
+                                                                                                    placeholder=""
                                                                                                     style={{
                                                                                                         flex: 1,
                                                                                                         width: '100%',
@@ -3050,19 +3024,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                             >
                                                                                                 {prevDateLabel ? `Prev: ${prevDateLabel}` : 'Previous'}
                                                                                             </button>
-                                                                                            <button
-                                                                                                onClick={() => setActiveTabs(prev => ({ ...prev, [exKey]: 'prescribed' }))}
-                                                                                                style={{
-                                                                                                    flex: 1, padding: '8px 6px', borderRadius: 10, border: 'none',
-                                                                                                    background: currentTab === 'prescribed' ? 'linear-gradient(135deg, rgba(125, 135, 210, 0.35) 0%, rgba(168, 85, 247, 0.25) 100%)' : 'transparent',
-                                                                                                    color: currentTab === 'prescribed' ? '#ffffff' : 'var(--secondary-foreground)',
-                                                                                                    cursor: 'pointer', fontWeight: currentTab === 'prescribed' ? 700 : 500, fontSize: '0.8rem',
-                                                                                                    boxShadow: currentTab === 'prescribed' ? '0 2px 8px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.15)' : 'none',
-                                                                                                    transition: 'all 0.18s ease'
-                                                                                                }}
-                                                                                            >
-                                                                                                Prescribed
-                                                                                            </button>
+
                                                                                             <button
                                                                                                 onClick={() => setActiveTabs(prev => ({ ...prev, [exKey]: 'actual' }))}
                                                                                                 style={{
@@ -3144,20 +3106,6 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                     </div>
                                                                                                     <div style={{ width: '36px' }} />
                                                                                                 </div>
-                                                                                            ) : currentTab === 'prescribed' ? (
-                                                                                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                                                                                    <span style={{ width: '20px', fontSize: '0.75rem', fontWeight: 700, color: 'rgba(255, 255, 255, 0.4)', textAlign: 'center', flexShrink: 0 }}>
-                                                                                                        {setIdx + 1}
-                                                                                                    </span>
-                                                                                                    <div style={{ display: 'flex', flex: 1, gap: '8px' }}>
-                                                                                                        {(['weight', 'reps', 'rpe'] as const).map(f => (
-                                                                                                            <div key={f} style={{ flex: 1, padding: '8px 10px', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '10px', background: 'rgba(255, 255, 255, 0.03)', textAlign: 'center', color: '#ffffff', fontWeight: 600, fontSize: '0.95rem' }}>
-                                                                                                                {target[f] || '-'}
-                                                                                                            </div>
-                                                                                                        ))}
-                                                                                                    </div>
-                                                                                                    <div style={{ width: '36px' }} />
-                                                                                                </div>
                                                                                             ) : (
                                                                                                 <>
                                                                                                     {/* Stacked Prescribed Target Header */}
@@ -3229,7 +3177,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                                 value={actual.weight}
                                                                                                                 onChange={e => updateSet(sKey, exIdx, setIdx, 'weight', e.target.value, program.id)}
                                                                                                                 onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
-                                                                                                                placeholder={isPlannedTopSet && planned?.weight ? String(planned.weight) : (target.weight ? String(target.weight) : '—')}
+                                                                                                                placeholder=""
                                                                                                                 style={{
                                                                                                                     flex: 1,
                                                                                                                     width: '100%',
@@ -3255,7 +3203,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                                 value={actual.reps}
                                                                                                                 onChange={e => updateSet(sKey, exIdx, setIdx, 'reps', e.target.value, program.id)}
                                                                                                                 onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
-                                                                                                                placeholder={isPlannedTopSet && planned?.reps ? String(planned.reps) : (target.reps ? String(target.reps) : '—')}
+                                                                                                                placeholder=""
                                                                                                                 style={{
                                                                                                                     flex: 1,
                                                                                                                     width: '100%',
@@ -3281,7 +3229,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                                                 value={actual.rpe}
                                                                                                                 onChange={e => updateSet(sKey, exIdx, setIdx, 'rpe', e.target.value, program.id)}
                                                                                                                 onFocus={() => { if (!editState[sKey]) initEdit(sKey, exercises, log); }}
-                                                                                                                placeholder={isPlannedTopSet && planned?.rpe ? String(planned.rpe) : (target.rpe ? String(target.rpe) : '—')}
+                                                                                                                placeholder=""
                                                                                                                 style={{
                                                                                                                     flex: 1,
                                                                                                                     width: '100%',
