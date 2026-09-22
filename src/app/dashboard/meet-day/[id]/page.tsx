@@ -5,6 +5,7 @@ import Link from 'next/link';
 import MeetDayClient from './MeetDayClient';
 import MeetAttempts from '@/components/dashboard/MeetAttempts';
 import { getCoachRecord } from '@/lib/auth-cache';
+import { cleanupExpiredMeetData } from '@/lib/date-utils';
 
 export default async function LifterMeetDayPage({
     params,
@@ -46,6 +47,23 @@ export default async function LifterMeetDayPage({
     ]);
 
     if (!athlete) notFound();
+
+    const cleaned = cleanupExpiredMeetData(athlete);
+    if (cleaned) {
+        await prisma.athlete.update({
+            where: { id: athlete.id },
+            data: {
+                nextMeetDate: cleaned.nextMeetDate,
+                nextMeetName: cleaned.nextMeetName,
+                meetAttempts: cleaned.meetAttempts,
+                pastMeets: cleaned.pastMeets,
+            },
+        });
+        athlete.nextMeetDate = cleaned.nextMeetDate;
+        athlete.nextMeetName = cleaned.nextMeetName;
+        athlete.meetAttempts = cleaned.meetAttempts;
+        athlete.pastMeets = cleaned.pastMeets;
+    }
 
     return (
         <div style={{ maxWidth: '900px', margin: '0 auto', padding: '1.5rem 0' }}>

@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { currentUser } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/prisma';
 import { getCoachRecord } from '@/lib/auth-cache';
+import { cleanupExpiredMeetData } from '@/lib/date-utils';
 
 function getDaysOut(dateStr: string | null | undefined): number | null {
     if (!dateStr) return null;
@@ -48,14 +49,53 @@ export default async function MeetDayPage() {
             nextMeetName: true,
             nextMeetDate: true,
             meetAttempts: true,
+            pastMeets: true,
+            weightClass: true,
+            gender: true,
         },
         orderBy: { name: 'asc' },
     });
 
-    // Filter to athletes with meet data
-    const meetAthletes = allAthletes.filter(
-        (a) => a.nextMeetName || a.meetAttempts
-    );
+    // Auto-remove any meet date that has been over for > 1 day
+    const expiredAthletes = allAthletes
+        .map(a => ({ athlete: a, cleaned: cleanupExpiredMeetData(a) }))
+        .filter((item): item is { athlete: typeof item.athlete; cleaned: NonNullable<typeof item.cleaned> } => item.cleaned !== null);
+
+    if (expiredAthletes.length > 0) {
+        await Promise.all(
+            expiredAthletes.map(({ athlete, cleaned }) =>
+                prisma.athlete.update({
+                    where: { id: athlete.id },
+                    data: {
+                        nextMeetDate: cleaned.nextMeetDate,
+                        nextMeetName: cleaned.nextMeetName,
+                        meetAttempts: cleaned.meetAttempts,
+                        pastMeets: cleaned.pastMeets,
+                    },
+                })
+            )
+        );
+
+        for (const { athlete, cleaned } of expiredAthletes) {
+            athlete.nextMeetDate = cleaned.nextMeetDate;
+            athlete.nextMeetName = cleaned.nextMeetName;
+            athlete.meetAttempts = cleaned.meetAttempts;
+            athlete.pastMeets = cleaned.pastMeets;
+        }
+    }
+
+    // Filter to athletes with active meet data or upcoming plans
+    const meetAthletes = allAthletes.filter((a) => {
+        if (a.nextMeetName || a.nextMeetDate) return true;
+        const attempts = a.meetAttempts as any;
+        if (!attempts) return false;
+        return [attempts.squat, attempts.bench, attempts.deadlift].some((lift: any) =>
+            lift && ['attempt1', 'attempt2', 'attempt3'].some((k: string) => {
+                const att = lift[k];
+                return att && ((att.actualKg && parseFloat(att.actualKg) > 0) || (att.planned?.kg && parseFloat(att.planned.kg) > 0));
+            })
+        );
+    });
 
     // Sort by proximity to meet date (closest first), nulls at end
     meetAthletes.sort((a, b) => {

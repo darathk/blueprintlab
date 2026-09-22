@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { calculateDots } from '@/lib/calculators';
+import { isMeetOverByOneDay, cleanupExpiredMeetData } from '@/lib/date-utils';
 import { useUser } from '@clerk/nextjs';
 import { ChevronDown, ChevronUp, Camera, MessageSquare, X } from 'lucide-react';
 import ChatInterface from '@/components/chat/ChatInterface';
@@ -262,6 +263,102 @@ export default function MeetAttempts({
         federation: data.meetDay?.federation || athlete?.federation || 'IPF',
     }));
 
+    // Auto-remove notice state when a meet date is over for > 1 day
+    const [autoPrunedNotice, setAutoPrunedNotice] = useState<{
+        originalDate: string;
+        originalName?: string;
+        wasArchived: boolean;
+    } | null>(null);
+    const hasCheckedAutoPruneRef = useRef(false);
+
+    useEffect(() => {
+        if (hasCheckedAutoPruneRef.current) return;
+        hasCheckedAutoPruneRef.current = true;
+
+        const rawDate = meetMeta.meetDate || athlete?.nextMeetDate;
+        if (rawDate && isMeetOverByOneDay(rawDate)) {
+            const cleaned = cleanupExpiredMeetData({
+                id: athlete.id,
+                name: athlete.name,
+                nextMeetDate: athlete.nextMeetDate,
+                nextMeetName: athlete.nextMeetName,
+                meetAttempts: athlete.meetAttempts,
+                pastMeets: athlete.pastMeets,
+                weightClass: athlete.weightClass,
+                gender: athlete.gender,
+            });
+
+            if (cleaned) {
+                setMeetMeta(prev => ({ ...prev, meetDate: '', meetName: '' }));
+                setData(prev => ({
+                    ...prev,
+                    meetDay: {
+                        bodyweight: meetMeta.bodyweight,
+                        federation: meetMeta.federation,
+                        ...(prev.meetDay || {}),
+                        meetDate: '',
+                        meetName: '',
+                    }
+                }));
+
+                setAutoPrunedNotice({
+                    originalDate: cleaned.originalMeetDate,
+                    originalName: cleaned.originalMeetName,
+                    wasArchived: cleaned.wasArchived,
+                });
+
+                fetch('/api/athletes', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: athlete.id,
+                        nextMeetDate: null,
+                        nextMeetName: null,
+                        meetAttempts: cleaned.meetAttempts,
+                        pastMeets: cleaned.pastMeets,
+                    }),
+                }).catch(err => console.error('Failed to auto-clean expired meet date:', err));
+            }
+        }
+    }, [athlete, meetMeta.meetDate, meetMeta.bodyweight, meetMeta.federation]);
+
+    const handleRestoreMeetDate = async () => {
+        if (!autoPrunedNotice) return;
+        const restoredDate = autoPrunedNotice.originalDate;
+        const restoredName = autoPrunedNotice.originalName || '';
+
+        setMeetMeta(prev => ({ ...prev, meetDate: restoredDate, meetName: restoredName }));
+        setData(prev => ({
+            ...prev,
+            meetDay: {
+                bodyweight: meetMeta.bodyweight,
+                federation: meetMeta.federation,
+                ...(prev.meetDay || {}),
+                meetDate: restoredDate,
+                meetName: restoredName,
+            }
+        }));
+        setAutoPrunedNotice(null);
+
+        await fetch('/api/athletes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                id: athlete.id,
+                nextMeetDate: restoredDate,
+                nextMeetName: restoredName || null,
+                meetAttempts: {
+                    ...data,
+                    meetDay: {
+                        ...meetMeta,
+                        meetDate: restoredDate,
+                        meetName: restoredName,
+                    }
+                }
+            }),
+        });
+    };
+
     const [activeTab, setActiveTab] = useState<'attempts' | 'scout'>('attempts');
     const [exporting, setExporting] = useState(false);
     const [exportingLift, setExportingLift] = useState<LiftKey | null>(null);
@@ -372,14 +469,20 @@ export default function MeetAttempts({
     const bwKg = parseFloat(meetMeta.bodyweight) || athlete.weightClass || 0;
 
     // Save to backend
-    const save = useCallback(async (newData: MeetData) => {
+    const save = useCallback(async (newData: MeetData, customMeta?: MeetDayMeta) => {
         setSaving(true);
         setSaved(false);
-        const payload = { ...newData, meetDay: meetMeta };
+        const metaToSave = customMeta || meetMeta;
+        const payload = { ...newData, meetDay: metaToSave };
         await fetch('/api/athletes', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ id: athlete.id, meetAttempts: payload }),
+            body: JSON.stringify({
+                id: athlete.id,
+                meetAttempts: payload,
+                nextMeetDate: metaToSave.meetDate || null,
+                nextMeetName: metaToSave.meetName || null,
+            }),
         });
         setSaving(false);
         setSaved(true);
@@ -452,7 +555,7 @@ export default function MeetAttempts({
     };
 
     const handleBlur = () => {
-        if (!isReadOnly) save(data);
+        if (!isReadOnly) save(data, meetMeta);
     };
 
     const handleMetaChange = (field: keyof MeetDayMeta, value: string) => {
@@ -460,7 +563,7 @@ export default function MeetAttempts({
     };
 
     const handleMetaBlur = () => {
-        if (!isReadOnly) save(data);
+        if (!isReadOnly) save(data, meetMeta);
     };
 
     // Projected totals for 9/9 scenarios (incorporating live made attempts)
@@ -733,6 +836,68 @@ export default function MeetAttempts({
 
             <div id="meet-attempts-content" style={{ display: activeTab === 'attempts' ? 'block' : 'none' }}>
 
+            {/* Auto-Pruned Meet Date Notice */}
+            {autoPrunedNotice && (
+                <div style={{
+                    background: 'rgba(125, 135, 210, 0.08)',
+                    border: '1px solid rgba(125, 135, 210, 0.25)',
+                    borderRadius: 14,
+                    padding: '0.85rem 1.15rem',
+                    marginBottom: '1rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    flexWrap: 'wrap',
+                    gap: '0.75rem',
+                }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                        <span style={{ fontSize: '1.25rem' }}>🏁</span>
+                        <div>
+                            <div style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--foreground)' }}>
+                                Meet Date ({autoPrunedNotice.originalDate}) Auto-Removed
+                            </div>
+                            <div style={{ fontSize: '0.75rem', color: 'var(--secondary-foreground)' }}>
+                                Concluded over 24h ago. {autoPrunedNotice.wasArchived ? 'Results archived to Meet History.' : 'Cleared for your next upcoming meet.'}
+                            </div>
+                        </div>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                        <button
+                            type="button"
+                            onClick={handleRestoreMeetDate}
+                            className="chat-press"
+                            style={{
+                                fontSize: '0.75rem',
+                                fontWeight: 600,
+                                padding: '4px 10px',
+                                borderRadius: 8,
+                                background: 'rgba(255,255,255,0.08)',
+                                border: '1px solid rgba(255,255,255,0.15)',
+                                color: 'var(--foreground)',
+                                cursor: 'pointer',
+                            }}
+                        >
+                            Restore Date
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setAutoPrunedNotice(null)}
+                            style={{
+                                background: 'none',
+                                border: 'none',
+                                color: 'var(--secondary-foreground)',
+                                cursor: 'pointer',
+                                fontSize: '1rem',
+                                lineHeight: 1,
+                                padding: '4px',
+                            }}
+                        >
+                            ✕
+                        </button>
+                    </div>
+                </div>
+            )}
+
             {/* Meet Info Fields */}
             {(meetDayMode || true) && (
                 <div style={{
@@ -758,7 +923,30 @@ export default function MeetAttempts({
                             />
                         </div>
                         <div>
-                            <label style={{ fontSize: 10, color: 'var(--secondary-foreground)', display: 'block', marginBottom: 4 }}>Meet Date</label>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+                                <label style={{ fontSize: 10, color: 'var(--secondary-foreground)' }}>Meet Date</label>
+                                {meetMeta.meetDate && !isReadOnly && (
+                                    <button
+                                        type="button"
+                                        onClick={() => {
+                                            handleMetaChange('meetDate', '');
+                                            save(data, { ...meetMeta, meetDate: '' });
+                                        }}
+                                        style={{
+                                            background: 'none',
+                                            border: 'none',
+                                            color: 'var(--secondary-foreground)',
+                                            fontSize: 10,
+                                            cursor: 'pointer',
+                                            padding: 0,
+                                            opacity: 0.7,
+                                        }}
+                                        title="Clear meet date"
+                                    >
+                                        Clear
+                                    </button>
+                                )}
+                            </div>
                             <div style={{ ...metaInputStyle, padding: 0, overflow: 'hidden', position: 'relative', height: '38px' }}>
                                 <input
                                     type="date"

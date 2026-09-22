@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
 import MeetAttempts from '@/components/dashboard/MeetAttempts';
+import { cleanupExpiredMeetData } from '@/lib/date-utils';
 
 export default async function AthleteMeetPage({ params }: { params: Promise<{ id: string }> }) {
     const { id } = await params;
@@ -10,6 +11,23 @@ export default async function AthleteMeetPage({ params }: { params: Promise<{ id
     });
 
     if (!athlete) return <div style={{ padding: '2rem' }}>Athlete not found.</div>;
+
+    const cleaned = cleanupExpiredMeetData(athlete);
+    if (cleaned) {
+        await prisma.athlete.update({
+            where: { id: athlete.id },
+            data: {
+                nextMeetDate: cleaned.nextMeetDate,
+                nextMeetName: cleaned.nextMeetName,
+                meetAttempts: cleaned.meetAttempts,
+                pastMeets: cleaned.pastMeets,
+            },
+        });
+        athlete.nextMeetDate = cleaned.nextMeetDate;
+        athlete.nextMeetName = cleaned.nextMeetName;
+        athlete.meetAttempts = cleaned.meetAttempts;
+        athlete.pastMeets = cleaned.pastMeets;
+    }
 
     return (
         <div style={{ minHeight: '100vh', padding: '1.25rem 1rem', maxWidth: 560, margin: '0 auto', paddingBottom: 120 }}>

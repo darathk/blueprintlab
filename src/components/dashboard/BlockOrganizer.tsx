@@ -3,6 +3,7 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { GripVertical, Calendar, Target, Edit3, Sparkles, Compass, Trophy, CheckCircle2, ChevronDown, ChevronRight, RotateCcw, ArrowRight, Zap } from 'lucide-react';
+import { isMeetOverByOneDay } from '@/lib/date-utils';
 
 export default function PeriodizationPlanner({ athlete, onUpdate }: { athlete: any; onUpdate?: (data: any) => void }) {
     const router = useRouter();
@@ -12,9 +13,10 @@ export default function PeriodizationPlanner({ athlete, onUpdate }: { athlete: a
     const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
     // Merged Competition Tracker State
-    const [meetName, setMeetName] = useState(athlete?.nextMeetName || '');
+    const isExpired = athlete?.nextMeetDate && isMeetOverByOneDay(athlete.nextMeetDate);
+    const [meetName, setMeetName] = useState(isExpired ? '' : (athlete?.nextMeetName || ''));
     const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
-    const [meetDate, setMeetDate] = useState(athlete?.nextMeetDate || '');
+    const [meetDate, setMeetDate] = useState(isExpired ? '' : (athlete?.nextMeetDate || ''));
 
     // Archived / Completed blocks history
     const [archivedBlocks, setArchivedBlocks] = useState<any[]>([]);
@@ -24,8 +26,9 @@ export default function PeriodizationPlanner({ athlete, onUpdate }: { athlete: a
     // Sync if athlete prop updates
     useEffect(() => {
         if (athlete) {
-            setMeetName(athlete.nextMeetName || '');
-            setMeetDate(athlete.nextMeetDate || '');
+            const expired = athlete.nextMeetDate && isMeetOverByOneDay(athlete.nextMeetDate);
+            setMeetName(expired ? '' : (athlete.nextMeetName || ''));
+            setMeetDate(expired ? '' : (athlete.nextMeetDate || ''));
             setBlocks(athlete.periodization || []);
             hasAutoPrunedRef.current = false;
         }
