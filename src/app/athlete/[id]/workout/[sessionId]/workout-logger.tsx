@@ -59,6 +59,33 @@ function formatSetsSummary(sets) {
     return parts.join(', ');
 }
 
+function linkify(text: string | null | undefined) {
+    if (!text) return '';
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    return text.split(urlRegex).map((part, i) => {
+        if (part.match(urlRegex)) {
+            return (
+                <a
+                    key={i}
+                    href={part}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                        color: 'var(--primary)',
+                        textDecoration: 'underline',
+                        wordBreak: 'break-all',
+                        overflowWrap: 'anywhere',
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    {part}
+                </a>
+            );
+        }
+        return part;
+    });
+}
+
 export default function WorkoutLogger({ athleteId, coachId = '', programId, sessionId, weekNum = 1, dayNum = 1, blockName = 'Block', exercises, sessionWarmupDrills = '', initialLog, weekSessions = [], weekStartDate = '', scheduledDate = '', programName = '' }) {
     const router = useRouter();
     const [isSaving, setIsSaving] = useState(false);
@@ -714,6 +741,9 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                                 display: 'flex',
                                                 flexDirection: 'column',
                                                 gap: '4px',
+                                                overflow: 'hidden',
+                                                wordBreak: 'break-word',
+                                                overflowWrap: 'anywhere',
                                             }}>
                                                 <div style={{
                                                     fontSize: '0.68rem',
@@ -729,8 +759,10 @@ export default function WorkoutLogger({ athleteId, coachId = '', programId, sess
                                                     color: 'var(--foreground)',
                                                     lineHeight: 1.4,
                                                     whiteSpace: 'pre-wrap',
+                                                    wordBreak: 'break-word',
+                                                    overflowWrap: 'anywhere',
                                                 }}>
-                                                    {ex.coachNotes || exercises?.[exIndex]?.notes}
+                                                    {linkify(ex.coachNotes || exercises?.[exIndex]?.notes)}
                                                 </div>
                                             </div>
                                         )}

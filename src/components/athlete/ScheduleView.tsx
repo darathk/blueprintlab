@@ -72,7 +72,12 @@ function linkify(text: string | null | undefined) {
                     href={part}
                     target="_blank"
                     rel="noopener noreferrer"
-                    style={{ color: 'var(--primary)', textDecoration: 'underline' }}
+                    style={{
+                        color: 'var(--primary)',
+                        textDecoration: 'underline',
+                        wordBreak: 'break-all',
+                        overflowWrap: 'anywhere',
+                    }}
                     onClick={(e) => e.stopPropagation()}
                 >
                     {part}
@@ -1297,7 +1302,10 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                         background: 'linear-gradient(135deg, rgba(125, 135, 210, 0.12) 0%, rgba(168, 85, 247, 0.06) 100%)',
                                                         border: '1px solid rgba(125, 135, 210, 0.3)',
                                                         borderRadius: 16,
-                                                        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
+                                                        boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+                                                        overflow: 'hidden',
+                                                        wordBreak: 'break-word',
+                                                        overflowWrap: 'anywhere',
                                                     }}>
                                                         <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#c4b5fd', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                             <div style={{ width: 26, height: 26, borderRadius: 8, background: 'rgba(125, 135, 210, 0.2)', border: '1px solid rgba(125, 135, 210, 0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
@@ -1305,7 +1313,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                             </div>
                                                             Warm-Up & Prep Drills
                                                         </div>
-                                                        <div style={{ fontSize: '0.88rem', color: 'var(--foreground)', whiteSpace: 'pre-wrap', lineHeight: '1.45', paddingLeft: 34 }}>
+                                                        <div style={{ fontSize: '0.88rem', color: 'var(--foreground)', whiteSpace: 'pre-wrap', lineHeight: '1.45', paddingLeft: 34, wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                                                             {linkify(session.warmupDrills || log?.warmupDrills)}
                                                         </div>
                                                     </div>
@@ -1589,11 +1597,14 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                             color: 'var(--foreground)',
                                                                             lineHeight: 1.4,
                                                                             boxShadow: '0 2px 10px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+                                                                            overflow: 'hidden',
+                                                                            wordBreak: 'break-word',
+                                                                            overflowWrap: 'anywhere',
                                                                         }}>
                                                                             <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#818cf8', marginBottom: 4 }}>
                                                                                 Coach Notes
                                                                             </div>
-                                                                            <div>{linkify(ex?.notes || exerciseData?.coachNotes)}</div>
+                                                                            <div style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{linkify(ex?.notes || exerciseData?.coachNotes)}</div>
                                                                         </div>
                                                                     )}
 
@@ -2668,7 +2679,10 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                     background: 'linear-gradient(135deg, rgba(125, 135, 210, 0.12) 0%, rgba(168, 85, 247, 0.06) 100%)',
                                                                     border: '1px solid rgba(125, 135, 210, 0.3)',
                                                                     borderRadius: 16,
-                                                                    boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08)'
+                                                                    boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+                                                                    overflow: 'hidden',
+                                                                    wordBreak: 'break-word',
+                                                                    overflowWrap: 'anywhere',
                                                                 }}>
                                                                     <div style={{ fontSize: '0.82rem', fontWeight: 700, color: '#c4b5fd', marginBottom: '6px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                                                                         <div style={{ width: 26, height: 26, borderRadius: 8, background: 'rgba(125, 135, 210, 0.2)', border: '1px solid rgba(125, 135, 210, 0.35)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--primary)' }}>
@@ -2676,7 +2690,7 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                         </div>
                                                                         Warm-Up & Prep Drills
                                                                     </div>
-                                                                    <div style={{ fontSize: '0.88rem', color: 'var(--foreground)', whiteSpace: 'pre-wrap', lineHeight: '1.45', paddingLeft: 34 }}>
+                                                                    <div style={{ fontSize: '0.88rem', color: 'var(--foreground)', whiteSpace: 'pre-wrap', lineHeight: '1.45', paddingLeft: 34, wordBreak: 'break-word', overflowWrap: 'anywhere' }}>
                                                                         {linkify(session.warmupDrills || log?.warmupDrills)}
                                                                     </div>
                                                                 </div>
@@ -2962,11 +2976,14 @@ export default function ScheduleView({ programs, athleteId, coachId, logs, isCoa
                                                                                         color: 'var(--foreground)',
                                                                                         lineHeight: 1.4,
                                                                                         boxShadow: '0 2px 10px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255, 255, 255, 0.05)',
+                                                                                        overflow: 'hidden',
+                                                                                        wordBreak: 'break-word',
+                                                                                        overflowWrap: 'anywhere',
                                                                                     }}>
                                                                                         <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.05em', color: '#818cf8', marginBottom: 4 }}>
                                                                                             Coach Notes
                                                                                         </div>
-                                                                                        <div>{linkify(ex?.notes || exerciseData?.coachNotes)}</div>
+                                                                                        <div style={{ wordBreak: 'break-word', overflowWrap: 'anywhere' }}>{linkify(ex?.notes || exerciseData?.coachNotes)}</div>
                                                                                     </div>
                                                                                 )}
 

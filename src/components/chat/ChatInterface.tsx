@@ -187,7 +187,7 @@ function highlightMatch(text: string, searchText?: string) {
             <>
                 {parts.map((part, i) =>
                     isUrl(part)
-                        ? <a key={i} href={part} target="_blank" rel="noopener noreferrer" style={{ color: '#22d3ee', textDecoration: 'underline' }}>{part}</a>
+                        ? <a key={i} href={part} target="_blank" rel="noopener noreferrer" style={{ color: '#22d3ee', textDecoration: 'underline', wordBreak: 'break-all', overflowWrap: 'anywhere' }}>{part}</a>
                         : part
                 )}
             </>
@@ -200,7 +200,7 @@ function highlightMatch(text: string, searchText?: string) {
         <>
             {parts.map((part, i) => {
                 if (isUrl(part)) {
-                    return <a key={i} href={part} target="_blank" rel="noopener noreferrer" style={{ color: '#22d3ee', textDecoration: 'underline' }}>{part}</a>;
+                    return <a key={i} href={part} target="_blank" rel="noopener noreferrer" style={{ color: '#22d3ee', textDecoration: 'underline', wordBreak: 'break-all', overflowWrap: 'anywhere' }}>{part}</a>;
                 }
                 const searchParts = part.split(new RegExp(`(${escapedSearch})`, 'gi'));
                 return searchParts.map((sp, j) =>
