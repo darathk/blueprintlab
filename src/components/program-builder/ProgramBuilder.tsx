@@ -282,7 +282,13 @@ const BuilderExerciseCard = ({ exercise, onUpdate, onRemove, onDragStart, onDrag
                             padding: '2px 6px',
                             borderRadius: '4px',
                             marginLeft: '6px',
+                            whiteSpace: 'nowrap',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px',
+                            flexShrink: 0,
                         }}>
+                            <RefreshCw size={10} style={{ animation: 'spin 2s linear infinite' }} />
                             PICK IN LIBRARY TO REPLACE
                         </span>
                     )}

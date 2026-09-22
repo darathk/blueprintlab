@@ -1761,6 +1761,12 @@ export default function ProgramWeeklyView({
                                         selectedExerciseForReplacement.dayNum === dayNum &&
                                         (selectedExerciseForReplacement.exerciseId === ex.id || selectedExerciseForReplacement.exerciseIndex === exIdx));
 
+                                    const isLightCat = catColor === '#EAB308' || catColor === '#F472B6';
+                                    const textColor = isLightCat ? '#0f172a' : '#ffffff';
+                                    const buttonBg = isLightCat ? 'rgba(0, 0, 0, 0.14)' : 'rgba(0, 0, 0, 0.28)';
+                                    const buttonHoverBg = isLightCat ? 'rgba(0, 0, 0, 0.25)' : 'rgba(0, 0, 0, 0.5)';
+                                    const buttonColor = isLightCat ? '#0f172a' : '#ffffff';
+
                                     return (
                                         <div
                                             key={ex.id}
@@ -1786,68 +1792,89 @@ export default function ProgramWeeklyView({
                                                 transition: 'border 0.15s, box-shadow 0.15s, transform 0.1s',
                                             }}
                                         >
-                                            {/* Exercise Name Banner - Full text with word wrap & direct action buttons */}
+                                            {/* Replace Mode Indicator Strip (Full Width) */}
+                                            {isSelectedForReplacement && (
+                                                <div
+                                                    style={{
+                                                        background: 'linear-gradient(90deg, #06b6d4 0%, #0891b2 100%)',
+                                                        color: '#080c14',
+                                                        padding: '4px 8px',
+                                                        fontSize: '0.62rem',
+                                                        fontWeight: 800,
+                                                        letterSpacing: '0.04em',
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        justifyContent: 'space-between',
+                                                        gap: '4px',
+                                                        borderBottom: '1px solid rgba(0,0,0,0.15)',
+                                                    }}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
+                                                    <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                        <RefreshCw size={10} style={{ animation: 'spin 2s linear infinite', flexShrink: 0 }} />
+                                                        <span>PICK IN LIBRARY TO REPLACE</span>
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => onSelectExerciseForReplacement?.(null)}
+                                                        title="Cancel replacement mode"
+                                                        style={{
+                                                            background: 'rgba(0,0,0,0.18)',
+                                                            border: 'none',
+                                                            color: '#080c14',
+                                                            borderRadius: '3px',
+                                                            cursor: 'pointer',
+                                                            fontWeight: 900,
+                                                            fontSize: '0.75rem',
+                                                            padding: '0 4px',
+                                                            lineHeight: 1.2,
+                                                            flexShrink: 0,
+                                                        }}
+                                                    >
+                                                        ✕
+                                                    </button>
+                                                </div>
+                                            )}
+
+                                            {/* Exercise Name Banner */}
                                             <div
-                                                onClick={(e) => {
-                                                    e.stopPropagation();
-                                                    onSelectDay(dayNum);
-                                                    if (isSelectedForReplacement) {
-                                                        onSelectExerciseForReplacement?.(null);
-                                                    } else {
-                                                        onSelectExerciseForReplacement?.({
-                                                            weekNum: currentWeekNum,
-                                                            dayNum,
-                                                            exerciseIndex: exIdx,
-                                                            exerciseId: ex.id,
-                                                            exerciseName: ex.name,
-                                                        });
-                                                    }
-                                                }}
                                                 style={{
                                                     background: catColor,
-                                                    padding: '8px 10px',
-                                                    display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start',
-                                                    cursor: 'pointer', gap: '6px',
-                                                    borderBottom: isSelectedForReplacement ? '1px solid rgba(6, 182, 212, 0.4)' : 'none',
-                                                }}
-                                                title={isSelectedForReplacement ? "Click to cancel replacement" : "Click to select and replace with an exercise from Library"}
-                                            >
-                                                <div style={{
-                                                    fontWeight: 700,
-                                                    fontSize: '0.82rem',
-                                                    color: '#ffffff',
-                                                    textShadow: '0 1px 2px rgba(0,0,0,0.4)',
-                                                    lineHeight: 1.25,
-                                                    wordBreak: 'break-word',
-                                                    whiteSpace: 'normal',
-                                                    flex: 1,
+                                                    padding: '6px 8px',
                                                     display: 'flex',
-                                                    flexDirection: 'column',
-                                                    gap: '4px',
-                                                }}>
-                                                    <span>{ex.name}</span>
-                                                    {isSelectedForReplacement && (
-                                                        <span style={{
-                                                            alignSelf: 'flex-start',
-                                                            background: '#06b6d4',
-                                                            color: '#000',
-                                                            fontSize: '0.62rem',
-                                                            fontWeight: 800,
-                                                            padding: '2px 6px',
-                                                            borderRadius: '4px',
-                                                            display: 'inline-flex',
-                                                            alignItems: 'center',
-                                                            gap: '3px',
-                                                            letterSpacing: '0.04em',
-                                                            boxShadow: '0 1px 3px rgba(0,0,0,0.3)',
-                                                        }}>
-                                                            <RefreshCw size={10} style={{ animation: 'spin 2s linear infinite' }} />
-                                                            PICK IN LIBRARY TO REPLACE
-                                                        </span>
-                                                    )}
+                                                    justifyContent: 'space-between',
+                                                    alignItems: 'center',
+                                                    gap: '6px',
+                                                    cursor: 'grab',
+                                                }}
+                                            >
+                                                <div
+                                                    style={{
+                                                        fontWeight: 700,
+                                                        fontSize: '0.8rem',
+                                                        color: textColor,
+                                                        textShadow: isLightCat ? 'none' : '0 1px 2px rgba(0,0,0,0.6)',
+                                                        lineHeight: 1.25,
+                                                        wordBreak: 'normal',
+                                                        overflowWrap: 'break-word',
+                                                        flex: 1,
+                                                        minWidth: 0,
+                                                    }}
+                                                    title={ex.name}
+                                                >
+                                                    {ex.name}
                                                 </div>
-                                                <div style={{ display: 'flex', alignItems: 'center', gap: '3px', flexShrink: 0 }} onClick={e => e.stopPropagation()}>
+                                                <div
+                                                    style={{
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '3px',
+                                                        flexShrink: 0,
+                                                    }}
+                                                    onClick={(e) => e.stopPropagation()}
+                                                >
                                                     <button
+                                                        type="button"
                                                         onClick={() => {
                                                             if (isSelectedForReplacement) {
                                                                 onSelectExerciseForReplacement?.(null);
@@ -1862,56 +1889,75 @@ export default function ProgramWeeklyView({
                                                                 });
                                                             }
                                                         }}
-                                                        title={isSelectedForReplacement ? "Cancel Replacement" : "Select to Replace with an exercise from Library"}
+                                                        title={isSelectedForReplacement ? "Cancel replacement" : `Swap "${ex.name}" with exercise from Library`}
                                                         style={{
-                                                            background: isSelectedForReplacement ? '#06b6d4' : 'rgba(0,0,0,0.25)',
-                                                            border: 'none',
-                                                            color: isSelectedForReplacement ? '#000' : '#fff',
+                                                            background: isSelectedForReplacement ? '#06b6d4' : buttonBg,
+                                                            border: isSelectedForReplacement ? '1px solid #ffffff' : 'none',
+                                                            color: isSelectedForReplacement ? '#000000' : buttonColor,
                                                             cursor: 'pointer',
-                                                            padding: '4px 6px',
+                                                            width: '22px',
+                                                            height: '22px',
+                                                            padding: 0,
                                                             borderRadius: '4px',
                                                             display: 'flex',
                                                             alignItems: 'center',
-                                                            gap: '3px',
+                                                            justifyContent: 'center',
                                                             transition: 'all 0.15s',
                                                         }}
                                                         onMouseOver={e => {
-                                                            if (!isSelectedForReplacement) e.currentTarget.style.background = 'rgba(6, 182, 212, 0.4)';
+                                                            if (!isSelectedForReplacement) e.currentTarget.style.background = 'rgba(6, 182, 212, 0.6)';
                                                         }}
                                                         onMouseOut={e => {
-                                                            if (!isSelectedForReplacement) e.currentTarget.style.background = 'rgba(0,0,0,0.25)';
+                                                            if (!isSelectedForReplacement) e.currentTarget.style.background = buttonBg;
                                                         }}
                                                     >
-                                                        <ArrowLeftRight size={12} />
-                                                        {isSelectedForReplacement && <span style={{ fontSize: '0.65rem', fontWeight: 800 }}>Cancel</span>}
+                                                        <ArrowLeftRight size={11} />
                                                     </button>
                                                     <button
+                                                        type="button"
                                                         onClick={() => duplicateExercise(dayNum, exIdx)}
-                                                        title="Duplicate Exercise"
+                                                        title={`Duplicate ${ex.name}`}
                                                         style={{
-                                                            background: 'rgba(0,0,0,0.25)', border: 'none', color: '#fff',
-                                                            cursor: 'pointer', padding: '4px 6px', borderRadius: '4px',
-                                                            display: 'flex', alignItems: 'center',
+                                                            background: buttonBg,
+                                                            border: 'none',
+                                                            color: buttonColor,
+                                                            cursor: 'pointer',
+                                                            width: '22px',
+                                                            height: '22px',
+                                                            padding: 0,
+                                                            borderRadius: '4px',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
                                                             transition: 'background 0.15s',
                                                         }}
-                                                        onMouseOver={e => e.currentTarget.style.background = 'rgba(0,0,0,0.5)'}
-                                                        onMouseOut={e => e.currentTarget.style.background = 'rgba(0,0,0,0.25)'}
+                                                        onMouseOver={e => e.currentTarget.style.background = buttonHoverBg}
+                                                        onMouseOut={e => e.currentTarget.style.background = buttonBg}
                                                     >
-                                                        <Copy size={12} />
+                                                        <Copy size={11} />
                                                     </button>
                                                     <button
+                                                        type="button"
                                                         onClick={() => removeExercise(dayNum, ex.id || exIdx)}
-                                                        title="Delete Exercise"
+                                                        title={`Delete ${ex.name}`}
                                                         style={{
-                                                            background: 'rgba(0,0,0,0.25)', border: 'none', color: '#fff',
-                                                            cursor: 'pointer', padding: '4px 6px', borderRadius: '4px',
-                                                            display: 'flex', alignItems: 'center',
+                                                            background: buttonBg,
+                                                            border: 'none',
+                                                            color: buttonColor,
+                                                            cursor: 'pointer',
+                                                            width: '22px',
+                                                            height: '22px',
+                                                            padding: 0,
+                                                            borderRadius: '4px',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
                                                             transition: 'background 0.15s',
                                                         }}
                                                         onMouseOver={e => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.85)'}
-                                                        onMouseOut={e => e.currentTarget.style.background = 'rgba(0,0,0,0.25)'}
+                                                        onMouseOut={e => e.currentTarget.style.background = buttonBg}
                                                     >
-                                                        <Trash2 size={12} />
+                                                        <Trash2 size={11} />
                                                     </button>
                                                 </div>
                                             </div>
