@@ -3886,7 +3886,7 @@ export default function ProgramBuilder({
                 }}>
                     <div style={{
                         background: 'var(--background)', borderRadius: 'var(--radius)', border: '1px solid var(--card-border)',
-                        width: '100%', maxWidth: '800px', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column',
+                        width: '100%', maxWidth: '920px', maxHeight: '90vh', overflow: 'hidden', display: 'flex', flexDirection: 'column',
                         boxShadow: '0 10px 40px rgba(0,0,0,0.5)'
                     }}>
                         <div style={{
@@ -3907,7 +3907,12 @@ export default function ProgramBuilder({
                                     periodization: athleteMeetData?.periodization,
                                     nextMeetName: athleteMeetData?.nextMeetName, 
                                     nextMeetDate: athleteMeetData?.nextMeetDate 
-                                }} 
+                                }}
+                                onUpdate={(data) => {
+                                    if (athleteMeetData) {
+                                        Object.assign(athleteMeetData, data);
+                                    }
+                                }}
                             />
                         </div>
                     </div>

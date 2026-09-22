@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import { GripVertical, Calendar, Target, Edit3, Sparkles } from 'lucide-react';
+import { GripVertical, Calendar, Target, Edit3, Sparkles, Compass, Trophy, CheckCircle2, ChevronDown, ChevronRight, RotateCcw, ArrowRight, Zap } from 'lucide-react';
 
-export default function PeriodizationPlanner({ athlete }) {
+export default function PeriodizationPlanner({ athlete, onUpdate }: { athlete: any; onUpdate?: (data: any) => void }) {
     const router = useRouter();
     const [blocks, setBlocks] = useState(athlete?.periodization || []);
     const [isEditing, setIsEditing] = useState(false);
@@ -16,19 +16,25 @@ export default function PeriodizationPlanner({ athlete }) {
     const [startDate, setStartDate] = useState(new Date().toISOString().split('T')[0]);
     const [meetDate, setMeetDate] = useState(athlete?.nextMeetDate || '');
 
+    // Archived / Completed blocks history
+    const [archivedBlocks, setArchivedBlocks] = useState<any[]>([]);
+    const [showArchived, setShowArchived] = useState(false);
+    const hasAutoPrunedRef = useRef(false);
+
     // Sync if athlete prop updates
     useEffect(() => {
         if (athlete) {
             setMeetName(athlete.nextMeetName || '');
             setMeetDate(athlete.nextMeetDate || '');
             setBlocks(athlete.periodization || []);
+            hasAutoPrunedRef.current = false;
         }
     }, [athlete]);
 
     // Calculate Days Out
     const daysOutData = useMemo(() => {
         if (!meetDate) return null;
-        const meet = new Date(meetDate);
+        const meet = new Date(meetDate + (meetDate.includes('T') ? '' : 'T00:00:00'));
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const diffTime = meet.getTime() - today.getTime();
@@ -42,11 +48,12 @@ export default function PeriodizationPlanner({ athlete }) {
     const schedule = useMemo(() => {
         if (!meetDate || blocks.length === 0) return [];
 
-        const meet = new Date(meetDate);
+        const meet = new Date(meetDate + (meetDate.includes('T') ? '' : 'T00:00:00'));
         // Find the Monday of the Meet Week (Start of the "Last Week")
         const meetWeekStart = new Date(meet);
         const offset = (meet.getDay() + 6) % 7;
         meetWeekStart.setDate(meet.getDate() - offset); // Monday is start of week
+        meetWeekStart.setHours(0, 0, 0, 0);
 
         // We work backwards from this anchor
         let currentAnchor = new Date(meetWeekStart);
@@ -55,16 +62,25 @@ export default function PeriodizationPlanner({ athlete }) {
         const reversedBlocks = [...blocks].reverse();
 
         reversedBlocks.forEach(block => {
+            const numWeeks = typeof block.weeks === 'number' ? block.weeks : parseInt(block.weeks) || 1;
             const startDate = new Date(currentAnchor);
-            startDate.setDate(currentAnchor.getDate() - ((block.weeks - 1) * 7));
+            startDate.setDate(currentAnchor.getDate() - ((numWeeks - 1) * 7));
+            startDate.setHours(0, 0, 0, 0);
+
+            // Block finish date: Sunday 23:59:59 of the final week (currentAnchor is Monday of last week)
+            const finishDate = new Date(currentAnchor);
+            finishDate.setDate(finishDate.getDate() + 6);
+            finishDate.setHours(23, 59, 59, 999);
 
             const nextAnchor = new Date(startDate);
             nextAnchor.setDate(startDate.getDate() - 7);
 
             scheduleItems.unshift({
                 ...block,
+                weeks: numWeeks,
                 startDate: new Date(startDate),
-                endDate: new Date(currentAnchor)
+                endDate: new Date(currentAnchor),
+                finishDate,
             });
 
             currentAnchor = nextAnchor;
@@ -72,26 +88,174 @@ export default function PeriodizationPlanner({ athlete }) {
         return scheduleItems;
     }, [meetDate, blocks]);
 
-    // Generate Weekly Table Data
+    // Trajectory Status: Where We Are, Current Block, and Next Block Length
+    const trajectoryStatus = useMemo(() => {
+        if (!meetDate || schedule.length === 0) return null;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        // Start of current week (Monday)
+        const currentMonday = new Date(today);
+        const dayOffset = (today.getDay() + 6) % 7;
+        currentMonday.setDate(today.getDate() - dayOffset);
+        currentMonday.setHours(0, 0, 0, 0);
+
+        // End of current week (Sunday)
+        const currentSunday = new Date(currentMonday);
+        currentSunday.setDate(currentMonday.getDate() + 6);
+        currentSunday.setHours(23, 59, 59, 999);
+
+        // Meet date
+        const meet = new Date(meetDate + (meetDate.includes('T') ? '' : 'T00:00:00'));
+        meet.setHours(0, 0, 0, 0);
+        const isMeetPassed = today > meet;
+
+        // Passed blocks: their entire duration ended before current week started
+        const passedBlocks = schedule.filter(b => b.finishDate < currentMonday);
+        const activeOrFutureBlocks = schedule.filter(b => b.finishDate >= currentMonday);
+
+        // Active block: today falls inside startDate and finishDate
+        const currentBlock = schedule.find(b => today >= b.startDate && today <= b.finishDate) || null;
+
+        let currentBlockIndex = -1;
+        let currentWeekInBlock = 1;
+        let weeksLeftInBlock = 0;
+        let progressPercent = 0;
+
+        if (currentBlock) {
+            currentBlockIndex = schedule.findIndex(b => b.id === currentBlock.id);
+            const daysSinceStart = Math.max(0, Math.floor((today.getTime() - currentBlock.startDate.getTime()) / (1000 * 60 * 60 * 24)));
+            currentWeekInBlock = Math.min(currentBlock.weeks, Math.floor(daysSinceStart / 7) + 1);
+            weeksLeftInBlock = Math.max(0, currentBlock.weeks - currentWeekInBlock);
+            progressPercent = Math.min(100, Math.round((currentWeekInBlock / currentBlock.weeks) * 100));
+        }
+
+        // Determine Next Block
+        let nextBlock = null;
+        if (currentBlock && currentBlockIndex >= 0 && currentBlockIndex < schedule.length - 1) {
+            nextBlock = schedule[currentBlockIndex + 1];
+        } else if (!currentBlock && activeOrFutureBlocks.length > 0) {
+            // If today is before any block starts
+            if (today < activeOrFutureBlocks[0].startDate) {
+                nextBlock = activeOrFutureBlocks[0];
+            }
+        }
+
+        return {
+            today,
+            currentMonday,
+            currentSunday,
+            passedBlocks,
+            activeOrFutureBlocks,
+            currentBlock,
+            currentBlockIndex,
+            currentWeekInBlock,
+            weeksLeftInBlock,
+            progressPercent,
+            nextBlock,
+            isMeetPassed,
+        };
+    }, [meetDate, schedule]);
+
+    // Auto-Prune Effect: automatically removes blocks that already passed as time passes
+    useEffect(() => {
+        if (isEditing || !athlete?.id || !meetDate || hasAutoPrunedRef.current) return;
+
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const meet = new Date(meetDate + (meetDate.includes('T') ? '' : 'T00:00:00'));
+        meet.setHours(0, 0, 0, 0);
+
+        if (today > meet) return; // Do not auto-prune if the meet itself has already passed
+
+        const currentMonday = new Date(today);
+        const dayOffset = (today.getDay() + 6) % 7;
+        currentMonday.setDate(today.getDate() - dayOffset);
+        currentMonday.setHours(0, 0, 0, 0);
+
+        const passed = schedule.filter(b => b.finishDate < currentMonday);
+        if (passed.length > 0) {
+            hasAutoPrunedRef.current = true;
+            const passedIds = new Set(passed.map(b => b.id));
+            const remaining = blocks.filter(b => !passedIds.has(b.id));
+
+            setArchivedBlocks(prev => {
+                const existingIds = new Set(prev.map(p => p.id));
+                const newItems = passed.filter(p => !existingIds.has(p.id));
+                return [...prev, ...newItems];
+            });
+
+            setBlocks(remaining);
+
+            fetch('/api/athletes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    id: athlete.id,
+                    periodization: remaining,
+                    nextMeetName: meetName,
+                    nextMeetDate: meetDate
+                })
+            }).catch(err => console.error("Failed to auto-save pruned periodization:", err));
+
+            onUpdate?.({
+                periodization: remaining,
+                nextMeetName: meetName,
+                nextMeetDate: meetDate
+            });
+        }
+    }, [athlete?.id, meetDate, schedule, blocks, isEditing, onUpdate, meetName]);
+
+    const restoreArchivedBlock = (blockToRestore: any) => {
+        const updated = [{
+            id: blockToRestore.id || Math.random().toString(36).substr(2, 9),
+            type: blockToRestore.type,
+            name: blockToRestore.name,
+            weeks: blockToRestore.weeks,
+            color: blockToRestore.color,
+            notes: blockToRestore.notes || ''
+        }, ...blocks];
+        setBlocks(updated);
+        setArchivedBlocks(prev => prev.filter(b => b.id !== blockToRestore.id));
+    };
+
+    // Generate Weekly Table Data with Current & Completed Week Highlighting
     const weeklyRows = useMemo(() => {
         if (schedule.length === 0) return [];
         const rows = [];
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const currentMonday = new Date(today);
+        const dayOffset = (today.getDay() + 6) % 7;
+        currentMonday.setDate(today.getDate() - dayOffset);
+        currentMonday.setHours(0, 0, 0, 0);
 
         schedule.forEach(block => {
-            // Generate a row for each week in the block
             for (let i = 0; i < block.weeks; i++) {
                 const weekStart = new Date(block.startDate);
                 weekStart.setDate(weekStart.getDate() + (i * 7));
+                weekStart.setHours(0, 0, 0, 0);
+
+                const weekEnd = new Date(weekStart);
+                weekEnd.setDate(weekEnd.getDate() + 6);
+                weekEnd.setHours(23, 59, 59, 999);
+
+                const isCurrentWeek = today >= weekStart && today <= weekEnd;
+                const isCompletedWeek = weekEnd < currentMonday;
 
                 rows.push({
                     weekName: i === 0 ? `Week 1` : `Week ${i + 1}`,
                     date: weekStart,
+                    endDate: weekEnd,
                     blockName: block.name,
                     blockColor: block.color,
-                    blockNotes: block.notes, // Pass notes
+                    blockNotes: block.notes,
                     isCheckIn: false,
                     isFirstInBlock: i === 0,
-                    blockSpan: block.weeks
+                    blockSpan: block.weeks,
+                    isCurrentWeek,
+                    isCompletedWeek,
                 });
             }
         });
@@ -354,6 +518,11 @@ export default function PeriodizationPlanner({ athlete }) {
                 nextMeetDate: meetDate
             })
         });
+        onUpdate?.({
+            periodization: blocks,
+            nextMeetName: meetName,
+            nextMeetDate: meetDate
+        });
         setIsEditing(false);
         router.refresh();
     };
@@ -374,6 +543,12 @@ export default function PeriodizationPlanner({ athlete }) {
         setMeetName('');
         setMeetDate('');
         setBlocks([]);
+        setArchivedBlocks([]);
+        onUpdate?.({
+            periodization: null,
+            nextMeetName: null,
+            nextMeetDate: null
+        });
         setIsEditing(false);
         router.refresh();
     };
@@ -684,6 +859,331 @@ export default function PeriodizationPlanner({ athlete }) {
                 </div>
             )}
 
+            {/* Dynamic Real-Time Trajectory: Where We Are & Next Block */}
+            {trajectoryStatus && !isEditing && (
+                <div
+                    style={{
+                        marginBottom: '1.5rem',
+                        padding: '1.25rem',
+                        borderRadius: '16px',
+                        background: 'linear-gradient(135deg, rgba(20, 24, 38, 0.95) 0%, rgba(13, 17, 28, 0.98) 100%)',
+                        border: '1px solid rgba(56, 189, 248, 0.25)',
+                        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08)',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '1rem',
+                    }}
+                >
+                    {/* Top Status Bar */}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid rgba(255, 255, 255, 0.08)', paddingBottom: '0.65rem', flexWrap: 'wrap', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{
+                                width: '26px', height: '26px', borderRadius: '7px',
+                                background: 'rgba(6, 182, 212, 0.15)', border: '1px solid rgba(6, 182, 212, 0.35)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            }}>
+                                <Compass size={15} style={{ color: '#06b6d4' }} />
+                            </div>
+                            <div>
+                                <span style={{ fontSize: '0.78rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: '#06b6d4' }}>
+                                    Where We Are • Live Trajectory
+                                </span>
+                            </div>
+                        </div>
+                        {meetDate && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.75rem', color: 'var(--secondary-foreground)' }}>
+                                <Trophy size={14} style={{ color: '#f59e0b' }} />
+                                <span style={{ fontWeight: 600, color: 'var(--foreground)' }}>{meetName || 'Target Competition'}</span>
+                                <span>•</span>
+                                <span style={{ fontFamily: 'monospace', color: '#38bdf8', fontWeight: 700 }}>
+                                    {daysOutData ? (daysOutData.totalDays >= 0 ? `${daysOutData.weeks}w ${daysOutData.days}d out` : `${Math.abs(daysOutData.totalDays)}d ago`) : ''}
+                                </span>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* 2-Column Grid: Active Block vs Next Block */}
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
+                        
+                        {/* COLUMN 1: Active Block */}
+                        <div style={{
+                            background: 'rgba(255, 255, 255, 0.025)',
+                            border: trajectoryStatus.currentBlock ? `1px solid ${trajectoryStatus.currentBlock.color}45` : '1px solid rgba(255, 255, 255, 0.08)',
+                            borderLeft: trajectoryStatus.currentBlock ? `4px solid ${trajectoryStatus.currentBlock.color}` : '4px solid var(--secondary-foreground)',
+                            borderRadius: '12px',
+                            padding: '1rem',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'space-between',
+                            gap: '0.75rem',
+                        }}>
+                            <div>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                                    <span style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--secondary-foreground)' }}>
+                                        Current Position
+                                    </span>
+                                    {trajectoryStatus.currentBlock && (
+                                        <span style={{
+                                            background: `${trajectoryStatus.currentBlock.color}25`,
+                                            border: `1px solid ${trajectoryStatus.currentBlock.color}60`,
+                                            color: trajectoryStatus.currentBlock.color,
+                                            fontSize: '0.65rem', fontWeight: 800, padding: '2px 8px', borderRadius: '12px',
+                                            textTransform: 'uppercase', letterSpacing: '0.04em'
+                                        }}>
+                                            Active Block
+                                        </span>
+                                    )}
+                                </div>
+
+                                {trajectoryStatus.currentBlock ? (
+                                    <>
+                                        <div style={{ fontSize: '1.18rem', fontWeight: 800, color: 'var(--foreground)', lineHeight: 1.25 }}>
+                                            {trajectoryStatus.currentBlock.name}
+                                        </div>
+                                        <div style={{ fontSize: '0.82rem', color: 'var(--secondary-foreground)', marginTop: '5px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                            <span style={{ color: '#06b6d4', fontWeight: 800 }}>
+                                                Week {trajectoryStatus.currentWeekInBlock} of {trajectoryStatus.currentBlock.weeks}
+                                            </span>
+                                            <span>•</span>
+                                            <span style={{ fontWeight: 600 }}>
+                                                {trajectoryStatus.weeksLeftInBlock > 0
+                                                    ? `${trajectoryStatus.weeksLeftInBlock} ${trajectoryStatus.weeksLeftInBlock === 1 ? 'week' : 'weeks'} remaining`
+                                                    : 'Final week of this block'}
+                                            </span>
+                                        </div>
+                                        <div style={{ fontSize: '0.74rem', color: 'rgba(255,255,255,0.5)', marginTop: '4px' }}>
+                                            {trajectoryStatus.currentBlock.startDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })} – {trajectoryStatus.currentBlock.finishDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                        </div>
+                                    </>
+                                ) : (
+                                    <div>
+                                        <div style={{ fontSize: '1.05rem', fontWeight: 700, color: 'var(--foreground)' }}>
+                                            {trajectoryStatus.isMeetPassed ? 'Meet Concluded' : 'Preparation Trajectory Initialized'}
+                                        </div>
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginTop: '4px' }}>
+                                            {trajectoryStatus.isMeetPassed ? 'Competition day has passed.' : 'Your planned blocks will begin with the upcoming block below.'}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {/* Progress Bar for Active Block */}
+                            {trajectoryStatus.currentBlock && (
+                                <div>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.68rem', color: 'var(--secondary-foreground)', marginBottom: '4px', fontWeight: 700 }}>
+                                        <span>Block Completion</span>
+                                        <span style={{ color: '#06b6d4' }}>{trajectoryStatus.progressPercent}%</span>
+                                    </div>
+                                    <div style={{ width: '100%', height: '6px', background: 'rgba(255,255,255,0.08)', borderRadius: '3px', overflow: 'hidden' }}>
+                                        <div style={{
+                                            width: `${trajectoryStatus.progressPercent}%`,
+                                            height: '100%',
+                                            background: `linear-gradient(90deg, ${trajectoryStatus.currentBlock.color} 0%, #06b6d4 100%)`,
+                                            borderRadius: '3px',
+                                            transition: 'width 0.3s ease',
+                                        }} />
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* COLUMN 2: Next Block (Direct Answer to "what the next block length should be") */}
+                        <div style={{
+                            background: trajectoryStatus.nextBlock ? 'linear-gradient(135deg, rgba(6, 182, 212, 0.08) 0%, rgba(59, 130, 246, 0.06) 100%)' : 'rgba(255, 255, 255, 0.025)',
+                            border: trajectoryStatus.nextBlock ? '1px solid rgba(6, 182, 212, 0.35)' : '1px solid rgba(255, 255, 255, 0.08)',
+                            borderLeft: trajectoryStatus.nextBlock ? `4px solid ${trajectoryStatus.nextBlock.color || '#38bdf8'}` : '4px solid rgba(255,255,255,0.2)',
+                            borderRadius: '12px',
+                            padding: '1rem',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            justifyContent: 'space-between',
+                            gap: '0.75rem',
+                        }}>
+                            <div>
+                                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '6px' }}>
+                                    <span style={{ fontSize: '0.65rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.08em', color: trajectoryStatus.nextBlock ? '#38bdf8' : 'var(--secondary-foreground)' }}>
+                                        Next Block Up
+                                    </span>
+                                    {trajectoryStatus.nextBlock && (
+                                        <span style={{
+                                            background: 'rgba(6, 182, 212, 0.18)',
+                                            border: '1px solid rgba(6, 182, 212, 0.45)',
+                                            color: '#06b6d4',
+                                            fontSize: '0.65rem', fontWeight: 800, padding: '2px 8px', borderRadius: '12px',
+                                            textTransform: 'uppercase', letterSpacing: '0.04em'
+                                        }}>
+                                            Next In Queue
+                                        </span>
+                                    )}
+                                </div>
+
+                                {trajectoryStatus.nextBlock ? (
+                                    <>
+                                        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
+                                            <div style={{ fontSize: '1.18rem', fontWeight: 800, color: 'var(--foreground)', lineHeight: 1.25 }}>
+                                                {trajectoryStatus.nextBlock.name}
+                                            </div>
+                                            {/* Huge, Bold Block Length */}
+                                            <div style={{
+                                                fontSize: '1.35rem',
+                                                fontWeight: 900,
+                                                color: trajectoryStatus.nextBlock.color || '#38bdf8',
+                                                lineHeight: 1,
+                                                display: 'flex',
+                                                alignItems: 'baseline',
+                                                gap: '4px',
+                                                background: 'rgba(0,0,0,0.3)',
+                                                padding: '4px 10px',
+                                                borderRadius: '8px',
+                                                border: `1px solid ${trajectoryStatus.nextBlock.color}40`,
+                                            }}>
+                                                <span>{trajectoryStatus.nextBlock.weeks}</span>
+                                                <span style={{ fontSize: '0.72rem', fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                                    {trajectoryStatus.nextBlock.weeks === 1 ? 'Week' : 'Weeks'}
+                                                </span>
+                                            </div>
+                                        </div>
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginTop: '6px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            <Calendar size={13} style={{ opacity: 0.7 }} />
+                                            <span>Starts: {trajectoryStatus.nextBlock.startDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                                            <span>•</span>
+                                            <span>Ends: {trajectoryStatus.nextBlock.finishDate.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}</span>
+                                        </div>
+                                        {trajectoryStatus.nextBlock.notes && (
+                                            <div style={{ fontSize: '0.74rem', fontStyle: 'italic', color: 'rgba(255,255,255,0.6)', marginTop: '4px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                                &ldquo;{trajectoryStatus.nextBlock.notes}&rdquo;
+                                            </div>
+                                        )}
+                                    </>
+                                ) : (
+                                    <div>
+                                        <div style={{ fontSize: '1.05rem', fontWeight: 800, color: '#f59e0b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            <Trophy size={16} /> Final Block Before Meet
+                                        </div>
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--secondary-foreground)', marginTop: '4px' }}>
+                                            {trajectoryStatus.currentBlock
+                                                ? 'This is the final preparation phase leading directly into Competition Day.'
+                                                : 'All scheduled blocks have concluded.'}
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+
+                            {trajectoryStatus.nextBlock && (
+                                <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.7)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                    <span style={{ color: 'var(--secondary-foreground)' }}>Phase Type:</span>
+                                    <span style={{ fontWeight: 700, color: trajectoryStatus.nextBlock.color || '#38bdf8' }}>{trajectoryStatus.nextBlock.type}</span>
+                                </div>
+                            )}
+                        </div>
+
+                    </div>
+
+                    {/* Auto-Prune Archive Notification Bar */}
+                    {archivedBlocks.length > 0 && (
+                        <div style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            padding: '6px 12px',
+                            borderRadius: '8px',
+                            background: 'rgba(255, 255, 255, 0.03)',
+                            border: '1px solid rgba(255, 255, 255, 0.08)',
+                            fontSize: '0.74rem',
+                            color: 'var(--secondary-foreground)',
+                        }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                <CheckCircle2 size={13} style={{ color: '#22c55e' }} />
+                                <span>
+                                    <strong style={{ color: 'var(--foreground)' }}>{archivedBlocks.length}</strong> completed past {archivedBlocks.length === 1 ? 'block was' : 'blocks were'} auto-archived based on date.
+                                </span>
+                            </div>
+                            <button
+                                type="button"
+                                onClick={() => setShowArchived(!showArchived)}
+                                style={{
+                                    background: 'transparent',
+                                    border: 'none',
+                                    color: '#06b6d4',
+                                    cursor: 'pointer',
+                                    fontWeight: 700,
+                                    fontSize: '0.72rem',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                }}
+                            >
+                                {showArchived ? 'Hide History' : 'Show History'}
+                                {showArchived ? <ChevronDown size={12} /> : <ChevronRight size={12} />}
+                            </button>
+                        </div>
+                    )}
+
+                    {/* Expandable Completed Blocks Drawer */}
+                    {showArchived && archivedBlocks.length > 0 && (
+                        <div style={{
+                            borderRadius: '10px',
+                            background: 'rgba(0, 0, 0, 0.35)',
+                            border: '1px solid rgba(255, 255, 255, 0.06)',
+                            padding: '0.75rem',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            gap: '0.5rem',
+                        }}>
+                            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: 'var(--secondary-foreground)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+                                Completed Blocks Archive
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                {archivedBlocks.map((b, bi) => (
+                                    <div key={b.id || bi} style={{
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        justifyContent: 'space-between',
+                                        padding: '6px 10px',
+                                        borderRadius: '6px',
+                                        background: 'rgba(255, 255, 255, 0.02)',
+                                        borderLeft: `3px solid ${b.color || '#64748b'}`,
+                                        fontSize: '0.78rem',
+                                    }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                            <span style={{ fontWeight: 600, color: 'var(--foreground)' }}>{b.name}</span>
+                                            <span style={{ fontSize: '0.7rem', color: 'var(--secondary-foreground)', background: 'rgba(255,255,255,0.06)', padding: '1px 6px', borderRadius: '4px' }}>
+                                                {b.weeks}w
+                                            </span>
+                                            {b.notes && (
+                                                <span style={{ fontSize: '0.72rem', fontStyle: 'italic', color: 'rgba(255,255,255,0.5)' }}>
+                                                    &ldquo;{b.notes}&rdquo;
+                                                </span>
+                                            )}
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => restoreArchivedBlock(b)}
+                                            title="Restore to active roadmap"
+                                            style={{
+                                                background: 'rgba(255, 255, 255, 0.06)',
+                                                border: '1px solid rgba(255, 255, 255, 0.1)',
+                                                color: 'var(--foreground)',
+                                                cursor: 'pointer',
+                                                padding: '2px 8px',
+                                                borderRadius: '4px',
+                                                fontSize: '0.7rem',
+                                                fontWeight: 600,
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '4px',
+                                            }}
+                                        >
+                                            <RotateCcw size={11} /> Restore
+                                        </button>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+
             {/* Weekly Table View */}
             {!meetDate ? (
                 <div
@@ -757,11 +1257,44 @@ export default function PeriodizationPlanner({ athlete }) {
                                     key={i}
                                     style={{
                                         borderBottom: '1px solid rgba(148, 163, 184, 0.06)',
+                                        background: row.isCurrentWeek ? 'rgba(6, 182, 212, 0.1)' : 'transparent',
+                                        boxShadow: row.isCurrentWeek ? 'inset 3px 0 0 #06b6d4' : 'none',
                                         transition: 'background 0.15s',
+                                        opacity: row.isCompletedWeek ? 0.65 : 1,
                                     }}
                                 >
-                                    <td style={{ padding: '0.85rem 1rem', color: 'var(--primary)', fontWeight: 600, fontSize: '0.85rem' }}>{row.weekName}</td>
-                                    <td style={{ padding: '0.85rem 1rem', fontFamily: 'monospace', color: 'rgba(255,255,255,0.7)', fontSize: '0.82rem' }}>
+                                    <td style={{ padding: '0.85rem 1rem', color: row.isCurrentWeek ? '#06b6d4' : 'var(--primary)', fontWeight: row.isCurrentWeek ? 800 : 600, fontSize: '0.85rem' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                            <span>{row.weekName}</span>
+                                            {row.isCurrentWeek && (
+                                                <span style={{
+                                                    background: '#06b6d4',
+                                                    color: '#000000',
+                                                    fontSize: '0.62rem',
+                                                    fontWeight: 900,
+                                                    padding: '2px 6px',
+                                                    borderRadius: '4px',
+                                                    letterSpacing: '0.04em',
+                                                    whiteSpace: 'nowrap',
+                                                    boxShadow: '0 0 8px rgba(6, 182, 212, 0.4)',
+                                                }}>
+                                                    📍 THIS WEEK
+                                                </span>
+                                            )}
+                                            {row.isCompletedWeek && (
+                                                <span style={{ fontSize: '0.68rem', color: '#22c55e', fontWeight: 700 }}>
+                                                    ✓
+                                                </span>
+                                            )}
+                                        </div>
+                                    </td>
+                                    <td style={{
+                                        padding: '0.85rem 1rem',
+                                        fontFamily: 'monospace',
+                                        color: row.isCurrentWeek ? '#ffffff' : 'rgba(255,255,255,0.7)',
+                                        fontSize: '0.82rem',
+                                        fontWeight: row.isCurrentWeek ? 700 : 400
+                                    }}>
                                         {row.date.toLocaleDateString(undefined, { month: '2-digit', day: '2-digit' })}
                                         <span style={{ opacity: 0.3, marginLeft: '4px' }}>'{row.date.getFullYear().toString().substr(2)}</span>
                                     </td>
